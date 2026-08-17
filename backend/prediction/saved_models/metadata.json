@@ -1,0 +1,27 @@
+{
+  "trained_at": "2026-08-13T17:38:18.652714",
+  "best_model": "random_forest",
+  "n_training_days": 177,
+  "feature_columns": [
+    "day_of_week",
+    "is_weekend",
+    "day_of_month",
+    "is_payday_period",
+    "is_regular_closed_day",
+    "lag_1",
+    "lag_7",
+    "rolling_avg_7"
+  ],
+  "metrics": {
+    "ridge_regression": {
+      "mae": 1749673.765024051,
+      "rmse": 2466522.1385882827,
+      "mape": 4.317801568861407
+    },
+    "random_forest": {
+      "mae": 1604098.4927794423,
+      "rmse": 2125437.014643422,
+      "mape": 6.612815033913195
+    }
+  }
+}

@@ -1,0 +1,169 @@
+/* src/index.css */
+
+/* 1. CORE TAILWIND V4 & FONTS */
+@import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Manrope:wght@400;500;600;700&family=Caveat:wght@400;700&display=swap");
+
+/* 2. KONFIGURASI TEMA GLOBAL (Red Masashimura) */
+@theme {
+  /* Pewarnaan */
+  --color-primary: #dc2626;
+  --color-accent: #f59e0b;
+  --color-background: #050505;
+  --color-foreground: #ffffff;
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-card: rgba(30, 41, 59, 0.3);
+  --color-secondary: rgba(30, 41, 59, 0.5);
+
+  /* Typography */
+  --font-oswald: "Oswald", sans-serif;
+  --font-manrope: "Manrope", sans-serif;
+  --font-caveat: "Caveat", cursive;
+}
+
+/* 3. ATURAN DASAR (Base) */
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: "Manrope", sans-serif;
+    overflow-x: hidden;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Oswald", sans-serif;
+  }
+}
+
+/* 4. CUSTOM UTILITIES (Tailwind v4 Syntax) */
+@layer utilities {
+  .bg-noise {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+  }
+
+  /* Shadow Neo-Brutalism */
+  .shadow-neo-red {
+    box-shadow: 4px 4px 0px #991b1b;
+  }
+  .shadow-neo-red-hover {
+    box-shadow: 2px 2px 0px #991b1b;
+  }
+  .shadow-neo-yellow {
+    box-shadow: 4px 4px 0px #f59e0b;
+  }
+}
+
+/* Utility Khusus: Scrollbar Tipis Transparan (Ex-Main.css) */
+@utility custom-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+}
+
+/* Utility Khusus: Sembunyikan Scrollbar Total */
+@utility custom-scroll-hide {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE & Edge */
+
+  &::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Edge */
+  }
+}
+
+/* src/index.css - Tambahkan di baris paling bawah */
+
+/* Styling Modern untuk Toaster (Sonner) */
+[data-sonner-toaster] {
+  position: fixed !important;
+  top: 380px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 9999 !important;
+
+  /* Efek Modern */
+  width: auto !important;
+  max-width: 400px !important;
+}
+
+[data-sonner-toast] {
+  /* Glassmorphism Effect */
+  background: rgba(245, 158, 11, 0.15) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+
+  /* Border & Bentuk */
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+  border-radius: 16px !important;
+  padding: 12px 20px !important;
+
+  /* Tipografi & Shadow */
+  color: #fbbf24 !important;
+  box-shadow:
+    0 10px 25px -5px rgba(0, 0, 0, 0.3),
+    0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  font-family: "Manrope", sans-serif !important;
+  font-weight: 800 !important;
+}
+
+/* Mengubah warna border berdasarkan tipe toast (Opsional) */
+[data-sonner-toast][data-type="success"] {
+  border-left: 4px solid #dc2626 !important; /* Primary Red */
+}
+
+/* ==========================================================================
+   ✨ PREMIUM MINIMALIST CUSTOM SCROLLBAR FOR MASASHIMURA ERP
+   ========================================================================== */
+
+/* 1. Mengatur ukuran lebar scrollbar global */
+::-webkit-scrollbar {
+  width: 6px;  /* Bikin scrollbar vertikal jadi tipis dan elegan */
+  height: 6px; /* Bikin scrollbar horizontal jadi tipis */
+}
+
+/* 2. Mengatur area rel/jalur tempat scrollbar berjalan (Track) */
+::-webkit-scrollbar-track {
+  background: transparent; /* Biar menyatu sama background gelap dashboard */
+}
+
+/* 3. Mengatur warna batang scrollbar yang digeser (Thumb) */
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1); /* Warna putih transparan tipis */
+  border-radius: 10px; /* Bikin ujungnya membulat (capsule style) */
+  transition: background 0.3s ease;
+}
+
+/* 4. Efek saat kursor kasir mengarah ke scrollbar (Hover) */
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(239, 68, 68, 0.4); /* Berubah jadi merah transparan khas Masashimura */
+}
+
+/* Khusus untuk Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+.no-spinner::-webkit-outer-spin-button,
+.no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.no-spinner {
+  -moz-appearance: textfield;
+}
