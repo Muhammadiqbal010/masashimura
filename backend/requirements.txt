@@ -11,3 +11,5 @@ joblib==1.5.3
 numpy==2.5.1
 python-dotenv
 cloudinary
+django-cloudinary-storage
+psycopg[binary]
