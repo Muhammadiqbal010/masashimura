@@ -103,6 +103,7 @@ class OrderSerializer(serializers.ModelSerializer):
             "status",
             "payment_status",
             "payment_method",
+            "proof_image_url",
             "is_deferred_payment",
             "customer_name",
             "customer_phone",
