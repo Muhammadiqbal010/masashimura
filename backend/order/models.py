@@ -35,10 +35,11 @@ CANCEL_REASON_CHOICES = (
 )
 
 PAYMENT_STATUS_CHOICES = (
-    ('unpaid',  'Unpaid'),
-    ('paid',    'Paid'),
-    ('pending', 'Pending'),
-    ('void',    'Batal'),
+    ('unpaid',                'Unpaid'),
+    ('paid',                  'Paid'),
+    ('pending',                'Pending'),
+    ('pending_verification',  'Menunggu Verifikasi'),
+    ('void',                  'Batal'),
 )
 
 PAYMENT_METHOD_CHOICES = (
@@ -60,7 +61,7 @@ class Order(models.Model):
     source         = models.CharField(max_length=10, choices=ORDER_SOURCE_CHOICES, default='web')
     status         = models.CharField(max_length=15, choices=ORDER_STATUS_CHOICES, default='pending')
 
-    payment_status = models.CharField(max_length=10, choices=PAYMENT_STATUS_CHOICES, default='unpaid')
+    payment_status = models.CharField(max_length=25, choices=PAYMENT_STATUS_CHOICES, default='unpaid')
     payment_method = models.CharField(max_length=15, choices=PAYMENT_METHOD_CHOICES, blank=True, null=True)
     is_deferred_payment = models.BooleanField(
         default=False,
@@ -106,6 +107,15 @@ class Order(models.Model):
         blank=True,
         default=""
     )
+
+    # Link Cloudinary bukti bayar QRIS yang diupload customer saat checkout
+    # web. Diisi otomatis di create_order — sebelumnya ini cuma numpang
+    # lewat di pesan WhatsApp, ga pernah tersimpan sama sekali di DB.
+    proof_image_url = models.URLField(
+        max_length=500, blank=True, default="",
+        help_text="Bukti pembayaran QRIS (link Cloudinary), diisi saat checkout web QRIS",
+    )
+
 
     # ── Audit trail pembatalan (void) ──────────────────────────────
     # Order yang dibatalkan TIDAK dihapus dari database — cuma diubah

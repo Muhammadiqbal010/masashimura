@@ -25,6 +25,7 @@ from .views import (
     StoreSettingsView,
     available_point_rewards,
     PointRewardViewSet,
+    verify_qris_payment,
 )
 from .finance_excel import export_finance_excel_view
 from .finance_pdf import export_finance_pdf_view
@@ -78,6 +79,8 @@ urlpatterns = [
 
     # ── Detail & pay — HARUS PALING BAWAH karena pakai <int:pk> ─────────────
     path("orders/<int:pk>/",         get_order,    name="order-detail"),
-    path("orders/<int:pk>/pay/",     pay_order,    name="pay-order"),
-    path("orders/<int:pk>/cancel/",  cancel_order, name="cancel-order"),
+    path("orders/<int:pk>/pay/",            pay_order,           name="pay-order"),
+    path("orders/<int:pk>/cancel/",         cancel_order,        name="cancel-order"),
+    path("orders/<int:pk>/verify-payment/", verify_qris_payment, name="verify-qris-payment"),
 ] + router.urls
+

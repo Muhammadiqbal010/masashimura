@@ -518,6 +518,7 @@ const checkout = async () => {
       source:         "web",
       customer:       { phone: phone.value, name: name.value },
       payment_method: paymentMethod.value,
+      proof_image_url: paymentMethod.value === "qris" ? proofCloudinaryUrl.value : "",
       promo_id:               appliedPromo.value?.promo_id || null,
       promo_discount_amount:  appliedPromo.value?.discount_amount || 0,
       redeem_reward_ids:      selectedRewardIds.value,

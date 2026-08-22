@@ -47,6 +47,14 @@ def create_order(request):
 
     source         = data.get('source', 'pos')
     payment_method = data.get('payment_method', 'cash')
+
+    # PENTING: source='pos' cuma boleh dipercaya kalau request ini beneran
+    # datang dari staff yang login. Tanpa ini, siapa pun tanpa login bisa
+    # POST /orders/ langsung dengan source='pos' dan order-nya otomatis
+    # ke-mark 'paid'+'completed' di bawah — bypass total alur web/QRIS.
+    if source == 'pos' and not (request.user and request.user.is_authenticated and request.user.is_staff):
+        source = 'web'
+
     table_number   = data.get('table_number')
     notes          = data.get('notes', '')
 
@@ -63,13 +71,19 @@ def create_order(request):
 
     # Logika payment_status
     is_qris = payment_method in ('qris', 'qris_manual', 'gateway')
+    proof_image_url = (data.get('proof_image_url') or '').strip()
+
+    if source == 'web' and is_qris and not proof_image_url:
+        return Response({"error": "Bukti pembayaran QRIS wajib diupload"}, status=400)
 
     if source == 'web':
         if is_qris:
-            # Web + QRIS → langsung paid & completed
-            payment_status = 'paid'
+            # Web + QRIS → JANGAN langsung 'paid'. Nunggu admin cek manual
+            # bukti pembayaran (proof_image_url) lewat endpoint verify-payment
+            # sebelum order dianggap lunas & masuk laporan omzet.
+            payment_status = 'pending_verification'
             is_deferred    = False
-            order_status   = 'completed'
+            order_status   = 'pending'
         else:
             # Web + cash → pending seperti biasa
             payment_status = 'pending'
@@ -85,165 +99,6 @@ def create_order(request):
         payment_status = 'paid'
         is_deferred    = False
         order_status   = 'completed'
-
-    # Kumpulkan & validasi semua item terlebih dahulu
-    processed_items = []
-    for item_data in items_data:
-        menu_obj = get_object_or_404(Menu, id=item_data.get('menu_id'))
-        if not menu_obj.is_available:
-            return Response(
-                {"error": f"Menu '{menu_obj.name}' tidak tersedia"},
-                status=400,
-            )
-
-        if source == 'web':
-            price = item_data.get('price') or menu_obj.price_web
-        else:
-            price = item_data.get('price') or menu_obj.price
-
-        processed_items.append({
-            "menu":  menu_obj,
-            "qty":   int(item_data.get('quantity', 1)),
-            "price": price,
-            "notes": item_data.get('notes', ''),
-        })
-
-    # ── Tukar poin loyalty → menu gratis (kalau ada) ─────────────────────────
-    # select_for_update() dipakai biar dua order dari nomor HP yang sama & poin
-    # mepet ngga bisa berdua-duaan lolos validasi poin di saat bersamaan (race
-    # condition), sama seperti kuota promo di bawah.
-    loyalty_for_redeem = None
-    reward_points_to_deduct = 0
-    if redeem_reward_ids:
-        if not phone:
-            return Response({"error": "Nomor WhatsApp wajib diisi untuk menukar poin"}, status=400)
-
-        loyalty_for_redeem = CustomerLoyalty.objects.select_for_update().filter(phone=phone).first()
-        if not loyalty_for_redeem:
-            return Response({"error": "Belum ada poin loyalty untuk nomor ini"}, status=400)
-
-        rewards_qs = PointReward.objects.select_related('menu').filter(
-            id__in=set(redeem_reward_ids), is_active=True,
-        )
-        rewards_by_id = {r.id: r for r in rewards_qs}
-
-        missing = [rid for rid in redeem_reward_ids if rid not in rewards_by_id]
-        if missing:
-            return Response({"error": f"Reward tidak ditemukan/tidak aktif: {missing}"}, status=400)
-
-        reward_points_to_deduct = sum(rewards_by_id[rid].point_cost for rid in redeem_reward_ids)
-        if reward_points_to_deduct > loyalty_for_redeem.points:
-            return Response({
-                "error": f"Poin tidak cukup. Butuh {reward_points_to_deduct} poin, kamu punya {loyalty_for_redeem.points} poin",
-            }, status=400)
-
-        for rid in redeem_reward_ids:
-            reward   = rewards_by_id[rid]
-            menu_obj = reward.menu
-            if not menu_obj.is_available:
-                return Response(
-                    {"error": f"Menu reward '{menu_obj.name}' sedang tidak tersedia"},
-                    status=400,
-                )
-            processed_items.append({
-                "menu":  menu_obj,
-                "qty":   1,
-                "price": 0,
-                "notes": "Reward poin",
-                "is_point_redemption": True,
-            })
-
-    # Subtotal dihitung dulu dari item² tervalidasi, dipakai buat validasi promo
-    computed_subtotal = sum(
-        (Decimal(str(item["price"])) * item["qty"] for item in processed_items),
-        Decimal('0'),
-    )
-
-    # ── Validasi & kunci promo (kalau dikirim) ───────────────────────────────
-    # PENTING: discount_amount SELALU dihitung ulang di server lewat
-    # promo.calculate_discount(), jangan percaya angka promo_discount_amount
-    # yang dikirim dari frontend (bisa dimanipulasi). select_for_update() dipakai
-    # supaya dua order dengan kode promo yang sama & kuota mepet ngga bisa
-    # sama-sama lolos validasi kuota di saat bersamaan (race condition).
-    promo_obj      = None
-    promo_discount = Decimal('0')
-    if promo_id:
-        promo_obj = Promo.objects.select_for_update().filter(id=promo_id).first()
-        if not promo_obj:
-            return Response({"error": "Promo tidak ditemukan"}, status=400)
-
-        is_valid, message = promo_obj.check_valid(computed_subtotal)
-        if not is_valid:
-            return Response({"error": f"Promo tidak valid: {message}"}, status=400)
-
-        promo_discount = Decimal(str(promo_obj.calculate_discount(computed_subtotal)))
-
-    # Diskon tier loyalty otomatis SUDAH DIHAPUS — satu-satunya jalur reward
-    # customer sekarang cuma poin (tukar menu gratis lewat is_point_redemption).
-    # Yang motong harga di sini cuma promo, sama seperti sebelumnya.
-    computed_total_price = computed_subtotal - promo_discount
-    computed_total_price = computed_total_price if computed_total_price > 0 else Decimal('0')
-
-    # Buat order setelah semua item & promo tervalidasi/terhitung
-    order = Order.objects.create(
-        source=source,
-        status=order_status,
-        payment_status=payment_status,
-        payment_method=payment_method,
-        is_deferred_payment=is_deferred,
-        customer_name=name,
-        customer_phone=phone,
-        table_number=table_number,
-        notes=notes,
-        amount_paid=amount_paid,
-        kasir_name=kasir_name,
-        promo=promo_obj,
-        promo_discount_amount=promo_discount,
-        subtotal=computed_subtotal,
-        total_price=computed_total_price,
-    )
-
-    OrderItem.objects.bulk_create([
-        OrderItem(
-            order    = order,
-            menu     = item["menu"],
-            quantity = item["qty"],
-            price    = item["price"],
-            notes    = item["notes"],
-            is_point_redemption = item.get("is_point_redemption", False),
-        )
-        for item in processed_items
-    ])
-
-    # Catatan: TIDAK perlu panggil order.recalculate_totals() lagi di sini —
-    # subtotal & total_price sudah final & konsisten dengan processed_items
-    # sejak baris Order.objects.create() di atas.
-
-    # Kunci pemakaian kuota promo — HANYA setelah order beneran berhasil dibuat.
-    # F() dipakai biar increment-nya atomic di level database, ngga rawan
-    # race condition dibanding baca-lalu-tulis manual.
-    if promo_obj:
-        promo_obj.used_count = models.F('used_count') + 1
-        promo_obj.save(update_fields=['used_count'])
-
-    # Potong poin — HANYA setelah order beneran berhasil dibuat, sama seperti
-    # kuota promo di atas. F() dipakai biar pengurangannya atomic di level DB.
-    if loyalty_for_redeem and reward_points_to_deduct:
-        loyalty_for_redeem.points = models.F('points') - reward_points_to_deduct
-        loyalty_for_redeem.save(update_fields=['points'])
-
-    order.refresh_from_db()
-
-    if payment_status == "paid" and amount_paid > 0:
-        order.change_amount = max(
-            amount_paid - order.total_price,
-            Decimal("0"),
-        )
-        order.save(update_fields=["change_amount"])
-        order.refresh_from_db()
-
-    return Response(OrderSerializer(order).data, status=201)
-
 
 @api_view(["GET"])
 @permission_classes([IsAdminUser])
@@ -996,6 +851,48 @@ def pay_order(request, pk):
         "payment_method": order.payment_method,
     })
 
+@api_view(["PATCH"])
+@permission_classes([IsAdminUser])
+def verify_qris_payment(request, pk):
+    """
+    PATCH /api/orders/<id>/verify-payment/
+    Body: { "approve": true/false, "kasir_name": "...", "reject_note": "..." }
+
+    Dipanggil admin setelah ngecek proof_image_url order yang statusnya
+    'pending_verification'. approve=true → order dianggap lunas
+    (paid+completed). approve=false → order dibatalkan, dianggap
+    pembayaran tidak valid.
+    """
+    order = get_object_or_404(Order, pk=pk)
+
+    if order.payment_status != 'pending_verification':
+        return Response(
+            {"detail": "Order ini bukan status menunggu verifikasi."},
+            status=400,
+        )
+
+    approve    = request.data.get('approve', True)
+    kasir_name = (request.data.get('kasir_name') or '').strip()
+    previous_status = order.status
+
+    if approve:
+        order.payment_status = 'paid'
+        order.status         = 'completed'
+        order.amount_paid    = order.total_price
+        order.kasir_name     = kasir_name or order.kasir_name
+    else:
+        order.payment_status = 'void'
+        order.status         = 'cancelled'
+        order.cancel_reason  = 'other'
+        order.cancel_note    = (request.data.get('reject_note') or 'Bukti pembayaran QRIS tidak valid').strip()
+        order.cancelled_at   = timezone.now()
+        order.cancelled_by   = kasir_name
+
+    order._previous_status = previous_status
+    order.save()
+    order.refresh_from_db()
+
+    return Response(OrderSerializer(order).data)
 
 @api_view(["PATCH"])
 @permission_classes([IsAdminUser])
