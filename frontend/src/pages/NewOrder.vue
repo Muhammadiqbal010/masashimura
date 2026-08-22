@@ -18,6 +18,15 @@
         </button>
       </div>
 
+      <!-- Search bar -->
+      <div class="search-bar">
+        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input v-model="searchQuery" type="text" placeholder="Cari menu..." class="search-input" />
+        <button v-if="searchQuery" @click="searchQuery = ''" class="search-clear-btn">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
       <!-- Loading skeleton -->
       <div v-if="isLoadingMenus" class="menu-grid">
         <div v-for="n in 6" :key="n" class="menu-skeleton"></div>
@@ -62,10 +71,15 @@
     </div>
 
     <!-- ── RINGKASAN PESANAN ───────────────────────────────────────── -->
-    <div class="order-panel">
+    <div class="order-panel" :class="{ 'mobile-cart-open': showMobileCart }">
       <div class="order-panel-head">
-        <p class="pos-eyebrow">Transaksi Aktif</p>
-        <h2 class="order-panel-title">Ringkasan Pesanan</h2>
+        <div>
+          <p class="pos-eyebrow">Transaksi Aktif</p>
+          <h2 class="order-panel-title">Ringkasan Pesanan</h2>
+        </div>
+        <button class="order-panel-close" @click="showMobileCart = false">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
       </div>
 
       <!-- Customer info -->
@@ -281,6 +295,19 @@
       </button>
     </div>
   </div>
+
+  <!-- ── BACKDROP + FLOATING CART (MOBILE) ───────────────────────── -->
+  <div v-if="showMobileCart" class="mobile-cart-backdrop" @click="showMobileCart = false"></div>
+
+  <button
+    v-if="orderItems.length && !showMobileCart"
+    @click="showMobileCart = true"
+    class="mobile-cart-fab"
+  >
+    <span class="mcf-count">{{ cartItemCount }}</span>
+    <span class="mcf-label">Lihat Pesanan</span>
+    <span class="mcf-total">{{ formatPrice(totalPrice) }}</span>
+  </button>
 
   <!-- ── DRAWER TAGIHAN BELUM LUNAS ──────────────────────────────── -->
   <transition
@@ -514,6 +541,12 @@ const isSubmitting      = ref(false);
 const isTrackingLoyalty = ref(false);
 let debounceTimeout     = null;
 
+// ── Mobile cart sheet ────────────────────────────────────────────────
+const showMobileCart = ref(false);
+const cartItemCount  = computed(() =>
+  orderItems.value.reduce((acc, i) => acc + i.quantity, 0)
+);
+
 // ── Promo code ──────────────────────────────────────────────────────
 const promoBoxRef  = ref(null);
 const appliedPromo = ref(null); // { promo_id, code, discount_amount }
@@ -727,6 +760,7 @@ const submitOrder = async () => {
     paymentMethod.value = "cash"; orderType.value = "dine_in_now"; amountPaid.value = 0;
     promoBoxRef.value?.removePromo();
     resetPointRewards();
+    showMobileCart.value = false;
     fetchUnpaidOrders();
     await shareReceiptAsImage(res.data);
   } catch (e) { console.error(e); toast.error("Gagal menyimpan transaksi ke server."); }
@@ -751,7 +785,7 @@ onMounted(() => { fetchMenus(); fetchUnpaidOrders(); });
   padding: 1.5rem;
   align-items: flex-start;
 }
-@media (max-width: 1024px) { .pos-root { flex-direction: column; padding: 1rem; } }
+@media (max-width: 1024px) { .pos-root { flex-direction: column; padding: 1rem; padding-bottom: 6.5rem; } }
 
 /* ── Shared tokens ───────────────────────────────────────────────── */
 .pos-eyebrow {
@@ -795,6 +829,25 @@ onMounted(() => { fetchMenus(); fetchUnpaidOrders(); });
   width: 18px; height: 18px; border-radius: 50%;
   background: #dc2626; color: #fff; font-size: 0.6rem; font-weight: 700;
 }
+
+/* ── Search bar ──────────────────────────────────────────────────── */
+.search-bar { position: relative; display: flex; align-items: center; }
+.search-icon { position: absolute; left: 0.9rem; color: rgba(255,255,255,0.25); pointer-events: none; }
+.search-input {
+  width: 100%; background: #0f0f0f; border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px; padding: 0.65rem 2.2rem 0.65rem 2.3rem;
+  color: #fff; font-size: 0.82rem; font-family: 'Inter', sans-serif;
+  outline: none; transition: border-color 0.15s;
+}
+.search-input::placeholder { color: rgba(255,255,255,0.2); }
+.search-input:focus { border-color: rgba(220,38,38,0.45); }
+.search-clear-btn {
+  position: absolute; right: 0.75rem; width: 20px; height: 20px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.06); border: none; border-radius: 50%;
+  color: rgba(255,255,255,0.4); cursor: pointer; transition: all 0.15s;
+}
+.search-clear-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
 
 /* ── Menu grid ───────────────────────────────────────────────────── */
 .menu-grid {
@@ -874,16 +927,17 @@ onMounted(() => { fetchMenus(); fetchUnpaidOrders(); });
   display: flex; flex-direction: column;
   max-height: calc(100vh - 3rem); overflow-y: auto;
 }
-@media (max-width: 1024px) { .order-panel { width: 100%; position: static; max-height: none; } }
 
 .order-panel-head {
   padding: 1.25rem 1.4rem 1rem;
   border-bottom: 1px solid rgba(255,255,255,0.05);
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem;
 }
 .order-panel-title {
   font-family: 'Oswald', sans-serif; font-size: 1rem; font-weight: 500;
   text-transform: uppercase; letter-spacing: 0.08em; margin: 0;
 }
+.order-panel-close { display: none; }
 
 .order-section {
   padding: 1rem 1.4rem;
@@ -1052,6 +1106,10 @@ onMounted(() => { fetchMenus(); fetchUnpaidOrders(); });
   animation: spin 0.75s linear infinite;
 }
 
+/* ── Mobile cart backdrop + FAB ──────────────────────────────────── */
+.mobile-cart-backdrop { display: none; }
+.mobile-cart-fab { display: none; }
+
 /* ── Drawer ──────────────────────────────────────────────────────── */
 .drawer-overlay {
   position: fixed; inset: 0; z-index: 50;
@@ -1197,4 +1255,51 @@ onMounted(() => { fetchMenus(); fetchUnpaidOrders(); });
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; }
+
+/* ── MOBILE OVERRIDES ────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .order-panel {
+    position: fixed;
+    left: 0; right: 0; bottom: 0; top: auto;
+    width: 100%;
+    max-height: 88vh;
+    border-radius: 20px 20px 0 0;
+    transform: translateY(105%);
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    z-index: 60;
+    box-shadow: 0 -12px 40px rgba(0,0,0,0.55);
+  }
+  .order-panel.mobile-cart-open { transform: translateY(0); }
+
+  .order-panel-close {
+    display: flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.5); cursor: pointer;
+  }
+
+  .mobile-cart-backdrop {
+    display: block; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(2px); z-index: 55;
+  }
+
+  .mobile-cart-fab {
+    display: flex; align-items: center; gap: 0.65rem;
+    position: fixed; left: 1rem; right: 1rem; bottom: 1rem;
+    z-index: 55; padding: 0.85rem 1.1rem;
+    background: #dc2626; border: none; border-radius: 14px;
+    box-shadow: 0 8px 28px rgba(220,38,38,0.4);
+    cursor: pointer; color: #fff;
+  }
+  .mcf-count {
+    width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+    background: rgba(255,255,255,0.2); display: flex; align-items: center;
+    justify-content: center; font-size: 0.7rem; font-weight: 800;
+  }
+  .mcf-label {
+    flex: 1; text-align: left; font-family: 'Oswald', sans-serif;
+    font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .mcf-total { font-family: monospace; font-weight: 800; font-size: 0.85rem; }
+}
 </style>

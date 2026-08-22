@@ -1,0 +1,616 @@
+[
+  {
+    "model": "menu.category",
+    "pk": 1,
+    "fields": {
+      "name": "Makanan",
+      "group": "makanan"
+    }
+  },
+  {
+    "model": "menu.category",
+    "pk": 2,
+    "fields": {
+      "name": "Minuman",
+      "group": "minuman"
+    }
+  },
+  {
+    "model": "menu.category",
+    "pk": 3,
+    "fields": {
+      "name": "Snacks",
+      "group": "snack"
+    }
+  },
+  {
+    "model": "menu.category",
+    "pk": 4,
+    "fields": {
+      "name": "Signature Minuman",
+      "group": "minuman"
+    }
+  },
+  {
+    "model": "menu.category",
+    "pk": 5,
+    "fields": {
+      "name": "Dimsum",
+      "group": "makanan"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 8,
+    "fields": {
+      "name": "Omellete MIe",
+      "category": 1,
+      "price": "13000",
+      "price_web": "13500",
+      "description": "Mie yang dipadukan dengan kocokan telur dan bumbu, lalu digoreng hingga membentuk dadar tebal yang gurih dan renyah.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783593889/menus/nlyk0vjeib2bgsvqglfm.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 9,
+    "fields": {
+      "name": "Piscok",
+      "category": 3,
+      "price": "12000",
+      "price_web": "12500",
+      "description": "Pisang coklat yang dibungkus kulit lumpia renyah, menghasilkan kombinasi manis-garing di setiap gigitan.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783594364/menus/ywu0r6aqze9ldo2sno9v.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 10,
+    "fields": {
+      "name": "Pangsit Chili Oil Rebus",
+      "category": 1,
+      "price": "12000",
+      "price_web": "12500",
+      "description": "Pangsit lembut dengan isian ayam padat, disiram dengan minyak cabai (chili oil) khas yang pedas, gurih, dan wangi aromatik.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783594750/menus/juqfvzrrpeffif0uzhly.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 11,
+    "fields": {
+      "name": "Indomie Rebus/Goreng",
+      "category": 1,
+      "price": "8000",
+      "price_web": "8500",
+      "description": "Kenikmatan klasik mi instan favorit yang dimasak pas dengan tingkat kematangan yang sempurna.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783594822/menus/js1yo7mpjxszh03k1qkf.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 12,
+    "fields": {
+      "name": "Kukubima",
+      "category": 2,
+      "price": "7000",
+      "price_web": "7500",
+      "description": "Minuman energi instan untuk mengembalikan stamina setelah seharian beraktivitas.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783595716/menus/bqbwiyvahywij4tdm40j.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 13,
+    "fields": {
+      "name": "Kukubima Susu",
+      "category": 2,
+      "price": "10000",
+      "price_web": "10500",
+      "description": "Kombinasi unik Kukubima rasa buah dengan tambahan susu yang bikin rasanya makin creamy dan segar.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783595784/menus/yavepre0x3cbj62yioc8.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 14,
+    "fields": {
+      "name": "chicken Katsu Kentang",
+      "category": 1,
+      "price": "24000",
+      "price_web": "24500",
+      "description": "Pilihan pas untuk yang tidak ingin nasi—chicken katsu krispi disajikan dengan kentang goreng gurih.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783595841/menus/ip0mtovoyatgu4b4gzsq.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 15,
+    "fields": {
+      "name": "Roti Bakar Coklat",
+      "category": 3,
+      "price": "12000",
+      "price_web": "12500",
+      "description": "Roti panggang empuk dengan isian selai coklat premium yang lumer saat digigit.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783596033/menus/c5wnmzyt8f3ozw7osxgu.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 16,
+    "fields": {
+      "name": "Air Mineral",
+      "category": 2,
+      "price": "5000",
+      "price_web": "5500",
+      "description": "Air mineral kemasan dingin/biasa untuk menyegarkan tenggorokanmu.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783596071/menus/jrnlq7vlwfx4ypzngfwk.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 17,
+    "fields": {
+      "name": "Pangsit Goreng Chili Oil",
+      "category": 1,
+      "price": "12000",
+      "price_web": "12500",
+      "description": "Pangsit goreng super renyah dibalut dengan bumbu chili oil pedas menggigit yang bikin gak bisa berhenti ngunyah.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783596138/menus/gyhmpndpgr7bgqdgqkoy.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 18,
+    "fields": {
+      "name": "Nasi Gila",
+      "category": 1,
+      "price": "15000",
+      "price_web": "15500",
+      "description": "Nasi putih dengan tumisan sosis, bakso, telur dan sayuran yang dimasak dengan bumbu pedas manis gurih yang melimpah.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783596221/menus/paec9l7qt6dklaxhj9bj.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 19,
+    "fields": {
+      "name": "Dimsum Original Isi 6",
+      "category": 5,
+      "price": "18000",
+      "price_web": "18500",
+      "description": "Porsi lebih puas! Enam buah dimsum ayam original yang cocok untuk sharing atau dimakan sendiri.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783596286/menus/m6of9enloumtocdivqan.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 20,
+    "fields": {
+      "name": "Dimsum Mentai Isi 4",
+      "category": 5,
+      "price": "18000",
+      "price_web": "18500",
+      "description": "Dimsum ayam lembut yang dibakar dengan topping saus mentai creamy, asam, manis, dan sedikit pedas di atasnya.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783596329/menus/fx4p2hulklg1n238cspl.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 21,
+    "fields": {
+      "name": "Dimsum Original Isi 4",
+      "category": 5,
+      "price": "14000",
+      "price_web": "14500",
+      "description": "Dimsum ayam premium yang padat, lembut, dan gurih alami, disajikan hangat dengan saus cocolan.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783596638/menus/jxlxeuvzwdcquct8wnuk.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 22,
+    "fields": {
+      "name": "Matcha Latte",
+      "category": 4,
+      "price": "12000",
+      "price_web": "12500",
+      "description": "Bubuk matcha (teh hijau Jepang) premium dipadukan dengan susu segar, menghasilkan rasa sedikit pahit-manis yang otentik.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783596854/menus/rkumlkbeu3qus865l4dr.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 23,
+    "fields": {
+      "name": "Kopi Susu Masashimura",
+      "category": 4,
+      "price": "10000",
+      "price_web": "10500",
+      "description": "Menu kopi andalan dengan perpaduan espresso, susu creamy, dan racikan sirup rahasia kami.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783596926/menus/ybxuqcnvnqpwyvivgbfg.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 24,
+    "fields": {
+      "name": "Nasi Telur Dadar Crispy",
+      "category": 1,
+      "price": "13000",
+      "price_web": "13500",
+      "description": "Nasi hangat disajikan dengan telur dadar yang digoreng ekstra renyah di bagian luar, gurih, dan bikin nagih dengan tambahan chili oil pedas gurih.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783597017/menus/zcxfxhcvt3rieuorrchz.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 25,
+    "fields": {
+      "name": "Caramel Matchiato",
+      "category": 4,
+      "price": "12000",
+      "price_web": "12500",
+      "description": "Perpaduan mewah antara kopi espresso halus, susu, dan sirup karamel manis aromatik.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783597067/menus/wnefl9g8ljxkpqjyntdf.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 26,
+    "fields": {
+      "name": "Es Coklat",
+      "category": 4,
+      "price": "10000",
+      "price_web": "10500",
+      "description": "Minuman coklat pekat racikan khas Masashimura yang manisnya pas dan tidak bikin seret.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783597130/menus/p03xb3pwbaqobzikvmr2.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 27,
+    "fields": {
+      "name": "Indomie Telur Rebus/Goreng",
+      "category": 1,
+      "price": "13000",
+      "price_web": "13500",
+      "description": "Upgrade mie instan favoritmu dengan tambahan telur rebus/dadar agar makin nikmat dan mengenyangkan.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783597251/menus/jrk0jwrkarmghzk8wlqv.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 28,
+    "fields": {
+      "name": "Nutrisari",
+      "category": 2,
+      "price": "5000",
+      "price_web": "5500",
+      "description": "Minuman rasa buah jeruk yang manis, asam, dan ekstra segar.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783597312/menus/exf6kupicgvyukelgxqq.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 29,
+    "fields": {
+      "name": "Extrajoss",
+      "category": 2,
+      "price": "7000",
+      "price_web": "7500",
+      "description": "Minuman kesehatan dan energi yang memberikan kesegaran instan penuh semangat.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783597379/menus/vhbfxlogiq3kgkvqmpfz.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 30,
+    "fields": {
+      "name": "Extrajoss Susu",
+      "category": 2,
+      "price": "10000",
+      "price_web": "10500",
+      "description": "Perpaduan populer Extrajozz dengan susu kental manis dingin—manis, segar, dan berenergi.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783597455/menus/ivbanhi2xuszsxnivrcw.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 31,
+    "fields": {
+      "name": "Kopi Vanila",
+      "category": 4,
+      "price": "12000",
+      "price_web": "12500",
+      "description": "Espresso dipadukan dengan susu segar dan aroma sirup vanila yang lembut serta menenangkan.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783597499/menus/vygkx5mkq8a86xciahsl.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 32,
+    "fields": {
+      "name": "Lemon Tea",
+      "category": 2,
+      "price": "8000",
+      "price_web": "8500",
+      "description": "Kombinasi teh dan ekstrak lemon asli yang memberikan rasa asam-manis menyegarkan.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783597555/menus/a8htrsnsypd7crps3gmy.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 33,
+    "fields": {
+      "name": "Es Teh Manis",
+      "category": 2,
+      "price": "5000",
+      "price_web": "5500",
+      "description": "Kesegaran teh seduh tradisional pilihan dengan manis yang pas, disajikan dingin.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783597610/menus/ppno1g27y4c8mno2ekgp.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 34,
+    "fields": {
+      "name": "Teh Tarik",
+      "category": 2,
+      "price": "8000",
+      "price_web": "8500",
+      "description": "Minuman kemasan berasa teh tarik.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783597706/menus/ufeskqh3plss3gk8fyn0.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 35,
+    "fields": {
+      "name": "Goodday Cappucinno",
+      "category": 2,
+      "price": "8000",
+      "price_web": "8500",
+      "description": "Kopi cappucino dengan tambahan choco granule di atasnya, disajikan dingin atau hangat.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783597746/menus/dhzwedbhqewypxp7ll0n.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 36,
+    "fields": {
+      "name": "Goodday Freeze",
+      "category": 2,
+      "price": "8000",
+      "price_web": "8500",
+      "description": "Kopi larut air dingin yang langsung memberikan sensasi cool dan menyegarkan seketika.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783597793/menus/p8pyltdct9ow1pocwsj7.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 37,
+    "fields": {
+      "name": "Mix Platter",
+      "category": 3,
+      "price": "15000",
+      "price_web": "15500",
+      "description": "Kombinasi kentang dan sosis goreng favorit dalam satu piring, pas untuk teman nongkrong.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783597949/menus/ygmhpzpnoihaokx7yshp.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 38,
+    "fields": {
+      "name": "Chicken katsu Nasi",
+      "category": 1,
+      "price": "20000",
+      "price_web": "20500",
+      "description": "Fillet dada ayam goreng tepung ala Jepang yang krispi dan juicy, disajikan lengkap dengan nasi hangat.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783597994/menus/dm6b1b3iyhpdpfweob5v.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 39,
+    "fields": {
+      "name": "Chicen Katsu MIe",
+      "category": 1,
+      "price": "23000",
+      "price_web": "23500",
+      "description": "Kombinasi mantap chicken katsu yang renyah di atas mi goreng bumbu spesial Masashimura.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783598434/menus/uemeqdmepxyzxap25nih.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 40,
+    "fields": {
+      "name": "Kentang Goreng",
+      "category": 3,
+      "price": "12000",
+      "price_web": "12500",
+      "description": "French fries yang digoreng keemasan, garing di luar dan lembut di dalam, ditaburi sedikit garam.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783598484/menus/ojn8cbvozl0al4zf91gj.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 41,
+    "fields": {
+      "name": "Milo",
+      "category": 2,
+      "price": "8000",
+      "price_web": "8500",
+      "description": "Minuman coklat malt legendaris yang manis, gurih, dan berenergi.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783598519/menus/sq1snstbxzsetiw2ynxw.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 42,
+    "fields": {
+      "name": "Kopi Gula Aren",
+      "category": 4,
+      "price": "12000",
+      "price_web": "12500",
+      "description": "Es kopi susu kekinian yang menggunakan gula aren murni, memberikan rasa manis legit tradisional yang khas.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783598565/menus/fz5gcqnzfhlfnxtuqj46.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 43,
+    "fields": {
+      "name": "MIe Nyemek",
+      "category": 1,
+      "price": "15000",
+      "price_web": "15500",
+      "description": "Mie dengan kuah kental yang gurih, kaya rempah, dimasak setengah basah dengan tambahan sayur, baso,  dan telur.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783598617/menus/i3ajot2pupfdmen9t2h5.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 44,
+    "fields": {
+      "name": "Dimsum Mentai Isi 6",
+      "category": 5,
+      "price": "25000",
+      "price_web": "25500",
+      "description": "Puaskan keinginanmu dengan porsi besar dimsum mentai panggang yang lumer di mulut.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783598683/menus/kisxx5jasekhirnmf2fj.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 45,
+    "fields": {
+      "name": "Kopi Panas",
+      "category": 2,
+      "price": "6000",
+      "price_web": "6500",
+      "description": "Kopi instan panas dengan aroma manis yang menenangkan hati.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783598796/menus/lumkijdvg8cypz9nzpyt.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 46,
+    "fields": {
+      "name": "Kopi Hitam Panas",
+      "category": 2,
+      "price": "5000",
+      "price_web": "5500",
+      "description": "Pilihan kopi hitam panas untuk menemani waktu santaimu",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783598856/menus/u6vny3hhr82z2ms8prfk.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 47,
+    "fields": {
+      "name": "Nasi",
+      "category": 1,
+      "price": "5000",
+      "price_web": "5500",
+      "description": "Nasi putih hangat, pulen, dan pas sebagai pelengkap menu utama.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783598903/menus/h39tk99n5x1gaqqb41zf.jpg"
+    }
+  },
+  {
+    "model": "menu.menu",
+    "pk": 48,
+    "fields": {
+      "name": "Roti Bakar Coklat Keju",
+      "category": 3,
+      "price": "15000",
+      "price_web": "15500",
+      "description": "Perpaduan sempurna antara manisnya coklat lumer dan gurih asinnya parutan keju melimpah.",
+      "is_available": true,
+      "is_active": true,
+      "image": "image/upload/v1783598944/menus/mis3imwvc4xihg1ozsso.jpg"
+    }
+  }
+]
