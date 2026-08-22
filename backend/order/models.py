@@ -125,6 +125,20 @@ class Order(models.Model):
         help_text="Nama kasir/admin yang membatalkan order",
     )
 
+    # ── Dipakai buat reversal akurat kalau order ini dihapus permanen ──
+    # (lihat OrderDeletionLog / views._delete_order_permanently). Disimpan
+    # di sini (bukan dihitung ulang saat delete) karena rupiah_per_point
+    # di LoyaltySettings bisa saja sudah berubah sejak order ini completed
+    # — kalau dihitung ulang pakai rate SEKARANG, angkanya bisa salah.
+    loyalty_applied = models.BooleanField(
+        default=False,
+        help_text="True kalau order ini sudah pernah trigger penambahan poin ke customer",
+    )
+    loyalty_points_earned = models.PositiveIntegerField(
+        default=0,
+        help_text="Poin yang di-earn dari order ini saat completed — disimpan biar reversal saat delete akurat, tidak bergantung rupiah_per_point yang mungkin sudah berubah",
+    )
+
     class Meta:
         ordering = ['-created_at']
 
@@ -200,6 +214,55 @@ class OrderPayment(models.Model):
 
     def __str__(self):
         return f"{self.order.order_number} — {self.get_method_display()} Rp{self.amount}"
+
+
+# ─────────────────────────────────────────────
+# ORDER DELETION LOG (audit trail buat hapus permanen)
+# ─────────────────────────────────────────────
+# Beda dari cancel_order (void) yang cuma ubah status & row Order-nya
+# tetap ada di DB — delete permanen beneran ngilangin row Order (+
+# OrderItem/OrderPayment via CASCADE). Snapshot di sini disimpan SEBELUM
+# Order-nya benar-benar di-.delete(), jadi tetap ada jejak kalau nanti
+# dipertanyakan: kapan, siapa yang hapus, isinya apa, dan efek balik
+# (poin/promo) apa aja yang sudah di-reverse.
+class OrderDeletionLog(models.Model):
+    order_number   = models.CharField(max_length=30)
+    order_source   = models.CharField(max_length=10)
+    order_status   = models.CharField(max_length=15)
+    payment_status = models.CharField(max_length=10)
+    payment_method = models.CharField(max_length=15, blank=True, null=True)
+
+    customer_name  = models.CharField(max_length=100, blank=True)
+    customer_phone = models.CharField(max_length=20, blank=True)
+
+    total_price = models.DecimalField(max_digits=12, decimal_places=0)
+    amount_paid = models.DecimalField(max_digits=12, decimal_places=0, default=0)
+
+    original_created_at = models.DateTimeField()
+
+    items_snapshot    = models.JSONField(default=list)
+    payments_snapshot = models.JSONField(default=list)
+
+    loyalty_points_reverted = models.IntegerField(
+        default=0,
+        help_text="Poin yang ditarik balik dari CustomerLoyalty (0 kalau order ini memang tidak pernah menyumbang poin)",
+    )
+    loyalty_clamped = models.BooleanField(
+        default=False,
+        help_text="True kalau saldo poin customer sudah lebih kecil dari yang seharusnya di-reverse (kemungkinan poinnya sudah kepakai buat redeem reward lain) — dikliping ke 0, bukan dipaksa minus",
+    )
+    promo_code_reverted = models.CharField(max_length=50, blank=True, default="")
+
+    deleted_by = models.CharField(max_length=100, blank=True, default="")
+    deleted_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-deleted_at"]
+        verbose_name = "Order Deletion Log"
+        verbose_name_plural = "Order Deletion Logs"
+
+    def __str__(self):
+        return f"[DELETED] {self.order_number} oleh {self.deleted_by or '—'} pada {self.deleted_at:%d %b %Y %H:%M}"
 
 
 # ─────────────────────────────────────────────
@@ -433,6 +496,14 @@ def _update_loyalty_on_complete(sender, instance, created, **kwargs):
             loyalty.name = instance.customer_name
 
         loyalty.save()
+
+        # Catat berapa poin yang di-earn order ini langsung di row-nya,
+        # pakai queryset.update() (bukan instance.save()) biar signal ini
+        # nggak retrigger dirinya sendiri (post_save loop).
+        Order.objects.filter(pk=instance.pk).update(
+            loyalty_applied=True,
+            loyalty_points_earned=earned_points,
+        )
 
 
 def generate_order_number():

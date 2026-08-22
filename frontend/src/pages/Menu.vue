@@ -2,7 +2,7 @@
   <div class="min-h-screen bg-[#060606] text-white font-inter">
 
     <!-- ── HEADER ──────────────────────────────────────────────────────────── -->
-    <div class="pt-24 pb-8 px-4 sm:px-8 max-w-7xl mx-auto">
+    <div class="pt-24 pb-4 px-4 sm:px-8 max-w-7xl mx-auto">
       <div class="space-y-1 mb-8">
         <div class="flex items-center gap-2">
           <span class="w-4 h-px bg-[#DC2626]"></span>
@@ -15,32 +15,71 @@
           Rasa dijamin enak yang ramah di kantong. Fresh tiap hari.
         </p>
       </div>
+    </div>
 
-      <!-- Filter tabs -->
-      <div
-        ref="tabsRef"
-        class="flex gap-1.5 overflow-x-auto scrollbar-none"
-        style="-webkit-overflow-scrolling: touch;"
-      >
-        <button
-          v-for="cat in categories"
-          :key="cat.value"
-          :ref="el => setTabRef(el, cat.value)"
-          @click="selectCategoryWithScroll(cat.value)"
-          :class="[
-            'flex-shrink-0 px-4 py-2 text-[10px] font-sora font-bold uppercase tracking-widest transition-all duration-200 rounded-lg',
-            selectedCategory === cat.value
-              ? 'text-white bg-[#DC2626]'
-              : 'text-zinc-600 bg-[#111111] hover:text-zinc-300 border border-white/[0.06] hover:border-white/10'
-          ]"
+    <!-- ── STICKY SEARCH + FILTER BAR ─────────────────────────────────────────── -->
+    <div class="sticky top-0 z-30 bg-[#060606]/90 backdrop-blur-md border-b border-white/[0.05]">
+      <div class="px-4 sm:px-8 max-w-7xl mx-auto py-4 space-y-3">
+
+        <!-- Search + Sort row -->
+        <div class="flex gap-2">
+          <div class="relative flex-1">
+            <Search :size="14" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-600 pointer-events-none" />
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Cari menu..."
+              class="w-full bg-[#111111] border border-white/[0.06] rounded-lg pl-9 pr-8 py-2.5 text-[11px] font-light text-white placeholder:text-zinc-600 focus:outline-none focus:border-white/20 transition-colors"
+            />
+            <button
+              v-if="searchQuery"
+              @click="searchQuery = ''"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-300"
+            >
+              <X :size="13" />
+            </button>
+          </div>
+
+          <select
+            v-model="sortBy"
+            class="flex-shrink-0 bg-[#111111] border border-white/[0.06] rounded-lg px-2.5 text-[10px] font-sora font-bold uppercase tracking-widest text-zinc-400 focus:outline-none focus:border-white/20 transition-colors appearance-none"
+          >
+            <option value="default">Urutkan</option>
+            <option value="price_asc">Termurah</option>
+            <option value="price_desc">Termahal</option>
+          </select>
+        </div>
+
+        <!-- Filter tabs -->
+        <div
+          ref="tabsRef"
+          class="flex gap-1.5 overflow-x-auto scrollbar-none"
+          style="-webkit-overflow-scrolling: touch;"
         >
-          {{ cat.label }}
-          <span
-            v-if="cat.value !== 'all'"
-            class="ml-1.5 font-mono text-[9px] opacity-50"
-          >{{ getCategoryCount(cat.value) }}</span>
-        </button>
+          <button
+            v-for="cat in categories"
+            :key="cat.value"
+            :ref="el => setTabRef(el, cat.value)"
+            @click="selectCategoryWithScroll(cat.value)"
+            :class="[
+              'flex-shrink-0 px-4 py-2 text-[10px] font-sora font-bold uppercase tracking-widest transition-all duration-200 rounded-lg',
+              selectedCategory === cat.value
+                ? 'text-white bg-[#DC2626]'
+                : 'text-zinc-600 bg-[#111111] hover:text-zinc-300 border border-white/[0.06] hover:border-white/10'
+            ]"
+          >
+            {{ cat.label }}
+            <span
+              v-if="cat.value !== 'all'"
+              class="ml-1.5 font-mono text-[9px] opacity-50"
+            >{{ getCategoryCount(cat.value) }}</span>
+          </button>
+        </div>
       </div>
+    </div>
+
+    <!-- ── GRID MENU ────────────────────────────────────────────────────────── -->
+    <div class="px-4 sm:px-8 max-w-7xl mx-auto pt-6 pb-32">
 
       <!-- Store closed banner -->
       <div
@@ -52,10 +91,6 @@
         </svg>
         <p class="font-mono text-[11px] text-red-400 leading-relaxed">{{ closedMessage }}</p>
       </div>
-    </div>
-
-    <!-- ── GRID MENU ────────────────────────────────────────────────────────── -->
-    <div class="px-4 sm:px-8 max-w-7xl mx-auto pb-32">
 
       <!-- Loading skeleton -->
       <div v-if="loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -84,14 +119,24 @@
         <div class="w-14 h-14 rounded-2xl bg-[#111] border border-white/5 flex items-center justify-center mx-auto mb-4">
           <span class="text-2xl">🍽️</span>
         </div>
-        <p class="font-sora text-xs font-bold uppercase tracking-widest text-zinc-600">Menu tidak tersedia</p>
+        <p class="font-sora text-xs font-bold uppercase tracking-widest text-zinc-600">
+          {{ searchQuery ? `Tidak ada hasil untuk "${searchQuery}"` : "Menu tidak tersedia" }}
+        </p>
         <p class="text-[11px] text-zinc-700 font-light">Coba kategori lain atau cek lagi nanti.</p>
       </div>
 
       <!-- Grid -->
-      <div
+      <TransitionGroup
         v-else
+        tag="div"
         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5"
+        enter-active-class="transition duration-300 ease-out"
+        enter-from-class="opacity-0 translate-y-2"
+        enter-to-class="opacity-100 translate-y-0"
+        leave-active-class="transition duration-150 ease-in absolute"
+        leave-from-class="opacity-100"
+        leave-to-class="opacity-0"
+        move-class="transition-transform duration-300 ease-out"
       >
         <div
           v-for="menu in filteredMenus"
@@ -99,8 +144,12 @@
           class="group relative bg-[#0d0d0d] border border-white/[0.06] rounded-2xl overflow-hidden flex flex-col transition-all duration-300 hover:border-white/[0.12]"
           :class="{ 'opacity-50': !menu.is_available }"
         >
-          <!-- Foto -->
-          <div class="w-full aspect-[4/3] bg-[#111] overflow-hidden relative">
+          <!-- Foto (clickable → detail) -->
+          <button
+            type="button"
+            class="w-full aspect-[4/3] bg-[#111] overflow-hidden relative text-left"
+            @click="openDetail(menu)"
+          >
             <img
               v-if="menu.image_url"
               :src="getMediaUrl(menu.image_url)"
@@ -133,19 +182,23 @@
                 {{ menu.category_name }}
               </span>
             </div>
-          </div>
+          </button>
 
           <!-- Info -->
           <div class="p-5 flex flex-col gap-4 flex-1">
-            <!-- Nama + deskripsi -->
-            <div class="flex-1 space-y-1.5">
+            <!-- Nama + deskripsi (clickable → detail) -->
+            <button
+              type="button"
+              class="flex-1 space-y-1.5 text-left"
+              @click="openDetail(menu)"
+            >
               <h3 class="font-sora text-[13px] font-bold uppercase tracking-wide text-white leading-tight">
                 {{ menu.name }}
               </h3>
               <p class="text-zinc-600 text-[11px] font-light leading-relaxed line-clamp-2">
                 {{ menu.description || "Menu andalan spesial Masashimura." }}
               </p>
-            </div>
+            </button>
 
             <!-- Harga + tombol -->
             <div class="flex items-center justify-between gap-3 pt-4 border-t border-white/[0.05]">
@@ -169,7 +222,7 @@
             </div>
           </div>
         </div>
-      </div>
+      </TransitionGroup>
 
       <!-- Info jumlah item -->
       <div v-if="!loading && filteredMenus.length > 0" class="mt-10 text-center">
@@ -205,6 +258,16 @@
 
     <!-- ── CART DRAWER ────────────────────────────────────────────────────────── -->
     <Cart v-if="isCartOpen" @close="isCartOpen = false" :format-price="formatPrice" />
+
+    <!-- ── DETAIL MODAL ───────────────────────────────────────────────────────── -->
+    <MenuDetailModal
+      v-if="selectedMenu"
+      :menu="selectedMenu"
+      :format-price="formatPrice"
+      :is-store-open="isStoreOpen"
+      @close="closeDetail"
+      @add-to-cart="addToCart"
+    />
   </div>
 </template>
 
@@ -214,8 +277,9 @@ import { useCartStore } from "@/stores/cart"
 import { useAuthStore } from "@/stores/auth"
 import { menuAPI, getMediaUrl } from "@/api"
 import { toast } from "vue-sonner"
-import { ShoppingCart, Plus } from "lucide-vue-next"
+import { ShoppingCart, Plus, Search, X } from "lucide-vue-next"
 import Cart from "@/components/ui/Cart.vue"
+import MenuDetailModal from "@/components/ui/MenuDetailModal.vue"
 import { useStoreSettings } from "@/composables/useStoreSettings"
 
 const cartStore = useCartStore()
@@ -225,6 +289,9 @@ const loading    = ref(true)
 const isCartOpen = ref(false)
 
 const selectedCategory = ref("all")
+const searchQuery      = ref("")
+const sortBy           = ref("default") // 'default' | 'price_asc' | 'price_desc'
+const selectedMenu     = ref(null)       // menu yang lagi dibuka di detail modal
 
 const categories = computed(() => {
   const uniqueCats = [...new Set(menus.value.map(m => m.category_name).filter(Boolean))];
@@ -237,7 +304,7 @@ const categories = computed(() => {
 const { isStoreOpen, closedMessage, fetchSettings } = useStoreSettings()
 onMounted(() => {
   fetchMenus()
-  fetchSettings()   // ← tambah ini
+  fetchSettings()
 })
 
 const selectCategory = (val) => { selectedCategory.value = val }
@@ -259,21 +326,40 @@ const fetchMenus = async () => {
 
 const filteredMenus = computed(() => {
   // Menu tanpa kategori (category_name null) selalu disembunyikan dari customer
-  const validMenus = menus.value.filter(m => m.category_name)
+  let list = menus.value.filter(m => m.category_name)
 
-  const list = selectedCategory.value === "all"
-    ? validMenus
-    : validMenus.filter(m => m.category_name === selectedCategory.value)
+  if (selectedCategory.value !== "all") {
+    list = list.filter(m => m.category_name === selectedCategory.value)
+  }
 
-  return [...list].sort((a, b) => b.is_available - a.is_available)
+  const q = searchQuery.value.trim().toLowerCase()
+  if (q) {
+    list = list.filter(m =>
+      m.name?.toLowerCase().includes(q) ||
+      m.description?.toLowerCase().includes(q)
+    )
+  }
+
+  list = [...list].sort((a, b) => {
+    // Habis selalu di bawah, ga peduli sort apa
+    if (a.is_available !== b.is_available) return b.is_available - a.is_available
+    if (sortBy.value === "price_asc")  return a.price_web - b.price_web
+    if (sortBy.value === "price_desc") return b.price_web - a.price_web
+    return 0
+  })
+
+  return list
 })
 
 const addToCart = (menu) => {
-  if (!isStoreOpen.value) return toast.error(closedMessage.value)  // ← tambah ini
+  if (!isStoreOpen.value) return toast.error(closedMessage.value)
   if (!menu.is_available) return toast.error("Menu ini sedang habis!")
   cartStore.addToCart(menu)
   toast.success(`${menu.name} ditambahkan! 🛒`)
 }
+
+const openDetail = (menu) => { selectedMenu.value = menu }
+const closeDetail = () => { selectedMenu.value = null }
 
 const formatPrice = (p) =>
   new Intl.NumberFormat("id-ID", {

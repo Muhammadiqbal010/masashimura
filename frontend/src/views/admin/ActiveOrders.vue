@@ -127,6 +127,14 @@
                 >
                   Batalkan
                 </button>
+                <button
+                  v-if="isOwner"
+                  class="hapus-btn"
+                  @click="openDeleteModal(order)"
+                  title="Hapus permanen (khusus owner)"
+                >
+                  Hapus
+                </button>
               </td>
             </tr>
 
@@ -497,6 +505,61 @@
       </div>
     </div>
 
+    <!-- ── MODAL HAPUS PERMANEN (khusus owner) ─────────────────────── -->
+    <div v-if="isDeleteModalOpen && selectedDeleteOrder" class="modal-overlay" @click.self="closeDeleteModal">
+      <div class="pay-modal-box">
+        <div class="modal-header">
+          <div>
+            <p class="modal-eyebrow delete-eyebrow">⚠ Hapus Permanen</p>
+            <h2 class="modal-title">{{ selectedDeleteOrder.order_number }}</h2>
+          </div>
+          <button class="modal-close" @click="closeDeleteModal">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <div class="pay-body">
+          <div class="pay-customer">
+            <p class="pay-name">{{ selectedDeleteOrder.customer_name || 'Walk In' }}</p>
+            <p class="pay-phone">{{ selectedDeleteOrder.customer_phone || 'Tanpa nomor' }}</p>
+          </div>
+
+          <div class="pay-total-strip">
+            <span class="pay-total-label">Total Tagihan</span>
+            <span class="pay-total-val">{{ formatPrice(selectedDeleteOrder.total_price) }}</span>
+          </div>
+
+          <div class="delete-warning-box">
+            <p>
+              Order ini akan <strong>dihapus permanen</strong> dari database{{ selectedDeleteOrder.payment_status === 'paid' ? ', termasuk data transaksi yang sudah LUNAS' : '' }}.
+              Ini akan mempengaruhi laporan penjualan, data prediksi, dan riwayat poin pelanggan. Tindakan ini <strong>tidak bisa dibatalkan</strong>.
+            </p>
+          </div>
+
+          <div class="pay-section">
+            <p class="pay-section-label">
+              Ketik <span class="delete-order-code">{{ selectedDeleteOrder.order_number }}</span> untuk konfirmasi
+            </p>
+            <input
+              v-model="deleteConfirmText"
+              type="text"
+              class="pay-amount-input delete-confirm-input"
+              placeholder="Ketik nomor order di sini..."
+              autocomplete="off"
+            />
+          </div>
+
+          <button
+            @click="confirmDelete"
+            :disabled="isDeleting || deleteConfirmText !== selectedDeleteOrder.order_number"
+            class="pay-confirm-btn delete-confirm-btn"
+          >
+            {{ isDeleting ? 'Menghapus...' : 'Hapus Permanen' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -509,6 +572,12 @@ import html2canvas from 'html2canvas';
 
 const authStore = useAuthStore();
 const kasirName = computed(() => authStore.user?.name || authStore.user?.username || 'Staff');
+
+// Role owner — cuma role ini yang boleh hapus order permanen.
+// NOTE: ini cuma nyembunyiin tombol di UI. Endpoint DELETE di backend
+// WAJIB juga dikasih permission check role owner, kalau belum ada,
+// karena request langsung ke API bisa bypass tombol ini.
+const isOwner = computed(() => (authStore.user?.role || '').toLowerCase() === 'owner');
 
 const currentDate   = ref(new Date());
 const orders        = ref([]);
@@ -546,6 +615,40 @@ const cancelReasonOptions = [
   { value: "out_of_stock",    label: "Stok Habis" },
   { value: "other",           label: "Lainnya" },
 ];
+
+// ── Hapus permanen (khusus owner) ───────────────────────────────────
+const isDeleteModalOpen   = ref(false);
+const selectedDeleteOrder = ref(null);
+const deleteConfirmText   = ref("");
+const isDeleting          = ref(false);
+
+const openDeleteModal = (order) => {
+  selectedDeleteOrder.value = order;
+  deleteConfirmText.value   = "";
+  isDeleteModalOpen.value   = true;
+};
+
+const closeDeleteModal = () => {
+  isDeleteModalOpen.value   = false;
+  selectedDeleteOrder.value = null;
+  deleteConfirmText.value   = "";
+};
+
+const confirmDelete = async () => {
+  if (!selectedDeleteOrder.value) return;
+  if (deleteConfirmText.value !== selectedDeleteOrder.value.order_number) return;
+  isDeleting.value = true;
+  try {
+    await apiClient.delete(`/orders/${selectedDeleteOrder.value.id}/`);
+    toast.success(`Order ${selectedDeleteOrder.value.order_number} dihapus permanen`);
+    closeDeleteModal();
+    fetchActiveOrders();
+  } catch (err) {
+    toast.error(err?.response?.data?.detail || "Gagal menghapus order. Cek apakah endpoint DELETE sudah tersedia di backend.");
+  } finally {
+    isDeleting.value = false;
+  }
+};
 
 const formattedCurrentDate = computed(() =>
   currentDate.value.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
@@ -1000,7 +1103,7 @@ onUnmounted(() => { if (pollingTimer) clearInterval(pollingTimer); });
 }
 .lunasi-btn:hover { background: #b91c1c; }
 
-.td-actions { display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+.td-actions { display: flex; align-items: center; justify-content: center; gap: 0.5rem; flex-wrap: wrap; }
 
 .batalkan-btn {
   padding: 0.4rem 0.85rem;
@@ -1016,6 +1119,24 @@ onUnmounted(() => { if (pollingTimer) clearInterval(pollingTimer); });
   transition: background 0.15s, border-color 0.15s;
 }
 .batalkan-btn:hover { background: rgba(220,38,38,0.1); border-color: rgba(220,38,38,0.6); }
+
+/* Tombol hapus permanen — dibedain visualnya dari "Batalkan" biar
+   kasir/owner sadar ini aksi yang levelnya beda (destruktif, bukan
+   sekadar ubah status). */
+.hapus-btn {
+  padding: 0.4rem 0.85rem;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 8px;
+  color: rgba(255,255,255,0.5);
+  font-family: 'Oswald', sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.hapus-btn:hover { background: #dc2626; border-color: #dc2626; color: #fff; }
 
 .cancel-confirm-btn { background: #dc2626; }
 .cancel-confirm-btn:hover:not(:disabled) { background: #b91c1c; }
@@ -1059,6 +1180,7 @@ onUnmounted(() => { if (pollingTimer) clearInterval(pollingTimer); });
   font-size: 0.58rem; letter-spacing: 0.18em;
   text-transform: uppercase; color: #dc2626; margin: 0 0 0.25rem;
 }
+.delete-eyebrow { color: #f87171; }
 .modal-title { font-family: monospace; font-size: 1rem; font-weight: 700; margin: 0; }
 .modal-close {
   width: 30px; height: 30px; border-radius: 8px;
@@ -1281,6 +1403,29 @@ onUnmounted(() => { if (pollingTimer) clearInterval(pollingTimer); });
 }
 .pay-confirm-btn:hover:not(:disabled) { background: #b91c1c; }
 .pay-confirm-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* Modal hapus permanen — visual peringatan lebih tegas */
+.delete-warning-box {
+  padding: 0.85rem 1rem;
+  background: rgba(220,38,38,0.08);
+  border: 1px solid rgba(220,38,38,0.25);
+  border-radius: 10px;
+  font-size: 0.75rem;
+  line-height: 1.55;
+  color: rgba(255,255,255,0.75);
+}
+.delete-warning-box strong { color: #f87171; }
+.delete-order-code {
+  font-family: monospace;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(255,255,255,0.08);
+  padding: 0.05rem 0.4rem;
+  border-radius: 4px;
+}
+.delete-confirm-input { font-family: monospace; }
+.delete-confirm-btn { background: #991b1b; }
+.delete-confirm-btn:hover:not(:disabled) { background: #7f1d1d; }
 
 /* ── Struk print (thermal) — disembunyikan di layar biasa ─────────── */
 .print-receipt { display: none; }

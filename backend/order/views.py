@@ -21,7 +21,7 @@ from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Order, OrderItem, OrderPayment, CustomerLoyalty, LoyaltySettings, PAYMENT_METHOD_CHOICES, CANCEL_REASON_CHOICES, StoreSettings, PointReward, PointAdjustment
+from .models import Order, OrderItem, OrderPayment, CustomerLoyalty, LoyaltySettings, PAYMENT_METHOD_CHOICES, CANCEL_REASON_CHOICES, StoreSettings, PointReward, PointAdjustment, OrderDeletionLog
 from menu.models import Menu
 from .serializers import OrderSerializer, LoyaltySettingsSerializer, StoreSettingsSerializer, PointRewardSerializer
 from rest_framework import viewsets
@@ -256,13 +256,146 @@ def list_orders(request):
     return Response(OrderSerializer(orders, many=True).data)
 
 
-@api_view(["GET"])
+# ─────────────────────────────────────────────
+# HAPUS PERMANEN — helper (dipakai oleh get_order saat method DELETE)
+# ─────────────────────────────────────────────
+# Beda dari cancel_order (void): cancel_order cuma ubah status, row Order
+# tetap ada buat audit. Ini beneran ngilangin row Order dari DB (+
+# OrderItem/OrderPayment ikut CASCADE) — dipakai buat kasus salah input
+# yang baru ketauan belakangan, duplikat, dsb, TERMASUK order yang sudah
+# completed/paid.
+#
+# Karena ini destruktif & permanen, sebelum row-nya beneran hilang kita:
+#   1. Reverse poin loyalty yang sudah kadung di-earn dari order ini
+#      (kalau order.loyalty_applied True) — di-clamp ke 0, tidak dipaksa
+#      minus, kalau saldo customer sekarang sudah lebih kecil dari yang
+#      seharusnya di-reverse (kemungkinan sudah kepakai buat redeem lain).
+#   2. Reverse kuota promo (used_count) kalau order ini pakai promo.
+#   3. Simpan snapshot lengkap ke OrderDeletionLog, biar tetap ada jejak
+#      audit meskipun row Order-nya sendiri sudah hilang.
+@transaction.atomic
+def _delete_order_permanently(order, deleted_by=""):
+    items_snapshot = [
+        {
+            "menu_name": item.menu.name if item.menu else "(menu dihapus)",
+            "quantity": item.quantity,
+            "price": float(item.price),
+            "notes": item.notes,
+            "is_point_redemption": item.is_point_redemption,
+        }
+        for item in order.items.select_related("menu").all()
+    ]
+    payments_snapshot = [
+        {"method": p.method, "amount": float(p.amount)}
+        for p in order.payments.all()
+    ]
+
+    loyalty_points_reverted = 0
+    loyalty_clamped = False
+
+    # ── Reverse poin loyalty — HANYA kalau order ini memang pernah
+    # trigger penambahan poin (loyalty_applied), biar nggak salah
+    # mengurangi poin dari order yang belum pernah completed.
+    if order.loyalty_applied and order.customer_phone:
+        loyalty = CustomerLoyalty.objects.select_for_update().filter(
+            phone=order.customer_phone
+        ).first()
+
+        if loyalty:
+            points_to_revert = order.loyalty_points_earned
+            if points_to_revert > loyalty.points:
+                loyalty_clamped = True
+
+            new_points = max(loyalty.points - points_to_revert, 0)
+            loyalty_points_reverted = loyalty.points - new_points
+
+            loyalty.points = new_points
+            loyalty.total_spent = max(loyalty.total_spent - order.total_price, Decimal("0"))
+            loyalty.total_orders = max(loyalty.total_orders - 1, 0)
+
+            # Recompute last_order_at dari order completed LAIN milik
+            # customer ini (selain yang mau dihapus), biar estimasi
+            # kedaluwarsa poin tetap akurat.
+            other_last_order = (
+                Order.objects.filter(customer_phone=order.customer_phone, status="completed")
+                .exclude(pk=order.pk)
+                .aggregate(latest=Max("created_at"))["latest"]
+            )
+            loyalty.last_order_at = other_last_order
+
+            loyalty.save(update_fields=["points", "total_spent", "total_orders", "last_order_at"])
+
+            PointAdjustment.objects.create(
+                customer=loyalty,
+                amount=-loyalty_points_reverted,
+                reason="manual",
+                note=(
+                    f"Reversal otomatis — order {order.order_number} dihapus permanen"
+                    + (" (poin di-clamp ke 0, saldo sudah kurang dari yang di-reverse)" if loyalty_clamped else "")
+                ),
+                admin_name=deleted_by or "system",
+            )
+
+    # ── Reverse kuota promo ──────────────────────────────────────────
+    promo_code_reverted = ""
+    if order.promo_id:
+        Promo.objects.filter(pk=order.promo_id).update(used_count=models.F("used_count") - 1)
+        promo_code_reverted = getattr(order.promo, "code", str(order.promo_id))
+
+    # ── Simpan snapshot audit SEBELUM row-nya kehapus ────────────────
+    OrderDeletionLog.objects.create(
+        order_number=order.order_number,
+        order_source=order.source,
+        order_status=order.status,
+        payment_status=order.payment_status,
+        payment_method=order.payment_method,
+        customer_name=order.customer_name,
+        customer_phone=order.customer_phone,
+        total_price=order.total_price,
+        amount_paid=order.amount_paid,
+        original_created_at=order.created_at,
+        items_snapshot=items_snapshot,
+        payments_snapshot=payments_snapshot,
+        loyalty_points_reverted=loyalty_points_reverted,
+        loyalty_clamped=loyalty_clamped,
+        promo_code_reverted=promo_code_reverted,
+        deleted_by=deleted_by,
+    )
+
+    order_number = order.order_number
+    order.delete()
+    return order_number
+
+
+@api_view(["GET", "DELETE"])
 @permission_classes([IsAdminUser])
 def get_order(request, pk):
     order = get_object_or_404(
-        Order.objects.prefetch_related("items__menu"),
+        Order.objects.select_related("promo").prefetch_related("items__menu", "payments"),
         pk=pk,
     )
+
+    if request.method == "DELETE":
+        # IsAdminUser di atas cuma cek is_staff (akses admin panel secara
+        # umum) — BUKAN role owner spesifik. Hapus permanen cuma boleh
+        # role owner, jadi dicek manual di sini juga, biar request langsung
+        # ke API (bypass tombol UI) tetap ke-block.
+        profile = getattr(request.user, "profile", None)
+        if not profile or profile.role != "owner":
+            return Response(
+                {"detail": "Hanya owner yang boleh menghapus order secara permanen."},
+                status=403,
+            )
+
+        deleted_by = getattr(request.user, "username", "") or "owner"
+        order_number = _delete_order_permanently(order, deleted_by=deleted_by)
+
+        return Response({
+            "success": True,
+            "order_number": order_number,
+            "detail": f"Order {order_number} dihapus permanen. Poin loyalty & kuota promo sudah di-reverse.",
+        })
+
     return Response(OrderSerializer(order).data)
 
 
