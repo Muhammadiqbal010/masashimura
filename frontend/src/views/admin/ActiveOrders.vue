@@ -164,7 +164,10 @@
           </button>
         </div>
 
-        <!-- Receipt body -->
+        <!-- Receipt body — HANYA konten yang boleh ikut kalau struk ini
+             suatu saat dijadikan struk online / di-share / di-print.
+             Bukti pembayaran SENGAJA tidak ditaruh di sini, lihat blok
+             "internal-proof-section" di bawah modal-footer. -->
         <div class="receipt-body">
           <div class="receipt-logo-area">
             <img src="/src/assets/masashimura-logo.png" alt="Logo" class="receipt-logo" />
@@ -187,29 +190,6 @@
             <div v-if="selectedOrder?.cancel_note" class="meta-row"><span>Catatan</span><span class="meta-val">{{ selectedOrder?.cancel_note }}</span></div>
             <div class="meta-row"><span>Oleh</span><span class="meta-val">{{ selectedOrder?.cancelled_by || '—' }}</span></div>
             <div class="meta-row"><span>Waktu</span><span class="meta-val">{{ formatFullDateTime(selectedOrder?.cancelled_at) }}</span></div>
-          </div>
-
-          <!-- Bukti pembayaran QRIS — cuma muncul kalau order ini punya
-               proof_image_url (diupload customer saat checkout web QRIS).
-               Preview langsung di sini biar admin gak perlu buka WA buat cek. -->
-          <div v-if="selectedOrder?.proof_image_url" class="proof-box">
-            <p class="proof-label">📎 Bukti Pembayaran QRIS</p>
-            <a
-              :href="selectedOrder.proof_image_url"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="proof-thumb-link"
-            >
-              <img :src="selectedOrder.proof_image_url" alt="Bukti Pembayaran" class="proof-thumb" />
-            </a>
-            <a
-              :href="selectedOrder.proof_image_url"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="proof-view-link"
-            >
-              Buka ukuran penuh ↗
-            </a>
           </div>
 
           <div class="receipt-divider">· · · · · · · · · · · · · · · · · · · ·</div>
@@ -246,17 +226,6 @@
 
           <div class="receipt-info-card">
             <div class="info-row"><span>Metode</span><span class="info-val">{{ selectedOrder?.payment_method === 'qris_manual' ? 'QRIS' : (selectedOrder?.payment_method === 'mixed' ? 'Split Bayar' : (selectedOrder?.payment_method || 'Cash')) }}</span></div>
-            <div v-if="selectedOrder?.proof_image_url" class="info-row">
-              <span>Bukti Bayar</span>
-              <a
-                :href="selectedOrder.proof_image_url"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="proof-link"
-              >
-                Lihat Foto ↗
-              </a>
-            </div>
             <template v-if="selectedOrder?.payment_method === 'mixed' && selectedOrder?.payments?.length">
               <div v-for="p in selectedOrder.payments" :key="p.id" class="info-row" style="padding-left:0.75rem;">
                 <span>— {{ p.method_display }}</span>
@@ -271,6 +240,38 @@
               </span>
             </div>
           </div>
+        </div>
+
+        <!-- ── INFO INTERNAL — Bukti Pembayaran QRIS ───────────────────
+             SENGAJA dipisah dari .receipt-body (struk) di atas. Blok ini
+             gak pernah ikut ke:
+               - shareReceiptAsImage() → capture cuma dari #receiptRef
+               - printReceipt()        → cetak cuma dari #printRef
+             Jadi kalau struk ini nanti dipakai jadi "struk online" yang
+             dikirim/di-share ke customer, foto bukti transfer gak akan
+             ikut kebawa. Ini murni buat verifikasi internal kasir. -->
+        <div v-if="selectedOrder?.proof_image_url" class="internal-proof-section">
+          <div class="internal-proof-header">
+            <span class="internal-proof-badge">🔒 Internal</span>
+            <p class="internal-proof-title">Bukti Pembayaran QRIS</p>
+          </div>
+          <p class="internal-proof-note">Tidak termasuk struk — hanya untuk verifikasi kasir/owner</p>
+          <a
+            :href="selectedOrder.proof_image_url"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="internal-proof-thumb-link"
+          >
+            <img :src="selectedOrder.proof_image_url" alt="Bukti Pembayaran" class="internal-proof-thumb" />
+          </a>
+          <a
+            :href="selectedOrder.proof_image_url"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="internal-proof-view-link"
+          >
+            Buka ukuran penuh ↗
+          </a>
         </div>
 
         <!-- Modal footer actions -->
@@ -409,7 +410,7 @@
           </div>
 
           <!-- Bukti bayar QRIS di modal lunasi juga, biar kasir bisa cek
-               sebelum mengonfirmasi lunas -->
+               sebelum mengonfirmasi lunas. Ini juga terpisah dari struk. -->
           <a
             v-if="selectedPayOrder.proof_image_url"
             :href="selectedPayOrder.proof_image_url"
@@ -796,6 +797,9 @@ const confirmCancel = async () => {
   }
 };
 
+// Capture struk cuma dari #receiptRef — proof pembayaran memang tidak
+// pernah dirender di dalam node itu, jadi otomatis tidak ikut ke gambar
+// yang di-share ke customer via WA.
 const shareReceiptAsImage = async () => {
   if (!receiptRef.value || !selectedOrder.value) return;
   isCapturing.value = true;
@@ -822,7 +826,8 @@ const shareReceiptAsImage = async () => {
   } catch (err) { console.error(err); toast.error("Gagal screenshot struk"); isCapturing.value = false; }
 };
 
-// ── Cetak struk thermal (58mm / 80mm) ──────────────────────────────
+// ── Cetak struk thermal (58mm / 80mm) — cetak cuma dari #printRef,
+// yang juga tidak pernah memuat bukti pembayaran ──────────────────
 const printReceipt = (widthMm = 80) => {
   if (!selectedOrder.value) return;
   printPaperWidth.value = widthMm;
@@ -929,7 +934,7 @@ onUnmounted(() => { if (pollingTimer) clearInterval(pollingTimer); });
   50% { opacity: 0.4; }
 }
 
-/* ── Control Bar ─────────────────────────────────────────────────── 
+/* ── Control Bar ───────────────────────────────────────────────────
    Navigasi tanggal + pencarian dipisah dari header jadi satu "toolbar"
    sendiri — pola yang sama dipakai di dashboard, biar konsisten
    sebagai satu sistem desain di seluruh app. */
@@ -1263,71 +1268,6 @@ onUnmounted(() => { if (pollingTimer) clearInterval(pollingTimer); });
 .cancel-info-title { margin: 0 0 0.25rem; font-size: 0.72rem; font-weight: 700; color: #f87171; }
 .meta-val { color: #fff; font-weight: 600; }
 
-/* Bukti pembayaran QRIS — preview di struk modal, biar admin gak
-   perlu buka tab/aplikasi lain buat verifikasi transfer customer. */
-.proof-box {
-  margin-top: 0.75rem;
-  padding: 0.75rem;
-  background: rgba(255,255,255,0.02);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-}
-.proof-label {
-  font-size: 0.65rem;
-  font-family: 'Oswald', sans-serif;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.35);
-  margin: 0;
-  align-self: flex-start;
-}
-.proof-thumb-link { display: block; width: 100%; }
-.proof-thumb {
-  width: 100%;
-  max-height: 220px;
-  object-fit: contain;
-  border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.08);
-  cursor: zoom-in;
-  background: #000;
-}
-.proof-view-link {
-  font-family: monospace;
-  font-size: 0.7rem;
-  color: #60a5fa;
-  text-decoration: underline;
-}
-.proof-view-link:hover { color: #93c5fd; }
-.proof-link {
-  font-family: monospace;
-  font-size: 0.72rem;
-  color: #60a5fa;
-  font-weight: 700;
-  text-decoration: underline;
-}
-.proof-link:hover { color: #93c5fd; }
-
-/* Banner bukti bayar di modal Lunasi — biar kasir cek dulu sebelum konfirmasi */
-.pay-proof-banner {
-  display: block;
-  text-align: center;
-  padding: 0.6rem 0.85rem;
-  background: rgba(37,99,235,0.1);
-  border: 1px solid rgba(37,99,235,0.3);
-  border-radius: 10px;
-  color: #93c5fd;
-  font-family: monospace;
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-decoration: none;
-  transition: background 0.15s;
-}
-.pay-proof-banner:hover { background: rgba(37,99,235,0.18); }
-
 .receipt-items { margin-bottom: 0.5rem; }
 .items-heading { font-size: 0.65rem; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.12em; margin: 0 0 0.6rem; }
 .item-row { margin-bottom: 0.5rem; }
@@ -1358,6 +1298,81 @@ onUnmounted(() => { if (pollingTimer) clearInterval(pollingTimer); });
 .info-paid   { color: #34d399; font-weight: 700; }
 .info-pending{ color: #fbbf24; font-weight: 700; }
 .info-void   { color: #a1a1aa; font-weight: 700; }
+
+/* ── Info Internal: Bukti Pembayaran ───────────────────────────────
+   Ditaruh di luar .receipt-body dan pakai gaya visual yang beda
+   sengaja (bukan gaya struk monospace) supaya jelas kelihatan "ini
+   bukan bagian dari struk" — baik secara kode maupun secara visual. */
+.internal-proof-section {
+  margin: 0 1.5rem;
+  padding: 0.85rem 1rem;
+  background: rgba(37,99,235,0.06);
+  border: 1px dashed rgba(37,99,235,0.35);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'Inter', sans-serif;
+}
+.internal-proof-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  align-self: flex-start;
+}
+.internal-proof-badge {
+  font-size: 0.58rem;
+  font-family: 'Oswald', sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #93c5fd;
+  background: rgba(37,99,235,0.15);
+  border: 1px solid rgba(37,99,235,0.3);
+  padding: 0.12rem 0.45rem;
+  border-radius: 100px;
+}
+.internal-proof-title { margin: 0; font-size: 0.75rem; font-weight: 700; color: #fff; }
+.internal-proof-note {
+  align-self: flex-start;
+  margin: -0.25rem 0 0;
+  font-size: 0.62rem;
+  color: rgba(255,255,255,0.35);
+}
+.internal-proof-thumb-link { display: block; width: 100%; }
+.internal-proof-thumb {
+  width: 100%;
+  max-height: 220px;
+  object-fit: contain;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.08);
+  cursor: zoom-in;
+  background: #000;
+}
+.internal-proof-view-link {
+  font-family: monospace;
+  font-size: 0.7rem;
+  color: #60a5fa;
+  text-decoration: underline;
+}
+.internal-proof-view-link:hover { color: #93c5fd; }
+
+/* Banner bukti bayar di modal Lunasi — biar kasir cek dulu sebelum konfirmasi */
+.pay-proof-banner {
+  display: block;
+  text-align: center;
+  padding: 0.6rem 0.85rem;
+  background: rgba(37,99,235,0.1);
+  border: 1px solid rgba(37,99,235,0.3);
+  border-radius: 10px;
+  color: #93c5fd;
+  font-family: monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.pay-proof-banner:hover { background: rgba(37,99,235,0.18); }
 
 .modal-footer {
   padding: 1rem 1.25rem;
@@ -1552,6 +1567,7 @@ onUnmounted(() => { if (pollingTimer) clearInterval(pollingTimer); });
   .date-nav { width: 100%; justify-content: space-between; }
   .ao-summary { flex-wrap: wrap; }
   .summary-chip { flex: 1; min-width: 110px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .internal-proof-section { margin: 0 1rem; }
 }
 @media (max-width: 480px) {
   .ao-live { display: none; }
@@ -1582,6 +1598,9 @@ input[type="number"] { -moz-appearance: textfield; }
     font-size: 11.5px;
     line-height: 1.55;
   }
+  /* Jaga-jaga: kalau suatu saat print CSS di atas berubah, blok
+     internal proof tetap dipastikan tidak pernah ikut tercetak. */
+  .internal-proof-section { display: none !important; }
 }
 
 .pr-center { text-align: center; margin-bottom: 4px; }
