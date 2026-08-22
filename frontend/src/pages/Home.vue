@@ -85,7 +85,7 @@
       <!-- ═══════════════════════════════════════════
            2. MARQUEE
       ═══════════════════════════════════════════ -->
-      <div class="border-y border-white/[0.06] bg-[#0a0a0a] overflow-hidden py-4 pointer-events-none">
+      <div class="marquee-wrap border-y border-white/[0.06] bg-[#0a0a0a] overflow-hidden py-4">
         <div class="whitespace-nowrap flex animate-marquee">
           <span v-for="n in 6" :key="n"
             class="inline-block font-sora text-[11px] font-bold tracking-[0.35em] uppercase text-zinc-700 mx-10">
@@ -97,7 +97,7 @@
       <!-- ═══════════════════════════════════════════
            3. BEST SELLER
       ═══════════════════════════════════════════ -->
-      <section class="py-32 px-6 sm:px-10 max-w-7xl mx-auto">
+      <section v-reveal class="py-32 px-6 sm:px-10 max-w-7xl mx-auto">
 
         <div class="flex items-end justify-between mb-16">
           <div class="space-y-3">
@@ -123,6 +123,7 @@
             <!-- Foto -->
             <div class="relative w-full aspect-[4/3] shrink-0 overflow-hidden bg-zinc-900">
               <img
+                v-blur-img
                 :src="item.image"
                 :alt="item.name"
                 loading="lazy"
@@ -165,13 +166,13 @@
       <!-- ═══════════════════════════════════════════
            4. TENTANG MASASHIMURA
       ═══════════════════════════════════════════ -->
-      <section class="py-32 border-t border-white/[0.06] bg-[#0a0a0a]">
+      <section v-reveal class="py-32 border-t border-white/[0.06] bg-[#0a0a0a]">
         <div class="max-w-7xl mx-auto px-6 sm:px-10 grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
 
           <!-- Foto outlet -->
           <div class="relative">
             <div class="aspect-square overflow-hidden">
-              <img :src="cms.about_image || defaultAboutImage" alt="Suasana Masashimura" loading="lazy"
+              <img v-blur-img :src="cms.about_image || defaultAboutImage" alt="Suasana Masashimura" loading="lazy"
                 class="w-full h-full object-cover grayscale-[15%] hover:grayscale-0 transition duration-700" />
             </div>
             <!-- Aksen garis merah pojok -->
@@ -193,13 +194,13 @@
             </div>
 
             <!-- Metrics — horizontal rule style -->
-            <div class="grid grid-cols-3 border border-white/[0.07] divide-x divide-white/[0.07]">
+            <div ref="metricsRef" class="grid grid-cols-3 border border-white/[0.07] divide-x divide-white/[0.07]">
               <div class="px-6 py-5 space-y-1">
-                <p class="font-sora text-2xl font-extrabold text-[#DC2626]">{{ cms.metric_1 }}</p>
+                <p class="font-sora text-2xl font-extrabold text-[#DC2626]">{{ metricDisplays.m1 }}</p>
                 <p class="font-mono text-[9px] tracking-[0.25em] text-zinc-600 uppercase">Berdiri</p>
               </div>
               <div class="px-6 py-5 space-y-1">
-                <p class="font-sora text-2xl font-extrabold text-white">{{ cms.metric_2 }}</p>
+                <p class="font-sora text-2xl font-extrabold text-white">{{ metricDisplays.m2 }}</p>
                 <p class="font-mono text-[9px] tracking-[0.25em] text-zinc-600 uppercase">Varian Menu</p>
               </div>
               <div class="px-6 py-5 space-y-1">
@@ -220,7 +221,7 @@
       <!-- ═══════════════════════════════════════════
            5. BENTO GRID FASILITAS
       ═══════════════════════════════════════════ -->
-      <section class="py-32 px-6 sm:px-10 max-w-7xl mx-auto">
+      <section v-reveal class="py-32 px-6 sm:px-10 max-w-7xl mx-auto">
         <div class="flex items-end justify-between mb-16">
           <div class="space-y-3">
             <div class="flex items-center gap-3">
@@ -258,7 +259,7 @@
       <!-- ═══════════════════════════════════════════
            6. GALLERY (Diperbaiki — dense grid dinamis, filter kategori, lightbox)
       ═══════════════════════════════════════════ -->
-      <section class="py-32 border-t border-white/[0.06] bg-[#0a0a0a]">
+      <section v-reveal class="py-32 border-t border-white/[0.06] bg-[#0a0a0a]">
         <div class="max-w-7xl mx-auto px-6 sm:px-10">
           <div class="mb-10 space-y-3">
             <div class="flex items-center gap-3">
@@ -298,7 +299,7 @@
                 'relative overflow-hidden group text-left bg-zinc-900 border-0 p-0 cursor-pointer'
               ]"
             >
-              <img :src="img.image_url" :alt="img.title || 'Dokumentasi Masashimura'" loading="lazy"
+              <img v-blur-img :src="img.image_url" :alt="img.title || 'Dokumentasi Masashimura'" loading="lazy"
                 class="w-full h-full object-cover grayscale-[15%] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700" />
               <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
                 <div class="space-y-0.5">
@@ -363,7 +364,7 @@
       <!-- ═══════════════════════════════════════════
            7. REVIEW
       ═══════════════════════════════════════════ -->
-      <section class="py-32 px-6 sm:px-10 max-w-4xl mx-auto">
+      <section v-reveal class="py-32 px-6 sm:px-10 max-w-4xl mx-auto">
         <div class="mb-16 space-y-3">
           <div class="flex items-center gap-3">
             <span class="w-6 h-px bg-[#DC2626]"></span>
@@ -402,7 +403,7 @@
       <!-- ═══════════════════════════════════════════
            8. CTA
       ═══════════════════════════════════════════ -->
-      <section class="border-t border-white/[0.06] bg-[#0a0a0a]">
+      <section v-reveal class="border-t border-white/[0.06] bg-[#0a0a0a]">
         <div class="max-w-7xl mx-auto px-6 sm:px-10 py-32 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           <div class="space-y-6">
             <div class="flex items-center gap-3">
@@ -434,7 +435,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue"
+import { ref, computed, onMounted, onUnmounted, nextTick } from "vue"
 import {
   Coffee, Wifi, Zap, Utensils, DollarSign, Moon, Shield, Tv,
   Music, Gamepad2, Beer, BatteryCharging, Heart, Award, Smartphone,
@@ -470,6 +471,87 @@ const reviews        = ref([])
 const iconMap = {
   Coffee, Wifi, Zap, Utensils, DollarSign, Moon, Shield, Tv,
   Music, Gamepad2, Beer, BatteryCharging, Heart, Award, Smartphone
+}
+
+// ── Scroll reveal directive: fade + slide up sekali pas section masuk viewport ──
+const vReveal = {
+  mounted(el) {
+    el.classList.add("reveal")
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          el.classList.add("reveal-visible")
+          observer.unobserve(el)
+        }
+      })
+    }, { threshold: 0.12 })
+    observer.observe(el)
+  }
+}
+
+// ── Image fade-up directive: img mulai transparan+scale, muncul pas selesai load ──
+const vBlurImg = {
+  mounted(el) {
+    el.classList.add("img-blur")
+    const markLoaded = () => el.classList.add("img-loaded")
+    if (el.complete && el.naturalWidth > 0) {
+      markLoaded()
+    } else {
+      el.addEventListener("load", markLoaded, { once: true })
+    }
+  }
+}
+
+// ── Metric count-up (section Tentang) ────────────────────────────────────
+const metricsRef     = ref(null)
+const metricDisplays = ref({ m1: "0", m2: "0" })
+let   metricsAnimated = false
+let   metricsObserver = null
+
+const parseMetricParts = (raw) => {
+  const str = String(raw ?? "")
+  const match = str.match(/^([\d.,]+)(.*)$/)
+  if (!match) return null
+  const numStr = match[1].replace(/,/g, "")
+  const target = parseFloat(numStr)
+  if (isNaN(target)) return null
+  const decimals = (numStr.split(".")[1] || "").length
+  const suffix = match[2] || ""
+  return { target, decimals, suffix }
+}
+
+const animateMetric = (raw, key) => {
+  const parts = parseMetricParts(raw)
+  if (!parts) {
+    metricDisplays.value[key] = raw
+    return
+  }
+  const { target, decimals, suffix } = parts
+  const duration = 1400
+  const startTime = performance.now()
+  const step = (now) => {
+    const progress = Math.min((now - startTime) / duration, 1)
+    const eased = 1 - Math.pow(1 - progress, 3)
+    const current = (target * eased).toFixed(decimals)
+    metricDisplays.value[key] = `${current}${suffix}`
+    if (progress < 1) requestAnimationFrame(step)
+  }
+  requestAnimationFrame(step)
+}
+
+const setupMetricsObserver = () => {
+  if (!metricsRef.value) return
+  metricsObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting && !metricsAnimated) {
+        metricsAnimated = true
+        animateMetric(cms.value.metric_1, "m1")
+        animateMetric(cms.value.metric_2, "m2")
+        metricsObserver.unobserve(entry.target)
+      }
+    })
+  }, { threshold: 0.3 })
+  metricsObserver.observe(metricsRef.value)
 }
 
 // ── Gallery: filter kategori + pagination + lightbox ──────────────────────
@@ -547,7 +629,7 @@ const fetchBestSellers = async () => {
       bestSellers.value = data.map(item => ({
         name:  item.name,
         desc:  item.description || "Menu favorit pilihan squad Masashimura.",
-        price: Number(item.price),
+        price: Number(item.price_web),
         image: item.image_url || defaultHeroFood,
       }))
     }
@@ -606,6 +688,8 @@ onMounted(async () => {
   window.addEventListener("keydown", handleLightboxKeydown)
   await Promise.all([fetchCMSData(), fetchBestSellers(), fetchGoogleReviews(), fetchBentoAndGallery()])
   isLoading.value = false
+  await nextTick()
+  setupMetricsObserver()
   reviewInterval = setInterval(() => {
     if (reviews.value.length > 0)
       currentReviewIndex.value = (currentReviewIndex.value + 1) % reviews.value.length
@@ -616,6 +700,7 @@ onUnmounted(() => {
   window.removeEventListener("scroll", handleScroll)
   window.removeEventListener("keydown", handleLightboxKeydown)
   if (reviewInterval) clearInterval(reviewInterval)
+  if (metricsObserver) metricsObserver.disconnect()
 })
 </script>
 
@@ -627,6 +712,9 @@ onUnmounted(() => {
 .animate-marquee {
   width: max-content;
   animation: marquee 40s linear infinite;
+}
+.marquee-wrap:hover .animate-marquee {
+  animation-play-state: paused;
 }
 
 .review-fade-enter-active,
@@ -644,5 +732,35 @@ onUnmounted(() => {
 .lightbox-fade-enter-from,
 .lightbox-fade-leave-to {
   opacity: 0;
+}
+
+/* Scroll reveal per section */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Image fade-up on load */
+.img-blur {
+  opacity: 0;
+  transform: scale(1.04);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.img-blur.img-loaded {
+  opacity: 1;
+  transform: scale(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .img-blur {
+    transition: none;
+    opacity: 1;
+    transform: none;
+  }
 }
 </style>
