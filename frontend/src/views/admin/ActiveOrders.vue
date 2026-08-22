@@ -251,27 +251,33 @@
              dikirim/di-share ke customer, foto bukti transfer gak akan
              ikut kebawa. Ini murni buat verifikasi internal kasir. -->
         <div v-if="selectedOrder?.proof_image_url" class="internal-proof-section">
-          <div class="internal-proof-header">
-            <span class="internal-proof-badge">🔒 Internal</span>
-            <p class="internal-proof-title">Bukti Pembayaran QRIS</p>
-          </div>
+          <button type="button" class="internal-proof-toggle" @click="showProofImage = !showProofImage">
+            <span class="internal-proof-toggle-left">
+              <span class="internal-proof-badge">🔒 Internal</span>
+              <span class="internal-proof-title">Bukti Pembayaran QRIS</span>
+            </span>
+            <span class="internal-proof-chevron" :class="{ open: showProofImage }">▾</span>
+          </button>
           <p class="internal-proof-note">Tidak termasuk struk — hanya untuk verifikasi kasir/owner</p>
-          <a
-            :href="selectedOrder.proof_image_url"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="internal-proof-thumb-link"
-          >
-            <img :src="selectedOrder.proof_image_url" alt="Bukti Pembayaran" class="internal-proof-thumb" />
-          </a>
-          <a
-            :href="selectedOrder.proof_image_url"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="internal-proof-view-link"
-          >
-            Buka ukuran penuh ↗
-          </a>
+
+          <div v-if="showProofImage" class="internal-proof-body">
+            <a
+              :href="selectedOrder.proof_image_url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="internal-proof-thumb-link"
+            >
+              <img :src="selectedOrder.proof_image_url" alt="Bukti Pembayaran" class="internal-proof-thumb" />
+            </a>
+            <a
+              :href="selectedOrder.proof_image_url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="internal-proof-view-link"
+            >
+              Buka ukuran penuh ↗
+            </a>
+          </div>
         </div>
 
         <!-- Modal footer actions -->
@@ -632,6 +638,7 @@ const searchQuery   = ref("");
 const isModalOpen   = ref(false);
 const selectedOrder = ref(null);
 const isCapturing   = ref(false);
+const showProofImage = ref(false); // toggle bukti bayar — collapsed by default biar modal gak kepanjangan
 const receiptRef    = ref(null);
 const printRef       = ref(null);
 const printPaperWidth = ref(80); // 58 atau 80 (mm)
@@ -725,7 +732,7 @@ const filteredOrders = computed(() =>
   orders.value.filter(o => (o.customer_phone || "").includes(searchQuery.value))
 );
 
-const openOrderModal = (order) => { selectedOrder.value = order; isModalOpen.value = true; };
+const openOrderModal = (order) => { selectedOrder.value = order; showProofImage.value = false; isModalOpen.value = true; };
 const openPayModal = (order) => {
   selectedPayOrder.value = order;
   payRows.value          = [{ method: "cash", amount: 0 }];
@@ -1305,22 +1312,27 @@ onUnmounted(() => { if (pollingTimer) clearInterval(pollingTimer); });
    bukan bagian dari struk" — baik secara kode maupun secara visual. */
 .internal-proof-section {
   margin: 0 1.5rem;
-  padding: 0.85rem 1rem;
+  padding: 0.65rem 0.85rem;
   background: rgba(37,99,235,0.06);
   border: 1px dashed rgba(37,99,235,0.35);
   border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
   font-family: 'Inter', sans-serif;
 }
-.internal-proof-header {
+/* Header dobel sebagai tombol toggle — collapsed by default, jadi
+   gak makan tempat di modal struk kecuali admin memang mau ngecek. */
+.internal-proof-toggle {
+  width: 100%;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.5rem;
-  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
 }
+.internal-proof-toggle-left { display: flex; align-items: center; gap: 0.5rem; }
 .internal-proof-badge {
   font-size: 0.58rem;
   font-family: 'Oswald', sans-serif;
@@ -1331,18 +1343,32 @@ onUnmounted(() => { if (pollingTimer) clearInterval(pollingTimer); });
   border: 1px solid rgba(37,99,235,0.3);
   padding: 0.12rem 0.45rem;
   border-radius: 100px;
+  flex-shrink: 0;
 }
-.internal-proof-title { margin: 0; font-size: 0.75rem; font-weight: 700; color: #fff; }
-.internal-proof-note {
-  align-self: flex-start;
-  margin: -0.25rem 0 0;
-  font-size: 0.62rem;
+.internal-proof-title { font-size: 0.75rem; font-weight: 700; color: #fff; }
+.internal-proof-chevron {
   color: rgba(255,255,255,0.35);
+  font-size: 0.7rem;
+  transition: transform 0.15s;
+  flex-shrink: 0;
+}
+.internal-proof-chevron.open { transform: rotate(180deg); color: #93c5fd; }
+.internal-proof-note {
+  margin: 0.2rem 0 0;
+  font-size: 0.6rem;
+  color: rgba(255,255,255,0.3);
+}
+.internal-proof-body {
+  margin-top: 0.65rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
 }
 .internal-proof-thumb-link { display: block; width: 100%; }
 .internal-proof-thumb {
   width: 100%;
-  max-height: 220px;
+  max-height: 140px;
   object-fit: contain;
   border-radius: 8px;
   border: 1px solid rgba(255,255,255,0.08);
@@ -1351,7 +1377,7 @@ onUnmounted(() => { if (pollingTimer) clearInterval(pollingTimer); });
 }
 .internal-proof-view-link {
   font-family: monospace;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   color: #60a5fa;
   text-decoration: underline;
 }
