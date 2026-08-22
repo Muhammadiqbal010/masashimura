@@ -55,8 +55,8 @@ def create_order(request):
     if source == 'pos' and not (request.user and request.user.is_authenticated and request.user.is_staff):
         source = 'web'
 
-    table_number   = data.get('table_number')
-    notes          = data.get('notes', '')
+    table_number = data.get('table_number')
+    notes        = data.get('notes', '')
 
     amount_paid = Decimal(str(data.get('amount_paid', 0) or 0))
     kasir_name  = data.get('kasir_name', '').strip()
@@ -100,6 +100,151 @@ def create_order(request):
         is_deferred    = False
         order_status   = 'completed'
 
+    # ── Validasi & kunci promo (kalau ada) ──────────────────────────
+    # ASUMSI field Promo: is_active, used_count, discount_type
+    # ('percentage'/'fixed'), discount_value, max_discount_amount, quota.
+    # SESUAIKAN kalau struktur promotions.models.Promo lo beda.
+    promo_obj = None
+    if promo_id:
+        promo_obj = Promo.objects.select_for_update().filter(pk=promo_id, is_active=True).first()
+        if not promo_obj:
+            return Response({"error": "Promo tidak valid atau sudah tidak aktif"}, status=400)
+
+        quota = getattr(promo_obj, "quota", None)
+        if quota is not None and promo_obj.used_count >= quota:
+            return Response({"error": "Kuota promo sudah habis"}, status=400)
+
+    # ── Bikin Order dulu (item & payment nyusul, biar dapet FK) ─────
+    order = Order.objects.create(
+        source=source,
+        status=order_status,
+        payment_status=payment_status,
+        payment_method=payment_method,
+        is_deferred_payment=is_deferred,
+        customer_name=name,
+        customer_phone=phone,
+        table_number=table_number,
+        notes=notes,
+        kasir_name=kasir_name,
+        proof_image_url=proof_image_url,
+        promo=promo_obj,
+    )
+
+    # ── Bikin OrderItem dari items_data ──────────────────────────────
+    subtotal = Decimal('0')
+    for item in items_data:
+        menu_id    = item.get('menu_id') or item.get('menu')
+        quantity   = int(item.get('quantity', 1) or 1)
+        item_notes = (item.get('notes') or '').strip()
+
+        if not menu_id or quantity <= 0:
+            transaction.set_rollback(True)
+            return Response({"error": "Data item tidak valid (menu_id/quantity)"}, status=400)
+
+        menu = get_object_or_404(Menu, pk=menu_id)
+
+        # Web pakai harga markup 1% (dibulatkan ke atas kelipatan 500),
+        # POS pakai harga normal.
+        if source == 'web':
+            marked_up = float(menu.price) * 1.01
+            price = Decimal(int(math.ceil(marked_up / 500) * 500))
+        else:
+            price = menu.price
+
+        OrderItem.objects.create(
+            order=order, menu=menu, quantity=quantity,
+            price=price, notes=item_notes,
+        )
+        subtotal += price * quantity
+
+    # ── Redeem poin (kalau ada) ──────────────────────────────────────
+    total_point_cost = 0
+    if redeem_reward_ids:
+        if not phone:
+            transaction.set_rollback(True)
+            return Response({"error": "Nomor HP wajib diisi buat nuker poin"}, status=400)
+
+        loyalty = CustomerLoyalty.objects.select_for_update().filter(phone=phone).first()
+        if not loyalty:
+            transaction.set_rollback(True)
+            return Response({"error": "Customer belum terdaftar loyalty, belum punya poin"}, status=400)
+
+        loyalty.check_and_expire_points()
+
+        for reward_id in redeem_reward_ids:
+            reward = (
+                PointReward.objects
+                .filter(pk=reward_id, is_active=True)
+                .select_related('menu')
+                .first()
+            )
+            if not reward:
+                transaction.set_rollback(True)
+                return Response({"error": "Salah satu reward tidak valid/tidak aktif"}, status=400)
+
+            OrderItem.objects.create(
+                order=order, menu=reward.menu, quantity=1,
+                price=Decimal('0'), is_point_redemption=True,
+            )
+            total_point_cost += reward.point_cost
+
+        if total_point_cost > loyalty.points:
+            transaction.set_rollback(True)
+            return Response(
+                {"error": f"Poin tidak cukup. Saldo {loyalty.points}, butuh {total_point_cost}"},
+                status=400,
+            )
+
+        loyalty.points -= total_point_cost
+        loyalty.save(update_fields=['points'])
+        PointAdjustment.objects.create(
+            customer=loyalty, amount=-total_point_cost, reason='manual',
+            note=f"Redeem reward saat order {order.order_number}",
+            admin_name=kasir_name or 'system',
+        )
+
+    # ── Hitung diskon promo & total akhir ────────────────────────────
+    promo_discount_amount = Decimal('0')
+    if promo_obj:
+        discount_type  = getattr(promo_obj, 'discount_type', 'fixed')
+        discount_value = Decimal(str(getattr(promo_obj, 'discount_value', 0) or 0))
+
+        if discount_type == 'percentage':
+            promo_discount_amount = subtotal * discount_value / Decimal('100')
+            max_discount = getattr(promo_obj, 'max_discount_amount', None)
+            if max_discount:
+                promo_discount_amount = min(promo_discount_amount, Decimal(str(max_discount)))
+        else:
+            promo_discount_amount = discount_value
+
+        promo_discount_amount = min(promo_discount_amount, subtotal)
+        Promo.objects.filter(pk=promo_obj.pk).update(used_count=models.F('used_count') + 1)
+
+    order.subtotal              = subtotal
+    order.promo_discount_amount = promo_discount_amount
+    total = subtotal - promo_discount_amount
+    order.total_price = total if total > 0 else Decimal('0')
+
+    if amount_paid > 0:
+        order.amount_paid   = amount_paid
+        order.change_amount = max(amount_paid - order.total_price, Decimal('0'))
+    elif payment_status == 'paid':
+        order.amount_paid = order.total_price
+
+    order.save()
+
+    # ── Catat baris pembayaran (kalau order langsung lunas) ──────────
+    if order.payment_status == 'paid' and order.payment_method:
+        OrderPayment.objects.create(
+            order=order,
+            method=order.payment_method,
+            amount=order.amount_paid or order.total_price,
+        )
+
+    order.refresh_from_db()
+    return Response(OrderSerializer(order).data, status=201)
+
+    
 @api_view(["GET"])
 @permission_classes([IsAdminUser])
 def list_orders(request):
