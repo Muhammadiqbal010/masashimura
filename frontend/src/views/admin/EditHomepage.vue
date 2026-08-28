@@ -370,6 +370,7 @@
 import { ref, onMounted, onBeforeUnmount } from "vue";
 import { toast } from "vue-sonner";
 import axios from "axios";
+import apiClient from "@/api/client";
 import ImageCropper from "@/components/ui/ImageCropper.vue";
 import {
   Coffee, Wifi, Zap, Utensils, DollarSign, Moon, Shield, Tv,
@@ -382,7 +383,7 @@ const iconMap = {
   Music, Gamepad2, Beer, BatteryCharging, Heart, Award, Smartphone
 };
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
+// Cloudinary tetap pakai axios biasa karena base URL-nya beda (bukan backend sendiri)
 const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
@@ -425,9 +426,9 @@ const galleryForm = ref({ title: "", image_url: "", category: "Event" });
 const fetchHomepageData = async () => {
   try {
     const [coreRes, bentoRes, galleryRes] = await Promise.all([
-      axios.get(`${API_BASE_URL}/api/homepage/config/current/`),
-      axios.get(`${API_BASE_URL}/api/homepage/bento/`),
-      axios.get(`${API_BASE_URL}/api/homepage/gallery/`)
+      apiClient.get(`/homepage/config/current/`),
+      apiClient.get(`/homepage/bento/`),
+      apiClient.get(`/homepage/gallery/`)
     ]);
 
     if (coreRes.data) form.value = { ...form.value, ...coreRes.data };
@@ -451,9 +452,7 @@ const saveHomepageData = async () => {
   if (payload.about_image === "") payload.about_image = null;
 
   try {
-    await axios.post(`${API_BASE_URL}/api/homepage/config/update/`, payload, {
-      headers: { Authorization: `Token ${token}` },
-    });
+    await apiClient.post(`/homepage/config/update/`, payload);
     toast.success("Konten Teks Utama Homepage berhasil dipublikasikan!");
   } catch (err) {
     console.error("Gagal menyimpan konfigurasi homepage:", err);
@@ -533,19 +532,17 @@ const openBentoModal = (bento = null) => {
 const saveBento = async () => {
   if (!bentoForm.value.title.trim()) return toast.warning("Nama fasilitas bento tidak boleh kosong!");
   isSavingSub.value = true;
-  const token = localStorage.getItem("token");
-  const config = { headers: { Authorization: `Token ${token}` } };
 
   try {
     if (editingBentoId.value) {
-      await axios.put(`${API_BASE_URL}/api/homepage/bento/${editingBentoId.value}/`, bentoForm.value, config);
+      await apiClient.put(`/homepage/bento/${editingBentoId.value}/`, bentoForm.value);
       toast.success("Variabel bento grid diperbarui!");
     } else {
-      await axios.post(`${API_BASE_URL}/api/homepage/bento/create/`, bentoForm.value, config);
+      await apiClient.post(`/homepage/bento/create/`, bentoForm.value);
       toast.success("Fasilitas bento baru ditambahkan!");
     }
     showModal.value = false;
-    const res = await axios.get(`${API_BASE_URL}/api/homepage/bento/`);
+    const res = await apiClient.get(`/homepage/bento/`);
     bentoFacilities.value = res.data;
   } catch (err) {
     toast.error("Gagal memproses data bento grid.");
@@ -556,11 +553,8 @@ const saveBento = async () => {
 
 const deleteBento = async (id) => {
   if (!confirm("Hapus item fasilitas bento grid ini?")) return;
-  const token = localStorage.getItem("token");
   try {
-    await axios.delete(`${API_BASE_URL}/api/homepage/bento/${id}/`, {
-      headers: { Authorization: `Token ${token}` }
-    });
+    await apiClient.delete(`/homepage/bento/${id}/`);
     toast.success("Fasilitas bento sukses dibersihkan!");
     bentoFacilities.value = bentoFacilities.value.filter(b => b.id !== id);
   } catch (err) {
@@ -591,20 +585,18 @@ const saveGalleryItem = async () => {
   if (!galleryForm.value.image_url) return toast.warning("Unggah berkas foto terlebih dahulu!");
   if (!galleryForm.value.title.trim()) return toast.warning("Judul event wajib diisi!");
   isSavingSub.value = true;
-  const token = localStorage.getItem("token");
-  const config = { headers: { Authorization: `Token ${token}` } };
 
   try {
     if (editingGalleryId.value) {
       // Update data yang sudah ada — tidak perlu hapus dulu
-      await axios.put(`${API_BASE_URL}/api/homepage/gallery/${editingGalleryId.value}/`, galleryForm.value, config);
+      await apiClient.put(`/homepage/gallery/${editingGalleryId.value}/`, galleryForm.value);
       toast.success("Dokumentasi event berhasil diperbarui!");
     } else {
-      await axios.post(`${API_BASE_URL}/api/homepage/gallery/create/`, galleryForm.value, config);
+      await apiClient.post(`/homepage/gallery/create/`, galleryForm.value);
       toast.success("Dokumentasi event berhasil dipublikasikan!");
     }
     showModal.value = false;
-    const res = await axios.get(`${API_BASE_URL}/api/homepage/gallery/`);
+    const res = await apiClient.get(`/homepage/gallery/`);
     galleryData.value = res.data;
   } catch (err) {
     toast.error("Gagal menyimpan data dokumentasi foto ke database.");
@@ -615,11 +607,8 @@ const saveGalleryItem = async () => {
 
 const deleteGalleryItem = async (id) => {
   if (!confirm("Hapus dokumentasi foto ini dari server cloud Cloudinary?")) return;
-  const token = localStorage.getItem("token");
   try {
-    await axios.delete(`${API_BASE_URL}/api/homepage/gallery/${id}/`, {
-      headers: { Authorization: `Token ${token}` }
-    });
+    await apiClient.delete(`/homepage/gallery/${id}/`);
     toast.success("Foto event berhasil dibuang!");
     galleryData.value = galleryData.value.filter(g => g.id !== id);
   } catch (err) {

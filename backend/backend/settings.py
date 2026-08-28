@@ -78,10 +78,13 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated', # Semua API butuh login
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'reset_password': '3/hour',  # <- baru: batasin percobaan reset password/PIN
+        'reset_password': '5/hour',
+        'login': '10/hour',          # <- baru: batasin brute-force login
+        'admin_action': '30/hour',   # <- baru: batasin admin_reset_password & set-pin
     },
 }
 
+TOKEN_EXPIRE_HOURS = 24 * 1
 # ========================
 # SISANYA (JANGAN DIUBAH)
 # ========================

@@ -1,13 +1,13 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.throttling import AnonRateThrottle
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
-from rest_framework.authentication import TokenAuthentication
 
+from .authentication import ExpiringTokenAuthentication
 from .models import UserProfile
 from .serializers import (
     UserCreateSerializer, LoginSerializer, ChangePasswordSerializer,
@@ -16,8 +16,17 @@ from .serializers import (
 from .permissions import IsOwner
 
 
+class LoginThrottle(AnonRateThrottle):
+    scope = 'login'
+
+
+class AdminActionThrottle(UserRateThrottle):
+    scope = 'admin_action'
+
+
 class LoginView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [LoginThrottle]
 
     def post(self, request, *args, **kwargs):
         login_input = request.data.get('username') or request.data.get('email')
@@ -128,7 +137,7 @@ class UserProfileUpdateView(APIView):
     verifikasi password lama sama sekali (celah keamanan). Sekarang
     ganti password wajib lewat ChangePasswordView yang minta verifikasi.
     """
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [ExpiringTokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     def put(self, request, *args, **kwargs):
@@ -187,7 +196,6 @@ class ResetPasswordWithPinView(APIView):
             user = User.objects.get(username=username)
             profile = user.profile
         except (User.DoesNotExist, UserProfile.DoesNotExist):
-            # Pesan generic — jangan bedain "user gak ada" vs "kredensial salah"
             return Response({"detail": "Username, password lama, atau PIN salah."}, status=status.HTTP_400_BAD_REQUEST)
 
         verified = (old_password and user.check_password(old_password)) or \
@@ -218,6 +226,7 @@ class AdminSetPinView(APIView):
     karena owner udah terverifikasi lewat sesi login dia sendiri.
     """
     permission_classes = [IsAuthenticated, IsOwner]
+    throttle_classes = [AdminActionThrottle]
 
     def post(self, request):
         serializer = AdminSetPinSerializer(data=request.data)
@@ -239,10 +248,13 @@ class AdminSetPinView(APIView):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated, IsOwner])
+@throttle_classes([AdminActionThrottle])
 def admin_reset_password_view(request):
     """
     Owner reset password staff langsung, tanpa email/OTP — karena
     yang ngelakuin ini udah pasti owner yang sudah login & terverifikasi.
+    Throttle di sini jaga-jaga kalau token owner bocor — tetep dibatasin
+    biar gak dipakai buat reset password semua staff sekaligus secara massal.
     """
     user_id = request.data.get('user_id')
     new_password = request.data.get('new_password')
