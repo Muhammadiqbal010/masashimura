@@ -149,6 +149,31 @@
           </div>
         </div>
 
+        <!-- PIN Keamanan -->
+<div class="space-y-2">
+  <label for="staff-pin" class="block text-[10px] uppercase tracking-widest font-bold text-white/70">
+    PIN Keamanan (6 digit)
+  </label>
+  <div class="relative">
+    <KeyRound :size="16" class="absolute left-4 top-1/2 -translate-y-1/2 text-white/25" />
+    <input
+      id="staff-pin"
+      v-model="formData.securityPin"
+      type="text"
+      inputmode="numeric"
+      maxlength="6"
+      required
+      :disabled="loading"
+      class="w-full bg-white/5 border border-white/10 text-white rounded-xl h-12 pl-11 pr-4 outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600/30 transition-all placeholder-white/20 disabled:opacity-50 text-sm font-mono tracking-widest"
+      placeholder="6 digit angka..."
+      @input="formData.securityPin = formData.securityPin.replace(/\D/g, '').slice(0, 6)"
+    />
+  </div>
+  <p class="text-white/25 text-[11px] pl-1">
+    Beritahu PIN ini ke staff secara langsung (lisan/tatap muka), bukan lewat chat. PIN ini dipakai staff buat reset password sendiri kalau lupa.
+  </p>
+</div>
+
         <!-- Submit -->
         <button
           type="submit"
@@ -176,7 +201,7 @@
 import { ref, computed } from "vue";
 import { toast } from "vue-sonner";
 import {
-  Eye, EyeOff, User, Mail, Lock, CheckCircle2,
+  Eye, EyeOff, User, Mail, Lock, CheckCircle2, KeyRound,
   ChefHat, ShieldCheck, UserPlus,
 } from "lucide-vue-next";
 import apiClient from "@/api/client";
@@ -189,7 +214,8 @@ const formData = ref({
   name: "",
   email: "",
   password: "",
-  role: "kasir", // Default role karyawan baru adalah kasir
+  securityPin: "",
+  role: "kasir",
 });
 
 const roleOptions = [
@@ -197,8 +223,8 @@ const roleOptions = [
   { value: "admin", label: "Admin", desc: "Manajer operasional", icon: ShieldCheck },
 ];
 
-// ── Validation ────────────────────────────────────────────────────────────
 const emailValid = computed(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.value.email));
+const pinValid = computed(() => /^\d{6}$/.test(formData.value.securityPin));
 
 const passwordStrength = computed(() => {
   const p = formData.value.password;
@@ -209,10 +235,10 @@ const passwordStrength = computed(() => {
   if (/[^A-Za-z0-9]/.test(p) && p.length >= 10) score++;
 
   const levels = [
-    { label: "Lemah",  color: "bg-red-500",    textColor: "text-red-400" },
-    { label: "Lemah",  color: "bg-red-500",    textColor: "text-red-400" },
-    { label: "Cukup",  color: "bg-amber-500",  textColor: "text-amber-400" },
-    { label: "Kuat",   color: "bg-emerald-500", textColor: "text-emerald-400" },
+    { label: "Lemah", color: "bg-red-500", textColor: "text-red-400" },
+    { label: "Lemah", color: "bg-red-500", textColor: "text-red-400" },
+    { label: "Cukup", color: "bg-amber-500", textColor: "text-amber-400" },
+    { label: "Kuat", color: "bg-emerald-500", textColor: "text-emerald-400" },
     { label: "Sangat Kuat", color: "bg-emerald-500", textColor: "text-emerald-400" },
   ];
   return { score, ...levels[score] };
@@ -221,43 +247,44 @@ const passwordStrength = computed(() => {
 const canSubmit = computed(() =>
   formData.value.name.trim().length > 0 &&
   emailValid.value &&
-  formData.value.password.length >= 8
+  formData.value.password.length >= 8 &&
+  pinValid.value
 );
 
-// 🔥 KUNCI UTAMA: Alur Register Internal tanpa terpental log-out
+// Username dibuat dari bagian depan email — bukan nama lengkap, biar gak ada spasi
+const generateUsername = (email) => email.split("@")[0].toLowerCase();
+
 const handleInternalRegister = async () => {
   emailTouched.value = true;
   if (!canSubmit.value) {
-    toast.error("Periksa kembali data yang diisi (email valid & password min. 8 karakter).");
+    toast.error("Periksa kembali data yang diisi (email valid, password min. 8 karakter, PIN 6 digit).");
     return;
   }
 
   loading.value = true;
   try {
     const payload = {
-      username: formData.value.name,
+      username: generateUsername(formData.value.email),
       email: formData.value.email,
       password: formData.value.password,
       full_name: formData.value.name,
-      role: formData.value.role, // Payload role sukses dikirim ke Django backend
+      role: formData.value.role,
+      security_pin: formData.value.securityPin,
     };
 
-    // apiClient sudah membawa token & base URL yang benar (lihat @/api/client)
     await apiClient.post("/auth/register-internal/", payload);
 
-    toast.success(`Akun ${formData.value.role.toUpperCase()} baru berhasil didaftarkan!`);
+    toast.success(`Akun ${formData.value.role.toUpperCase()} baru berhasil didaftarkan! Username: ${payload.username}`);
 
-    // Reset Form murni agar Owner bisa langsung daftarin karyawan berikutnya tanpa mental ke login
-    formData.value.name = "";
-    formData.value.email = "";
-    formData.value.password = "";
-    formData.value.role = "kasir";
+    formData.value = { name: "", email: "", password: "", securityPin: "", role: "kasir" };
     emailTouched.value = false;
   } catch (error) {
     console.error("Internal Register Error:", error);
-    toast.error(
-      error.response?.data?.message || "Gagal mendaftarkan staff. Periksa koneksi backend."
-    );
+    const data = error.response?.data;
+    const firstError = data && typeof data === "object"
+      ? Object.values(data)[0]?.[0] || data.message
+      : null;
+    toast.error(firstError || "Gagal mendaftarkan staff. Periksa koneksi backend.");
   } finally {
     loading.value = false;
   }

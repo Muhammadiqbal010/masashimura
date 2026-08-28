@@ -124,67 +124,72 @@
     </div>
 
     <!-- ── MODAL RESET PASSWORD ───────────────────────────────────── -->
-    <div v-if="isForgotModalOpen" class="modal-overlay" @click.self="isForgotModalOpen = false">
-      <div class="modal-box">
+    <!-- ── MODAL RESET PASSWORD ───────────────────────────────────── -->
+<div v-if="isForgotModalOpen" class="modal-overlay" @click.self="isForgotModalOpen = false">
+  <div class="modal-box">
 
-        <div class="modal-header">
-          <div>
-            <p class="modal-eyebrow">Keamanan Akun</p>
-            <h3 class="modal-title">Reset Password</h3>
-          </div>
-          <button class="modal-close" @click="isForgotModalOpen = false">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    <div class="modal-header">
+      <div>
+        <p class="modal-eyebrow">Keamanan Akun</p>
+        <h3 class="modal-title">Reset Password</h3>
+      </div>
+      <button class="modal-close" @click="isForgotModalOpen = false">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <p class="modal-desc">Masukkan username kamu dan PIN keamanan yang dikasih owner saat akun dibuat.</p>
+
+    <form @submit.prevent="handleSelfResetPassword" class="modal-form">
+
+      <div class="field">
+        <label class="field-label">Username</label>
+        <div class="input-wrap">
+          <svg class="input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <input v-model="resetForm.username" type="text" required placeholder="username kamu..." class="text-input" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">PIN Keamanan</label>
+        <div class="input-wrap">
+          <svg class="input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          <input
+            v-model="resetForm.securityPin"
+            type="text" inputmode="numeric" maxlength="6" required
+            placeholder="6 digit PIN..."
+            class="text-input"
+            @input="resetForm.securityPin = resetForm.securityPin.replace(/\D/g, '').slice(0, 6)"
+          />
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Password Baru</label>
+        <div class="input-wrap">
+          <svg class="input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          <input
+            v-model="resetForm.newPassword"
+            :type="showResetPassword ? 'text' : 'password'"
+            required placeholder="Minimal 6 karakter..." class="text-input pr-input"
+          />
+          <button type="button" class="eye-btn" @click="showResetPassword = !showResetPassword">
+            <component :is="showResetPassword ? EyeOff : Eye" :size="15" />
           </button>
         </div>
-
-        <p class="modal-desc">Masukkan email staff yang terdaftar, lalu tentukan password baru langsung di bawah ini.</p>
-
-        <form @submit.prevent="handleSelfResetPassword" class="modal-form">
-
-          <div class="field">
-            <label class="field-label">Email Akun Staff</label>
-            <div class="input-wrap">
-              <svg class="input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-              <input
-                v-model="resetForm.email"
-                type="email"
-                required
-                placeholder="kasir@masashimura.id"
-                class="text-input"
-              />
-            </div>
-          </div>
-
-          <div class="field">
-            <label class="field-label">Password Baru</label>
-            <div class="input-wrap">
-              <svg class="input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-              <input
-                v-model="resetForm.newPassword"
-                :type="showResetPassword ? 'text' : 'password'"
-                required
-                placeholder="Minimal 6 karakter..."
-                class="text-input pr-input"
-              />
-              <button type="button" class="eye-btn" @click="showResetPassword = !showResetPassword">
-                <component :is="showResetPassword ? EyeOff : Eye" :size="15" />
-              </button>
-            </div>
-          </div>
-
-          <div class="modal-actions">
-            <button type="submit" :disabled="isResetting" class="submit-btn">
-              <span v-if="isResetting" class="btn-spinner"></span>
-              {{ isResetting ? 'Memproses...' : 'Ganti Password' }}
-            </button>
-            <button type="button" @click="isForgotModalOpen = false" class="cancel-btn">
-              Batalkan
-            </button>
-          </div>
-
-        </form>
       </div>
-    </div>
+
+      <div class="modal-actions">
+        <button type="submit" :disabled="isResetting" class="submit-btn">
+          <span v-if="isResetting" class="btn-spinner"></span>
+          {{ isResetting ? 'Memproses...' : 'Ganti Password' }}
+        </button>
+        <button type="button" @click="isForgotModalOpen = false" class="cancel-btn">Batalkan</button>
+      </div>
+
+    </form>
+  </div>
+</div>
 
   </div>
 </template>
@@ -195,7 +200,7 @@ import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import { toast } from "vue-sonner";
 import { Eye, EyeOff } from "lucide-vue-next";
-import axios from "axios";
+import apiClient from "@/api/client";
 
 const router = useRouter();
 const auth   = useAuthStore();
@@ -207,12 +212,12 @@ const isResetting       = ref(false);
 const isForgotModalOpen = ref(false);
 
 const formData  = ref({ username: "", password: "" });
-const resetForm = ref({ email: "", newPassword: "" });
+const resetForm = ref({ username: "", securityPin: "", newPassword: "" });
 
 const heroImage = "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?q=80&w=2080";
 
 const openForgotModal = () => {
-  resetForm.value = { email: "", newPassword: "" };
+  resetForm.value = { username: "", securityPin: "", newPassword: "" };
   showResetPassword.value = false;
   isForgotModalOpen.value = true;
 };
@@ -226,24 +231,35 @@ const handleSubmit = async () => {
     else if (auth.isKasir) router.push("/admin/orders");
     else router.push("/");
   } catch (error) {
-    toast.error(error.response?.data?.detail || "Username atau password salah.");
+    if (error.response?.status === 429) {
+      toast.error("Terlalu banyak percobaan login. Coba lagi dalam beberapa menit.");
+    } else {
+      toast.error(error.response?.data?.non_field_errors?.[0] || "Username atau password salah.");
+    }
   } finally {
     loading.value = false;
   }
 };
 
 const handleSelfResetPassword = async () => {
+  if (!/^\d{6}$/.test(resetForm.value.securityPin)) return toast.error("PIN harus 6 digit angka!");
   if (resetForm.value.newPassword.length < 6) return toast.error("Password minimal 6 karakter!");
+
   isResetting.value = true;
   try {
-    await axios.post("http://127.0.0.1:8000/api/auth/reset-password-instan/", {
-      email: resetForm.value.email.trim(),
+    await apiClient.post("/auth/reset-password-pin/", {
+      username: resetForm.value.username.trim(),
+      security_pin: resetForm.value.securityPin,
       new_password: resetForm.value.newPassword,
     });
     toast.success("Password berhasil diubah. Silakan login.");
     isForgotModalOpen.value = false;
   } catch (error) {
-    toast.error(error.response?.data?.message || "Email tidak terdaftar atau salah ketik.");
+    if (error.response?.status === 429) {
+      toast.error("Terlalu banyak percobaan. Coba lagi dalam beberapa menit.");
+    } else {
+      toast.error(error.response?.data?.detail || "Username atau PIN salah.");
+    }
   } finally {
     isResetting.value = false;
   }

@@ -36,7 +36,6 @@
           </span>
         </div>
 
-        <!-- Quick meta -->
         <div class="pt-3 border-t border-white/5 text-left space-y-2">
           <div class="flex items-center justify-between">
             <span class="text-[10px] text-white/30 uppercase tracking-wider">Username</span>
@@ -63,7 +62,6 @@
               <h2 class="font-oswald text-sm uppercase tracking-wider text-white/80">Informasi Akun</h2>
             </div>
 
-            <!-- Email (Read-Only) -->
             <div class="space-y-1.5">
               <label class="text-[10px] uppercase font-bold tracking-wider text-white/40">Alamat Email</label>
               <div class="relative">
@@ -81,7 +79,6 @@
               </p>
             </div>
 
-            <!-- Username -->
             <div class="space-y-1.5">
               <label for="profile-username" class="text-[10px] uppercase font-bold tracking-wider text-white/40">
                 Username
@@ -113,6 +110,60 @@
               Isi kolom di bawah hanya jika kamu ingin mengganti password akun operasional.
             </p>
 
+            <!-- Toggle metode verifikasi -->
+            <div v-if="profileForm.newPassword" class="verify-toggle">
+              <button type="button"
+                :class="['verify-btn', verifyMethod === 'password' && 'verify-btn-active']"
+                @click="verifyMethod = 'password'">
+                Password Lama
+              </button>
+              <button type="button"
+                :class="['verify-btn', verifyMethod === 'pin' && 'verify-btn-active']"
+                @click="verifyMethod = 'pin'">
+                PIN Keamanan
+              </button>
+            </div>
+
+            <!-- Password Saat Ini -->
+            <div v-if="verifyMethod === 'password'" class="space-y-1.5">
+              <label for="profile-current-password" class="text-[10px] uppercase font-bold tracking-wider text-white/40">
+                Password Saat Ini
+              </label>
+              <div class="relative">
+                <Lock :size="14" class="absolute left-4 top-1/2 -translate-y-1/2 text-white/25" />
+                <input
+                  id="profile-current-password"
+                  v-model="profileForm.currentPassword"
+                  :type="showCurrentPassword ? 'text' : 'password'"
+                  :disabled="isSaving"
+                  placeholder="Wajib diisi kalau mau ganti password..."
+                  class="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 pl-11 pr-12 text-sm focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600/30 font-mono transition text-white disabled:opacity-50"
+                />
+                <button type="button" tabindex="-1" @click="showCurrentPassword = !showCurrentPassword" class="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors">
+                  <component :is="showCurrentPassword ? EyeOff : Eye" :size="16" />
+                </button>
+              </div>
+            </div>
+
+            <!-- PIN Keamanan -->
+            <div v-else class="space-y-1.5">
+              <label for="profile-pin" class="text-[10px] uppercase font-bold tracking-wider text-white/40">
+                PIN Keamanan
+              </label>
+              <div class="relative">
+                <Lock :size="14" class="absolute left-4 top-1/2 -translate-y-1/2 text-white/25" />
+                <input
+                  id="profile-pin"
+                  v-model="profileForm.securityPin"
+                  type="text" inputmode="numeric" maxlength="6"
+                  :disabled="isSaving"
+                  placeholder="6 digit PIN kamu..."
+                  class="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 pl-11 pr-4 text-sm focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600/30 font-mono tracking-widest transition text-white disabled:opacity-50"
+                  @input="profileForm.securityPin = profileForm.securityPin.replace(/\D/g, '').slice(0, 6)"
+                />
+              </div>
+            </div>
+
             <!-- Password Baru -->
             <div class="space-y-1.5">
               <label for="profile-new-password" class="text-[10px] uppercase font-bold tracking-wider text-white/40">
@@ -128,22 +179,15 @@
                   placeholder="Masukkan password baru jika ingin diganti..."
                   class="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 pl-11 pr-12 text-sm focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600/30 font-mono transition text-white disabled:opacity-50"
                 />
-                <button
-                  type="button"
-                  tabindex="-1"
-                  @click="showNewPassword = !showNewPassword"
-                  class="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
-                >
+                <button type="button" tabindex="-1" @click="showNewPassword = !showNewPassword" class="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors">
                   <component :is="showNewPassword ? EyeOff : Eye" :size="16" />
                 </button>
               </div>
 
-              <!-- Strength meter -->
               <div v-if="profileForm.newPassword" class="flex items-center gap-2 pt-1">
                 <div class="flex gap-1 flex-1">
                   <span
-                    v-for="i in 4"
-                    :key="i"
+                    v-for="i in 4" :key="i"
                     class="h-1 flex-1 rounded-full transition-colors"
                     :class="i <= passwordStrength.score ? passwordStrength.color : 'bg-white/8'"
                   ></span>
@@ -174,12 +218,7 @@
                       : 'border-white/10 focus:border-red-600 focus:ring-1 focus:ring-red-600/30'
                   ]"
                 />
-                <button
-                  type="button"
-                  tabindex="-1"
-                  @click="showConfirmPassword = !showConfirmPassword"
-                  class="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
-                >
+                <button type="button" tabindex="-1" @click="showConfirmPassword = !showConfirmPassword" class="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors">
                   <component :is="showConfirmPassword ? EyeOff : Eye" :size="16" />
                 </button>
               </div>
@@ -199,10 +238,7 @@
               :disabled="isSaving || !canSubmit"
               class="w-full sm:w-fit flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white font-oswald uppercase px-8 py-3.5 rounded-xl text-xs font-bold tracking-widest transition disabled:opacity-40 disabled:hover:bg-red-600 cursor-pointer disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
             >
-              <span
-                v-if="isSaving"
-                class="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full"
-              />
+              <span v-if="isSaving" class="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
               <Save v-else :size="14" />
               {{ isSaving ? 'Menyimpan...' : 'Simpan Kredensial Baru' }}
             </button>
@@ -228,11 +264,15 @@ import apiClient from "@/api/client";
 const auth = useAuthStore();
 const isSaving = ref(false);
 
+const showCurrentPassword = ref(false);
 const showNewPassword = ref(false);
 const showConfirmPassword = ref(false);
+const verifyMethod = ref("password"); // "password" | "pin"
 
 const profileForm = ref({
   username: "",
+  currentPassword: "",
+  securityPin: "",
   newPassword: "",
   confirmPassword: "",
 });
@@ -252,7 +292,6 @@ const roleStyle = computed(() => {
   return map[userRole.value] || map.kasir;
 });
 
-// ── Validation ────────────────────────────────────────────────────────────
 const confirmMismatch = computed(() =>
   profileForm.value.newPassword &&
   profileForm.value.confirmPassword &&
@@ -277,25 +316,40 @@ const passwordStrength = computed(() => {
   return { score, ...levels[score] };
 });
 
+// Verifikasi ganti password sekarang OR: password lama ATAU PIN — bukan
+// dua-duanya wajib. Salah satu cukup, karena dua-duanya sama-sama cuma
+// diketahui pemilik akun.
 const canSubmit = computed(() => {
   if (!profileForm.value.username.trim()) return false;
   if (profileForm.value.newPassword) {
+    const hasVerification = verifyMethod.value === "password"
+      ? !!profileForm.value.currentPassword
+      : /^\d{6}$/.test(profileForm.value.securityPin);
+    if (!hasVerification) return false;
     if (profileForm.value.newPassword.length < 6) return false;
     if (profileForm.value.newPassword !== profileForm.value.confirmPassword) return false;
   }
   return true;
 });
 
-// Load data awal username user aktif dari store/state auth bawaan
 onMounted(() => {
   if (auth.user?.username) {
     profileForm.value.username = auth.user.username;
   }
 });
 
-// Aksi Update Kredensial Pengguna Ke Django DB Lokal
 const handleUpdateProfile = async () => {
   if (profileForm.value.newPassword) {
+    const hasVerification = verifyMethod.value === "password"
+      ? !!profileForm.value.currentPassword
+      : /^\d{6}$/.test(profileForm.value.securityPin);
+    if (!hasVerification) {
+      return toast.error(
+        verifyMethod.value === "password"
+          ? "Masukkan password saat ini buat konfirmasi ganti password!"
+          : "PIN harus 6 digit angka!"
+      );
+    }
     if (profileForm.value.newPassword.length < 6) {
       return toast.error("Password baru minimal harus 6 karakter!");
     }
@@ -306,40 +360,40 @@ const handleUpdateProfile = async () => {
 
   isSaving.value = true;
   try {
-    const payload = {
+    const response = await apiClient.put("/auth/profile/update/", {
       username: profileForm.value.username,
-    };
+    });
 
     if (profileForm.value.newPassword) {
-      payload.password = profileForm.value.newPassword;
-    }
+      const payload = { new_password: profileForm.value.newPassword };
+      if (verifyMethod.value === "password") payload.old_password = profileForm.value.currentPassword;
+      else payload.security_pin = profileForm.value.securityPin;
 
-    // apiClient sudah membawa token & base URL yang benar (lihat @/api/client)
-    const response = await apiClient.put("/auth/profile/update/", payload);
+      await apiClient.post("/auth/profile/change-password/", payload);
+    }
 
     toast.success("Kredensial profil kamu berhasil diperbarui!");
 
-    // 🔥 Sinkronisasi State: Update data di Pinia Store & localStorage biar live-sync
     if (response.data?.user) {
       const updatedUser = {
-        ...auth.user, // pertahankan token dan role lama yang sudah di-map
+        ...auth.user,
         username: response.data.user.username,
         name: response.data.user.name,
         email: response.data.user.email,
       };
-
       auth.user = updatedUser;
       localStorage.setItem("user", JSON.stringify(updatedUser));
     }
 
-    // Bersihkan form password setelah mutasi data di DB sukses
+    profileForm.value.currentPassword = "";
+    profileForm.value.securityPin = "";
     profileForm.value.newPassword = "";
     profileForm.value.confirmPassword = "";
   } catch (error) {
     console.error("Update Profile Error:", error);
     toast.error(
-      error.response?.data?.username?.[0] ||
       error.response?.data?.non_field_errors?.[0] ||
+      error.response?.data?.username?.[0] ||
       "Gagal memperbarui profil ke database."
     );
   } finally {
@@ -347,3 +401,20 @@ const handleUpdateProfile = async () => {
   }
 };
 </script>
+
+<style scoped>
+.verify-toggle {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;
+}
+.verify-btn {
+  padding: 0.6rem; border-radius: 10px;
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.4);
+  font-family: 'Oswald', sans-serif; font-size: 0.68rem;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  cursor: pointer; transition: all 0.15s;
+}
+.verify-btn-active {
+  background: rgba(220,38,38,0.12); border-color: rgba(220,38,38,0.4); color: #fca5a5;
+}
+</style>

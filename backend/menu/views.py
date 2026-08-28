@@ -8,7 +8,7 @@ from rest_framework import viewsets, status
 from django.db.models.functions import Coalesce
 
 from .models import Menu, Category
-from .serializers import MenuSerializer, CategorySerializer
+from .serializers import MenuSerializer, PublicMenuSerializer, CategorySerializer
 from order.permissions import PublicReadStaffWrite
 
 
@@ -22,6 +22,12 @@ class MenuViewSet(viewsets.ModelViewSet):
     queryset = Menu.objects.select_related("category").all()
     serializer_class = MenuSerializer
     permission_classes = [PublicReadStaffWrite]
+
+    def get_serializer_class(self):
+        is_staff = bool(self.request.user and self.request.user.is_authenticated and self.request.user.is_staff)
+        if self.request.method in ('GET',) and not is_staff:
+            return PublicMenuSerializer
+        return MenuSerializer
 
     def perform_destroy(self, instance):
         try:

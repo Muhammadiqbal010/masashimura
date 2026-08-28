@@ -15,8 +15,8 @@ load_dotenv()
 # ========================
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-ftxu0z)2z=ei553@4usfbx@*$037=ae8=8b+8bl(_%w*++t-uy'
-DEBUG = True
-ALLOWED_HOSTS = ['*', '.vercel.app', 'localhost', '127.0.0.1']
+DEBUG = False
+ALLOWED_HOSTS = ['masashimura-backend.vercel.app']
 
 # ========================
 # CLOUDINARY
@@ -76,7 +76,10 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated', # Semua API butuh login
-    ]
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'reset_password': '3/hour',  # <- baru: batasin percobaan reset password/PIN
+    },
 }
 
 # ========================
@@ -125,6 +128,9 @@ TIME_ZONE = 'Asia/Jakarta'
 USE_I18N = True
 USE_TZ = True
 STATIC_URL = 'static/'
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOWED_ORIGINS = [
+    "https://masashimura.vercel.app",
+]
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'

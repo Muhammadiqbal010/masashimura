@@ -290,7 +290,7 @@ import {
   ShoppingCart, ChefHat, BarChart3, Wallet, UserPlus,
   UserCheck, Edit3, ChevronDown, Zap, FolderOpen, ShieldCheck,
   CheckCircle2, XCircle, AlertTriangle, Info, X, Tag,
-  Crown, User, BriefcaseBusiness, Gift,
+  Crown, User, BriefcaseBusiness, Gift, KeyRound,
 } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import { useOrderNotificationsStore } from '@/stores/orderNotifications'
@@ -327,6 +327,7 @@ const dataManagementLinks = [
 const internalLinks = [
   { to: '/admin/finance',          icon: Wallet,   label: 'Buku Kas & Keuangan' },
   { to: '/admin/registerinternal', icon: UserPlus, label: 'Register Staff Baru' },
+  { to: '/admin/staff',            icon: KeyRound, label: 'Kelola PIN Staff' },
   { to: '/admin/settings',         icon: Settings, label: 'System Settings' },
 ]
 

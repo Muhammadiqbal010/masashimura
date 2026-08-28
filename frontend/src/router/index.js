@@ -16,123 +16,62 @@ const router = createRouter({
       component: () => import("../pages/Register.vue"),
     },
     {
-  path: "/checkout",
-  name: "Checkout",
-  component: () => import("../views/customer/Checkout.vue"), // Pastikan file Checkout.vue ada di folder pages
-  meta: { requiresAuth: false } // Pelanggan tidak perlu login untuk checkout
-},
-    {
-      path: "/menu",
-      name: "Menu",
-      component: () => import("../pages/Menu.vue"),
+      path: "/checkout",
+      name: "Checkout",
+      component: () => import("../views/customer/Checkout.vue"),
+      meta: { requiresAuth: false },
     },
-    {
-      path: "/contact",
-      name: "Contact",
-      component: () => import("../pages/Contact.vue"),
-    },
+    { path: "/menu", name: "Menu", component: () => import("../pages/Menu.vue") },
+    { path: "/contact", name: "Contact", component: () => import("../pages/Contact.vue") },
 
-    // 🌟 Admin Group Routes
     {
       path: "/admin",
       component: () => import("../layouts/AdminLayout.vue"),
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, roles: ["owner", "admin", "kasir"] },
       children: [
-        {
-          path: "",
-          name: "AdminDashboard",
-          component: () => import("../views/admin/AdminDashboard.vue"),
-        },
-        {
-          path: "menus",
-          name: "ManageMenus",
-          component: () => import("../views/admin/ManageMenus.vue"),
-        },
-        {
-          path: "promos",
-          name: "AdminPromos",
-          component: () => import("../views/admin/AdminPromos.vue"),
-        },
-        {
-          path: "point-rewards",
-          name: "AdminPointRewards",
-          component: () => import("../views/admin/AdminPointRewards.vue"),
-        },
-        {
-          path: "orders",
-          name: "ActiveOrders",
-          component: () => import("../views/admin/ActiveOrders.vue"),
-        },
-        {
-          path: "reports",
-          name: "OrderReports",
-          component: () => import("../pages/OrderReports.vue"), // Sesuai kode lo
-        },
-        {
-          path: "pos",
-          name: "NewOrder",
-          component: () => import("../pages/NewOrder.vue"), // Sesuai kode lo (Tempat kode POS kustom kita)
-        },
-        {
-          path: "customers",
-          name: "LoyalCustomers",
-          component: () => import("../pages/LoyalCustomers.vue"), // Sesuai kode lo
-        },
-        // 💰 Tambahkan Rute Finansial Baru (AdminFinance.vue) di Folder Views
-        {
-          path: "finance",
-          name: "AdminFinance",
-          component: () => import("../views/admin/AdminFinance.vue"),
-          meta: { roles: ["owner"] },
-        },
-        {
-          path: 'edit-homepage',
-          name: 'EditHomepage',
-          component: () => import("../views/admin/EditHomepage.vue"),
-        },
-        // 👥 Tambahkan Rute Register Staff Baru (Register.vue) di Folder Views
-        {
-          path: "registerinternal",
-          name: "RegisterStaff",
-          component: () => import("../pages/Register.vue"),
-        },
-        // 👤 Tambahkan Rute Profile Baru (UserProfile.vue) di Folder Views
-        {
-          path: "profile",
-          name: "UserProfile",
-          component: () => import("../pages/UserProfile.vue"),
-        },
-        {
-          path: "settings",
-          name: "AdminSettings",
-          component: () => import("../views/admin/AdminSettings.vue"),
-          meta: { roles: ["owner"] },
-        },
+        { path: "", name: "AdminDashboard", component: () => import("../views/admin/AdminDashboard.vue"), meta: { roles: ["owner", "admin"] } },
+        { path: "menus", name: "ManageMenus", component: () => import("../views/admin/ManageMenus.vue"), meta: { roles: ["owner", "admin"] } },
+        { path: "promos", name: "AdminPromos", component: () => import("../views/admin/AdminPromos.vue"), meta: { roles: ["owner", "admin"] } },
+        { path: "point-rewards", name: "AdminPointRewards", component: () => import("../views/admin/AdminPointRewards.vue"), meta: { roles: ["owner", "admin"] } },
+        { path: "orders", name: "ActiveOrders", component: () => import("../views/admin/ActiveOrders.vue"), meta: { roles: ["owner", "admin", "kasir"] } },
+        { path: "reports", name: "OrderReports", component: () => import("../pages/OrderReports.vue"), meta: { roles: ["owner", "admin"] } },
+        { path: "pos", name: "NewOrder", component: () => import("../pages/NewOrder.vue"), meta: { roles: ["owner", "admin", "kasir"] } },
+        { path: "customers", name: "LoyalCustomers", component: () => import("../pages/LoyalCustomers.vue"), meta: { roles: ["owner", "admin"] } },
+        { path: "finance", name: "AdminFinance", component: () => import("../views/admin/AdminFinance.vue"), meta: { roles: ["owner"] } },
+        { path: "edit-homepage", name: "EditHomepage", component: () => import("../views/admin/EditHomepage.vue"), meta: { roles: ["owner", "admin"] } },
+        { path: "registerinternal", name: "RegisterStaff", component: () => import("../pages/Register.vue"), meta: { roles: ["owner"] } },
+        { path: "profile", name: "UserProfile", component: () => import("../pages/UserProfile.vue"), meta: { roles: ["owner", "admin", "kasir"] } },
+        { path: "settings", name: "AdminSettings", component: () => import("../views/admin/AdminSettings.vue"), meta: { roles: ["owner"] } },
+        { path: "staff", name: "ManageStaff", component: () => import("../views/admin/ManageStaff.vue"), meta: { roles: ["owner"] } },
       ],
     },
-    { path: "/:pathMatch(.*)*", redirect: "/" },
+
+    // 404 — catch-all PALING BAWAH, harus komponen sendiri, BUKAN redirect
+    { path: "/:pathMatch(.*)*", name: "NotFound", component: () => import("../pages/NotFound.vue") },
   ],
 });
 
-// Auth Guard
 router.beforeEach((to) => {
   const token = localStorage.getItem("token");
-  const userRole = localStorage.getItem("role")?.toLowerCase(); // Normalisasi casing agar aman
+  const userRole = localStorage.getItem("role")?.toLowerCase();
+  const STAFF_ROLES = ["owner", "admin", "kasir"];
 
   if (to.matched.some((record) => record.meta.requiresAuth)) {
     if (!token) return { name: "Login" };
 
-    // Proteksi role pelanggan agar tidak masuk ke area admin
-    if (userRole === "pelanggan") return { name: "Menu" };
+    // Allowlist: cuma 3 role staff yang boleh masuk /admin sama sekali
+    if (!STAFF_ROLES.includes(userRole)) return { name: "Menu" };
 
-    // Proteksi rute khusus owner
-    if (to.meta.roles && !to.meta.roles.includes(userRole))
+    // Cek role spesifik per halaman (ambil meta.roles paling dalam yang match)
+    const matchedWithRoles = [...to.matched].reverse().find((r) => r.meta.roles);
+    if (matchedWithRoles && !matchedWithRoles.meta.roles.includes(userRole)) {
       return { name: "AdminDashboard" };
+    }
   }
 
-  // Mencegah user yang sudah login mengakses halaman auth
-  if ((to.name === "Login" || to.name === "Register") && token)
+  if ((to.name === "Login" || to.name === "Register") && token) {
     return { name: "AdminDashboard" };
+  }
 
   return true;
 });

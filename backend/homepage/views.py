@@ -5,12 +5,13 @@ from rest_framework.authentication import TokenAuthentication
 
 from .models import HomepageConfig, BentoFacility, GalleryLookbook
 from .serializers import HomepageConfigSerializer, BentoFacilitySerializer, GalleryLookbookSerializer
+from accounts.permissions import IsAdminOrOwner
 
 # ---------------------------------------------------------
 # 1. CMS CONFIG (HERO, ABOUT, METRICS)
 # ---------------------------------------------------------
 class CurrentHomepageConfigView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminOrOwner]
 
     def get(self, request):
         config = HomepageConfig.objects.first()
@@ -21,7 +22,7 @@ class CurrentHomepageConfigView(APIView):
 
 class UpdateHomepageConfigView(APIView):
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminOrOwner]
 
     def post(self, request):
         config = HomepageConfig.objects.first()
@@ -38,7 +39,7 @@ class UpdateHomepageConfigView(APIView):
 # 🧱 2. MODUL BENTO FACILITY DINAMIS
 # ---------------------------------------------------------
 class BentoFacilityListView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminOrOwner]
 
     def get(self, request):
         # Ambil semua fasilitas bento diurutkan dari susunan order-nya
@@ -48,7 +49,7 @@ class BentoFacilityListView(APIView):
 
 class BentoFacilityCreateView(APIView):
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminOrOwner]
 
     def post(self, request):
         serializer = BentoFacilitySerializer(data=request.data)
@@ -59,7 +60,7 @@ class BentoFacilityCreateView(APIView):
 
 class BentoFacilityDetailView(APIView):
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminOrOwner]
 
     def get_object(self, pk):
         try:
@@ -89,7 +90,7 @@ class BentoFacilityDetailView(APIView):
 # 📸 3. MODUL GALLERY EVENT DINAMIS (WITH TITLE)
 # ---------------------------------------------------------
 class GalleryListView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminOrOwner]
 
     def get(self, request):
         # Ambil seluruh galeri event dari yang terupdate (paling baru dibuat)
@@ -99,7 +100,7 @@ class GalleryListView(APIView):
 
 class GalleryCreateView(APIView):
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminOrOwner]
 
     def post(self, request):
         serializer = GalleryLookbookSerializer(data=request.data)
@@ -110,7 +111,7 @@ class GalleryCreateView(APIView):
 
 class GalleryDetailView(APIView):
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminOrOwner]
 
     def get_object(self, pk):
         try:
@@ -136,7 +137,7 @@ class GalleryDetailView(APIView):
         gallery_item.delete()
         return Response({"message": "Foto galeri & event berhasil dihapus"}, status=200)
 class GoogleMapsReviewsView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminOrOwner]
 
     def get(self, request):
         # Ini adalah data review asli dari Google Maps yang lo kasih tadi
