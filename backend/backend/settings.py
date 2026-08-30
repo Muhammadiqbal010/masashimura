@@ -115,7 +115,7 @@ DATABASES = {
         'NAME': os.getenv('DB_NAME', 'postgres'),
         'USER': os.getenv('DB_USER'),
         'PASSWORD': os.getenv('DB_PASSWORD'),
-        'HOST': os.getenv('DB_HOST'),  # Jangan kasih default '127.0.0.1'
+        'HOST': os.getenv('DB_HOST'),
         'PORT': os.getenv('DB_PORT', '6543'),
         'OPTIONS': {
             'sslmode': 'require',  # Wajib untuk Supabase
@@ -135,8 +135,8 @@ USE_I18N = True
 USE_TZ = True
 STATIC_URL = 'static/'
 CORS_ALLOW_ALL_ORIGINS = False
-CORS_ALLOWED_ORIGINS = [
-    "https://masashimura.vercel.app",
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://masashimura.*\.vercel\.app$",
 ]
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
