@@ -341,29 +341,97 @@
           <p>Tidak ada tagihan tertunda</p>
         </div>
 
-        <div class="drawer-list">
-          <div
-            v-for="order in filteredUnpaidOrders"
-            :key="order.id"
-            class="drawer-order-card"
-          >
-            <div class="drawer-order-top">
-              <div>
-                <p class="drawer-order-num">{{ order.order_number }}</p>
-                <p class="drawer-order-name">{{ order.customer_name || 'Walk In' }}</p>
-                <p class="drawer-order-phone">{{ order.customer_phone || '—' }}</p>
-              </div>
-              <div class="drawer-order-right">
-                <p class="drawer-order-total">{{ formatPrice(order.total_price) }}</p>
-                <p class="drawer-order-items">{{ order.items.length }} item</p>
-              </div>
-            </div>
-            <button class="drawer-pay-btn" @click="openPaymentModal(order)">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12h.01"/></svg>
-              Bayar Sekarang
-            </button>
-          </div>
-        </div>
+        <div
+  v-for="order in filteredUnpaidOrders"
+  :key="order.id"
+  class="drawer-order-card"
+>
+  <div class="drawer-order-top">
+    <div>
+      <p class="drawer-order-num">{{ order.order_number }}</p>
+      <p class="drawer-order-name">{{ order.customer_name || 'Walk In' }}</p>
+      <p class="drawer-order-phone">{{ order.customer_phone || '—' }}</p>
+    </div>
+    <div class="drawer-order-right">
+      <p class="drawer-order-total">{{ formatPrice(order.total_price) }}</p>
+      <p class="drawer-order-items">{{ order.items.length }} item</p>
+    </div>
+  </div>
+
+  <!-- Daftar menu yang dipesan -->
+  <ul class="drawer-items">
+    <li v-for="item in order.items" :key="item.id" class="drawer-item">
+      <div class="drawer-item-info">
+        <span class="drawer-item-name">{{ item.menu_name }}</span>
+        <span v-if="item.is_point_redemption" class="drawer-item-note">Reward poin</span>
+        <span v-else-if="item.notes" class="drawer-item-note">{{ item.notes }}</span>
+      </div>
+
+      <!-- mode ubah item -->
+      <div v-if="isMode(order, 'edit') && !item.is_point_redemption" class="qty-stepper">
+        <button :disabled="isBusy" @click="changeQty(order, item, -1)">−</button>
+        <span>{{ item.quantity }}</span>
+        <button :disabled="isBusy" @click="changeQty(order, item, 1)">+</button>
+      </div>
+
+      <!-- mode pisah bayar -->
+      <div v-else-if="isMode(order, 'split') && !item.is_point_redemption" class="qty-stepper">
+        <button @click="stepSplit(item, -1)">−</button>
+        <span>{{ splitQty[item.id] || 0 }}/{{ item.quantity }}</span>
+        <button @click="stepSplit(item, 1)">+</button>
+      </div>
+
+      <span v-else class="drawer-item-qty">×{{ item.quantity }}</span>
+      <span class="drawer-item-price">{{ formatPrice(Number(item.price) * item.quantity) }}</span>
+    </li>
+  </ul>
+
+  <!-- Tambah menu (mode ubah item) -->
+  <div v-if="isMode(order, 'edit')" class="drawer-add-row">
+    <select
+      v-model="addMenuId"
+      class="pos-input"
+      :disabled="isBusy"
+      @change="addItemToOrder(order)"
+    >
+      <option value="" disabled>+ Tambah menu…</option>
+      <option v-for="m in addableMenus" :key="m.id" :value="m.id">
+        {{ m.name }} — {{ formatPrice(m.price) }}
+      </option>
+    </select>
+  </div>
+
+  <!-- Panel pisah bayar -->
+  <div v-if="isMode(order, 'split')" class="drawer-split-box">
+    <p class="drawer-hint">Atur jumlah yang dipindah ke nota baru (yang tidak dipilih tetap di nota ini).</p>
+    <input v-model="splitName" class="pos-input" placeholder="Nama nota baru (opsional)" />
+    <div class="drawer-split-total">
+      <span>Nota baru</span>
+      <span>{{ formatPrice(splitSelectedTotal(order)) }}</span>
+    </div>
+    <button class="drawer-pay-btn" :disabled="isBusy" @click="submitSplit(order)">
+      Buat Nota Terpisah
+    </button>
+  </div>
+
+  <div class="drawer-actions">
+    <button class="drawer-ghost-btn" @click="toggleCardMode(order, 'edit')">
+      {{ isMode(order, 'edit') ? 'Selesai' : 'Ubah Item' }}
+    </button>
+    <button
+      v-if="order.items.length > 1 || (order.items[0] && order.items[0].quantity > 1)"
+      class="drawer-ghost-btn"
+      @click="toggleCardMode(order, 'split')"
+    >
+      {{ isMode(order, 'split') ? 'Batal Pisah' : 'Pisah Bayar' }}
+    </button>
+  </div>
+
+  <button class="drawer-pay-btn" @click="openPaymentModal(order)">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12h.01"/></svg>
+    Bayar Sekarang
+  </button>
+</div>
 
       </div>
     </div>
@@ -712,6 +780,90 @@ const confirmPayment = async () => {
     fetchUnpaidOrders();
   } catch { toast.error("Pembayaran gagal"); }
   finally { isPaying.value = false; }
+};
+
+// ── Ubah item & pisah bayar di drawer Tagihan ─────────────────────────
+const cardMode  = ref({ id: null, mode: null }); // mode: 'edit' | 'split'
+const isBusy    = ref(false);
+const addMenuId = ref("");
+const splitQty  = ref({});   // { [itemId]: jumlah yang dipindah ke nota baru }
+const splitName = ref("");
+
+const isMode = (order, mode) =>
+  cardMode.value.id === order.id && cardMode.value.mode === mode;
+
+const toggleCardMode = (order, mode) => {
+  cardMode.value = isMode(order, mode) ? { id: null, mode: null } : { id: order.id, mode };
+  splitQty.value = {}; splitName.value = ""; addMenuId.value = "";
+};
+
+const addableMenus = computed(() =>
+  menus.value.filter(m => m.is_available !== false)
+);
+
+const replaceUnpaid = (updated) => {
+  const i = unpaidOrders.value.findIndex(o => o.id === updated.id);
+  if (i !== -1) unpaidOrders.value[i] = updated;
+};
+
+const apiError = (e, fallback) =>
+  toast.error(e.response?.data?.detail || e.response?.data?.error || fallback);
+
+const changeQty = async (order, item, delta) => {
+  const newQty = item.quantity + delta;
+  if (newQty <= 0 && !confirm(`Hapus ${item.menu_name} dari nota?`)) return;
+  isBusy.value = true;
+  try {
+    const { data } = newQty <= 0
+      ? await apiClient.delete(`/orders/${order.id}/items/${item.id}/`)
+      : await apiClient.patch(`/orders/${order.id}/items/${item.id}/`, { quantity: newQty });
+    replaceUnpaid(data);
+  } catch (e) { apiError(e, "Gagal mengubah item"); }
+  finally { isBusy.value = false; }
+};
+
+const addItemToOrder = async (order) => {
+  if (!addMenuId.value) return;
+  isBusy.value = true;
+  try {
+    const { data } = await apiClient.post(`/orders/${order.id}/items/`, {
+      menu_id: addMenuId.value, quantity: 1,
+    });
+    replaceUnpaid(data);
+  } catch (e) { apiError(e, "Gagal menambah item"); }
+  finally { isBusy.value = false; addMenuId.value = ""; }
+};
+
+const stepSplit = (item, delta) => {
+  const cur = splitQty.value[item.id] || 0;
+  splitQty.value = {
+    ...splitQty.value,
+    [item.id]: Math.min(Math.max(cur + delta, 0), item.quantity),
+  };
+};
+
+const splitSelectedTotal = (order) =>
+  order.items.reduce((sum, i) => sum + (splitQty.value[i.id] || 0) * Number(i.price), 0);
+
+const submitSplit = async (order) => {
+  const items = Object.entries(splitQty.value)
+    .filter(([, q]) => q > 0)
+    .map(([id, q]) => ({ item_id: Number(id), quantity: q }));
+  if (!items.length) return toast.error("Pilih dulu item yang mau dipisah");
+
+  isBusy.value = true;
+  try {
+    await apiClient.post(`/orders/${order.id}/split/`, {
+      items,
+      customer_name: splitName.value.trim(),
+      kasir_name: kasirName.value,
+    });
+    toast.success("Nota dipisah — sekarang bisa dibayar sendiri-sendiri");
+    cardMode.value = { id: null, mode: null };
+    splitQty.value = {}; splitName.value = "";
+    await fetchUnpaidOrders();
+  } catch (e) { apiError(e, "Gagal memisah nota"); }
+  finally { isBusy.value = false; }
 };
 
 const shareReceiptAsImage = async (orderData) => {
@@ -1302,4 +1454,26 @@ input[type="number"] { -moz-appearance: textfield; }
   }
   .mcf-total { font-family: monospace; font-weight: 800; font-size: 0.85rem; }
 }
+
+.drawer-items { list-style: none; margin: 0.75rem 0 0.5rem; padding: 0.6rem 0 0; border-top: 1px dashed rgba(255,255,255,0.1); display: flex; flex-direction: column; gap: 0.45rem; }
+.drawer-item { display: flex; align-items: center; gap: 0.6rem; font-size: 0.78rem; }
+.drawer-item-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.drawer-item-name { color: rgba(255,255,255,0.85); }
+.drawer-item-note { font-size: 0.65rem; color: rgba(255,255,255,0.35); }
+.drawer-item-qty { color: rgba(255,255,255,0.45); font-family: monospace; }
+.drawer-item-price { font-family: monospace; color: rgba(255,255,255,0.7); min-width: 4.5rem; text-align: right; }
+
+.qty-stepper { display: flex; align-items: center; gap: 0.4rem; font-family: monospace; font-size: 0.75rem; }
+.qty-stepper button { width: 1.6rem; height: 1.6rem; border-radius: 0.4rem; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: #fff; cursor: pointer; }
+.qty-stepper button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.drawer-add-row { margin: 0.5rem 0; }
+.drawer-split-box { margin: 0.5rem 0; padding: 0.75rem; border: 1px dashed rgba(255,255,255,0.15); border-radius: 0.6rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.drawer-hint { font-size: 0.68rem; color: rgba(255,255,255,0.4); margin: 0; }
+.drawer-split-total { display: flex; justify-content: space-between; font-size: 0.8rem; font-family: monospace; }
+
+.drawer-actions { display: flex; gap: 0.5rem; margin: 0.5rem 0; }
+.drawer-ghost-btn { flex: 1; padding: 0.5rem; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; border-radius: 0.5rem; border: 1px solid rgba(255,255,255,0.15); background: transparent; color: rgba(255,255,255,0.7); cursor: pointer; }
+.drawer-ghost-btn:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
+
 </style>
