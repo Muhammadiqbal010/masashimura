@@ -1,24 +1,45 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.authentication import TokenAuthentication
 
 from .models import HomepageConfig, BentoFacility, GalleryLookbook
-from .serializers import HomepageConfigSerializer, BentoFacilitySerializer, GalleryLookbookSerializer
+from .serializers import (
+    HomepageConfigSerializer,
+    BentoFacilitySerializer,
+    GalleryLookbookSerializer,
+)
 from accounts.permissions import IsAdminOrOwner
+
+
+# =========================================================
+# CATATAN POLA
+# - Endpoint GET yang dipakai halaman Home (publik):
+#     authentication_classes = []  -> token basi diabaikan, gak bikin 401
+#     permission_classes = [AllowAny]
+# - Endpoint tulis (POST/PUT/DELETE) untuk CMS:
+#     TokenAuthentication + IsAdminOrOwner
+# =========================================================
+
+
+class PublicReadMixin:
+    """GET terbuka untuk semua pengunjung."""
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
 
 # ---------------------------------------------------------
 # 1. CMS CONFIG (HERO, ABOUT, METRICS)
 # ---------------------------------------------------------
-class CurrentHomepageConfigView(APIView):
-    permission_classes = [IsAdminOrOwner]
-
+class CurrentHomepageConfigView(PublicReadMixin, APIView):
     def get(self, request):
         config = HomepageConfig.objects.first()
         if not config:
-            config = HomepageConfig.objects.create()
-        serializer = HomepageConfigSerializer(config)
-        return Response(serializer.data, status=200)
+            # Jangan bikin record dari request anonim.
+            # Balas nilai default; record dibuat saat admin pertama kali simpan.
+            return Response(HomepageConfigSerializer(HomepageConfig()).data, status=200)
+        return Response(HomepageConfigSerializer(config).data, status=200)
+
 
 class UpdateHomepageConfigView(APIView):
     authentication_classes = [TokenAuthentication]
@@ -36,16 +57,14 @@ class UpdateHomepageConfigView(APIView):
 
 
 # ---------------------------------------------------------
-# 🧱 2. MODUL BENTO FACILITY DINAMIS
+# 2. MODUL BENTO FACILITY DINAMIS
 # ---------------------------------------------------------
-class BentoFacilityListView(APIView):
-    permission_classes = [IsAdminOrOwner]
-
+class BentoFacilityListView(PublicReadMixin, APIView):
     def get(self, request):
-        # Ambil semua fasilitas bento diurutkan dari susunan order-nya
-        facilities = BentoFacility.objects.all().order_by('order')
+        facilities = BentoFacility.objects.all().order_by("order")
         serializer = BentoFacilitySerializer(facilities, many=True)
         return Response(serializer.data, status=200)
+
 
 class BentoFacilityCreateView(APIView):
     authentication_classes = [TokenAuthentication]
@@ -57,6 +76,7 @@ class BentoFacilityCreateView(APIView):
             serializer.save()
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
+
 
 class BentoFacilityDetailView(APIView):
     authentication_classes = [TokenAuthentication]
@@ -87,16 +107,14 @@ class BentoFacilityDetailView(APIView):
 
 
 # ---------------------------------------------------------
-# 📸 3. MODUL GALLERY EVENT DINAMIS (WITH TITLE)
+# 3. MODUL GALLERY EVENT DINAMIS (WITH TITLE)
 # ---------------------------------------------------------
-class GalleryListView(APIView):
-    permission_classes = [IsAdminOrOwner]
-
+class GalleryListView(PublicReadMixin, APIView):
     def get(self, request):
-        # Ambil seluruh galeri event dari yang terupdate (paling baru dibuat)
-        gallery_items = GalleryLookbook.objects.all().order_by('-created_at')
+        gallery_items = GalleryLookbook.objects.all().order_by("-created_at")
         serializer = GalleryLookbookSerializer(gallery_items, many=True)
         return Response(serializer.data, status=200)
+
 
 class GalleryCreateView(APIView):
     authentication_classes = [TokenAuthentication]
@@ -108,6 +126,7 @@ class GalleryCreateView(APIView):
             serializer.save()
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
+
 
 class GalleryDetailView(APIView):
     authentication_classes = [TokenAuthentication]
@@ -136,17 +155,23 @@ class GalleryDetailView(APIView):
         # Logika pre_save/post_delete otomatis menghapus aset di Cloudinary
         gallery_item.delete()
         return Response({"message": "Foto galeri & event berhasil dihapus"}, status=200)
-class GoogleMapsReviewsView(APIView):
-    permission_classes = [IsAdminOrOwner]
 
+
+# ---------------------------------------------------------
+# 4. REVIEW GOOGLE MAPS
+# ---------------------------------------------------------
+class GoogleMapsReviewsView(PublicReadMixin, APIView):
     def get(self, request):
-        # Ini adalah data review asli dari Google Maps yang lo kasih tadi
         reviews_data = [
             {"name": "Deny Yusuf Akbar", "status": "Local Guide", "text": "Cozy place, like Izakaya in Japan. Cheap food, very delicious especially Mie Jebew with Chili oil."},
             {"name": "rifky aziz", "status": "Local Guide", "text": "Makanannya murah murah, rasanya mantul, pelayanan cepat, ada wifinya, cocok buat nobar."},
             {"name": "Issa Xander", "status": "Local Guide", "text": "Tempat Nya asik full musik juga. Ayam goreng sama Milkshake nya mantap."},
             {"name": "nabil khalid", "status": "Customer", "text": "Tempaaat rekomendassiii bangettt daah, gabakall nyesel, mao ajak pacar, rekanan jugaaa bisaa bangetttt!"},
             {"name": "ayimuhammad taupik", "status": "Customer", "text": "Harga merakyat, makanannya enak, ada wifinya lagi. Recomended buat tempat nongkrong."},
-            {"name": "Muhamad Riandy", "status": "Customer", "text": "Solusi nongkrong hemat budget, harga kaki lima rasa bintang 5."}
+            {"name": "Fajri Azhari", "status": "Customer", "text": "Tempat nongkrong rekomendasi, harga terjangkau, makanan nya juga enak, tempat nya bersih, pelayan nya oke, gass keun kesini."},
+            {"name": "Muhamad Riandy", "status": "Customer", "text": "Solusi nongkrong hemat budget, harga kaki lima rasa bintang 5."},
+            {"name": "Ceplik -_-", "status": "Customer", "text": "Tempatnya asik, bersih, nyaman. Serta harga murah juga euy."},
+            {"name": "Zyss", "status": "Customer", "text": "Mantap, paling cocok buat nongkrong."},
+            {"name": "joss tv", "status": "Customer", "text": "Tempat nya orang santuy."},
         ]
         return Response(reviews_data, status=200)

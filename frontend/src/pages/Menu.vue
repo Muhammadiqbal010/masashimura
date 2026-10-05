@@ -281,6 +281,7 @@ import { ShoppingCart, Plus, Search, X } from "lucide-vue-next"
 import Cart from "@/components/ui/Cart.vue"
 import MenuDetailModal from "@/components/ui/MenuDetailModal.vue"
 import { useStoreSettings } from "@/composables/useStoreSettings"
+import router from "@/router"
 
 const cartStore = useCartStore()
 const authStore = useAuthStore()
