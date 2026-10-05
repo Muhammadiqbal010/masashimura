@@ -71,7 +71,7 @@ export const useAuthStore = defineStore("auth", () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     localStorage.removeItem("role");
-    window.location.href = "/login";
+    window.location.href = "/masashimura-internalakses";
   };
 
   return {
