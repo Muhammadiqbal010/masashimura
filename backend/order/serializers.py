@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import Order, OrderItem, OrderPayment, LoyaltySettings, StoreSettings, PointReward
 from menu.models import Menu, Category
-import math
+from .pricing import web_price as calc_web_price
 
 class MenuSerializer(serializers.ModelSerializer):
     category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
@@ -12,7 +12,7 @@ class MenuSerializer(serializers.ModelSerializer):
     # Read-only URL gambar
     image_url = serializers.SerializerMethodField(read_only=True)
 
-    # Harga web = harga POS + 1% (dibulatkan ke atas ke kelipatan 100)
+    # Harga web = harga POS + 1% (dibulatkan ke atas ke kelipatan 500)
     web_price = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
@@ -38,10 +38,7 @@ class MenuSerializer(serializers.ModelSerializer):
 
     def get_web_price(self, obj):
         if obj.price:
-            # Markup 1%, bulatkan ke atas ke kelipatan 500
-            marked_up = float(obj.price) * 1.01
-            rounded   = math.ceil(marked_up / 500) * 500
-            return int(rounded)
+            return int(calc_web_price(obj.price))
         return None
 
 

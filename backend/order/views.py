@@ -1,30 +1,96 @@
-from django.db import transaction, models
-from django.db.models import Count, Sum, Max
-from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
-from django.utils import timezone
-from decimal import Decimal
-from django.db.models import Q
-import math
 import calendar
 import datetime
 from datetime import timedelta
+from decimal import Decimal
 
-# Finance app
-from finance.models import Expense
+from django.db import transaction
+from django.db.models import (
+    Count, DecimalField, ExpressionWrapper, F, Max, Min, Q, Sum,
+)
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
 
-# Promo — dipakai buat validasi & kunci kuota server-side saat create_order
-from promotions.models import Promo
-
+from rest_framework import viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Order, OrderItem, OrderPayment, CustomerLoyalty, LoyaltySettings, PAYMENT_METHOD_CHOICES, CANCEL_REASON_CHOICES, StoreSettings, PointReward, PointAdjustment, OrderDeletionLog
+from finance.models import Expense
 from menu.models import Menu
-from .serializers import OrderSerializer, LoyaltySettingsSerializer, StoreSettingsSerializer, PointRewardSerializer
-from rest_framework import viewsets
+from promotions.models import Promo  # validasi & kunci kuota server-side saat create_order
+
+from .pricing import web_price
+from .models import (
+    CANCEL_REASON_CHOICES,
+    PAYMENT_METHOD_CHOICES,
+    CustomerLoyalty,
+    LoyaltySettings,
+    Order,
+    OrderDeletionLog,
+    OrderItem,
+    OrderPayment,
+    PointAdjustment,
+    PointReward,
+    StoreSettings,
+)
+from .serializers import (
+    LoyaltySettingsSerializer,
+    OrderSerializer,
+    PointRewardSerializer,
+    StoreSettingsSerializer,
+)
+
+
+# ─────────────────────────────────────────────
+# HELPERS BERSAMA
+# ─────────────────────────────────────────────
+
+# Subtotal per baris item (price * quantity), dipakai di beberapa agregasi.
+LINE_TOTAL = ExpressionWrapper(
+    F("price") * F("quantity"),
+    output_field=DecimalField(),
+)
+
+
+def _int_param(request, name, default):
+    """Ambil query param integer; kalau kosong/invalid balik ke default (bukan 500)."""
+    try:
+        return int(request.query_params.get(name, default))
+    except (TypeError, ValueError):
+        return default
+
+
+def _price_for(source, menu):
+    """
+    Harga item: web = markup 1% (dibulatkan ke atas kelipatan 500),
+    POS = harga normal. SATU-SATUNYA tempat aturan ini ditulis.
+    """
+    if source == "web":
+        return web_price(menu.price)
+    return menu.price
+
+
+def _calc_promo_discount(promo, subtotal):
+    """
+    Nominal diskon promo untuk subtotal tertentu. SATU-SATUNYA tempat aturan
+    ini ditulis (dipakai create_order & _refresh_totals).
+    ASUMSI field Promo: discount_type ('percentage'/'fixed'), discount_value,
+    max_discount_amount.
+    """
+    if not promo:
+        return Decimal("0")
+
+    discount_value = Decimal(str(getattr(promo, "discount_value", 0) or 0))
+    if getattr(promo, "discount_type", "fixed") == "percentage":
+        discount = subtotal * discount_value / Decimal("100")
+        max_discount = getattr(promo, "max_discount_amount", None)
+        if max_discount:
+            discount = min(discount, Decimal(str(max_discount)))
+    else:
+        discount = discount_value
+
+    return min(discount, subtotal)
 
 
 # ─────────────────────────────────────────────
@@ -42,8 +108,8 @@ def create_order(request):
         return Response({"error": "Items kosong"}, status=400)
 
     customer_data = data.get('customer') or {}
-    phone = (customer_data.get('phone') or data.get('customer_phone', '')).strip()
-    name  = (customer_data.get('name')  or data.get('customer_name',  '')).strip()
+    phone = (customer_data.get('phone') or data.get('customer_phone', '') or '').strip()
+    name  = (customer_data.get('name')  or data.get('customer_name',  '') or '').strip()
 
     source         = data.get('source', 'pos')
     payment_method = data.get('payment_method', 'cash')
@@ -58,8 +124,11 @@ def create_order(request):
     table_number = data.get('table_number')
     notes        = data.get('notes', '')
 
-    amount_paid = Decimal(str(data.get('amount_paid', 0) or 0))
-    kasir_name  = data.get('kasir_name', '').strip()
+    try:
+        amount_paid = Decimal(str(data.get('amount_paid', 0) or 0))
+    except Exception:
+        return Response({"error": "amount_paid tidak valid"}, status=400)
+    kasir_name = (data.get('kasir_name') or '').strip()
 
     promo_id = data.get('promo_id')
 
@@ -69,8 +138,7 @@ def create_order(request):
 
     raw_payment_status = data.get('payment_status', '')
 
-    # Logika payment_status
-    is_qris = payment_method in ('qris', 'qris_manual', 'gateway')
+    is_qris         = payment_method in ('qris', 'qris_manual', 'gateway')
     proof_image_url = (data.get('proof_image_url') or '').strip()
 
     if source == 'web' and is_qris and not proof_image_url:
@@ -79,16 +147,13 @@ def create_order(request):
     if source == 'web':
         if is_qris:
             # Web + QRIS → JANGAN langsung 'paid'. Nunggu admin cek manual
-            # bukti pembayaran (proof_image_url) lewat endpoint verify-payment
-            # sebelum order dianggap lunas & masuk laporan omzet.
+            # bukti pembayaran lewat endpoint verify-payment sebelum order
+            # dianggap lunas & masuk laporan omzet.
             payment_status = 'pending_verification'
-            is_deferred    = False
-            order_status   = 'pending'
         else:
-            # Web + cash → pending seperti biasa
             payment_status = 'pending'
-            is_deferred    = False
-            order_status   = 'pending'
+        is_deferred  = False
+        order_status = 'pending'
     elif raw_payment_status == 'pending' and not is_qris:
         # POS "Makan Dulu" — hanya boleh cash
         payment_status = 'unpaid'
@@ -101,9 +166,6 @@ def create_order(request):
         order_status   = 'completed'
 
     # ── Validasi & kunci promo (kalau ada) ──────────────────────────
-    # ASUMSI field Promo: is_active, used_count, discount_type
-    # ('percentage'/'fixed'), discount_value, max_discount_amount, quota.
-    # SESUAIKAN kalau struktur promotions.models.Promo lo beda.
     promo_obj = None
     if promo_id:
         promo_obj = Promo.objects.select_for_update().filter(pk=promo_id, is_active=True).first()
@@ -115,9 +177,13 @@ def create_order(request):
             return Response({"error": "Kuota promo sudah habis"}, status=400)
 
     # ── Bikin Order dulu (item & payment nyusul, biar dapet FK) ─────
+    # status sengaja 'pending' dulu — status final (mis. 'completed' buat POS
+    # bayar langsung) baru diset di save() TERAKHIR, setelah total_price
+    # terisi. Kalau tidak, signal loyalty (post_save) jalan saat total masih 0
+    # dan poin customer tidak pernah ke-earn.
     order = Order.objects.create(
         source=source,
-        status=order_status,
+        status='pending',
         payment_status=payment_status,
         payment_method=payment_method,
         is_deferred_payment=is_deferred,
@@ -134,22 +200,18 @@ def create_order(request):
     subtotal = Decimal('0')
     for item in items_data:
         menu_id    = item.get('menu_id') or item.get('menu')
-        quantity   = int(item.get('quantity', 1) or 1)
         item_notes = (item.get('notes') or '').strip()
+        try:
+            quantity = int(item.get('quantity', 1) or 1)
+        except (TypeError, ValueError):
+            quantity = 0
 
         if not menu_id or quantity <= 0:
             transaction.set_rollback(True)
             return Response({"error": "Data item tidak valid (menu_id/quantity)"}, status=400)
 
-        menu = get_object_or_404(Menu, pk=menu_id)
-
-        # Web pakai harga markup 1% (dibulatkan ke atas kelipatan 500),
-        # POS pakai harga normal.
-        if source == 'web':
-            marked_up = float(menu.price) * 1.01
-            price = Decimal(int(math.ceil(marked_up / 500) * 500))
-        else:
-            price = menu.price
+        menu  = get_object_or_404(Menu, pk=menu_id)
+        price = _price_for(source, menu)
 
         OrderItem.objects.create(
             order=order, menu=menu, quantity=quantity,
@@ -204,26 +266,15 @@ def create_order(request):
         )
 
     # ── Hitung diskon promo & total akhir ────────────────────────────
-    promo_discount_amount = Decimal('0')
+    promo_discount_amount = _calc_promo_discount(promo_obj, subtotal)
     if promo_obj:
-        discount_type  = getattr(promo_obj, 'discount_type', 'fixed')
-        discount_value = Decimal(str(getattr(promo_obj, 'discount_value', 0) or 0))
-
-        if discount_type == 'percentage':
-            promo_discount_amount = subtotal * discount_value / Decimal('100')
-            max_discount = getattr(promo_obj, 'max_discount_amount', None)
-            if max_discount:
-                promo_discount_amount = min(promo_discount_amount, Decimal(str(max_discount)))
-        else:
-            promo_discount_amount = discount_value
-
-        promo_discount_amount = min(promo_discount_amount, subtotal)
-        Promo.objects.filter(pk=promo_obj.pk).update(used_count=models.F('used_count') + 1)
+        Promo.objects.filter(pk=promo_obj.pk).update(used_count=F('used_count') + 1)
 
     order.subtotal              = subtotal
     order.promo_discount_amount = promo_discount_amount
     total = subtotal - promo_discount_amount
     order.total_price = total if total > 0 else Decimal('0')
+    order.status      = order_status   # trigger signal loyalty dengan total yang sudah benar
 
     if amount_paid > 0:
         order.amount_paid   = amount_paid
@@ -244,7 +295,7 @@ def create_order(request):
     order.refresh_from_db()
     return Response(OrderSerializer(order).data, status=201)
 
-    
+
 @api_view(["GET"])
 @permission_classes([IsAdminUser])
 def list_orders(request):
@@ -257,7 +308,7 @@ def list_orders(request):
 
 
 # ─────────────────────────────────────────────
-# HAPUS PERMANEN — helper (dipakai oleh get_order saat method DELETE)
+# HAPUS PERMANEN — helper (dipakai get_order saat method DELETE)
 # ─────────────────────────────────────────────
 # Beda dari cancel_order (void): cancel_order cuma ubah status, row Order
 # tetap ada buat audit. Ini beneran ngilangin row Order dari DB (+
@@ -265,14 +316,11 @@ def list_orders(request):
 # yang baru ketauan belakangan, duplikat, dsb, TERMASUK order yang sudah
 # completed/paid.
 #
-# Karena ini destruktif & permanen, sebelum row-nya beneran hilang kita:
+# Sebelum row-nya hilang:
 #   1. Reverse poin loyalty yang sudah kadung di-earn dari order ini
-#      (kalau order.loyalty_applied True) — di-clamp ke 0, tidak dipaksa
-#      minus, kalau saldo customer sekarang sudah lebih kecil dari yang
-#      seharusnya di-reverse (kemungkinan sudah kepakai buat redeem lain).
+#      (kalau order.loyalty_applied True) — di-clamp ke 0.
 #   2. Reverse kuota promo (used_count) kalau order ini pakai promo.
-#   3. Simpan snapshot lengkap ke OrderDeletionLog, biar tetap ada jejak
-#      audit meskipun row Order-nya sendiri sudah hilang.
+#   3. Simpan snapshot lengkap ke OrderDeletionLog.
 @transaction.atomic
 def _delete_order_permanently(order, deleted_by=""):
     items_snapshot = [
@@ -293,9 +341,7 @@ def _delete_order_permanently(order, deleted_by=""):
     loyalty_points_reverted = 0
     loyalty_clamped = False
 
-    # ── Reverse poin loyalty — HANYA kalau order ini memang pernah
-    # trigger penambahan poin (loyalty_applied), biar nggak salah
-    # mengurangi poin dari order yang belum pernah completed.
+    # Reverse poin HANYA kalau order ini memang pernah trigger penambahan poin.
     if order.loyalty_applied and order.customer_phone:
         loyalty = CustomerLoyalty.objects.select_for_update().filter(
             phone=order.customer_phone
@@ -313,15 +359,12 @@ def _delete_order_permanently(order, deleted_by=""):
             loyalty.total_spent = max(loyalty.total_spent - order.total_price, Decimal("0"))
             loyalty.total_orders = max(loyalty.total_orders - 1, 0)
 
-            # Recompute last_order_at dari order completed LAIN milik
-            # customer ini (selain yang mau dihapus), biar estimasi
-            # kedaluwarsa poin tetap akurat.
-            other_last_order = (
+            # Recompute last_order_at dari order completed LAIN milik customer ini.
+            loyalty.last_order_at = (
                 Order.objects.filter(customer_phone=order.customer_phone, status="completed")
                 .exclude(pk=order.pk)
                 .aggregate(latest=Max("created_at"))["latest"]
             )
-            loyalty.last_order_at = other_last_order
 
             loyalty.save(update_fields=["points", "total_spent", "total_orders", "last_order_at"])
 
@@ -336,13 +379,12 @@ def _delete_order_permanently(order, deleted_by=""):
                 admin_name=deleted_by or "system",
             )
 
-    # ── Reverse kuota promo ──────────────────────────────────────────
+    # Reverse kuota promo (jangan sampai used_count jadi minus).
     promo_code_reverted = ""
     if order.promo_id:
-        Promo.objects.filter(pk=order.promo_id).update(used_count=models.F("used_count") - 1)
+        Promo.objects.filter(pk=order.promo_id, used_count__gt=0).update(used_count=F("used_count") - 1)
         promo_code_reverted = getattr(order.promo, "code", str(order.promo_id))
 
-    # ── Simpan snapshot audit SEBELUM row-nya kehapus ────────────────
     OrderDeletionLog.objects.create(
         order_number=order.order_number,
         order_source=order.source,
@@ -376,10 +418,8 @@ def get_order(request, pk):
     )
 
     if request.method == "DELETE":
-        # IsAdminUser di atas cuma cek is_staff (akses admin panel secara
-        # umum) — BUKAN role owner spesifik. Hapus permanen cuma boleh
-        # role owner, jadi dicek manual di sini juga, biar request langsung
-        # ke API (bypass tombol UI) tetap ke-block.
+        # IsAdminUser cuma cek is_staff — BUKAN role owner. Hapus permanen
+        # cuma boleh owner, jadi dicek manual di sini juga.
         profile = getattr(request.user, "profile", None)
         if not profile or profile.role != "owner":
             return Response(
@@ -426,9 +466,9 @@ def check_loyalty_status(request):
     GET /api/orders/check_loyalty_status/?phone=08xxx
 
     Response (poin, BUKAN diskon lagi):
-      - is_member       → True kalau nomor ini udah pernah tercatat di CustomerLoyalty
-      - points          → saldo poin aktif saat ini (udah lewat cek hangus)
-      - points_expiring_note → pesan kalau poin baru aja hangus atau kapan estimasi hangusnya
+      - is_member            → True kalau nomor ini udah tercatat di CustomerLoyalty
+      - points               → saldo poin aktif saat ini (udah lewat cek hangus)
+      - points_expiring_note → pesan kalau poin baru aja hangus / estimasi hangusnya
     """
     phone = request.query_params.get("phone", "").strip()
     if not phone:
@@ -438,8 +478,7 @@ def check_loyalty_status(request):
     if not loyalty:
         return Response({"is_member": False, "points": 0, "points_expiring_note": None})
 
-    # Cek hangus SEBELUM ditampilkan, biar customer selalu liat saldo yang akurat
-    # real-time — bukan cuma pas order baru selesai.
+    # Cek hangus SEBELUM ditampilkan, biar saldo selalu akurat real-time.
     just_expired = loyalty.check_and_expire_points()
 
     note = None
@@ -462,8 +501,11 @@ def check_loyalty_status(request):
 
 
 # ─────────────────────────────────────────────
-# POINT REWARDS — PUBLIK (cek saldo + rekomendasi tukar)
+# POINT REWARDS — PUBLIK
 # ─────────────────────────────────────────────
+
+LOCKED_RECOMMENDATION_LIMIT = 5
+
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
@@ -473,15 +515,11 @@ def available_point_rewards(request):
 
     Response:
       - points: saldo poin customer saat ini (0 kalau belum punya akun loyalty)
-      - affordable: reward yang poinnya udah cukup buat ditukar sekarang,
-        diurutkan dari yang paling MAHAL dulu (biar customer liat reward
-        paling worth-it dari poinnya, bukan yang termurah/paling gampang).
-      - locked: HANYA reward yang paling DEKAT ke saldo poin customer
-        (missing_points paling kecil), dibatasi max 5 — bukan seluruh
-        katalog. Ini biar rekomendasinya kerasa relevan/achievable ("dikit
-        lagi!"), bukan nge-dump semua menu yang masih jauh dari jangkauan.
+      - affordable: reward yang poinnya cukup, diurutkan dari yang paling MAHAL.
+      - locked: reward yang paling DEKAT ke saldo poin (missing_points paling
+        kecil), max 5 — biar rekomendasinya kerasa achievable.
     """
-    phone = request.query_params.get("phone", "").strip()
+    phone  = request.query_params.get("phone", "").strip()
     points = 0
     if phone:
         loyalty = CustomerLoyalty.objects.filter(phone=phone).first()
@@ -498,13 +536,8 @@ def available_point_rewards(request):
             data["missing_points"] = reward.point_cost - points
             locked.append((reward.point_cost - points, data))
 
-    # Affordable: yang paling mahal (paling "untung" buat ditukar) duluan.
     affordable.sort(key=lambda pair: pair[0], reverse=True)
-    # Locked: yang paling DEKAT (missing_points paling kecil) duluan,
-    # dibatasi 5 biar rekomendasinya fokus & achievable.
     locked.sort(key=lambda pair: pair[0])
-
-    LOCKED_RECOMMENDATION_LIMIT = 5
 
     return Response({
         "points": points,
@@ -533,7 +566,8 @@ def order_reports(request):
     month = request.query_params.get("month")
     year  = request.query_params.get("year")
 
-    qs = Order.objects.all()
+    # Konsisten dengan dashboard & laporan lengkap: hanya order lunas, bukan batal.
+    qs = Order.objects.filter(payment_status='paid').exclude(status='cancelled')
     if month and year:
         qs = qs.filter(created_at__month=month, created_at__year=year)
     elif year:
@@ -560,55 +594,37 @@ class DashboardStatsView(APIView):
         date_from = request.query_params.get('date_from')
         date_to   = request.query_params.get('date_to')
 
-        paid_qs = Order.objects.filter(
-            payment_status='paid',
-        ).exclude(status='cancelled')
+        paid_qs = Order.objects.filter(payment_status='paid').exclude(status='cancelled')
+        all_qs  = Order.objects.all()
+        top_menu_qs = OrderItem.objects.filter(
+            order__payment_status='paid',
+        ).exclude(order__status='cancelled')
 
         if date_from:
-            paid_qs = paid_qs.filter(created_at__date__gte=date_from)
+            paid_qs     = paid_qs.filter(created_at__date__gte=date_from)
+            all_qs      = all_qs.filter(created_at__date__gte=date_from)
+            top_menu_qs = top_menu_qs.filter(order__created_at__date__gte=date_from)
         if date_to:
-            paid_qs = paid_qs.filter(created_at__date__lte=date_to)
+            paid_qs     = paid_qs.filter(created_at__date__lte=date_to)
+            all_qs      = all_qs.filter(created_at__date__lte=date_to)
+            top_menu_qs = top_menu_qs.filter(order__created_at__date__lte=date_to)
 
         paid_stats = paid_qs.aggregate(
             total_revenue=Sum("total_price"),
             total_orders=Count("id"),
         )
 
-        all_qs = Order.objects.all()
-        if date_from:
-            all_qs = all_qs.filter(created_at__date__gte=date_from)
-        if date_to:
-            all_qs = all_qs.filter(created_at__date__lte=date_to)
-
         pending   = all_qs.filter(status="pending").count()
         completed = all_qs.filter(status="completed").count()
-
-        top_menu_qs = OrderItem.objects.filter(
-            order__payment_status='paid',
-        ).exclude(order__status='cancelled')
-
-        if date_from:
-            top_menu_qs = top_menu_qs.filter(order__created_at__date__gte=date_from)
-        if date_to:
-            top_menu_qs = top_menu_qs.filter(order__created_at__date__lte=date_to)
 
         top_menus = (
             top_menu_qs
             .values("menu__name")
-            .annotate(
-                total_qty=Sum("quantity"),
-                total_revenue=Sum(
-                    models.ExpressionWrapper(
-                        models.F("price") * models.F("quantity"),
-                        output_field=models.DecimalField(),
-                    )
-                ),
-            )
+            .annotate(total_qty=Sum("quantity"), total_revenue=Sum(LINE_TOTAL))
             .order_by("-total_qty")[:5]
         )
 
-        # Member loyal sekarang cuma soal "punya poin aktif atau enggak",
-        # gak ada lagi hitungan tier min_orders/min_spending.
+        # Member loyal = punya poin aktif (gak ada lagi tier min_orders/min_spending).
         loyal_count = CustomerLoyalty.objects.filter(points__gt=0).count()
 
         return Response({
@@ -658,9 +674,9 @@ def admin_dashboard_daily_stats(request):
 @api_view(["GET"])
 @permission_classes([IsAdminUser])
 def finance_monthly_summary(request):
-    from django.db.models.functions import TruncMonth, ExtractMonth
+    from django.db.models.functions import ExtractMonth, TruncMonth
 
-    year = int(request.query_params.get("year", timezone.now().year))
+    year = _int_param(request, "year", timezone.now().year)
 
     revenue_qs = (
         Order.objects
@@ -702,20 +718,19 @@ def finance_monthly_summary(request):
 def finance_daily_summary(request):
     """
     GET /api/orders/finance/daily/?year=2026&month=6
-    Mengembalikan pendapatan & pengeluaran per hari dalam satu bulan.
+    Pendapatan & pengeluaran per hari dalam satu bulan.
     """
     from django.db.models.functions import TruncDate
 
-    year  = int(request.query_params.get("year",  timezone.now().year))
-    month = int(request.query_params.get("month", timezone.now().month))
+    now   = timezone.now()
+    year  = _int_param(request, "year",  now.year)
+    month = _int_param(request, "month", now.month)
+    if not 1 <= month <= 12:
+        month = now.month
 
     revenue_qs = (
         Order.objects
-        .filter(
-            created_at__year=year,
-            created_at__month=month,
-            payment_status='paid',
-        )
+        .filter(created_at__year=year, created_at__month=month, payment_status='paid')
         .exclude(status='cancelled')
         .annotate(day=TruncDate('created_at'))
         .values('day')
@@ -795,29 +810,26 @@ class LoyaltySettingsView(APIView):
 
 class LoyalCustomersView(APIView):
     """
-    Sekarang sumber datanya langsung dari CustomerLoyalty (bukan agregasi
-    Order lagi) — karena points/total_spent/total_orders/last_order_at
-    semua udah kesimpen di sana secara real-time lewat signal tiap order
-    completed. Ngga ada lagi konsep "LOYAL MEMBER vs REGULAR" berdasarkan
-    tier — semua customer yang punya poin ya ditampilin apa adanya.
+    Sumber data langsung dari CustomerLoyalty (points/total_spent/total_orders/
+    last_order_at udah kesimpen real-time lewat signal tiap order completed).
     """
     permission_classes = [IsAdminUser]
 
     def get(self, request):
         settings  = LoyaltySettings.get_settings()
-        customers = []
-
-        for cl in CustomerLoyalty.objects.all().order_by('-points'):
-            customers.append({
-                "phone":            cl.phone,
-                "name":             cl.name,
-                "points":           cl.points,
-                "total_orders":     cl.total_orders,
-                "total_spent":      cl.total_spent,
-                "last_order_at":    cl.last_order_at,
-                "expiry_estimate":  cl.expiry_estimate_date(),
-                "points_expired":   cl.points_expired(),
-            })
+        customers = [
+            {
+                "phone":           cl.phone,
+                "name":            cl.name,
+                "points":          cl.points,
+                "total_orders":    cl.total_orders,
+                "total_spent":     cl.total_spent,
+                "last_order_at":   cl.last_order_at,
+                "expiry_estimate": cl.expiry_estimate_date(),
+                "points_expired":  cl.points_expired(),
+            }
+            for cl in CustomerLoyalty.objects.all().order_by('-points')
+        ]
 
         return Response({
             "settings":  LoyaltySettingsSerializer(settings).data,
@@ -827,13 +839,12 @@ class LoyalCustomersView(APIView):
 
 class AdjustPointsView(APIView):
     """
-    Pengganti GiveSpecialPriceView lama. Dulu admin kasih "diskon spesial %"
-    per customer — sekarang diganti adjust poin manual (nambah/mengurangi),
-    dengan alasan wajib diisi & tercatat sebagai PointAdjustment (audit log),
-    bukan cuma angka yang berubah tanpa jejak.
+    Adjust poin manual (nambah/mengurangi), alasan wajib & tercatat sebagai
+    PointAdjustment (audit log).
     """
     permission_classes = [IsAdminUser]
 
+    @transaction.atomic
     def post(self, request, phone):
         amount = request.data.get('amount')
         note   = (request.data.get('note') or '').strip()
@@ -849,10 +860,12 @@ class AdjustPointsView(APIView):
         if not note:
             return Response({'detail': 'Alasan (note) wajib diisi buat jejak audit'}, status=400)
 
-        loyalty, _ = CustomerLoyalty.objects.get_or_create(
+        CustomerLoyalty.objects.get_or_create(
             phone=phone,
             defaults={'name': request.data.get('name', '')},
         )
+        # Lock row biar dua adjust barengan gak saling timpa saldo.
+        loyalty = CustomerLoyalty.objects.select_for_update().get(phone=phone)
 
         new_balance = loyalty.points + amount
         if new_balance < 0:
@@ -870,14 +883,11 @@ class AdjustPointsView(APIView):
             note=note, admin_name=admin_name,
         )
 
-        return Response({
-            'phone':  phone,
-            'points': loyalty.points,
-        })
+        return Response({'phone': phone, 'points': loyalty.points})
 
 
 # ─────────────────────────────────────────────
-# UNPAID ORDERS & HISTORY
+# UNPAID ORDERS, PAYMENT, CANCEL
 # ─────────────────────────────────────────────
 
 @api_view(["GET"])
@@ -899,13 +909,12 @@ def unpaid_orders(request):
             | Q(order_number__icontains=search)
         )
 
-    return Response(
-        OrderSerializer(qs.order_by("-created_at"), many=True).data
-    )
+    return Response(OrderSerializer(qs.order_by("-created_at"), many=True).data)
 
 
 @api_view(["PATCH"])
 @permission_classes([IsAdminUser])
+@transaction.atomic
 def pay_order(request, pk):
     """
     Melunasi order. Mendukung 2 format request:
@@ -913,21 +922,28 @@ def pay_order(request, pk):
     1. FORMAT BARU (split bill / multi-payment) — kirim list `payments`:
        { "payments": [{"method": "cash", "amount": 5000}, {"method": "qris_manual", "amount": 8000}],
          "kasir_name": "Budi" }
-       Dipakai kalau bayarnya dicampur beberapa metode, atau dibagi
-       beberapa orang (tiap orang jadi satu baris payments).
 
-    2. FORMAT LAMA (satu metode, satu jumlah) — tetap didukung biar
-       kompatibel sama caller lain yang belum diupdate:
+    2. FORMAT LAMA (satu metode, satu jumlah):
        { "payment_method": "cash", "amount_paid": 20000, "kasir_name": "Budi" }
-    """
-    order = get_object_or_404(Order, pk=pk)
-    previous_status = order.status
 
-    kasir_name    = (request.data.get('kasir_name') or '').strip()
-    payments_data = request.data.get('payments')
+    Order di-lock selama proses, dan order yang sudah lunas / dibatalkan
+    ditolak — jadi double-klik / request barengan tidak bikin bayar dua kali.
+    """
+    order = get_object_or_404(Order.objects.select_for_update(), pk=pk)
+
+    if order.status == "cancelled" or order.payment_status in ("paid", "void"):
+        return Response(
+            {"detail": "Order ini sudah lunas atau dibatalkan, tidak bisa dibayar lagi."},
+            status=400,
+        )
+
+    previous_status = order.status
+    kasir_name      = (request.data.get('kasir_name') or '').strip()
+    payments_data   = request.data.get('payments')
 
     if payments_data:
         # ── Format baru: banyak baris pembayaran ──
+        valid_methods = {choice[0] for choice in PAYMENT_METHOD_CHOICES if choice[0] != 'mixed'}
         parsed_rows = []
         for row in payments_data:
             method = (row.get('method') or '').strip()
@@ -936,7 +952,6 @@ def pay_order(request, pk):
             except Exception:
                 return Response({"detail": "Nominal pembayaran tidak valid."}, status=400)
 
-            valid_methods = {choice[0] for choice in PAYMENT_METHOD_CHOICES if choice[0] != 'mixed'}
             if method not in valid_methods:
                 return Response({"detail": f"Metode pembayaran '{method}' tidak valid."}, status=400)
             if amount <= 0:
@@ -949,24 +964,23 @@ def pay_order(request, pk):
 
         total_paid = sum(amount for _, amount in parsed_rows)
         if total_paid < order.total_price:
-            return Response(
-                {"detail": "Total pembayaran belum menutupi tagihan."},
-                status=400,
-            )
+            return Response({"detail": "Total pembayaran belum menutupi tagihan."}, status=400)
 
-        # Hapus baris pembayaran lama kalau ini pengulangan (mis. retry), biar gak dobel.
         order.payments.all().delete()
         for method, amount in parsed_rows:
             OrderPayment.objects.create(order=order, method=method, amount=amount)
 
         distinct_methods = {method for method, _ in parsed_rows}
         order.payment_method = "mixed" if len(distinct_methods) > 1 else next(iter(distinct_methods))
-        order.amount_paid     = total_paid
-        order.change_amount   = max(total_paid - order.total_price, Decimal('0'))
+        order.amount_paid    = total_paid
+        order.change_amount  = max(total_paid - order.total_price, Decimal('0'))
 
     else:
         # ── Format lama: satu metode, satu jumlah ──
-        amount_paid = Decimal(str(request.data.get('amount_paid', 0) or 0))
+        try:
+            amount_paid = Decimal(str(request.data.get('amount_paid', 0) or 0))
+        except Exception:
+            return Response({"detail": "Nominal pembayaran tidak valid."}, status=400)
         method = request.data.get("payment_method") or order.payment_method or "cash"
 
         order.payments.all().delete()
@@ -976,7 +990,7 @@ def pay_order(request, pk):
         )
 
         order.payment_method = method
-        order.amount_paid     = amount_paid
+        order.amount_paid    = amount_paid
         if amount_paid > 0:
             order.change_amount = max(amount_paid - order.total_price, Decimal('0'))
 
@@ -989,26 +1003,26 @@ def pay_order(request, pk):
     order.refresh_from_db()
 
     return Response({
-        "success":       True,
-        "order_number":  order.order_number,
-        "change_amount": float(order.change_amount),
-        "amount_paid":   float(order.amount_paid),
+        "success":        True,
+        "order_number":   order.order_number,
+        "change_amount":  float(order.change_amount),
+        "amount_paid":    float(order.amount_paid),
         "payment_method": order.payment_method,
     })
 
+
 @api_view(["PATCH"])
 @permission_classes([IsAdminUser])
+@transaction.atomic
 def verify_qris_payment(request, pk):
     """
     PATCH /api/orders/<id>/verify-payment/
     Body: { "approve": true/false, "kasir_name": "...", "reject_note": "..." }
 
-    Dipanggil admin setelah ngecek proof_image_url order yang statusnya
-    'pending_verification'. approve=true → order dianggap lunas
-    (paid+completed). approve=false → order dibatalkan, dianggap
-    pembayaran tidak valid.
+    approve=true → order lunas (paid+completed).
+    approve=false → order dibatalkan (pembayaran tidak valid).
     """
-    order = get_object_or_404(Order, pk=pk)
+    order = get_object_or_404(Order.objects.select_for_update(), pk=pk)
 
     if order.payment_status != 'pending_verification':
         return Response(
@@ -1016,8 +1030,8 @@ def verify_qris_payment(request, pk):
             status=400,
         )
 
-    approve    = request.data.get('approve', True)
-    kasir_name = (request.data.get('kasir_name') or '').strip()
+    approve         = request.data.get('approve', True)
+    kasir_name      = (request.data.get('kasir_name') or '').strip()
     previous_status = order.status
 
     if approve:
@@ -1039,16 +1053,16 @@ def verify_qris_payment(request, pk):
 
     return Response(OrderSerializer(order).data)
 
+
 @api_view(["PATCH"])
 @permission_classes([IsAdminUser])
+@transaction.atomic
 def cancel_order(request, pk):
     """
-    Void/batalkan order dengan alasan wajib — dipakai kalau order salah
-    input, pelanggan batal, dsb. Order TIDAK dihapus dari database, cuma
-    diubah statusnya jadi 'cancelled' + dicatat alasannya, biar tetap ada
-    jejak buat audit/laporan (gak ada transaksi yang tiba-tiba hilang).
+    Void/batalkan order dengan alasan wajib. Order TIDAK dihapus dari
+    database, cuma diubah statusnya jadi 'cancelled' + dicatat alasannya.
     """
-    order = get_object_or_404(Order, pk=pk)
+    order = get_object_or_404(Order.objects.select_for_update(), pk=pk)
     previous_status = order.status
 
     if order.status == "completed":
@@ -1057,10 +1071,7 @@ def cancel_order(request, pk):
             status=400,
         )
     if order.status == "cancelled":
-        return Response(
-            {"detail": "Order ini sudah dibatalkan sebelumnya."},
-            status=400,
-        )
+        return Response({"detail": "Order ini sudah dibatalkan sebelumnya."}, status=400)
 
     reason = (request.data.get("cancel_reason") or "").strip()
     valid_reasons = {choice[0] for choice in CANCEL_REASON_CHOICES}
@@ -1070,64 +1081,59 @@ def cancel_order(request, pk):
             status=400,
         )
 
-    note       = (request.data.get("cancel_note") or "").strip()
-    kasir_name = (request.data.get("kasir_name") or "").strip()
-
     order.status         = "cancelled"
     order.payment_status = "void"
     order.cancel_reason  = reason
-    order.cancel_note    = note
+    order.cancel_note    = (request.data.get("cancel_note") or "").strip()
     order.cancelled_at   = timezone.now()
-    order.cancelled_by   = kasir_name
+    order.cancelled_by   = (request.data.get("kasir_name") or "").strip()
 
     order._previous_status = previous_status
     order.save()
     order.refresh_from_db()
 
     return Response({
-        "success":      True,
-        "order_number": order.order_number,
-        "status":       order.status,
+        "success":       True,
+        "order_number":  order.order_number,
+        "status":        order.status,
         "cancel_reason": order.cancel_reason,
     })
 
+
+# ─────────────────────────────────────────────
+# NOTIFIKASI ORDER BARU
+# ─────────────────────────────────────────────
+
 NOTIFICATION_BACKLOG_SKIP_THRESHOLD = 50
+
 
 @api_view(["GET"])
 @permission_classes([IsAdminUser])
 def new_order_notifications(request):
     """
     GET /api/orders/notifications/?after_id=123
- 
-    Polling ringan (bukan full order list) buat deteksi order BARU masuk
-    sejak id terakhir yang udah diketahui frontend. Dipakai admin dashboard
-    buat munculin toast + suara notifikasi tanpa nge-refetch semua data
-    order tiap beberapa detik.
- 
-    - Order dari POS (source='pos') di-exclude, karena itu diinput admin
-      sendiri di tempat — gak perlu notif ke diri sendiri.
-    - Kalau `after_id` gak dikirim (pemanggilan pertama kali pas dashboard
-      dibuka), balikin new_orders kosong — cuma ngasih tau `latest_id`
-      sebagai starting point. Ini penting biar order-order lama yang udah
-      ada dari sebelumnya gak ikut ke-notif ulang tiap kali admin refresh
-      halaman/pindah tab.
-    - Kalau gap antara after_id dan latest_id kelewat gede (lihat
-      NOTIFICATION_BACKLOG_SKIP_THRESHOLD), dianggap bulk insert, bukan
-      order beneran — cursor di-jump langsung, `backlog_skipped: True`
-      dikasih tau ke frontend biar bisa kasih pesan yang sesuai (bukan
-      diem-diem aja, biar admin ngerti kenapa gak ada toast satu-satu).
+
+    Polling ringan buat deteksi order BARU sejak id terakhir yang diketahui
+    frontend (toast + suara di admin dashboard).
+
+    - Order POS (source='pos') di-exclude.
+    - Tanpa `after_id` (pemanggilan pertama), balikin new_orders kosong +
+      `latest_id` sebagai starting point, biar order lama gak ke-notif ulang.
+    - Gap after_id → latest_id lebih besar dari
+      NOTIFICATION_BACKLOG_SKIP_THRESHOLD dianggap bulk insert: cursor
+      di-jump dan `backlog_skipped: True` dikirim ke frontend.
     """
     latest_id = Order.objects.order_by('-id').values_list('id', flat=True).first() or 0
- 
+
     after_id_raw = request.query_params.get("after_id")
     if after_id_raw is None:
         return Response({'new_orders': [], 'latest_id': latest_id})
- 
+
     try:
         after_id = int(after_id_raw)
     except (TypeError, ValueError):
         return Response({'new_orders': [], 'latest_id': latest_id})
- 
+
     gap = latest_id - after_id
     if gap > NOTIFICATION_BACKLOG_SKIP_THRESHOLD:
         return Response({
@@ -1136,33 +1142,37 @@ def new_order_notifications(request):
             'backlog_skipped': True,
             'backlog_count': gap,
         })
- 
+
     new_orders_qs = (
         Order.objects
         .filter(id__gt=after_id)
         .exclude(source='pos')
         .order_by('id')[:20]
     )
- 
+
     data = [
         {
-            'id':             o.id,
-            'order_number':   o.order_number,
-            'customer_name':  o.customer_name or 'Pelanggan',
-            'total_price':    o.total_price,
-            'source':         o.source,
-            'created_at':     o.created_at,
+            'id':            o.id,
+            'order_number':  o.order_number,
+            'customer_name': o.customer_name or 'Pelanggan',
+            'total_price':   o.total_price,
+            'source':        o.source,
+            'created_at':    o.created_at,
         }
         for o in new_orders_qs
     ]
     return Response({'new_orders': data, 'latest_id': latest_id})
 
 
+# ─────────────────────────────────────────────
+# HISTORY & LAPORAN LENGKAP
+# ─────────────────────────────────────────────
+
 @api_view(["GET"])
 @permission_classes([IsAdminUser])
 def order_history(request):
     """
-    GET /api/orders/history/?period=today|week|month
+    GET /api/orders/history/?period=today|week|month|year
     GET /api/orders/history/?period=month&year=2026&month=6
     """
     period = request.query_params.get("period", "today")
@@ -1177,20 +1187,15 @@ def order_history(request):
         qs = qs.filter(created_at__gte=now - timedelta(days=7))
 
     elif period == "month":
-        year  = request.query_params.get("year",  now.year)
-        month = request.query_params.get("month", now.month)
-        qs    = qs.filter(
-            created_at__year=int(year),
-            created_at__month=int(month),
+        qs = qs.filter(
+            created_at__year=_int_param(request, "year", now.year),
+            created_at__month=_int_param(request, "month", now.month),
         )
 
     elif period == "year":
-        year = request.query_params.get("year", now.year)
-        qs   = qs.filter(created_at__year=int(year))
+        qs = qs.filter(created_at__year=_int_param(request, "year", now.year))
 
-    return Response(
-        OrderSerializer(qs.order_by("-created_at"), many=True).data
-    )
+    return Response(OrderSerializer(qs.order_by("-created_at"), many=True).data)
 
 
 @api_view(["GET"])
@@ -1200,13 +1205,15 @@ def order_full_report(request):
 
     period = request.query_params.get("period", "lifetime")
     now    = timezone.now()
-    year   = int(request.query_params.get("year",  now.year))
-    month  = int(request.query_params.get("month", now.month))
-    days   = int(request.query_params.get("days",  7))
-    offset = int(request.query_params.get("offset", 0))
+    year   = _int_param(request, "year",   now.year)
+    month  = _int_param(request, "month",  now.month)
+    days   = _int_param(request, "days",   7)
+    offset = _int_param(request, "offset", 0)
 
     if days not in (7, 14, 28, 30):
         days = 7
+    if not 1 <= month <= 12:
+        month = now.month
 
     # ── 1. Tentukan period_start / period_end ──────────────────────────
     period_start = None
@@ -1225,7 +1232,9 @@ def order_full_report(request):
         period_end   = datetime.date(year, 12, 31)
 
     # ── 2. Base queryset ───────────────────────────────────────────────
-    qualifying_qs = Order.objects.filter(payment_status="paid").exclude(status="cancelled")
+    paid_qs = Order.objects.filter(payment_status="paid").exclude(status="cancelled")
+
+    qualifying_qs = paid_qs
     if period_start and period_end:
         qualifying_qs = qualifying_qs.filter(
             created_at__date__gte=period_start,
@@ -1245,15 +1254,10 @@ def order_full_report(request):
     menu_aktif      = Menu.objects.filter(is_active=True).count()
 
     # ── 4. Trend ───────────────────────────────────────────────────────
-    base_trend_qs = (
-        Order.objects.filter(payment_status="paid").exclude(status="cancelled")
-    )
-
     if period == "year":
-        BULAN_ID = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"]
+        BULAN_ID = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"]
         trend_qs = (
-            base_trend_qs
-            .filter(created_at__date__gte=period_start, created_at__date__lte=period_end)
+            qualifying_qs
             .annotate(period_label=TruncMonth("created_at"))
             .values("period_label")
             .annotate(omzet=Sum("total_price"), transaksi=Count("id"))
@@ -1266,8 +1270,7 @@ def order_full_report(request):
 
     elif period in ("week", "month") and period_start and period_end:
         trend_qs = (
-            base_trend_qs
-            .filter(created_at__date__gte=period_start, created_at__date__lte=period_end)
+            qualifying_qs
             .annotate(day=TruncDate("created_at"))
             .values("day")
             .annotate(omzet=Sum("total_price"), transaksi=Count("id"))
@@ -1279,7 +1282,7 @@ def order_full_report(request):
                 d = d.date()
             trend_map[d] = row
 
-        HARI_ID = ["Sen","Sel","Rab","Kam","Jum","Sab","Min"]
+        HARI_ID = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"]
         trend_labels, trend_dates, trend_omzet, trend_transaksi = [], [], [], []
         for i in range((period_end - period_start).days + 1):
             d   = period_start + timedelta(days=i)
@@ -1292,7 +1295,7 @@ def order_full_report(request):
     else:
         # Lifetime — by date
         trend_qs = (
-            base_trend_qs
+            qualifying_qs
             .annotate(day=TruncDate("created_at"))
             .values("day")
             .annotate(omzet=Sum("total_price"), transaksi=Count("id"))
@@ -1308,27 +1311,12 @@ def order_full_report(request):
 
     top_by_qty = list(
         base_item_qs.values("menu__name")
-        .annotate(
-            qty=Sum("quantity"),
-            omzet=Sum(
-                models.ExpressionWrapper(
-                    models.F("price") * models.F("quantity"),
-                    output_field=models.DecimalField(),
-                )
-            ),
-        )
+        .annotate(qty=Sum("quantity"), omzet=Sum(LINE_TOTAL))
         .order_by("-qty")[:10]
     )
     top_by_omzet = list(
         base_item_qs.values("menu__name")
-        .annotate(
-            omzet=Sum(
-                models.ExpressionWrapper(
-                    models.F("price") * models.F("quantity"),
-                    output_field=models.DecimalField(),
-                )
-            ),
-        )
+        .annotate(omzet=Sum(LINE_TOTAL))
         .order_by("-omzet")[:5]
     )
 
@@ -1365,14 +1353,12 @@ def order_full_report(request):
     first_order_map = {
         row["customer_phone"]: row["first_date"]
         for row in (
-            Order.objects.filter(payment_status="paid")
-            .exclude(status="cancelled")
-            .exclude(customer_phone="")
+            paid_qs.exclude(customer_phone="")
             .values("customer_phone")
-            .annotate(first_date=models.Min("created_at"))
+            .annotate(first_date=Min("created_at"))
         )
     }
-    phones_in_period = (
+    phones_in_period = list(
         qualifying_qs.exclude(customer_phone="")
         .values_list("customer_phone", flat=True)
         .distinct()
@@ -1388,13 +1374,9 @@ def order_full_report(request):
         else:
             pelanggan_baru += 1
 
-    # Member loyal sekarang = customer yang punya poin aktif (bukan tier
-    # min_orders/min_spending atau override diskon manual lagi).
-    per_phone_stats = qualifying_qs.exclude(customer_phone="").values_list(
-        "customer_phone", flat=True
-    ).distinct()
+    # Member loyal = customer di periode ini yang punya poin aktif.
     member_loyal = CustomerLoyalty.objects.filter(
-        phone__in=list(per_phone_stats), points__gt=0
+        phone__in=phones_in_period, points__gt=0
     ).count()
 
     # ── 9. Jam teramai ─────────────────────────────────────────────────
@@ -1415,12 +1397,12 @@ def order_full_report(request):
 
     return Response({
         "period": {
-            "mode":   period,
-            "year":   year,
-            "month":  month,
-            "days":   days,
-            "start":  str(period_start) if period_start else None,
-            "end":    str(period_end)   if period_end   else None,
+            "mode":  period,
+            "year":  year,
+            "month": month,
+            "days":  days,
+            "start": str(period_start) if period_start else None,
+            "end":   str(period_end)   if period_end   else None,
         },
         "stats": {
             "total_omzet":         float(total_omzet),
@@ -1442,7 +1424,7 @@ def order_full_report(request):
             {"name": r["menu__name"], "omzet": float(r["omzet"] or 0)}
             for r in top_by_omzet
         ],
-        "menu_tidak_laku": menu_tidak_laku,
+        "menu_tidak_laku":   menu_tidak_laku,
         "metode_pembayaran": metode_pembayaran,
         "pelanggan": {
             "baru":         pelanggan_baru,
@@ -1452,19 +1434,224 @@ def order_full_report(request):
         "jam_teramai": jam_teramai,
     })
 
+
+# ─────────────────────────────────────────────
+# STORE SETTINGS
+# ─────────────────────────────────────────────
+
 class StoreSettingsView(APIView):
     def get_permissions(self):
         if self.request.method == "GET":
             return [AllowAny()]
         return [IsAdminUser()]
- 
+
     def get(self, request):
-        settings = StoreSettings.get()
-        return Response(StoreSettingsSerializer(settings).data)
- 
+        return Response(StoreSettingsSerializer(StoreSettings.get()).data)
+
     def put(self, request):
         settings   = StoreSettings.get()
         serializer = StoreSettingsSerializer(settings, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
+
+
+# ─────────────────────────────────────────────
+# EDIT ITEM & PISAH NOTA (order belum lunas)
+# ─────────────────────────────────────────────
+
+def _check_editable(order):
+    """Item cuma boleh diubah selama order belum dibayar & belum dibatalkan."""
+    if order.status in ("completed", "cancelled") or order.payment_status not in ("unpaid", "pending"):
+        return Response(
+            {"detail": "Order ini sudah lunas / dibatalkan, item tidak bisa diubah lagi."},
+            status=400,
+        )
+    return None
+
+
+def _refresh_totals(order):
+    """
+    Hitung ulang subtotal, diskon promo, dan total. Diskon promo ikut dihitung
+    ulang (promo persen berubah saat item ditambah/dikurangi). Item tukar poin
+    harganya 0, jadi tidak mempengaruhi subtotal.
+    """
+    subtotal = sum((i.subtotal for i in order.items.all()), Decimal("0"))
+    promo_discount = _calc_promo_discount(order.promo, subtotal)
+
+    order.subtotal = subtotal
+    order.promo_discount_amount = promo_discount
+    total = subtotal - order.discount_amount - promo_discount
+    order.total_price = total if total > 0 else Decimal("0")
+    order.save(update_fields=["subtotal", "promo_discount_amount", "total_price"])
+
+
+@api_view(["POST"])
+@permission_classes([IsAdminUser])
+@transaction.atomic
+def add_order_item(request, pk):
+    """
+    Tambah menu ke order yang belum lunas.
+    Body: { "menu_id": 5, "quantity": 1, "notes": "" }
+    Menu + catatan yang sama sudah ada di nota → quantity-nya yang ditambah.
+    """
+    order = get_object_or_404(Order.objects.select_for_update(), pk=pk)
+    err = _check_editable(order)
+    if err:
+        return err
+
+    menu = get_object_or_404(Menu, pk=request.data.get("menu_id"))
+    try:
+        quantity = int(request.data.get("quantity", 1) or 1)
+    except (TypeError, ValueError):
+        return Response({"detail": "Quantity tidak valid."}, status=400)
+    if quantity <= 0:
+        return Response({"detail": "Quantity harus lebih dari 0."}, status=400)
+
+    notes = (request.data.get("notes") or "").strip()
+
+    existing = order.items.filter(menu=menu, notes=notes, is_point_redemption=False).first()
+    if existing:
+        existing.quantity += quantity
+        existing.save(update_fields=["quantity"])
+    else:
+        OrderItem.objects.create(
+            order=order, menu=menu, quantity=quantity,
+            price=_price_for(order.source, menu), notes=notes,
+        )
+
+    _refresh_totals(order)
+    order.refresh_from_db()
+    return Response(OrderSerializer(order).data)
+
+
+@api_view(["PATCH", "DELETE"])
+@permission_classes([IsAdminUser])
+@transaction.atomic
+def order_item_detail(request, pk, item_id):
+    """
+    PATCH  { "quantity": 3 }  → ubah jumlah (0 = hapus item)
+    DELETE                    → hapus item
+    """
+    order = get_object_or_404(Order.objects.select_for_update(), pk=pk)
+    err = _check_editable(order)
+    if err:
+        return err
+
+    item = get_object_or_404(OrderItem, pk=item_id, order=order)
+
+    if item.is_point_redemption:
+        return Response(
+            {"detail": "Item hasil tukar poin tidak bisa diubah (poin sudah terpotong). "
+                       "Kalau salah, batalkan order-nya."},
+            status=400,
+        )
+
+    if request.method == "DELETE":
+        new_qty = 0
+    else:
+        try:
+            new_qty = int(request.data.get("quantity", item.quantity))
+        except (TypeError, ValueError):
+            return Response({"detail": "Quantity tidak valid."}, status=400)
+
+    if new_qty <= 0:
+        if order.items.count() <= 1:
+            return Response(
+                {"detail": "Ini item terakhir di nota. Kalau mau dibatalkan semua, pakai Batalkan Order."},
+                status=400,
+            )
+        item.delete()
+    else:
+        item.quantity = new_qty
+        item.save(update_fields=["quantity"])
+
+    _refresh_totals(order)
+    order.refresh_from_db()
+    return Response(OrderSerializer(order).data)
+
+
+@api_view(["POST"])
+@permission_classes([IsAdminUser])
+@transaction.atomic
+def split_order(request, pk):
+    """
+    Pisah sebagian item ke NOTA BARU supaya bisa dibayar terpisah.
+
+    Body:
+    {
+      "items": [{"item_id": 12, "quantity": 1}, {"item_id": 13, "quantity": 2}],
+      "customer_name": "Budi",     # opsional, nama nota baru
+      "kasir_name": "Wawan"
+    }
+    quantity < jumlah di nota → itemnya dipecah (sisanya tetap di nota asal).
+    """
+    order = get_object_or_404(Order.objects.select_for_update(), pk=pk)
+    err = _check_editable(order)
+    if err:
+        return err
+
+    rows = request.data.get("items") or []
+    if not rows:
+        return Response({"detail": "Pilih minimal satu item yang mau dipisah."}, status=400)
+
+    moves, seen = [], set()
+    for row in rows:
+        item = order.items.filter(pk=row.get("item_id")).first()
+        if not item or item.pk in seen:
+            return Response({"detail": "Item tidak ditemukan / dobel di request."}, status=400)
+        if item.is_point_redemption:
+            return Response({"detail": "Item hasil tukar poin tidak bisa dipisah."}, status=400)
+        try:
+            qty = int(row.get("quantity") or 0)
+        except (TypeError, ValueError):
+            return Response({"detail": "Quantity tidak valid."}, status=400)
+        if qty <= 0 or qty > item.quantity:
+            return Response({"detail": f"Jumlah untuk {item.menu.name} tidak valid."}, status=400)
+        seen.add(item.pk)
+        moves.append((item, qty))
+
+    total_units = sum(i.quantity for i in order.items.all())
+    if total_units - sum(q for _, q in moves) <= 0:
+        return Response(
+            {"detail": "Sisakan minimal satu item di nota asal. Kalau semua dipindah, tidak perlu dipisah."},
+            status=400,
+        )
+
+    new_name   = (request.data.get("customer_name") or "").strip()
+    kasir_name = (request.data.get("kasir_name") or "").strip()
+
+    new_order = Order.objects.create(
+        source=order.source,
+        status="pending",
+        payment_status=order.payment_status,
+        payment_method=order.payment_method,
+        is_deferred_payment=order.is_deferred_payment,
+        customer_name=new_name or (f"{order.customer_name} (pisah)" if order.customer_name else "Pisahan"),
+        customer_phone="",   # sengaja kosong: poin loyalty tetap di nota asal
+        table_number=order.table_number,
+        notes=f"Dipisah dari {order.order_number}",
+        kasir_name=kasir_name or order.kasir_name,
+    )
+
+    for item, qty in moves:
+        if qty == item.quantity:
+            item.order = new_order
+            item.save(update_fields=["order"])
+        else:
+            item.quantity -= qty
+            item.save(update_fields=["quantity"])
+            OrderItem.objects.create(
+                order=new_order, menu=item.menu, quantity=qty,
+                price=item.price, notes=item.notes,
+            )
+
+    _refresh_totals(order)      # promo (kalau ada) tetap menempel di nota asal
+    _refresh_totals(new_order)
+    order.refresh_from_db()
+    new_order.refresh_from_db()
+
+    return Response({
+        "original":  OrderSerializer(order).data,
+        "new_order": OrderSerializer(new_order).data,
+    }, status=201)

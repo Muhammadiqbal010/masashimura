@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.db.models.signals import pre_save, post_save
 from dateutil.relativedelta import relativedelta
 from django.dispatch import receiver
@@ -200,7 +200,9 @@ class OrderItem(models.Model):
         return self.price * self.quantity
 
     def save(self, *args, **kwargs):
-        if not self.price:
+        # price=0 itu SAH (item tukar poin) — jangan ditimpa harga menu.
+        # Cuma isi otomatis kalau price benar-benar belum diset.
+        if self.price is None and self.menu:
             self.price = self.menu.price
         super().save(*args, **kwargs)
 
@@ -239,7 +241,7 @@ class OrderDeletionLog(models.Model):
     order_number   = models.CharField(max_length=30)
     order_source   = models.CharField(max_length=10)
     order_status   = models.CharField(max_length=15)
-    payment_status = models.CharField(max_length=10)
+    payment_status = models.CharField(max_length=25)
     payment_method = models.CharField(max_length=15, blank=True, null=True)
 
     customer_name  = models.CharField(max_length=100, blank=True)
@@ -480,19 +482,31 @@ def _track_previous_status(sender, instance, **kwargs):
 def _update_loyalty_on_complete(sender, instance, created, **kwargs):
     previous_status = getattr(instance, '_previous_status', None)
 
-    if (
+    if not (
         instance.status == 'completed'
         and previous_status != 'completed'
         and instance.customer_phone
     ):
-        loyalty, _ = CustomerLoyalty.objects.get_or_create(
+        return
+
+    with transaction.atomic():
+        # "Klaim" order ini secara atomik: cuma satu proses yang bisa ngubah
+        # loyalty_applied False -> True. Kalau sudah pernah di-apply (mis.
+        # status bolak-balik atau signal kepanggil dua kali), poin TIDAK
+        # ditambah lagi. update() juga gak retrigger post_save.
+        claimed = Order.objects.filter(pk=instance.pk, loyalty_applied=False).update(loyalty_applied=True)
+        if not claimed:
+            return
+
+        CustomerLoyalty.objects.get_or_create(
             phone=instance.customer_phone,
             defaults={'name': instance.customer_name},
         )
+        # Lock row biar dua order customer yang sama selesai barengan gak saling timpa saldo.
+        loyalty = CustomerLoyalty.objects.select_for_update().get(phone=instance.customer_phone)
 
         # Cek kedaluwarsa poin LAMA dulu (berdasarkan last_order_at SEBELUM
-        # order ini) sebelum poin baru ditambahkan — biar poin lama yang
-        # emang udah harus hangus ngga ikut "keselamatan" numpang di order baru.
+        # order ini) sebelum poin baru ditambahkan.
         loyalty.check_and_expire_points()
 
         rupiah_per_point = LoyaltySettings.get_settings().rupiah_per_point or 10000
@@ -507,13 +521,7 @@ def _update_loyalty_on_complete(sender, instance, created, **kwargs):
 
         loyalty.save()
 
-        # Catat berapa poin yang di-earn order ini langsung di row-nya,
-        # pakai queryset.update() (bukan instance.save()) biar signal ini
-        # nggak retrigger dirinya sendiri (post_save loop).
-        Order.objects.filter(pk=instance.pk).update(
-            loyalty_applied=True,
-            loyalty_points_earned=earned_points,
-        )
+        Order.objects.filter(pk=instance.pk).update(loyalty_points_earned=earned_points)
 
 
 def generate_order_number():
