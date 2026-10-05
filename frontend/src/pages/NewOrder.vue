@@ -4,7 +4,6 @@
     <!-- ── KATALOG MENU ─────────────────────────────────────────────── -->
     <div class="catalog-panel">
 
-      <!-- Catalog header -->
       <div class="catalog-header">
         <div>
           <p class="pos-eyebrow">Masashimura · Kasir</p>
@@ -13,48 +12,43 @@
         </div>
         <button @click="showUnpaidDrawer = true" class="unpaid-trigger">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          <span class="unpaid-label">Tagihan</span>
+          <span>Tagihan</span>
           <span v-if="unpaidOrders.length" class="unpaid-badge">{{ unpaidOrders.length }}</span>
         </button>
       </div>
 
-      <!-- Search bar -->
       <div class="search-bar">
         <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
         <input v-model="searchQuery" type="text" placeholder="Cari menu..." class="search-input" />
-        <button v-if="searchQuery" @click="searchQuery = ''" class="search-clear-btn">
+        <button v-if="searchQuery" @click="searchQuery = ''" class="search-clear-btn" aria-label="Hapus pencarian">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
         </button>
       </div>
 
-      <!-- Loading skeleton -->
       <div v-if="isLoadingMenus" class="menu-grid">
         <div v-for="n in 6" :key="n" class="menu-skeleton"></div>
       </div>
 
-      <!-- Error state -->
       <div v-else-if="menuLoadError" class="menu-error">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         <p>Gagal memuat katalog menu dari database</p>
         <button @click="fetchMenus" class="retry-btn">Coba Lagi</button>
       </div>
 
-      <!-- Empty state -->
       <div v-else-if="filteredMenus.length === 0" class="menu-empty">
         <div class="empty-icon">🍱</div>
         <p class="empty-text">Menu tidak ditemukan</p>
-        <p class="empty-hint">Coba kata kunci atau kategori lain</p>
+        <p class="empty-hint">Coba kata kunci lain</p>
       </div>
 
-      <!-- Menu grid -->
       <div v-else class="menu-grid">
         <button
           v-for="menu in filteredMenus"
           :key="menu.id"
           class="menu-card"
-          :class="!menu.is_available ? 'menu-card-unavail' : 'menu-card-avail'"
-          @click="addToOrder(menu)"
+          :class="menu.is_available ? 'menu-card-avail' : 'menu-card-unavail'"
           :disabled="!menu.is_available"
+          @click="addToOrder(menu)"
         >
           <div v-if="!menu.is_available" class="menu-habis-overlay">
             <span class="habis-badge">Habis</span>
@@ -77,7 +71,7 @@
           <p class="pos-eyebrow">Transaksi Aktif</p>
           <h2 class="order-panel-title">Ringkasan Pesanan</h2>
         </div>
-        <button class="order-panel-close" @click="showMobileCart = false">
+        <button class="order-panel-close" @click="showMobileCart = false" aria-label="Tutup keranjang">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
         </button>
       </div>
@@ -91,6 +85,7 @@
             <input
               v-model="customerPhone"
               @input="debounceTrackLoyalty"
+              inputmode="tel"
               placeholder="081234567xxx"
               class="pos-input flex-1"
             />
@@ -99,16 +94,14 @@
 
         <div class="field">
           <label class="field-label">Nama Pelanggan <span class="field-optional">(Opsional)</span></label>
-          <input
-            v-model="customerName"
-            type="text"
-            placeholder="Nama pembeli..."
-            class="pos-input"
-          />
+          <input v-model="customerName" type="text" placeholder="Nama pembeli..." class="pos-input" />
         </div>
 
-        <!-- Loyalty status -->
-        <div v-if="customerPhone.length >= 9" class="loyalty-status" :class="isTrackingLoyalty ? 'ls-loading' : isMember ? 'ls-loyal' : 'ls-regular'">
+        <div
+          v-if="customerPhone.length >= 9"
+          class="loyalty-status"
+          :class="isTrackingLoyalty ? 'ls-loading' : isMember ? 'ls-loyal' : 'ls-regular'"
+        >
           <template v-if="isTrackingLoyalty">
             <div class="ls-spinner"></div>
             <span>Memeriksa status member...</span>
@@ -125,7 +118,7 @@
       </div>
 
       <!-- Cart -->
-      <div class="order-section cart-section">
+      <div class="order-section">
         <div v-if="orderItems.length === 0" class="cart-empty">
           <div class="cart-empty-icon">🛒</div>
           <p>Keranjang masih kosong</p>
@@ -133,22 +126,18 @@
         </div>
 
         <div v-else class="cart-list">
-          <div
-            v-for="(item, index) in orderItems"
-            :key="index"
-            class="cart-item"
-          >
+          <div v-for="(item, index) in orderItems" :key="index" class="cart-item">
             <div class="cart-item-top">
               <div class="cart-item-info">
                 <p class="cart-item-name">{{ item.name }}</p>
                 <p class="cart-item-price">{{ formatPrice(item.price) }}</p>
               </div>
               <div class="qty-control">
-                <button @click="updateQty(index, -1)" class="qty-btn">
+                <button @click="updateQty(index, -1)" class="qty-btn" aria-label="Kurangi">
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 </button>
                 <span class="qty-val">{{ item.quantity }}</span>
-                <button @click="updateQty(index, 1)" class="qty-btn">
+                <button @click="updateQty(index, 1)" class="qty-btn" aria-label="Tambah">
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 </button>
               </div>
@@ -156,7 +145,7 @@
             <input
               type="text"
               v-model="item.notes"
-              @input="handleNotesChange(index)"
+              @change="handleNotesChange(index)"
               placeholder="Catatan koki: Level 5, Tanpa Bawang..."
               class="cart-notes-input"
             />
@@ -182,9 +171,7 @@
             class="toggle-btn"
             :class="orderType === 'dine_in_later'
               ? 'toggle-active-amber'
-              : paymentMethod === 'qris_manual'
-                ? 'toggle-disabled'
-                : 'toggle-inactive'"
+              : paymentMethod === 'qris_manual' ? 'toggle-disabled' : 'toggle-inactive'"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             Makan Dulu
@@ -216,14 +203,9 @@
       </div>
 
       <!-- Cash input -->
-      <div v-if="paymentMethod === 'cash' && orderType === 'dine_in_now'" class="order-section">
+      <div v-if="isCashNow" class="order-section">
         <label class="field-label">Uang Diterima</label>
-        <input
-          v-model.number="amountPaid"
-          type="number"
-          placeholder="0"
-          class="pos-input font-mono"
-        />
+        <input v-model.number="amountPaid" type="number" min="0" placeholder="0" class="pos-input font-mono" />
         <div v-if="amountPaid > 0 && amountPaid >= totalPrice" class="change-box change-ok">
           <span>Kembalian</span>
           <span>{{ formatPrice(changeDue) }}</span>
@@ -234,7 +216,7 @@
         </div>
       </div>
 
-      <!-- Kasir info -->
+      <!-- Kasir -->
       <div class="kasir-strip">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         Kasir: <span class="kasir-name">{{ kasirName }}</span>
@@ -259,7 +241,6 @@
           <span>−{{ formatPrice(appliedPromo.discount_amount) }}</span>
         </div>
 
-        <!-- 🎁 Tukar poin -->
         <PointRedeemBox
           v-if="isMember"
           :points="memberPoints"
@@ -283,7 +264,6 @@
         </div>
       </div>
 
-      <!-- Submit -->
       <button
         @click="submitOrder"
         :disabled="isSubmitting || orderItems.length === 0"
@@ -322,116 +302,124 @@
             <p class="pos-eyebrow">Antrian Kasir</p>
             <h2 class="drawer-title">Tagihan Belum Lunas</h2>
           </div>
-          <button class="drawer-close" @click="showUnpaidDrawer = false">
+          <button class="drawer-close" @click="showUnpaidDrawer = false" aria-label="Tutup">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </button>
         </div>
 
         <div class="drawer-search-wrap">
           <svg class="drawer-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-          <input
-            v-model="unpaidSearch"
-            placeholder="Cari order, nama, no HP..."
-            class="drawer-search"
-          />
+          <input v-model="unpaidSearch" placeholder="Cari order, nama, no HP..." class="drawer-search" />
         </div>
 
-        <div v-if="!filteredUnpaidOrders.length" class="drawer-empty">
-          <div class="empty-icon">✓</div>
-          <p>Tidak ada tagihan tertunda</p>
+        <div v-if="filteredUnpaidOrders.length" class="drawer-summary">
+          <span>{{ filteredUnpaidOrders.length }} tagihan</span>
+          <strong>{{ formatPrice(unpaidGrandTotal) }}</strong>
         </div>
 
-        <div
-  v-for="order in filteredUnpaidOrders"
-  :key="order.id"
-  class="drawer-order-card"
->
-  <div class="drawer-order-top">
-    <div>
-      <p class="drawer-order-num">{{ order.order_number }}</p>
-      <p class="drawer-order-name">{{ order.customer_name || 'Walk In' }}</p>
-      <p class="drawer-order-phone">{{ order.customer_phone || '—' }}</p>
-    </div>
-    <div class="drawer-order-right">
-      <p class="drawer-order-total">{{ formatPrice(order.total_price) }}</p>
-      <p class="drawer-order-items">{{ order.items.length }} item</p>
-    </div>
-  </div>
+        <!-- Area scroll: WAJIB dibungkus .drawer-list supaya bisa di-scroll -->
+        <div class="drawer-list">
+          <div v-if="isLoadingUnpaid && !unpaidOrders.length" class="drawer-empty">
+            <div class="ls-spinner"></div>
+            <p>Memuat tagihan...</p>
+          </div>
 
-  <!-- Daftar menu yang dipesan -->
-  <ul class="drawer-items">
-    <li v-for="item in order.items" :key="item.id" class="drawer-item">
-      <div class="drawer-item-info">
-        <span class="drawer-item-name">{{ item.menu_name }}</span>
-        <span v-if="item.is_point_redemption" class="drawer-item-note">Reward poin</span>
-        <span v-else-if="item.notes" class="drawer-item-note">{{ item.notes }}</span>
-      </div>
+          <div v-else-if="!filteredUnpaidOrders.length" class="drawer-empty">
+            <div class="empty-icon">✓</div>
+            <p>Tidak ada tagihan tertunda</p>
+          </div>
 
-      <!-- mode ubah item -->
-      <div v-if="isMode(order, 'edit') && !item.is_point_redemption" class="qty-stepper">
-        <button :disabled="isBusy" @click="changeQty(order, item, -1)">−</button>
-        <span>{{ item.quantity }}</span>
-        <button :disabled="isBusy" @click="changeQty(order, item, 1)">+</button>
-      </div>
+          <div
+            v-for="order in filteredUnpaidOrders"
+            :key="order.id"
+            class="drawer-order-card"
+          >
+            <div class="drawer-order-top">
+              <div>
+                <p class="drawer-order-num">{{ order.order_number }}</p>
+                <p class="drawer-order-name">{{ order.customer_name || 'Walk In' }}</p>
+                <p class="drawer-order-phone">{{ order.customer_phone || '—' }}</p>
+              </div>
+              <div class="drawer-order-right">
+                <p class="drawer-order-total">{{ formatPrice(order.total_price) }}</p>
+                <p class="drawer-order-items">{{ order.items.length }} item</p>
+              </div>
+            </div>
 
-      <!-- mode pisah bayar -->
-      <div v-else-if="isMode(order, 'split') && !item.is_point_redemption" class="qty-stepper">
-        <button @click="stepSplit(item, -1)">−</button>
-        <span>{{ splitQty[item.id] || 0 }}/{{ item.quantity }}</span>
-        <button @click="stepSplit(item, 1)">+</button>
-      </div>
+            <ul class="drawer-items">
+              <li v-for="item in order.items" :key="item.id" class="drawer-item">
+                <div class="drawer-item-info">
+                  <span class="drawer-item-name">{{ item.menu_name }}</span>
+                  <span v-if="item.is_point_redemption" class="drawer-item-note">Reward poin</span>
+                  <span v-else-if="item.notes" class="drawer-item-note">{{ item.notes }}</span>
+                </div>
 
-      <span v-else class="drawer-item-qty">×{{ item.quantity }}</span>
-      <span class="drawer-item-price">{{ formatPrice(Number(item.price) * item.quantity) }}</span>
-    </li>
-  </ul>
+                <div v-if="isMode(order, 'edit') && !item.is_point_redemption" class="qty-stepper">
+                  <button :disabled="isBusy" @click="changeQty(order, item, -1)" aria-label="Kurangi">−</button>
+                  <span>{{ item.quantity }}</span>
+                  <button :disabled="isBusy" @click="changeQty(order, item, 1)" aria-label="Tambah">+</button>
+                </div>
 
-  <!-- Tambah menu (mode ubah item) -->
-  <div v-if="isMode(order, 'edit')" class="drawer-add-row">
-    <select
-      v-model="addMenuId"
-      class="pos-input"
-      :disabled="isBusy"
-      @change="addItemToOrder(order)"
-    >
-      <option value="" disabled>+ Tambah menu…</option>
-      <option v-for="m in addableMenus" :key="m.id" :value="m.id">
-        {{ m.name }} — {{ formatPrice(m.price) }}
-      </option>
-    </select>
-  </div>
+                <div v-else-if="isMode(order, 'split') && !item.is_point_redemption" class="qty-stepper">
+                  <button @click="stepSplit(item, -1)" aria-label="Kurangi">−</button>
+                  <span>{{ splitQty[item.id] || 0 }}/{{ item.quantity }}</span>
+                  <button @click="stepSplit(item, 1)" aria-label="Tambah">+</button>
+                </div>
 
-  <!-- Panel pisah bayar -->
-  <div v-if="isMode(order, 'split')" class="drawer-split-box">
-    <p class="drawer-hint">Atur jumlah yang dipindah ke nota baru (yang tidak dipilih tetap di nota ini).</p>
-    <input v-model="splitName" class="pos-input" placeholder="Nama nota baru (opsional)" />
-    <div class="drawer-split-total">
-      <span>Nota baru</span>
-      <span>{{ formatPrice(splitSelectedTotal(order)) }}</span>
-    </div>
-    <button class="drawer-pay-btn" :disabled="isBusy" @click="submitSplit(order)">
-      Buat Nota Terpisah
-    </button>
-  </div>
+                <span v-else class="drawer-item-qty">×{{ item.quantity }}</span>
+                <span class="drawer-item-price">{{ formatPrice(Number(item.price) * item.quantity) }}</span>
+              </li>
+            </ul>
 
-  <div class="drawer-actions">
-    <button class="drawer-ghost-btn" @click="toggleCardMode(order, 'edit')">
-      {{ isMode(order, 'edit') ? 'Selesai' : 'Ubah Item' }}
-    </button>
-    <button
-      v-if="order.items.length > 1 || (order.items[0] && order.items[0].quantity > 1)"
-      class="drawer-ghost-btn"
-      @click="toggleCardMode(order, 'split')"
-    >
-      {{ isMode(order, 'split') ? 'Batal Pisah' : 'Pisah Bayar' }}
-    </button>
-  </div>
+            <!-- Tambah menu (mode ubah) -->
+            <div v-if="isMode(order, 'edit')" class="drawer-add-row">
+              <select
+                v-model="addMenuId"
+                class="pos-input"
+                :disabled="isBusy"
+                @change="addItemToOrder(order)"
+              >
+                <option value="" disabled>+ Tambah menu…</option>
+                <option v-for="m in addableMenus" :key="m.id" :value="m.id">
+                  {{ m.name }} — {{ formatPrice(m.price) }}
+                </option>
+              </select>
+            </div>
 
-  <button class="drawer-pay-btn" @click="openPaymentModal(order)">
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12h.01"/></svg>
-    Bayar Sekarang
-  </button>
-</div>
+            <!-- Panel pisah bayar -->
+            <div v-if="isMode(order, 'split')" class="drawer-split-box">
+              <p class="drawer-hint">Atur jumlah yang dipindah ke nota baru (yang tidak dipilih tetap di nota ini).</p>
+              <input v-model="splitName" class="pos-input" placeholder="Nama nota baru (opsional)" />
+              <div class="drawer-split-total">
+                <span>Nota baru</span>
+                <span>{{ formatPrice(splitSelectedTotal(order)) }}</span>
+              </div>
+              <button class="drawer-pay-btn" :disabled="isBusy" @click="submitSplit(order)">
+                Buat Nota Terpisah
+              </button>
+            </div>
+
+            <div class="drawer-actions">
+              <button
+                class="drawer-ghost-btn"
+                :class="{ active: isMode(order, 'edit') }"
+                @click="toggleCardMode(order, 'edit')"
+              >{{ isMode(order, 'edit') ? 'Selesai' : 'Ubah' }}</button>
+
+              <button
+                v-if="canSplit(order)"
+                class="drawer-ghost-btn"
+                :class="{ active: isMode(order, 'split') }"
+                @click="toggleCardMode(order, 'split')"
+              >{{ isMode(order, 'split') ? 'Batal' : 'Pisah' }}</button>
+
+              <button class="drawer-pay-btn" @click="openPaymentModal(order)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12h.01"/></svg>
+                Bayar Sekarang
+              </button>
+            </div>
+          </div>
+        </div>
 
       </div>
     </div>
@@ -455,37 +443,35 @@
             <h2 class="modal-title">Pembayaran Order</h2>
             <p class="modal-ordnum">{{ selectedUnpaidOrder.order_number }}</p>
           </div>
-          <button class="modal-close-btn" @click="showPaymentModal = false">
+          <button class="modal-close-btn" @click="showPaymentModal = false" aria-label="Tutup">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </button>
         </div>
 
-        <!-- Customer -->
         <div class="modal-customer">
           <p class="modal-cust-name">{{ selectedUnpaidOrder.customer_name || 'Walk In' }}</p>
           <p class="modal-cust-phone">{{ selectedUnpaidOrder.customer_phone || '—' }}</p>
         </div>
 
-        <!-- Items -->
         <div class="modal-items">
-          <div
-            v-for="item in selectedUnpaidOrder.items"
-            :key="item.id"
-            class="modal-item"
-          >
+          <div v-for="item in selectedUnpaidOrder.items" :key="item.id" class="modal-item">
             <div class="modal-item-left">
               <p class="modal-item-name">{{ item.menu_name }} <span class="modal-item-qty">×{{ item.quantity }}</span></p>
-              <p v-if="item.notes" class="modal-item-note">{{ item.notes }}</p>
+              <p v-if="item.is_point_redemption" class="modal-item-note">Reward poin</p>
+              <p v-else-if="item.notes" class="modal-item-note">{{ item.notes }}</p>
             </div>
-            <span class="modal-item-price">{{ formatPrice(item.price * item.quantity) }}</span>
+            <span class="modal-item-price">{{ formatPrice(Number(item.price) * item.quantity) }}</span>
           </div>
         </div>
 
-        <!-- Totals -->
         <div class="modal-totals">
           <div class="modal-total-row">
             <span>Subtotal</span>
             <span>{{ formatPrice(selectedUnpaidOrder.subtotal) }}</span>
+          </div>
+          <div v-if="Number(selectedUnpaidOrder.promo_discount_amount) > 0" class="modal-total-row modal-discount">
+            <span>Diskon Promo{{ selectedUnpaidOrder.promo_code ? ` (${selectedUnpaidOrder.promo_code})` : '' }}</span>
+            <span>−{{ formatPrice(selectedUnpaidOrder.promo_discount_amount) }}</span>
           </div>
           <div class="modal-total-final">
             <span>Total</span>
@@ -493,7 +479,6 @@
           </div>
         </div>
 
-        <!-- Payment method -->
         <div class="modal-section">
           <label class="field-label">Metode Pembayaran</label>
           <div class="toggle-grid">
@@ -508,28 +493,22 @@
           </div>
         </div>
 
-        <!-- Cash input modal -->
         <div v-if="selectedPaymentMethod === 'cash'" class="modal-section">
           <label class="field-label">Uang Diterima</label>
-          <input
-            v-model.number="amountPaidModal"
-            type="number"
-            placeholder="0"
-            class="pos-input font-mono"
-          />
-          <div v-if="amountPaidModal > 0 && amountPaidModal >= parseFloat(selectedUnpaidOrder.total_price)" class="change-box change-ok">
+          <input v-model.number="amountPaidModal" type="number" min="0" placeholder="0" class="pos-input font-mono" />
+          <div v-if="amountPaidModal > 0 && amountPaidModal >= modalTotal" class="change-box change-ok">
             <span>Kembalian</span>
-            <span>{{ formatPrice(amountPaidModal - parseFloat(selectedUnpaidOrder.total_price)) }}</span>
+            <span>{{ formatPrice(amountPaidModal - modalTotal) }}</span>
           </div>
-          <div v-else-if="amountPaidModal > 0 && amountPaidModal < parseFloat(selectedUnpaidOrder.total_price)" class="change-box change-err">
+          <div v-else-if="amountPaidModal > 0 && amountPaidModal < modalTotal" class="change-box change-err">
             <span>Kurang</span>
-            <span>{{ formatPrice(parseFloat(selectedUnpaidOrder.total_price) - amountPaidModal) }}</span>
+            <span>{{ formatPrice(modalTotal - amountPaidModal) }}</span>
           </div>
         </div>
 
         <button
           @click="confirmPayment"
-          :disabled="isPaying || (selectedPaymentMethod === 'cash' && amountPaidModal > 0 && amountPaidModal < parseFloat(selectedUnpaidOrder.total_price))"
+          :disabled="isPaying || modalUnderpaid"
           class="submit-btn"
         >
           <span v-if="isPaying" class="btn-spinner"></span>
@@ -540,7 +519,7 @@
     </div>
   </transition>
 
-  <!-- ── STRUK TERSEMBUNYI ───────────────────────────────────────── -->
+  <!-- ── STRUK TERSEMBUNYI (dirender dari data server: lastOrder) ──── -->
   <div
     ref="receiptRef"
     style="position:fixed;left:-9999px;top:0;width:380px;background:#fff;color:#000;padding:24px;font-family:'Courier New',monospace;font-size:12px;line-height:1.6;"
@@ -548,152 +527,231 @@
     <div style="text-align:center;margin-bottom:12px;">
       <p style="font-size:15px;font-weight:900;text-transform:uppercase;letter-spacing:0.1em;">MASASHIMURA</p>
       <p style="font-size:10px;color:#666;">Jl. Pintu air no 48 Depan Pengadilan Bekasi</p>
-      <p style="font-size:10px;color:#999;">{{ new Date().toLocaleString('id-ID') }}</p>
+      <p style="font-size:10px;color:#999;">{{ receiptDate }}</p>
       <p style="color:#ccc;">========================================</p>
     </div>
-    <div v-if="lastOrder" style="font-size:11px;margin-bottom:10px;">
-      <div style="display:flex;justify-content:space-between;"><span>No. Nota</span><span style="font-weight:700;">{{ lastOrder.order_number }}</span></div>
-      <div style="display:flex;justify-content:space-between;"><span>Kasir</span><span>{{ kasirName }}</span></div>
-      <div style="display:flex;justify-content:space-between;"><span>Pelanggan</span><span>{{ lastOrder.customer_name || lastOrder.customer_phone || 'Walk In' }}</span></div>
-    </div>
-    <p style="color:#ccc;margin-bottom:10px;">----------------------------------------</p>
-    <div v-if="lastOrder" style="margin-bottom:10px;">
-      <div v-for="(item, idx) in lastOrderItems" :key="idx" style="margin-bottom:6px;">
-        <div style="display:flex;justify-content:space-between;font-weight:600;"><span>{{ item.quantity }}x {{ item.name }}</span><span>{{ formatPrice(item.price * item.quantity) }}</span></div>
-        <div v-if="item.notes" style="color:#b45309;font-size:10px;padding-left:10px;font-style:italic;">📋 {{ item.notes }}</div>
+
+    <template v-if="lastOrder">
+      <div style="font-size:11px;margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;"><span>No. Nota</span><span style="font-weight:700;">{{ lastOrder.order_number }}</span></div>
+        <div style="display:flex;justify-content:space-between;"><span>Kasir</span><span>{{ lastOrder.kasir_name || kasirName }}</span></div>
+        <div style="display:flex;justify-content:space-between;"><span>Pelanggan</span><span>{{ lastOrder.customer_name || lastOrder.customer_phone || 'Walk In' }}</span></div>
       </div>
-    </div>
-    <p style="color:#ccc;margin-bottom:10px;">----------------------------------------</p>
-    <div v-if="lastOrder" style="font-size:11px;margin-bottom:10px;">
-      <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span>Subtotal</span><span>{{ formatPrice(lastOrder.subtotal || lastOrder.total_price) }}</span></div>
-      <div v-if="parseFloat(lastOrder.promo_discount_amount) > 0" style="display:flex;justify-content:space-between;color:#16a34a;margin-bottom:3px;"><span>Diskon Promo</span><span>-{{ formatPrice(lastOrder.promo_discount_amount) }}</span></div>
-      <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:900;border-top:1px solid #eee;padding-top:4px;margin-bottom:4px;"><span>TOTAL</span><span>{{ formatPrice(lastOrder.total_price) }}</span></div>
-      <div v-if="lastOrder.amount_paid > 0" style="display:flex;justify-content:space-between;"><span>Bayar</span><span>{{ formatPrice(lastOrder.amount_paid) }}</span></div>
-      <div v-if="lastOrder.change_amount > 0" style="display:flex;justify-content:space-between;color:#16a34a;font-weight:700;"><span>Kembalian</span><span>{{ formatPrice(lastOrder.change_amount) }}</span></div>
-    </div>
-    <p style="color:#ccc;margin-bottom:10px;">========================================</p>
-    <div style="text-align:center;font-size:10px;color:#888;">
-      <p>Metode: {{ lastOrder?.payment_method?.toUpperCase() || 'CASH' }}</p>
-      <p style="font-weight:700;margin-top:4px;">Terima kasih sudah makan di Masashimura! 🙏</p>
-    </div>
+      <p style="color:#ccc;margin-bottom:10px;">----------------------------------------</p>
+
+      <div style="margin-bottom:10px;">
+        <div v-for="item in lastOrder.items" :key="item.id" style="margin-bottom:6px;">
+          <div style="display:flex;justify-content:space-between;font-weight:600;">
+            <span>{{ item.quantity }}x {{ item.menu_name }}</span>
+            <span>{{ item.is_point_redemption ? 'GRATIS' : formatPrice(Number(item.price) * item.quantity) }}</span>
+          </div>
+          <div v-if="item.is_point_redemption" style="color:#16a34a;font-size:10px;padding-left:10px;">🎁 Reward poin</div>
+          <div v-else-if="item.notes" style="color:#b45309;font-size:10px;padding-left:10px;font-style:italic;">📋 {{ item.notes }}</div>
+        </div>
+      </div>
+      <p style="color:#ccc;margin-bottom:10px;">----------------------------------------</p>
+
+      <div style="font-size:11px;margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span>Subtotal</span><span>{{ formatPrice(lastOrder.subtotal || lastOrder.total_price) }}</span></div>
+        <div v-if="Number(lastOrder.promo_discount_amount) > 0" style="display:flex;justify-content:space-between;color:#16a34a;margin-bottom:3px;"><span>Diskon Promo</span><span>-{{ formatPrice(lastOrder.promo_discount_amount) }}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:900;border-top:1px solid #eee;padding-top:4px;margin-bottom:4px;"><span>TOTAL</span><span>{{ formatPrice(lastOrder.total_price) }}</span></div>
+        <div v-if="Number(lastOrder.amount_paid) > 0" style="display:flex;justify-content:space-between;"><span>Bayar</span><span>{{ formatPrice(lastOrder.amount_paid) }}</span></div>
+        <div v-if="Number(lastOrder.change_amount) > 0" style="display:flex;justify-content:space-between;color:#16a34a;font-weight:700;"><span>Kembalian</span><span>{{ formatPrice(lastOrder.change_amount) }}</span></div>
+      </div>
+      <p style="color:#ccc;margin-bottom:10px;">========================================</p>
+
+      <div style="text-align:center;font-size:10px;color:#888;">
+        <p v-if="lastOrder.payment_status !== 'paid'" style="font-weight:700;color:#b45309;">BELUM LUNAS</p>
+        <p>Metode: {{ receiptMethod }}</p>
+        <p style="font-weight:700;margin-top:4px;">Terima kasih sudah makan di Masashimura! 🙏</p>
+      </div>
+    </template>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
 import { menuAPI, orderAPI, apiClient } from "@/api";
 import { toast } from "vue-sonner";
-import { useAuthStore } from '@/stores/auth';
-import html2canvas from 'html2canvas';
+import { useAuthStore } from "@/stores/auth";
 import PromoCodeBox from "@/components/ui/PromoCodeBox.vue";
 import PointRedeemBox from "@/components/ui/PointRedeemBox.vue";
 
-const authStore  = useAuthStore();
-const kasirName  = computed(() => authStore.user?.name || authStore.user?.username || 'Staff');
+const authStore = useAuthStore();
+const kasirName = computed(() => authStore.user?.name || authStore.user?.username || "Staff");
 
-const menus             = ref([]);
-const isLoadingMenus    = ref(false);
-const menuLoadError     = ref(false);
-const searchQuery       = ref("");
-const unpaidSearch      = ref("");
-const selectedCategory  = ref("Semua");
-const orderItems        = ref([]);
-const customerPhone     = ref("");
-const customerName      = ref("");
-const isMember          = ref(false);
-const memberPoints      = ref(0);
-const pointsExpiringNote = ref(null);
-const paymentMethod     = ref("cash");
-const orderType         = ref("dine_in_now");
-const isSubmitting      = ref(false);
-const isTrackingLoyalty = ref(false);
-let debounceTimeout     = null;
-
-// ── Mobile cart sheet ────────────────────────────────────────────────
+// ── State: katalog & keranjang ───────────────────────────────────────
+const menus          = ref([]);
+const isLoadingMenus = ref(false);
+const menuLoadError  = ref(false);
+const searchQuery    = ref("");
+const orderItems     = ref([]);
 const showMobileCart = ref(false);
-const cartItemCount  = computed(() =>
-  orderItems.value.reduce((acc, i) => acc + i.quantity, 0)
-);
 
-// ── Promo code ──────────────────────────────────────────────────────
+// ── State: pelanggan & loyalty ───────────────────────────────────────
+const customerPhone      = ref("");
+const customerName       = ref("");
+const isMember           = ref(false);
+const memberPoints       = ref(0);
+const pointsExpiringNote = ref(null);
+const isTrackingLoyalty  = ref(false);
+const affordableRewards  = ref([]);
+const lockedRewards      = ref([]);
+const selectedRewardIds  = ref([]);
+let debounceTimeout = null;
+
+// ── State: pembayaran ────────────────────────────────────────────────
+const paymentMethod = ref("cash");
+const orderType     = ref("dine_in_now");
+const amountPaid    = ref(0);
+const isSubmitting  = ref(false);
+
+// ── State: promo ─────────────────────────────────────────────────────
 const promoBoxRef  = ref(null);
 const appliedPromo = ref(null); // { promo_id, code, discount_amount }
 const onPromoApplied = (promo) => { appliedPromo.value = promo; };
 const onPromoRemoved = () => { appliedPromo.value = null; };
 
+// ── State: tagihan belum lunas ───────────────────────────────────────
 const unpaidOrders          = ref([]);
+const unpaidSearch          = ref("");
 const showUnpaidDrawer      = ref(false);
 const isLoadingUnpaid       = ref(false);
 const selectedUnpaidOrder   = ref(null);
 const showPaymentModal      = ref(false);
 const selectedPaymentMethod = ref("cash");
-const isPaying              = ref(false);
 const amountPaidModal       = ref(0);
-const amountPaid            = ref(0);
-const receiptRef            = ref(null);
-const lastOrder              = ref(null);
-const lastOrderItems        = ref([]);
-const affordableRewards = ref([]);
-const lockedRewards     = ref([]);
-const selectedRewardIds = ref([]);
+const isPaying              = ref(false);
 
-const changeDue = computed(() => {
-  if (paymentMethod.value !== 'cash' || orderType.value !== 'dine_in_now') return 0;
-  return amountPaid.value >= totalPrice.value ? amountPaid.value - totalPrice.value : 0;
-});
+// ── State: ubah item & pisah bayar ───────────────────────────────────
+const cardMode  = ref({ id: null, mode: null }); // mode: 'edit' | 'split'
+const isBusy    = ref(false);
+const addMenuId = ref("");
+const splitQty  = ref({});   // { [itemId]: jumlah yang dipindah ke nota baru }
+const splitName = ref("");
 
+// ── State: struk ─────────────────────────────────────────────────────
+const receiptRef = ref(null);
+const lastOrder  = ref(null);
+
+// ── Computed ─────────────────────────────────────────────────────────
 const liveFormattedDate = computed(() =>
-  new Date().toLocaleDateString('id-ID', { weekday:'long', year:'numeric', month:'long', day:'numeric' })
+  new Date().toLocaleDateString("id-ID", { weekday: "long", year: "numeric", month: "long", day: "numeric" })
 );
+
 const customerInitial = computed(() =>
   customerPhone.value ? customerPhone.value.trim().charAt(0).toUpperCase() : "?"
 );
+
+const cartItemCount = computed(() =>
+  orderItems.value.reduce((acc, i) => acc + i.quantity, 0)
+);
+
 const filteredMenus = computed(() => {
-  const query = searchQuery.value.trim().toLowerCase();
+  const q = searchQuery.value.trim().toLowerCase();
   return menus.value
-    .filter(menu => {
-      const matchCat = selectedCategory.value === "Semua" || (menu.category || "Makanan") === selectedCategory.value;
-      const matchQ   = !query || menu.name?.toLowerCase().includes(query);
-      return matchCat && matchQ;
-    })
-    .sort((a, b) => b.is_available - a.is_available);
+    .filter((m) => !q || m.name?.toLowerCase().includes(q))
+    .sort((a, b) => Number(b.is_available) - Number(a.is_available));
 });
 
-// ── Kalkulasi harga: subtotal → diskon promo → total (diskon member % udah dihapus) ──
-const subtotal       = computed(() => orderItems.value.reduce((acc, item) => acc + item.price * item.quantity, 0));
-const totalPrice     = computed(() => {
-  const promoDiscount = appliedPromo.value?.discount_amount || 0;
-  return Math.max(subtotal.value - promoDiscount, 0);
-});
+// subtotal → diskon promo → total (diskon member % sudah dihapus; reward poin = item gratis)
+const subtotal = computed(() =>
+  orderItems.value.reduce((acc, item) => acc + Number(item.price) * item.quantity, 0)
+);
+const totalPrice = computed(() =>
+  Math.max(subtotal.value - (appliedPromo.value?.discount_amount || 0), 0)
+);
+
+const isCashNow = computed(() => paymentMethod.value === "cash" && orderType.value === "dine_in_now");
+const changeDue = computed(() =>
+  isCashNow.value && amountPaid.value >= totalPrice.value ? amountPaid.value - totalPrice.value : 0
+);
+
+const selectedRewards = computed(() =>
+  affordableRewards.value.filter((r) => selectedRewardIds.value.includes(r.id))
+);
 
 const filteredUnpaidOrders = computed(() => {
   const q = unpaidSearch.value.toLowerCase().trim();
   if (!q) return unpaidOrders.value;
-  return unpaidOrders.value.filter(o =>
+  return unpaidOrders.value.filter((o) =>
     o.order_number?.toLowerCase().includes(q) ||
     o.customer_name?.toLowerCase().includes(q) ||
     o.customer_phone?.includes(q)
   );
 });
 
+const unpaidGrandTotal = computed(() =>
+  filteredUnpaidOrders.value.reduce((sum, o) => sum + Number(o.total_price || 0), 0)
+);
+
+const addableMenus = computed(() => menus.value.filter((m) => m.is_available !== false));
+
+const modalTotal = computed(() => Number(selectedUnpaidOrder.value?.total_price || 0));
+const modalUnderpaid = computed(() =>
+  selectedPaymentMethod.value === "cash" && amountPaidModal.value > 0 && amountPaidModal.value < modalTotal.value
+);
+
+const receiptDate = computed(() =>
+  new Date(lastOrder.value?.created_at || Date.now()).toLocaleString("id-ID")
+);
+const RECEIPT_METHOD_LABEL = { cash: "CASH", qris: "QRIS", qris_manual: "QRIS", gateway: "GATEWAY", mixed: "CAMPURAN" };
+const receiptMethod = computed(() => {
+  const m = lastOrder.value?.payment_method;
+  return RECEIPT_METHOD_LABEL[m] || (m ? m.toUpperCase() : "CASH");
+});
+
+// ── Helpers ──────────────────────────────────────────────────────────
+const formatPrice = (p) =>
+  new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(Number(p) || 0);
+
+const apiError = (e, fallback) =>
+  toast.error(e.response?.data?.detail || e.response?.data?.error || fallback);
+
+// ── Fetch ────────────────────────────────────────────────────────────
 const fetchMenus = async () => {
-  isLoadingMenus.value = true; menuLoadError.value = false;
-  try { const res = await menuAPI.getAll(); menus.value = res.data; }
-  catch { menuLoadError.value = true; }
-  finally { isLoadingMenus.value = false; }
+  isLoadingMenus.value = true;
+  menuLoadError.value = false;
+  try {
+    const res = await menuAPI.getAll();
+    menus.value = res.data;
+  } catch {
+    menuLoadError.value = true;
+  } finally {
+    isLoadingMenus.value = false;
+  }
 };
 
 const fetchUnpaidOrders = async () => {
   isLoadingUnpaid.value = true;
-  try { const { data } = await apiClient.get("/orders/unpaid/"); unpaidOrders.value = data; }
-  catch (err) { console.error(err); }
-  finally { isLoadingUnpaid.value = false; }
+  try {
+    const { data } = await apiClient.get("/orders/unpaid/");
+    unpaidOrders.value = data;
+  } catch (err) {
+    console.error(err);
+  } finally {
+    isLoadingUnpaid.value = false;
+  }
+};
+
+// ── Loyalty & point rewards ──────────────────────────────────────────
+const resetLoyalty = () => {
+  isMember.value = false;
+  memberPoints.value = 0;
+  pointsExpiringNote.value = null;
+};
+
+const resetPointRewards = () => {
+  affordableRewards.value = [];
+  lockedRewards.value = [];
+  selectedRewardIds.value = [];
 };
 
 const debounceTrackLoyalty = () => {
   clearTimeout(debounceTimeout);
   if (customerPhone.value.length < 9) {
-    isMember.value = false; memberPoints.value = 0; pointsExpiringNote.value = null;
+    isTrackingLoyalty.value = false;
+    resetLoyalty();
     resetPointRewards();
     return;
   }
@@ -702,53 +760,59 @@ const debounceTrackLoyalty = () => {
 };
 
 const checkLoyalty = async () => {
+  const phone = customerPhone.value;
+  const isStale = () => phone !== customerPhone.value; // nomor sudah berubah selama request
+
   try {
-    const { data } = await apiClient.get("/orders/check_loyalty_status/", { params: { phone: customerPhone.value } });
+    const { data } = await apiClient.get("/orders/check_loyalty_status/", { params: { phone } });
+    if (isStale()) return;
     isMember.value = data.is_member ?? false;
     memberPoints.value = data.points ?? 0;
     pointsExpiringNote.value = data.points_expiring_note ?? null;
   } catch {
-    isMember.value = false; memberPoints.value = 0; pointsExpiringNote.value = null;
+    if (isStale()) return;
+    resetLoyalty();
   } finally {
-    isTrackingLoyalty.value = false;
+    if (!isStale()) isTrackingLoyalty.value = false;
   }
-  // narik reward yang bisa ditukar, terpisah biar loyalty status gak nge-block kalo ini gagal
-  fetchPointRewards(customerPhone.value);
+
+  // terpisah supaya status loyalty tidak ke-block kalau ini gagal
+  if (!isStale()) fetchPointRewards(phone);
 };
 
-const selectedRewards = computed(() =>
-  affordableRewards.value.filter(r => selectedRewardIds.value.includes(r.id))
-);
-
-const resetPointRewards = () => {
-  affordableRewards.value = [];
-  lockedRewards.value = [];
-  selectedRewardIds.value = [];
-};
-
-const fetchPointRewards = async (phoneNumber) => {
+const fetchPointRewards = async (phone) => {
   try {
-    const { data } = await orderAPI.getAvailablePointRewards(phoneNumber);
+    const { data } = await orderAPI.getAvailablePointRewards(phone);
+    if (phone !== customerPhone.value) return;
     affordableRewards.value = data.affordable ?? [];
-    lockedRewards.value     = data.locked ?? [];
+    lockedRewards.value = data.locked ?? [];
   } catch {
-    resetPointRewards();
+    if (phone === customerPhone.value) resetPointRewards();
   }
 };
 
+// ── Keranjang ────────────────────────────────────────────────────────
 const addToOrder = (menu) => {
   if (!menu.is_available) { toast.error("Menu ini sedang habis!"); return; }
-  const existing = orderItems.value.find(i => i.id === menu.id && i.notes === "");
+  const existing = orderItems.value.find((i) => i.id === menu.id && i.notes === "");
   if (existing) existing.quantity++;
   else orderItems.value.push({ ...menu, quantity: 1, notes: "" });
 };
 
+// Dipanggil saat input catatan selesai diedit (@change), bukan tiap ketikan,
+// supaya item tidak ke-merge di tengah mengetik.
 const handleNotesChange = (index) => {
   const cur = orderItems.value[index];
-  const dup = orderItems.value.findIndex((item, idx) =>
-    idx !== index && item.id === cur.id && item.notes.trim().toLowerCase() === cur.notes.trim().toLowerCase()
+  if (!cur) return;
+  const norm = (s) => (s || "").trim().toLowerCase();
+  const dup = orderItems.value.findIndex(
+    (item, idx) => idx !== index && item.id === cur.id && norm(item.notes) === norm(cur.notes)
   );
-  if (dup > -1) { orderItems.value[dup].quantity += cur.quantity; orderItems.value.splice(index, 1); toast.info("Item dengan catatan sama digabungkan!"); }
+  if (dup > -1) {
+    orderItems.value[dup].quantity += cur.quantity;
+    orderItems.value.splice(index, 1);
+    toast.info("Item dengan catatan sama digabungkan!");
+  }
 };
 
 const updateQty = (index, delta) => {
@@ -758,68 +822,188 @@ const updateQty = (index, delta) => {
 
 const selectPaymentMethod = (method) => {
   paymentMethod.value = method;
-  if (method === 'qris_manual') orderType.value = 'dine_in_now';
+  if (method === "qris_manual") orderType.value = "dine_in_now";
 };
 
+// ── Submit order baru ────────────────────────────────────────────────
+const resetForm = () => {
+  orderItems.value = [];
+  customerPhone.value = "";
+  customerName.value = "";
+  resetLoyalty();
+  resetPointRewards();
+  paymentMethod.value = "cash";
+  orderType.value = "dine_in_now";
+  amountPaid.value = 0;
+  promoBoxRef.value?.removePromo();
+  showMobileCart.value = false;
+};
+
+const submitOrder = async () => {
+  if (orderItems.value.length === 0) return toast.error("Keranjang kosong!");
+  if (isCashNow.value && amountPaid.value > 0 && amountPaid.value < totalPrice.value) {
+    return toast.error("Uang diterima kurang dari total tagihan");
+  }
+
+  isSubmitting.value = true;
+
+  // Harga, diskon promo, dan status dihitung ulang di server — client hanya kirim niat.
+  const payload = {
+    source: "pos",
+    customer: customerPhone.value
+      ? { phone: customerPhone.value, name: customerName.value || "Member Baru" }
+      : null,
+    payment_method: paymentMethod.value,
+    payment_status: orderType.value === "dine_in_later" ? "pending" : "paid",
+    amount_paid: isCashNow.value ? amountPaid.value || 0 : 0,
+    kasir_name: kasirName.value,
+    promo_id: appliedPromo.value?.promo_id || null,
+    redeem_reward_ids: selectedRewardIds.value,
+    items: orderItems.value.map((item) => ({
+      menu_id: item.id,
+      quantity: item.quantity,
+      notes: item.notes,
+    })),
+  };
+
+  try {
+    const res = await apiClient.post("/orders/", payload);
+    lastOrder.value = res.data;
+    toast.success("Pesanan berhasil masuk ke sistem!");
+    resetForm();
+    fetchUnpaidOrders();
+    await shareReceiptAsImage(res.data);
+  } catch (e) {
+    console.error(e);
+    apiError(e, "Gagal menyimpan transaksi ke server.");
+  } finally {
+    isSubmitting.value = false;
+  }
+};
+
+// ── Struk ────────────────────────────────────────────────────────────
+const canvasToBlob = (canvas) => new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+
+const downloadBlob = (blob, filename) => {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+const toWaNumber = (raw) => {
+  const digits = (raw || "").replace(/\D/g, "");
+  return digits.startsWith("0") ? `62${digits.slice(1)}` : digits;
+};
+
+const shareReceiptAsImage = async (orderData) => {
+  await nextTick();                                   // tunggu struk ter-render dengan lastOrder
+  await new Promise((r) => setTimeout(r, 150));
+
+  try {
+    const { default: html2canvas } = await import("html2canvas"); // lazy-load, bundle awal lebih ringan
+    const canvas = await html2canvas(receiptRef.value, { backgroundColor: "#ffffff", scale: 2, useCORS: true });
+    const blob = await canvasToBlob(canvas);
+    if (!blob) throw new Error("Blob struk kosong");
+
+    const filename = `struk-${orderData.order_number}.png`;
+    const file = new File([blob], filename, { type: "image/png" });
+
+    if (navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], text: "Bukti Pembelian di Masashimura 🙏" });
+        return;
+      } catch (err) {
+        if (err?.name === "AbortError") return;       // kasir menutup dialog share
+        // gagal share (mis. izin gesture kedaluwarsa) → lanjut ke unduh manual
+      }
+    }
+
+    downloadBlob(blob, filename);
+    const caption = encodeURIComponent("Bukti Pembelian di Masashimura 🙏");
+    const phone = toWaNumber(orderData.customer_phone); // dari data order, bukan form (form sudah di-reset)
+    setTimeout(
+      () => window.open(phone ? `https://wa.me/${phone}?text=${caption}` : `https://wa.me/?text=${caption}`, "_blank"),
+      500
+    );
+    toast.info("Gambar diunduh. Lampirkan ke WhatsApp secara manual.");
+  } catch (err) {
+    console.error(err);
+    toast.error("Gagal membuat screenshot struk");
+  }
+};
+
+// ── Drawer tagihan: bayar ────────────────────────────────────────────
 const openPaymentModal = (order) => {
-  selectedUnpaidOrder.value = order; selectedPaymentMethod.value = "cash";
-  amountPaidModal.value = 0; showPaymentModal.value = true;
+  selectedUnpaidOrder.value = order;
+  selectedPaymentMethod.value = "cash";
+  amountPaidModal.value = 0;
+  showPaymentModal.value = true;
 };
 
 const confirmPayment = async () => {
-  if (!selectedUnpaidOrder.value) return;
+  if (!selectedUnpaidOrder.value || modalUnderpaid.value) return;
   isPaying.value = true;
   try {
     await apiClient.patch(`/orders/${selectedUnpaidOrder.value.id}/pay/`, {
       payment_method: selectedPaymentMethod.value,
-      amount_paid: selectedPaymentMethod.value === 'cash' ? amountPaidModal.value : 0,
+      amount_paid: selectedPaymentMethod.value === "cash" ? amountPaidModal.value || 0 : 0,
       kasir_name: kasirName.value,
     });
     toast.success("Pembayaran berhasil");
-    showPaymentModal.value = false; selectedUnpaidOrder.value = null; amountPaidModal.value = 0;
+    showPaymentModal.value = false;
+    selectedUnpaidOrder.value = null;
+    amountPaidModal.value = 0;
+    cardMode.value = { id: null, mode: null };
     fetchUnpaidOrders();
-  } catch { toast.error("Pembayaran gagal"); }
-  finally { isPaying.value = false; }
+  } catch (e) {
+    apiError(e, "Pembayaran gagal");
+    fetchUnpaidOrders();   // mungkin order sudah dibayar/dibatalkan di tempat lain
+  } finally {
+    isPaying.value = false;
+  }
 };
 
-// ── Ubah item & pisah bayar di drawer Tagihan ─────────────────────────
-const cardMode  = ref({ id: null, mode: null }); // mode: 'edit' | 'split'
-const isBusy    = ref(false);
-const addMenuId = ref("");
-const splitQty  = ref({});   // { [itemId]: jumlah yang dipindah ke nota baru }
-const splitName = ref("");
-
+// ── Drawer tagihan: ubah item & pisah bayar ──────────────────────────
 const isMode = (order, mode) =>
   cardMode.value.id === order.id && cardMode.value.mode === mode;
 
 const toggleCardMode = (order, mode) => {
   cardMode.value = isMode(order, mode) ? { id: null, mode: null } : { id: order.id, mode };
-  splitQty.value = {}; splitName.value = ""; addMenuId.value = "";
+  splitQty.value = {};
+  splitName.value = "";
+  addMenuId.value = "";
 };
 
-const addableMenus = computed(() =>
-  menus.value.filter(m => m.is_available !== false)
-);
+const canSplit = (order) =>
+  order.items.length > 1 || (order.items[0] && order.items[0].quantity > 1);
 
 const replaceUnpaid = (updated) => {
-  const i = unpaidOrders.value.findIndex(o => o.id === updated.id);
+  const i = unpaidOrders.value.findIndex((o) => o.id === updated.id);
   if (i !== -1) unpaidOrders.value[i] = updated;
 };
 
-const apiError = (e, fallback) =>
-  toast.error(e.response?.data?.detail || e.response?.data?.error || fallback);
-
 const changeQty = async (order, item, delta) => {
   const newQty = item.quantity + delta;
-  if (newQty <= 0 && !confirm(`Hapus ${item.menu_name} dari nota?`)) return;
+
+  if (newQty <= 0) {
+    if (order.items.length <= 1) return toast.error("Ini item terakhir di nota, tidak bisa dihapus.");
+    if (!confirm(`Hapus ${item.menu_name} dari nota?`)) return;
+  }
+
   isBusy.value = true;
   try {
     const { data } = newQty <= 0
       ? await apiClient.delete(`/orders/${order.id}/items/${item.id}/`)
       : await apiClient.patch(`/orders/${order.id}/items/${item.id}/`, { quantity: newQty });
     replaceUnpaid(data);
-  } catch (e) { apiError(e, "Gagal mengubah item"); }
-  finally { isBusy.value = false; }
+  } catch (e) {
+    apiError(e, "Gagal mengubah item");
+  } finally {
+    isBusy.value = false;
+  }
 };
 
 const addItemToOrder = async (order) => {
@@ -827,11 +1011,16 @@ const addItemToOrder = async (order) => {
   isBusy.value = true;
   try {
     const { data } = await apiClient.post(`/orders/${order.id}/items/`, {
-      menu_id: addMenuId.value, quantity: 1,
+      menu_id: addMenuId.value,
+      quantity: 1,
     });
     replaceUnpaid(data);
-  } catch (e) { apiError(e, "Gagal menambah item"); }
-  finally { isBusy.value = false; addMenuId.value = ""; }
+  } catch (e) {
+    apiError(e, "Gagal menambah item");
+  } finally {
+    isBusy.value = false;
+    addMenuId.value = "";
+  }
 };
 
 const stepSplit = (item, delta) => {
@@ -860,69 +1049,22 @@ const submitSplit = async (order) => {
     });
     toast.success("Nota dipisah — sekarang bisa dibayar sendiri-sendiri");
     cardMode.value = { id: null, mode: null };
-    splitQty.value = {}; splitName.value = "";
+    splitQty.value = {};
+    splitName.value = "";
     await fetchUnpaidOrders();
-  } catch (e) { apiError(e, "Gagal memisah nota"); }
-  finally { isBusy.value = false; }
+  } catch (e) {
+    apiError(e, "Gagal memisah nota");
+  } finally {
+    isBusy.value = false;
+  }
 };
 
-const shareReceiptAsImage = async (orderData) => {
-  await new Promise(r => setTimeout(r, 300));
-  try {
-    const canvas = await html2canvas(receiptRef.value, { backgroundColor: '#ffffff', scale: 2, useCORS: true });
-    canvas.toBlob(async (blob) => {
-      if (!blob) { toast.error("Gagal membuat gambar struk"); return; }
-      if (navigator.share && navigator.canShare?.({ files: [new File([blob], 'struk.png', { type: 'image/png' })] })) {
-        const file = new File([blob], `struk-${orderData.order_number}.png`, { type: 'image/png' });
-        await navigator.share({ files: [file], text: 'Bukti Pembelian di Masashimura 🙏' });
-      } else {
-        const url = URL.createObjectURL(blob); const a = document.createElement('a');
-        a.href = url; a.download = `struk-${orderData.order_number}.png`; a.click(); URL.revokeObjectURL(url);
-        const caption = encodeURIComponent('Bukti Pembelian di Masashimura 🙏');
-        const phone = (customerPhone.value || '').startsWith('0') ? '62' + customerPhone.value.slice(1) : customerPhone.value;
-        setTimeout(() => window.open(phone ? `https://wa.me/${phone}?text=${caption}` : `https://wa.me/?text=${caption}`, '_blank'), 500);
-        toast.info("Gambar diunduh. Lampirkan ke WhatsApp secara manual.");
-      }
-    }, 'image/png');
-  } catch (err) { console.error(err); toast.error("Gagal membuat screenshot struk"); }
-};
-
-const submitOrder = async () => {
-  if (orderItems.value.length === 0) return toast.error("Keranjang kosong!");
-  isSubmitting.value = true;
-  const payload = {
-  source: 'pos',
-  customer: customerPhone.value ? { phone: customerPhone.value, name: customerName.value || "Member Baru" } : null,
-  payment_method: paymentMethod.value,
-  payment_status: orderType.value === 'dine_in_later' ? 'pending' : 'paid',
-  status: 'pending',
-  amount_paid: paymentMethod.value === 'cash' ? amountPaid.value : 0,
-  kasir_name: kasirName.value,
-  promo_id: appliedPromo.value?.promo_id || null,
-  promo_discount_amount: appliedPromo.value?.discount_amount || 0,
-  redeem_reward_ids: selectedRewardIds.value,
-  items: orderItems.value.map(item => ({ menu_id: item.id, quantity: item.quantity, price: item.price, notes: item.notes })),
-};
-  try {
-    const res = await apiClient.post("/orders/", payload);
-    lastOrder.value = res.data; lastOrderItems.value = [...orderItems.value];
-    toast.success("Pesanan berhasil masuk ke sistem!");
-    orderItems.value = []; customerPhone.value = ""; customerName.value = "";
-    isMember.value = false; memberPoints.value = 0; pointsExpiringNote.value = null;
-    paymentMethod.value = "cash"; orderType.value = "dine_in_now"; amountPaid.value = 0;
-    promoBoxRef.value?.removePromo();
-    resetPointRewards();
-    showMobileCart.value = false;
-    fetchUnpaidOrders();
-    await shareReceiptAsImage(res.data);
-  } catch (e) { console.error(e); toast.error("Gagal menyimpan transaksi ke server."); }
-  finally { isSubmitting.value = false; }
-};
-
-const formatPrice = (p) =>
-  new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(p || 0);
+// ── Lifecycle ────────────────────────────────────────────────────────
+// Refresh tiap drawer dibuka, supaya order web yang baru masuk ikut muncul.
+watch(showUnpaidDrawer, (open) => { if (open) fetchUnpaidOrders(); });
 
 onMounted(() => { fetchMenus(); fetchUnpaidOrders(); });
+onBeforeUnmount(() => clearTimeout(debounceTimeout));
 </script>
 
 <style scoped>
@@ -975,7 +1117,6 @@ onMounted(() => { fetchMenus(); fetchUnpaidOrders(); });
   white-space: nowrap;
 }
 .unpaid-trigger:hover { border-color: rgba(255,255,255,0.18); color: #fff; }
-.unpaid-label { }
 .unpaid-badge {
   display: inline-flex; align-items: center; justify-content: center;
   width: 18px; height: 18px; border-radius: 50%;
@@ -1097,7 +1238,6 @@ onMounted(() => { fetchMenus(); fetchUnpaidOrders(); });
   display: flex; flex-direction: column; gap: 0.6rem;
 }
 
-/* Fields */
 .field { display: flex; flex-direction: column; gap: 0.35rem; }
 .field-label {
   font-family: 'Oswald', sans-serif; font-size: 0.56rem;
@@ -1139,7 +1279,6 @@ onMounted(() => { fetchMenus(); fetchUnpaidOrders(); });
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* Cart */
-.cart-section { }
 .cart-empty {
   padding: 2rem 0; text-align: center;
   color: rgba(255,255,255,0.2); font-size: 0.78rem;
@@ -1258,11 +1397,11 @@ onMounted(() => { fetchMenus(); fetchUnpaidOrders(); });
   animation: spin 0.75s linear infinite;
 }
 
-/* ── Mobile cart backdrop + FAB ──────────────────────────────────── */
+/* ── Mobile cart backdrop + FAB (desktop: disembunyikan) ─────────── */
 .mobile-cart-backdrop { display: none; }
 .mobile-cart-fab { display: none; }
 
-/* ── Drawer ──────────────────────────────────────────────────────── */
+/* ── Drawer tagihan ──────────────────────────────────────────────── */
 .drawer-overlay {
   position: fixed; inset: 0; z-index: 50;
   background: rgba(0,0,0,0.7); backdrop-filter: blur(3px);
@@ -1273,8 +1412,9 @@ onMounted(() => { fetchMenus(); fetchUnpaidOrders(); });
 .drawer-leave-to     { opacity: 0; }
 
 .drawer-box {
-  position: absolute; right: 0; top: 0; bottom: 0;
-  width: 400px; max-width: 100%;
+  position: absolute; right: 0; top: 0;
+  height: 100vh; height: 100dvh;            /* ikut tinggi layar yang BENAR-BENAR kelihatan */
+  width: 420px; max-width: 100%;
   background: #0d0d0d; border-left: 1px solid rgba(255,255,255,0.07);
   display: flex; flex-direction: column; overflow: hidden;
 }
@@ -1306,16 +1446,35 @@ onMounted(() => { fetchMenus(); fetchUnpaidOrders(); });
 .drawer-search::placeholder { color: rgba(255,255,255,0.18); }
 .drawer-search:focus { border-color: rgba(220,38,38,0.4); }
 
+.drawer-summary {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.55rem 1.25rem; font-size: 0.7rem; letter-spacing: 0.06em;
+  text-transform: uppercase; color: rgba(255,255,255,0.45);
+  background: rgba(220,38,38,0.06); border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.drawer-summary strong { font-family: monospace; font-size: 0.8rem; color: #fff; letter-spacing: 0; }
+
 .drawer-empty {
   flex: 1; display: flex; flex-direction: column; align-items: center;
   justify-content: center; gap: 0.4rem; padding: 3rem;
   color: rgba(255,255,255,0.2); font-size: 0.8rem;
 }
-.drawer-list { flex: 1; overflow-y: auto; padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; }
+
+/* Area scroll: min-height:0 + flex-shrink:0 di kartu = kunci supaya bisa scroll & kartu tidak gepeng */
+.drawer-list {
+  flex: 1 1 0; min-height: 0;
+  overflow-y: auto; overscroll-behavior: contain;
+  padding: 1rem 1.25rem calc(2rem + env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column; gap: 0.75rem;
+  scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.18) transparent;
+}
+.drawer-list::-webkit-scrollbar { width: 6px; }
+.drawer-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 999px; }
 
 .drawer-order-card {
+  flex-shrink: 0;
   background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;
+  border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; gap: 0.6rem;
 }
 .drawer-order-top { display: flex; justify-content: space-between; gap: 0.5rem; }
 .drawer-order-num { font-family: monospace; font-weight: 700; font-size: 0.82rem; color: #fff; margin: 0 0 0.2rem; }
@@ -1324,6 +1483,48 @@ onMounted(() => { fetchMenus(); fetchUnpaidOrders(); });
 .drawer-order-right { text-align: right; flex-shrink: 0; }
 .drawer-order-total { font-family: monospace; font-weight: 700; color: #dc2626; font-size: 0.9rem; margin: 0 0 0.2rem; }
 .drawer-order-items { font-size: 0.65rem; color: rgba(255,255,255,0.3); margin: 0; }
+
+.drawer-items {
+  list-style: none; margin: 0.25rem 0 0; padding: 0.6rem 0 0.1rem;
+  border-top: 1px dashed rgba(255,255,255,0.1);
+  display: flex; flex-direction: column; gap: 0.5rem;
+}
+.drawer-item { display: flex; align-items: center; gap: 0.6rem; font-size: 0.78rem; }
+.drawer-item-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.drawer-item-name { color: rgba(255,255,255,0.85); }
+.drawer-item-note { font-size: 0.65rem; color: rgba(255,255,255,0.35); }
+.drawer-item-qty { color: rgba(255,255,255,0.45); font-family: monospace; }
+.drawer-item-price { font-family: monospace; color: rgba(255,255,255,0.7); min-width: 4.5rem; text-align: right; }
+
+.qty-stepper { display: flex; align-items: center; gap: 0.4rem; font-family: monospace; font-size: 0.75rem; }
+.qty-stepper button {
+  width: 1.9rem; height: 1.9rem; font-size: 0.95rem;   /* target sentuh lebih besar */
+  border-radius: 0.4rem; border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.05); color: #fff; cursor: pointer;
+}
+.qty-stepper button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.drawer-add-row { margin: 0.25rem 0; }
+.drawer-split-box {
+  margin: 0.25rem 0; padding: 0.75rem;
+  border: 1px dashed rgba(255,255,255,0.15); border-radius: 0.6rem;
+  display: flex; flex-direction: column; gap: 0.5rem;
+}
+.drawer-hint { font-size: 0.68rem; color: rgba(255,255,255,0.4); margin: 0; }
+.drawer-split-total { display: flex; justify-content: space-between; font-size: 0.8rem; font-family: monospace; }
+
+/* Baris aksi: [Ubah] [Pisah] [Bayar ........] */
+.drawer-actions { display: flex; gap: 0.5rem; align-items: stretch; }
+.drawer-ghost-btn {
+  flex: 0 0 auto; padding: 0 0.85rem; min-height: 2.4rem;
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  border-radius: 9px; border: 1px solid rgba(255,255,255,0.15);
+  background: transparent; color: rgba(255,255,255,0.7); cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.drawer-ghost-btn:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
+.drawer-ghost-btn.active { background: rgba(255,255,255,0.1); color: #fff; border-color: rgba(255,255,255,0.35); }
+
 .drawer-pay-btn {
   display: flex; align-items: center; justify-content: center; gap: 0.4rem;
   width: 100%; padding: 0.6rem; border-radius: 9px; border: none;
@@ -1332,9 +1533,11 @@ onMounted(() => { fetchMenus(); fetchUnpaidOrders(); });
   letter-spacing: 0.1em; text-transform: uppercase;
   cursor: pointer; transition: background 0.15s;
 }
-.drawer-pay-btn:hover { background: #b91c1c; }
+.drawer-pay-btn:hover:not(:disabled) { background: #b91c1c; }
+.drawer-pay-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.drawer-actions .drawer-pay-btn { flex: 1; width: auto; min-height: 2.4rem; padding: 0 0.75rem; }
 
-/* ── Modal ───────────────────────────────────────────────────────── */
+/* ── Modal pembayaran ────────────────────────────────────────────── */
 .modal-overlay {
   position: fixed; inset: 0; z-index: 70;
   background: rgba(0,0,0,0.8); backdrop-filter: blur(4px);
@@ -1348,7 +1551,7 @@ onMounted(() => { fetchMenus(); fetchUnpaidOrders(); });
 .modal-box {
   background: #0f0f0f; border: 1px solid rgba(255,255,255,0.08);
   border-radius: 18px; width: 100%; max-width: 460px;
-  max-height: 90vh; overflow-y: auto;
+  max-height: 90vh; max-height: 90dvh; overflow-y: auto;
   display: flex; flex-direction: column; gap: 0;
 }
 .modal-head {
@@ -1368,9 +1571,7 @@ onMounted(() => { fetchMenus(); fetchUnpaidOrders(); });
 }
 .modal-close-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
 
-.modal-customer {
-  padding: 0.85rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.04);
-}
+.modal-customer { padding: 0.85rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.04); }
 .modal-cust-name { font-weight: 600; font-size: 0.88rem; margin: 0 0 0.15rem; }
 .modal-cust-phone { font-family: monospace; font-size: 0.72rem; color: rgba(255,255,255,0.35); margin: 0; }
 
@@ -1400,10 +1601,9 @@ onMounted(() => { fetchMenus(); fetchUnpaidOrders(); });
 .modal-total-final span:last-child { font-family: monospace; font-size: 1.05rem; font-weight: 800; color: #dc2626; }
 
 .modal-section { padding: 0.85rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.04); display: flex; flex-direction: column; gap: 0.55rem; }
-
 .modal-box > .submit-btn { margin: 1rem 1.5rem 1.25rem; }
 
-/* Scrollbar hide for number */
+/* Sembunyikan spinner input number */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; }
@@ -1455,25 +1655,7 @@ input[type="number"] { -moz-appearance: textfield; }
   .mcf-total { font-family: monospace; font-weight: 800; font-size: 0.85rem; }
 }
 
-.drawer-items { list-style: none; margin: 0.75rem 0 0.5rem; padding: 0.6rem 0 0; border-top: 1px dashed rgba(255,255,255,0.1); display: flex; flex-direction: column; gap: 0.45rem; }
-.drawer-item { display: flex; align-items: center; gap: 0.6rem; font-size: 0.78rem; }
-.drawer-item-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.drawer-item-name { color: rgba(255,255,255,0.85); }
-.drawer-item-note { font-size: 0.65rem; color: rgba(255,255,255,0.35); }
-.drawer-item-qty { color: rgba(255,255,255,0.45); font-family: monospace; }
-.drawer-item-price { font-family: monospace; color: rgba(255,255,255,0.7); min-width: 4.5rem; text-align: right; }
-
-.qty-stepper { display: flex; align-items: center; gap: 0.4rem; font-family: monospace; font-size: 0.75rem; }
-.qty-stepper button { width: 1.6rem; height: 1.6rem; border-radius: 0.4rem; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: #fff; cursor: pointer; }
-.qty-stepper button:disabled { opacity: 0.4; cursor: not-allowed; }
-
-.drawer-add-row { margin: 0.5rem 0; }
-.drawer-split-box { margin: 0.5rem 0; padding: 0.75rem; border: 1px dashed rgba(255,255,255,0.15); border-radius: 0.6rem; display: flex; flex-direction: column; gap: 0.5rem; }
-.drawer-hint { font-size: 0.68rem; color: rgba(255,255,255,0.4); margin: 0; }
-.drawer-split-total { display: flex; justify-content: space-between; font-size: 0.8rem; font-family: monospace; }
-
-.drawer-actions { display: flex; gap: 0.5rem; margin: 0.5rem 0; }
-.drawer-ghost-btn { flex: 1; padding: 0.5rem; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; border-radius: 0.5rem; border: 1px solid rgba(255,255,255,0.15); background: transparent; color: rgba(255,255,255,0.7); cursor: pointer; }
-.drawer-ghost-btn:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
-
+@media (max-width: 480px) {
+  .drawer-box { width: 100%; border-left: none; }
+}
 </style>

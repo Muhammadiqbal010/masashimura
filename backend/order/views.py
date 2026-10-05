@@ -276,6 +276,12 @@ def create_order(request):
     order.total_price = total if total > 0 else Decimal('0')
     order.status      = order_status   # trigger signal loyalty dengan total yang sudah benar
 
+    # Bayar langsung cash tapi uang diterima kurang dari total → tolak
+    # (jangan sampai order ke-mark lunas padahal kurang bayar).
+    if payment_status == 'paid' and payment_method == 'cash' and 0 < amount_paid < order.total_price:
+        transaction.set_rollback(True)
+        return Response({"error": "Uang diterima kurang dari total tagihan"}, status=400)
+
     if amount_paid > 0:
         order.amount_paid   = amount_paid
         order.change_amount = max(amount_paid - order.total_price, Decimal('0'))
