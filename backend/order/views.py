@@ -9,6 +9,7 @@ from django.db.models import (
 )
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.dateparse import parse_date, parse_datetime
 
 from rest_framework import viewsets
 from rest_framework.decorators import api_view, permission_classes
@@ -33,6 +34,7 @@ from .models import (
     PointAdjustment,
     PointReward,
     StoreSettings,
+    WIB,
 )
 from .serializers import (
     LoyaltySettingsSerializer,
@@ -97,6 +99,45 @@ def _calc_promo_discount(promo, subtotal):
 # ORDERS — CRUD
 # ─────────────────────────────────────────────
 
+# ─────────────────────────────────────────────
+# WAKTU ORDER MANUAL (input susulan)
+# ─────────────────────────────────────────────
+# Kasus: order salah input baru ketahuan di hari lain. Admin (staff) boleh
+# menginput ulang order dengan tanggal & jam sesuai kejadian aslinya, jadi
+# order masuk ke laporan hari itu dan tampil berurutan menurut jam di
+# Active Orders. Cuma untuk source='pos' yang dikirim staff login.
+BACKDATE_MAX_DAYS         = 366   # batas mundur — jaga dari salah ketik tahun
+BACKDATE_FUTURE_TOLERANCE = timedelta(minutes=2)
+BACKDATE_NOW_TOLERANCE    = timedelta(minutes=2)   # selisih sekecil ini dianggap "sekarang"
+
+
+def _parse_backdate(raw):
+    """
+    Return (datetime_aware | None, error | None).
+    None tanpa error = pakai waktu sekarang (kosong / selisih < 2 menit dari sekarang).
+    """
+    if raw in (None, ""):
+        return None, None
+
+    try:
+        dt = parse_datetime(str(raw))
+    except ValueError:
+        dt = None
+    if dt is None:
+        return None, "Format tanggal/jam order tidak valid."
+    if timezone.is_naive(dt):
+        dt = timezone.make_aware(dt, WIB)   # tanpa offset = dianggap WIB
+
+    now = timezone.now()
+    if dt > now + BACKDATE_FUTURE_TOLERANCE:
+        return None, "Waktu order tidak boleh di masa depan."
+    if dt < now - timedelta(days=BACKDATE_MAX_DAYS):
+        return None, f"Waktu order terlalu lama (maksimal {BACKDATE_MAX_DAYS} hari ke belakang). Cek tahunnya."
+    if dt >= now - BACKDATE_NOW_TOLERANCE:
+        return None, None
+    return dt, None
+
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @transaction.atomic
@@ -120,6 +161,17 @@ def create_order(request):
     # ke-mark 'paid'+'completed' di bawah — bypass total alur web/QRIS.
     if source == 'pos' and not (request.user and request.user.is_authenticated and request.user.is_staff):
         source = 'web'
+
+    # Waktu order manual — HANYA berlaku untuk source='pos' (di titik ini sudah
+    # dipastikan staff login). Dari order web / tanpa login, created_at diabaikan.
+    backdated_at = None
+    if source == 'pos':
+        backdated_at, backdate_error = _parse_backdate(data.get('created_at'))
+        if backdate_error:
+            return Response({"error": backdate_error}, status=400)
+    time_fields = (
+        {"created_at": backdated_at, "entered_at": timezone.now()} if backdated_at else {}
+    )
 
     table_number = data.get('table_number')
     notes        = data.get('notes', '')
@@ -194,6 +246,7 @@ def create_order(request):
         kasir_name=kasir_name,
         proof_image_url=proof_image_url,
         promo=promo_obj,
+        **time_fields,
     )
 
     # ── Bikin OrderItem dari items_data ──────────────────────────────
@@ -292,11 +345,15 @@ def create_order(request):
 
     # ── Catat baris pembayaran (kalau order langsung lunas) ──────────
     if order.payment_status == 'paid' and order.payment_method:
-        OrderPayment.objects.create(
+        payment_row = OrderPayment.objects.create(
             order=order,
             method=order.payment_method,
             amount=order.amount_paid or order.total_price,
         )
+        if backdated_at:
+            # created_at pembayaran auto_now_add (selalu "sekarang"); untuk order
+            # input susulan yang langsung lunas, waktu bayar = waktu order.
+            OrderPayment.objects.filter(pk=payment_row.pk).update(created_at=order.created_at)
 
     order.refresh_from_db()
     return Response(OrderSerializer(order).data, status=201)
@@ -448,15 +505,26 @@ def get_order(request, pk):
 @api_view(["GET"])
 @permission_classes([IsAdminUser])
 def active_orders_per_day(request):
-    target_date = request.query_params.get("target_date")
-    if not target_date:
+    raw_date = request.query_params.get("target_date")
+    if not raw_date:
         return Response({"error": "Parameter target_date wajib diisi"}, status=400)
 
+    target_date = parse_date(raw_date)   # None kalau formatnya salah (bukan 500)
+    if target_date is None:
+        return Response({"error": "Format target_date harus YYYY-MM-DD"}, status=400)
+
+    # "Hari" = 00:00–24:00 WIB (eksplisit, tidak bergantung setting TIME_ZONE).
+    day_start = datetime.datetime.combine(target_date, datetime.time.min, tzinfo=WIB)
+    day_end   = day_start + timedelta(days=1)
+
+    # Urut berdasarkan JAM ORDER (created_at), terbaru di atas. -id jadi
+    # tie-break supaya urutan stabil kalau dua order punya jam yang sama
+    # (mis. nota hasil pisah, atau dua input susulan di menit yang sama).
     orders = (
         Order.objects
-        .filter(created_at__date=target_date)
+        .filter(created_at__gte=day_start, created_at__lt=day_end)
         .prefetch_related("items__menu")
-        .order_by("-created_at")
+        .order_by("-created_at", "-id")
     )
     return Response(OrderSerializer(orders, many=True).data)
 
@@ -1637,6 +1705,9 @@ def split_order(request, pk):
         customer_phone="",   # sengaja kosong: poin loyalty tetap di nota asal
         table_number=order.table_number,
         notes=f"Dipisah dari {order.order_number}",
+        # Nota hasil pisah tetap di hari & jam order asal (bukan "sekarang"),
+        # jadi order dari hari lain tidak loncat ke laporan hari ini.
+        created_at=order.created_at,
         kasir_name=kasir_name or order.kasir_name,
     )
 

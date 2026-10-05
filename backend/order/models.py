@@ -10,6 +10,10 @@ import string
 
 from menu.models import Menu
 
+# Zona waktu operasional toko (WIB, UTC+7, tanpa DST). Dipakai untuk "hari" order
+# dan tanggal di nomor order, supaya tidak bergantung ke setting TIME_ZONE server.
+WIB = timezone.get_fixed_timezone(7 * 60)
+
 
 # ─────────────────────────────────────────────
 # CHOICES
@@ -90,6 +94,12 @@ class Order(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # Waktu ASLI order ini diketik ke sistem. HANYA diisi kalau admin menginput
+    # order untuk waktu lain (created_at diatur manual di POS — mis. salah input
+    # yang baru ketahuan besok). Kosong = order dibuat saat itu juga.
+    # Dipakai buat audit & badge "Input susulan" di Active Orders.
+    entered_at = models.DateTimeField(null=True, blank=True)
+
     amount_paid = models.DecimalField(
     max_digits=12,
     decimal_places=0,
@@ -157,7 +167,9 @@ class Order(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.order_number:
-            self.order_number = generate_order_number()
+            # Tanggal di nomor order mengikuti created_at (bukan jam saat ini),
+            # supaya order input susulan tetap bernomor sesuai harinya.
+            self.order_number = generate_order_number(self.created_at)
         super().save(*args, **kwargs)
 
     def recalculate_totals(self):
@@ -514,7 +526,10 @@ def _update_loyalty_on_complete(sender, instance, created, **kwargs):
         loyalty.points       += earned_points
         loyalty.total_spent  += instance.total_price
         loyalty.total_orders += 1
-        loyalty.last_order_at = instance.created_at
+        # Jangan mundurkan last_order_at: order input susulan (created_at lebih
+        # lama dari order terakhir customer) tidak boleh memajukan masa hangus poin.
+        if not loyalty.last_order_at or instance.created_at > loyalty.last_order_at:
+            loyalty.last_order_at = instance.created_at
 
         if instance.customer_name and not loyalty.name:
             loyalty.name = instance.customer_name
@@ -524,8 +539,12 @@ def _update_loyalty_on_complete(sender, instance, created, **kwargs):
         Order.objects.filter(pk=instance.pk).update(loyalty_points_earned=earned_points)
 
 
-def generate_order_number():
-    date_part = datetime.now().strftime("%y%m%d")
+def generate_order_number(for_dt=None):
+    # Tanggal diambil dari waktu WIB milik for_dt; default: sekarang.
+    dt = for_dt or timezone.now()
+    if timezone.is_aware(dt):
+        dt = timezone.localtime(dt, WIB)
+    date_part = dt.strftime("%y%m%d")
 
     while True:
         random_part = "".join(

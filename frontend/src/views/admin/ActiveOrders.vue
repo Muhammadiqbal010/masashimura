@@ -22,7 +22,13 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
           Kemarin
         </button>
-        <span class="date-nav-current">{{ targetDateString }}</span>
+        <input
+          type="date"
+          class="date-nav-current date-nav-input"
+          :value="targetDateString"
+          @change="jumpToDate($event.target.value)"
+          title="Pilih tanggal"
+        />
         <button class="date-nav-btn" @click="changeDate(1)">
           Besok
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
@@ -109,7 +115,14 @@
                 {{ order.payment_method === 'qris_manual' ? 'QRIS' : (order.payment_method === 'mixed' ? 'Split' : (order.payment_method || 'Cash')) }}
               </td>
 
-              <td class="td-center td-time">{{ formatTime(order.created_at) }}</td>
+              <td class="td-center td-time">
+                {{ formatTime(order.created_at) }}
+                <span
+                  v-if="order.entered_at"
+                  class="late-tag"
+                  :title="`Diinput ${formatFullDateTime(order.entered_at)}`"
+                >Input susulan</span>
+              </td>
 
               <td class="td-center td-actions" @click.stop>
                 <button
@@ -721,6 +734,14 @@ const changeDate = (days) => {
   fetchActiveOrders();
 };
 
+// Loncat langsung ke tanggal tertentu (cek order input susulan di hari lain).
+const jumpToDate = (value) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value || "")) return;
+  const [y, m, d] = value.split("-").map(Number);
+  currentDate.value = new Date(y, m - 1, d);
+  fetchActiveOrders();
+};
+
 const fetchActiveOrders = async () => {
   try {
     const res = await orderAPI.getActiveOrders(targetDateString.value);
@@ -992,6 +1013,13 @@ onUnmounted(() => { if (pollingTimer) clearInterval(pollingTimer); });
   border-right: 1px solid rgba(255,255,255,0.06);
 }
 
+.date-nav-input {
+  background: transparent;
+  outline: none;
+  color-scheme: dark;
+  cursor: pointer;
+}
+
 /* Search */
 .search-wrap {
   position: relative;
@@ -1144,6 +1172,11 @@ onUnmounted(() => { if (pollingTimer) clearInterval(pollingTimer); });
 .method-icon { margin-right: 0.2rem; }
 
 .td-time { font-family: monospace; font-size: 0.78rem; color: rgba(255,255,255,0.3); }
+.late-tag {
+  display: block; margin-top: 2px;
+  font-family: 'Inter', sans-serif; font-size: 0.55rem; font-weight: 600;
+  letter-spacing: 0.04em; text-transform: uppercase; color: #fbbf24;
+}
 .td-dash { color: rgba(255,255,255,0.15); font-size: 0.8rem; }
 
 .lunasi-btn {

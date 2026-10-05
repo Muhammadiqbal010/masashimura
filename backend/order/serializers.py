@@ -1,5 +1,6 @@
+from django.utils import timezone
 from rest_framework import serializers
-from .models import Order, OrderItem, OrderPayment, LoyaltySettings, StoreSettings, PointReward
+from .models import Order, OrderItem, OrderPayment, LoyaltySettings, StoreSettings, PointReward, WIB
 from menu.models import Menu, Category
 from .pricing import web_price as calc_web_price
 
@@ -89,7 +90,9 @@ class OrderSerializer(serializers.ModelSerializer):
     promo_code = serializers.CharField(source="promo.code", read_only=True, default=None)
 
     def get_created_time(self, obj):
-        return obj.created_at.strftime("%H:%M WIB")
+        # Konversi ke WIB dulu — created_at dari DB berupa UTC; tanpa ini jamnya
+        # geser 7 jam padahal diberi label "WIB".
+        return timezone.localtime(obj.created_at, WIB).strftime("%H:%M WIB")
 
     class Meta:
         model = Order
@@ -114,6 +117,7 @@ class OrderSerializer(serializers.ModelSerializer):
             "notes",
             "created_at",
             "created_time",
+            "entered_at",
             "items",
             "payments",
             "amount_paid",

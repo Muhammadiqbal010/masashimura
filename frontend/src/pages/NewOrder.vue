@@ -170,6 +170,41 @@
         </div>
       </div>
 
+      <!-- Waktu order: default "Sekarang"; "Atur Manual" buat input susulan hari/jam lain -->
+      <div class="order-section">
+        <label class="field-label">Waktu Order</label>
+        <div class="toggle-grid">
+          <button
+            type="button"
+            @click="setNowMode"
+            class="toggle-btn"
+            :class="!useCustomTime ? 'toggle-active-white' : 'toggle-inactive'"
+          >
+            Sekarang
+          </button>
+          <button
+            type="button"
+            @click="enableCustomTime"
+            class="toggle-btn"
+            :class="useCustomTime ? 'toggle-active-amber' : 'toggle-inactive'"
+          >
+            Atur Manual
+          </button>
+        </div>
+
+        <div v-if="useCustomTime" class="time-box">
+          <div class="time-fields">
+            <input v-model="orderDate" type="date" :max="wibToday()" class="pos-input" aria-label="Tanggal order" />
+            <input v-model="orderTime" type="time" class="pos-input" aria-label="Jam order" />
+          </div>
+          <p v-if="customTimeError" class="time-error">{{ customTimeError }}</p>
+          <p v-else class="time-note">
+            Order dicatat pada <strong>{{ customTimeLabel }}</strong> dan masuk ke laporan hari itu.
+            Mode ini tetap aktif untuk order berikutnya — pilih “Sekarang” kalau sudah selesai.
+          </p>
+        </div>
+      </div>
+
       <!-- Order type -->
       <div class="order-section">
         <label class="field-label">Alur Konsumsi</label>
@@ -288,7 +323,7 @@
       >
         <span v-if="isSubmitting" class="btn-spinner"></span>
         <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-        {{ isSubmitting ? 'Memproses...' : 'Eksekusi Pesanan' }}
+        {{ isSubmitting ? 'Memproses...' : (useCustomTime ? 'Simpan Pesanan Susulan' : 'Eksekusi Pesanan') }}
       </button>
     </div>
   </div>
@@ -615,6 +650,50 @@ const orderType     = ref("dine_in_now");
 const amountPaid    = ref(0);
 const isSubmitting  = ref(false);
 
+// ── State: waktu order manual (input susulan) ────────────────────────
+// Dihitung dalam WIB (UTC+7) tanpa bergantung zona waktu perangkat; nilai
+// dikirim ke server lengkap dengan offset +07:00.
+const useCustomTime = ref(false);
+const orderDate     = ref("");   // YYYY-MM-DD
+const orderTime     = ref("");   // HH:mm
+const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
+const wibParts = () => {
+  const iso = new Date(Date.now() + WIB_OFFSET_MS).toISOString();
+  return { date: iso.slice(0, 10), time: iso.slice(11, 16) };
+};
+const wibToday = () => wibParts().date;
+
+const customCreatedAtValue = () => `${orderDate.value}T${orderTime.value}:00+07:00`;
+
+const getCustomTimeError = () => {
+  if (!useCustomTime.value) return "";
+  if (!orderDate.value || !orderTime.value) {
+    return "Isi tanggal dan jam order dulu, atau pilih “Sekarang”.";
+  }
+  const picked = new Date(customCreatedAtValue());
+  if (Number.isNaN(picked.getTime())) return "Tanggal/jam order tidak valid.";
+  if (picked.getTime() > Date.now() + 60_000) return "Waktu order tidak boleh di masa depan.";
+  return "";
+};
+const customTimeError = computed(() => getCustomTimeError());
+
+const customTimeLabel = computed(() => {
+  const picked = new Date(customCreatedAtValue());
+  if (Number.isNaN(picked.getTime())) return "—";
+  const day = picked.toLocaleDateString("id-ID", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Jakarta",
+  });
+  return `${day} · ${orderTime.value} WIB`;
+});
+
+const enableCustomTime = () => {
+  const now = wibParts();
+  if (!orderDate.value) orderDate.value = now.date;
+  if (!orderTime.value) orderTime.value = now.time;
+  useCustomTime.value = true;
+};
+const setNowMode = () => { useCustomTime.value = false; };
+
 // ── State: promo ─────────────────────────────────────────────────────
 const promoBoxRef  = ref(null);
 const appliedPromo = ref(null); // { promo_id, code, discount_amount }
@@ -855,11 +934,17 @@ const submitOrder = async () => {
     return toast.error("Uang diterima kurang dari total tagihan");
   }
 
+  if (useCustomTime.value) {
+    const timeErr = getCustomTimeError();
+    if (timeErr) return toast.error(timeErr);
+  }
+
   isSubmitting.value = true;
 
   // Harga, diskon promo, dan status dihitung ulang di server — client hanya kirim niat.
   const payload = {
     source: "pos",
+    ...(useCustomTime.value ? { created_at: customCreatedAtValue() } : {}),
     customer: customerPhone.value
       ? { phone: customerPhone.value, name: customerName.value || "Member Baru" }
       : null,
@@ -879,7 +964,14 @@ const submitOrder = async () => {
   try {
     const res = await apiClient.post("/orders/", payload);
     lastOrder.value = res.data;
-    toast.success("Pesanan berhasil masuk ke sistem!");
+    toast.success(
+      useCustomTime.value
+        ? `Pesanan dicatat untuk ${customTimeLabel.value}`
+        : "Pesanan berhasil masuk ke sistem!"
+    );
+    // Input susulan sering beruntun di hari yang sama: tanggal dipertahankan,
+    // tapi jam dikosongkan supaya order berikutnya tidak ikut jam lama tanpa sengaja.
+    if (useCustomTime.value) orderTime.value = "";
     resetForm();
     fetchUnpaidOrders();
     await shareReceiptAsImage(res.data);
@@ -1413,6 +1505,18 @@ onBeforeUnmount(() => clearTimeout(debounceTimeout));
 .change-err { background: rgba(239,68,68,0.07);  border-color: rgba(239,68,68,0.2);  color: #f87171; }
 
 /* Kasir strip */
+/* ── Waktu order manual (input susulan) ───────────────────────────── */
+.time-box {
+  margin-top: 0.6rem; padding: 0.7rem; border-radius: 10px;
+  display: flex; flex-direction: column; gap: 0.5rem;
+  background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.25);
+}
+.time-fields { display: grid; grid-template-columns: 1.4fr 1fr; gap: 0.5rem; }
+.time-fields .pos-input { color-scheme: dark; min-width: 0; }
+.time-note { margin: 0; font-size: 0.68rem; line-height: 1.5; color: rgba(255,255,255,0.55); }
+.time-note strong { color: #fbbf24; font-weight: 600; }
+.time-error { margin: 0; font-size: 0.68rem; line-height: 1.5; color: #f87171; }
+
 .kasir-strip {
   padding: 0.7rem 1.4rem;
   display: flex; align-items: center; gap: 0.4rem;
