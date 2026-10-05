@@ -17,6 +17,22 @@
         </button>
       </div>
 
+      <!-- Banner mode tambah ke tagihan -->
+      <div v-if="addTarget" class="add-banner">
+        <div class="add-banner-info">
+          <p class="add-banner-eyebrow">Menambah ke tagihan</p>
+          <p class="add-banner-title">
+            {{ addTarget.order_number }}
+            <span>· {{ addTarget.customer_name || 'Walk In' }}</span>
+          </p>
+        </div>
+        <div class="add-banner-right">
+          <p class="add-banner-total">{{ formatPrice(addTarget.total_price) }}</p>
+          <button class="add-banner-done" @click="finishAddToOrder">Selesai</button>
+        </div>
+      </div>
+
+      <!-- Search bar -->
       <div class="search-bar">
         <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
         <input v-model="searchQuery" type="text" placeholder="Cari menu..." class="search-input" />
@@ -48,11 +64,12 @@
           class="menu-card"
           :class="menu.is_available ? 'menu-card-avail' : 'menu-card-unavail'"
           :disabled="!menu.is_available"
-          @click="addToOrder(menu)"
+          @click="onMenuClick(menu)"
         >
           <div v-if="!menu.is_available" class="menu-habis-overlay">
             <span class="habis-badge">Habis</span>
           </div>
+          <span v-if="addTarget && addedCounts[menu.id]" class="menu-added-badge">+{{ addedCounts[menu.id] }}</span>
           <div class="menu-card-body">
             <h3 class="menu-name">{{ menu.name }}</h3>
             <p class="menu-price">{{ formatPrice(menu.price) }}</p>
@@ -371,19 +388,11 @@
               </li>
             </ul>
 
-            <!-- Tambah menu (mode ubah) -->
+            <!-- Tambah menu (mode ubah) → lompat ke katalog POS -->
             <div v-if="isMode(order, 'edit')" class="drawer-add-row">
-              <select
-                v-model="addMenuId"
-                class="pos-input"
-                :disabled="isBusy"
-                @change="addItemToOrder(order)"
-              >
-                <option value="" disabled>+ Tambah menu…</option>
-                <option v-for="m in addableMenus" :key="m.id" :value="m.id">
-                  {{ m.name }} — {{ formatPrice(m.price) }}
-                </option>
-              </select>
+              <button class="drawer-add-btn" @click="startAddToOrder(order)">
+                + Tambah menu dari katalog
+              </button>
             </div>
 
             <!-- Panel pisah bayar -->
@@ -626,9 +635,12 @@ const isPaying              = ref(false);
 // ── State: ubah item & pisah bayar ───────────────────────────────────
 const cardMode  = ref({ id: null, mode: null }); // mode: 'edit' | 'split'
 const isBusy    = ref(false);
-const addMenuId = ref("");
 const splitQty  = ref({});   // { [itemId]: jumlah yang dipindah ke nota baru }
 const splitName = ref("");
+
+// ── State: mode "tambah menu ke tagihan" (pakai katalog POS) ─────────
+const addTarget   = ref(null);   // order tujuan (objek order terbaru dari server)
+const addedCounts = ref({});     // { [menuId]: jumlah yang ditambah di sesi ini }
 
 // ── State: struk ─────────────────────────────────────────────────────
 const receiptRef = ref(null);
@@ -684,8 +696,6 @@ const filteredUnpaidOrders = computed(() => {
 const unpaidGrandTotal = computed(() =>
   filteredUnpaidOrders.value.reduce((sum, o) => sum + Number(o.total_price || 0), 0)
 );
-
-const addableMenus = computed(() => menus.value.filter((m) => m.is_available !== false));
 
 const modalTotal = computed(() => Number(selectedUnpaidOrder.value?.total_price || 0));
 const modalUnderpaid = computed(() =>
@@ -974,7 +984,6 @@ const toggleCardMode = (order, mode) => {
   cardMode.value = isMode(order, mode) ? { id: null, mode: null } : { id: order.id, mode };
   splitQty.value = {};
   splitName.value = "";
-  addMenuId.value = "";
 };
 
 const canSplit = (order) =>
@@ -1006,20 +1015,46 @@ const changeQty = async (order, item, delta) => {
   }
 };
 
-const addItemToOrder = async (order) => {
-  if (!addMenuId.value) return;
+// ── Mode "tambah menu ke tagihan" (pakai katalog POS) ────────────────
+const startAddToOrder = (order) => {
+  addTarget.value = order;
+  addedCounts.value = {};
+  cardMode.value = { id: null, mode: null };
+  showUnpaidDrawer.value = false;
+};
+
+// Drawer dibuka lagi → watcher showUnpaidDrawer otomatis fetch ulang dari server
+const finishAddToOrder = () => {
+  addTarget.value = null;
+  addedCounts.value = {};
+  showUnpaidDrawer.value = true;
+};
+
+const onMenuClick = async (menu) => {
+  // Bukan mode tambah ke tagihan → perilaku lama (masuk keranjang)
+  if (!addTarget.value) return addToOrder(menu);
+
+  // Guard: abaikan tap selagi request sebelumnya masih jalan (cegah double-add & angka banner loncat)
+  if (isBusy.value) return;
   isBusy.value = true;
+
   try {
-    const { data } = await apiClient.post(`/orders/${order.id}/items/`, {
-      menu_id: addMenuId.value,
+    const { data } = await apiClient.post(`/orders/${addTarget.value.id}/items/`, {
+      menu_id: menu.id,
       quantity: 1,
     });
+    addTarget.value = data;
     replaceUnpaid(data);
+    addedCounts.value = {
+      ...addedCounts.value,
+      [menu.id]: (addedCounts.value[menu.id] || 0) + 1,
+    };
   } catch (e) {
     apiError(e, "Gagal menambah item");
+    // Tagihan sudah keburu lunas/dibatalkan → keluar dari mode ini (drawer fetch ulang sendiri)
+    if (e.response?.status === 400) finishAddToOrder();
   } finally {
     isBusy.value = false;
-    addMenuId.value = "";
   }
 };
 
@@ -1123,6 +1158,26 @@ onBeforeUnmount(() => clearTimeout(debounceTimeout));
   background: #dc2626; color: #fff; font-size: 0.6rem; font-weight: 700;
 }
 
+/* ── Banner mode tambah ke tagihan ───────────────────────────────── */
+.add-banner {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  margin-bottom: 0.75rem; padding: 0.75rem 1rem;
+  background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.4);
+  border-radius: 12px; backdrop-filter: blur(6px);
+}
+.add-banner-eyebrow { margin: 0 0 0.15rem; font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: #4ade80; }
+.add-banner-title { margin: 0; font-family: monospace; font-weight: 700; font-size: 0.85rem; color: #fff; }
+.add-banner-title span { font-family: inherit; font-weight: 400; color: rgba(255,255,255,0.55); }
+.add-banner-right { display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0; }
+.add-banner-total { margin: 0; font-family: monospace; font-weight: 700; font-size: 0.95rem; color: #fff; }
+.add-banner-done {
+  padding: 0.5rem 0.9rem; border: none; border-radius: 9px; cursor: pointer;
+  background: #16a34a; color: #fff; font-size: 0.7rem; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+.add-banner-done:hover { background: #15803d; }
+
 /* ── Search bar ──────────────────────────────────────────────────── */
 .search-bar { position: relative; display: flex; align-items: center; }
 .search-icon { position: absolute; left: 0.9rem; color: rgba(255,255,255,0.25); pointer-events: none; }
@@ -1188,6 +1243,14 @@ onBeforeUnmount(() => clearTimeout(debounceTimeout));
 .menu-card-avail:hover { border-color: rgba(220,38,38,0.5); background: rgba(220,38,38,0.04); }
 .menu-card-avail:hover .menu-add-indicator { opacity: 1; }
 .menu-card-unavail { opacity: 0.45; cursor: not-allowed; filter: grayscale(0.7); }
+
+/* Badge jumlah yang baru ditambah di kartu menu (mode tambah ke tagihan) */
+.menu-added-badge {
+  position: absolute; top: 0.5rem; right: 0.5rem; z-index: 2;
+  min-width: 1.6rem; padding: 0.1rem 0.4rem; text-align: center;
+  background: #16a34a; color: #fff; border-radius: 999px;
+  font-family: monospace; font-size: 0.72rem; font-weight: 700;
+}
 
 .menu-habis-overlay {
   position: absolute; inset: 0; z-index: 10;
@@ -1505,6 +1568,13 @@ onBeforeUnmount(() => clearTimeout(debounceTimeout));
 .qty-stepper button:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .drawer-add-row { margin: 0.25rem 0; }
+.drawer-add-btn {
+  width: 100%; min-height: 2.5rem; border-radius: 9px; cursor: pointer;
+  border: 1px dashed rgba(34,197,94,0.5); background: rgba(34,197,94,0.08);
+  color: #4ade80; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+}
+.drawer-add-btn:hover { background: rgba(34,197,94,0.15); }
+
 .drawer-split-box {
   margin: 0.25rem 0; padding: 0.75rem;
   border: 1px dashed rgba(255,255,255,0.15); border-radius: 0.6rem;
