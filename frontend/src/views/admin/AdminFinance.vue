@@ -88,7 +88,7 @@
           <span class="s-label">Total Pengeluaran</span>
         </div>
         <div class="s-value">Rp {{ formatNumber(summaryCards.expenses) }}</div>
-        <div class="s-note">Dari buku kas harian</div>
+        <div class="s-note">Tunai + QRIS</div>
       </div>
 
       <div class="s-card s-profit" :class="summaryCards.net_profit >= 0 ? 's-surplus' : 's-defisit'">
@@ -128,20 +128,27 @@
               <thead>
                 <tr>
                   <th>Keterangan</th>
+                  <th>Metode</th>
                   <th class="th-right">Nominal</th>
                   <th class="th-center">Aksi</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="exp in dailyExpensesList" :key="exp.id" class="data-row">
+                <tr v-for="exp in dailyExpensesList" :key="exp.id" class="data-row" :class="{ 'row-editing': editingId === exp.id }">
                   <td class="td-desc">{{ exp.description }}</td>
+                  <td class="td-method">
+                    <span class="method-badge" :class="exp.payment_method === 'qris' ? 'mb-qris' : 'mb-cash'">{{ methodLabel(exp.payment_method) }}</span>
+                  </td>
                   <td class="td-right td-amount">−Rp {{ formatNumber(exp.amount) }}</td>
                   <td class="td-center">
-                    <button @click="deleteExpense(exp.id)" class="delete-btn">Hapus</button>
+                    <div class="row-actions">
+                      <button @click="startEdit(exp)" class="edit-btn">Edit</button>
+                      <button @click="askDelete(exp)" class="delete-btn">Hapus</button>
+                    </div>
                   </td>
                 </tr>
                 <tr v-if="!dailyExpensesList.length">
-                  <td colspan="3" class="empty-cell">
+                  <td colspan="4" class="empty-cell">
                     <div class="empty-icon">📋</div>
                     <p>Belum ada pengeluaran hari ini</p>
                   </td>
@@ -150,6 +157,7 @@
               <tfoot v-if="dailyExpensesList.length">
                 <tr class="total-row">
                   <td>Total Pengeluaran</td>
+                  <td></td>
                   <td class="td-right td-exp">Rp {{ formatNumber(summaryCards.expenses) }}</td>
                   <td></td>
                 </tr>
@@ -260,10 +268,10 @@
       <aside class="fr-aside">
 
         <!-- Form Input Pengeluaran (hanya mode harian) -->
-        <div v-if="viewMode === 'daily'" class="card">
+        <div v-if="viewMode === 'daily'" ref="formCard" class="card">
           <div class="card-head border-b">
-            <p class="card-eyebrow">Catat Biaya</p>
-            <h3 class="card-title">Input Pengeluaran</h3>
+            <p class="card-eyebrow">{{ editingId ? 'Ubah Catatan' : 'Catat Biaya' }}</p>
+            <h3 class="card-title">{{ editingId ? 'Edit Pengeluaran' : 'Input Pengeluaran' }}</h3>
           </div>
           <form @submit.prevent="submitExpense" class="expense-form">
             <div class="field">
@@ -287,11 +295,46 @@
                 class="field-input font-mono"
               />
             </div>
+            <div class="field">
+              <label class="field-label">Dibayar via</label>
+              <div class="method-switch" role="group" aria-label="Metode pembayaran">
+                <button
+                  v-for="m in paymentMethods"
+                  :key="m.key"
+                  type="button"
+                  class="method-btn"
+                  :class="{ active: expenseForm.payment_method === m.key }"
+                  :aria-pressed="expenseForm.payment_method === m.key"
+                  @click="expenseForm.payment_method = m.key"
+                >
+                  {{ m.label }}
+                </button>
+              </div>
+            </div>
             <button type="submit" :disabled="isSubmittingExpense" class="submit-btn">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
-              {{ isSubmittingExpense ? 'Menyimpan...' : 'Catat Pengeluaran' }}
+              {{ isSubmittingExpense ? 'Menyimpan...' : (editingId ? 'Simpan Perubahan' : 'Catat Pengeluaran') }}
             </button>
+            <button v-if="editingId" type="button" class="cancel-btn" @click="cancelEdit">Batal edit</button>
           </form>
+        </div>
+
+        <!-- Rincian pengeluaran per metode (hanya mode harian) -->
+        <div v-if="viewMode === 'daily'" class="card insight-card">
+          <div class="card-head border-b">
+            <p class="card-eyebrow">Rincian</p>
+            <h3 class="card-title">Pengeluaran per Metode</h3>
+          </div>
+          <div class="insight-body">
+            <div class="insight-row">
+              <span class="insight-label">Tunai</span>
+              <span class="insight-value">Rp {{ formatNumber(expenseByMethod.cash) }}</span>
+            </div>
+            <div class="insight-row">
+              <span class="insight-label">QRIS</span>
+              <span class="insight-value">Rp {{ formatNumber(expenseByMethod.qris) }}</span>
+            </div>
+          </div>
         </div>
 
         <!-- Ringkasan tambahan (bulanan/tahunan) -->
@@ -371,11 +414,31 @@
       </aside>
     </div>
 
+    <!-- ── KONFIRMASI HAPUS ───────────────────────────────────────── -->
+    <div v-if="deleteTarget" class="modal-backdrop" @click.self="closeDelete" @keydown.esc="closeDelete">
+      <div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="del-title" aria-describedby="del-desc">
+        <div class="modal-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6M10 11v6M14 11v6"/></svg>
+        </div>
+        <h3 id="del-title" class="modal-title">Hapus pengeluaran ini?</h3>
+        <p id="del-desc" class="modal-text">
+          <strong>{{ deleteTarget.description }}</strong> senilai Rp {{ formatNumber(deleteTarget.amount) }}
+          ({{ methodLabel(deleteTarget.payment_method) }}) akan dihapus dari buku kas dan tidak bisa dikembalikan.
+        </p>
+        <div class="modal-actions">
+          <button ref="cancelDeleteBtn" type="button" class="modal-cancel" @click="closeDelete">Batal</button>
+          <button type="button" class="modal-confirm" :disabled="isDeleting" @click="confirmDelete">
+            {{ isDeleting ? 'Menghapus...' : 'Hapus pengeluaran' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, nextTick } from "vue";
 import apiClient from "@/api/client";
 import { toast } from "vue-sonner";
 
@@ -395,11 +458,24 @@ const yearlyData          = ref([]);
 const isLoadingChart      = ref(false);
 const isSubmittingExpense = ref(false);
 const isExporting         = ref(false);
-const expenseForm         = ref({ description: "", amount: null });
+const expenseForm         = ref({ description: "", amount: null, payment_method: "cash" });
+const editingId           = ref(null);
+const formCard            = ref(null);
 
 const exportMode  = ref("monthly");
 const exportMonth = ref(new Date().getMonth() + 1);
 const exportYear  = ref(new Date().getFullYear());
+
+const paymentMethods = [{ key: "cash", label: "Tunai" }, { key: "qris", label: "QRIS" }];
+const methodLabel    = (m) => (m === "qris" ? "QRIS" : "Tunai");
+
+// Rincian pengeluaran harian per metode (dihitung dari daftar yang sudah dimuat)
+const expenseByMethod = computed(() => {
+  const sum = (m) => dailyExpensesList.value
+    .filter((e) => (e.payment_method || "cash") === m)
+    .reduce((a, e) => a + Number(e.amount || 0), 0);
+  return { cash: sum("cash"), qris: sum("qris") };
+});
 
 const targetDateString = computed(() => {
   const d = currentDate.value;
@@ -442,11 +518,12 @@ const barHeight    = (value, max, maxPx = 140) => max ? Math.max(0, ((value || 0
 
 const switchMode = (mode) => {
   viewMode.value = mode;
+  cancelEdit();
   if (mode === "monthly") { exportMode.value = "monthly"; exportMonth.value = selectedMonth.value; exportYear.value = selectedYear.value; fetchMonthlyData(); }
   else if (mode === "yearly") { exportMode.value = "yearly"; exportYear.value = selectedYear.value; fetchYearlyData(); }
   else { fetchDailyData(); }
 };
-const changeDate  = (days) => { const d = new Date(currentDate.value); d.setDate(d.getDate() + days); currentDate.value = d; fetchDailyData(); };
+const changeDate  = (days) => { cancelEdit(); const d = new Date(currentDate.value); d.setDate(d.getDate() + days); currentDate.value = d; fetchDailyData(); };
 const changeMonth = (delta) => { let m = selectedMonth.value + delta, y = selectedYear.value; if (m < 1) { m = 12; y--; } if (m > 12) { m = 1; y++; } selectedMonth.value = m; selectedYear.value = y; exportMonth.value = m; exportYear.value = y; fetchMonthlyData(); };
 const changeYear  = (delta) => { selectedYear.value += delta; exportYear.value = selectedYear.value; fetchYearlyData(); };
 
@@ -478,21 +555,48 @@ const fetchYearlyData = async () => {
   } catch (err) { console.error(err); toast.error("Gagal memuat data tahunan."); }
   finally { isLoadingChart.value = false; }
 };
+const resetExpenseForm = () => { expenseForm.value = { description: "", amount: null, payment_method: "cash" }; };
+const cancelEdit = () => { editingId.value = null; resetExpenseForm(); };
+const startEdit = (exp) => {
+  editingId.value = exp.id;
+  expenseForm.value = { description: exp.description, amount: Number(exp.amount), payment_method: exp.payment_method || "cash" };
+  formCard.value?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+};
 const submitExpense = async () => {
   if (!expenseForm.value.description || !expenseForm.value.amount) return;
   isSubmittingExpense.value = true;
+  const isEdit  = editingId.value !== null;
+  const payload = {
+    description: expenseForm.value.description,
+    amount: expenseForm.value.amount,
+    payment_method: expenseForm.value.payment_method,
+  };
   try {
-    await apiClient.post("/expenses/", { description: expenseForm.value.description, amount: expenseForm.value.amount, date: targetDateString.value });
-    expenseForm.value = { description: "", amount: null };
+    if (isEdit) await apiClient.patch(`/expenses/${editingId.value}/`, payload);
+    else await apiClient.post("/expenses/", { ...payload, date: targetDateString.value });
+    cancelEdit();
     await fetchDailyData();
-    toast.success("Pengeluaran dicatat!");
-  } catch { toast.error("Gagal mencatat pengeluaran."); }
+    toast.success(isEdit ? "Pengeluaran diperbarui!" : "Pengeluaran dicatat!");
+  } catch { toast.error(isEdit ? "Gagal memperbarui pengeluaran." : "Gagal mencatat pengeluaran."); }
   finally { isSubmittingExpense.value = false; }
 };
-const deleteExpense = async (id) => {
-  if (!confirm("Hapus catatan pengeluaran ini?")) return;
-  try { await apiClient.delete(`/expenses/${id}/`); toast.success("Pengeluaran dihapus."); fetchDailyData(); }
-  catch { toast.error("Gagal menghapus pengeluaran."); }
+const deleteTarget    = ref(null);
+const isDeleting      = ref(false);
+const cancelDeleteBtn = ref(null);
+const askDelete = (exp) => { deleteTarget.value = exp; nextTick(() => cancelDeleteBtn.value?.focus()); };
+const closeDelete = () => { if (!isDeleting.value) deleteTarget.value = null; };
+const confirmDelete = async () => {
+  const exp = deleteTarget.value;
+  if (!exp) return;
+  isDeleting.value = true;
+  try {
+    await apiClient.delete(`/expenses/${exp.id}/`);
+    if (editingId.value === exp.id) cancelEdit();
+    toast.success("Pengeluaran dihapus.");
+    deleteTarget.value = null;
+    fetchDailyData();
+  } catch { toast.error("Gagal menghapus pengeluaran."); }
+  finally { isDeleting.value = false; }
 };
 const exportDocument = async (type) => {
   isExporting.value = true;
@@ -740,6 +844,86 @@ onMounted(async () => {
 }
 .submit-btn:hover:not(:disabled) { background: rgba(251,191,36,0.08); border-color: rgba(251,191,36,0.25); }
 .submit-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* Modal konfirmasi hapus */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: center; padding: 1rem;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+}
+.modal {
+  width: 100%; max-width: 380px;
+  background: var(--surface); border: 1px solid var(--border-strong);
+  border-radius: var(--r-lg); padding: 1.5rem;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+  animation: modal-in 0.15s ease-out;
+}
+@keyframes modal-in { from { opacity: 0; transform: translateY(6px) scale(0.98); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .modal { animation: none; } }
+.modal-icon {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: var(--r-sm); margin-bottom: 1rem;
+  background: rgba(239,68,68,0.1); color: var(--red-soft);
+}
+.modal-title {
+  font-family: 'Oswald', sans-serif; font-size: 1rem; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.5rem; color: #fff;
+}
+.modal-text { font-size: 0.8rem; line-height: 1.55; color: var(--text-dim); margin: 0 0 1.25rem; }
+.modal-text strong { color: #fff; font-weight: 600; }
+.modal-actions { display: flex; gap: 0.5rem; }
+.modal-cancel, .modal-confirm {
+  flex: 1; padding: 0.7rem; border-radius: var(--r-sm); border: 1px solid;
+  font-family: 'Oswald', sans-serif; font-size: 0.7rem; letter-spacing: 0.1em;
+  text-transform: uppercase; cursor: pointer; transition: all 0.15s;
+}
+.modal-cancel { background: rgba(255,255,255,0.04); border-color: var(--border-strong); color: rgba(255,255,255,0.8); }
+.modal-cancel:hover { background: rgba(255,255,255,0.08); }
+.modal-confirm { background: var(--accent); border-color: var(--accent); color: #fff; }
+.modal-confirm:hover:not(:disabled) { background: #b91c1c; }
+.modal-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
+.modal-cancel:focus-visible, .modal-confirm:focus-visible { outline: 2px solid var(--amber-soft); outline-offset: 2px; }
+
+/* Metode pembayaran, badge, dan aksi baris */
+.method-switch {
+  display: flex; background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border); border-radius: var(--r-sm); padding: 3px; gap: 2px;
+}
+.method-btn {
+  flex: 1; padding: 0.5rem 0.7rem; border-radius: 6px; border: none; background: transparent;
+  color: var(--text-faint); font-family: 'Oswald', sans-serif; font-size: 0.66rem;
+  letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: all 0.15s;
+}
+.method-btn:hover { color: rgba(255,255,255,0.65); }
+.method-btn.active { background: var(--accent); color: #fff; }
+.method-btn:focus-visible, .edit-btn:focus-visible, .cancel-btn:focus-visible {
+  outline: 2px solid var(--amber-soft); outline-offset: 2px;
+}
+.cancel-btn {
+  padding: 0.65rem; background: transparent; border: 1px solid var(--border);
+  border-radius: var(--r-sm); color: var(--text-dim); font-family: 'Oswald', sans-serif;
+  font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+  cursor: pointer; transition: all 0.15s;
+}
+.cancel-btn:hover { color: #fff; border-color: var(--border-strong); }
+
+.method-badge {
+  display: inline-block; padding: 0.15rem 0.55rem; border-radius: 100px; border: 1px solid;
+  font-family: 'Oswald', sans-serif; font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase;
+}
+.mb-cash { color: var(--text-dim); background: rgba(255,255,255,0.04); border-color: var(--border-strong); }
+.mb-qris { color: #7dd3fc; background: rgba(56,189,248,0.08); border-color: rgba(56,189,248,0.25); }
+
+.row-editing { background: rgba(251,191,36,0.05); }
+.row-actions { display: inline-flex; gap: 0.4rem; }
+.edit-btn {
+  padding: 0.25rem 0.65rem; border-radius: 6px;
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border-strong);
+  color: var(--text-dim); font-family: 'Oswald', sans-serif;
+  font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase;
+  cursor: pointer; transition: all 0.15s;
+}
+.edit-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
 
 /* Insight card */
 .insight-body { padding: 1rem 1.4rem 1.25rem; display: flex; flex-direction: column; gap: 0.85rem; }
