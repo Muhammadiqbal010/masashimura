@@ -9,9 +9,9 @@
         <p class="ao-date-label">{{ formattedCurrentDate }}</p>
       </div>
 
-      <div class="ao-live">
+      <div class="ao-live" :class="{ 'is-error': !!loadError }">
         <span class="live-dot"></span>
-        <span class="live-label">Live · update tiap 5 detik</span>
+        <span class="live-label">{{ loadError ? 'Gagal memuat · coba lagi tiap 5 detik' : 'Live · update tiap 5 detik' }}</span>
       </div>
     </div>
 
@@ -44,6 +44,15 @@
           class="search-input"
         />
       </div>
+    </div>
+
+    <!-- ── ERROR MEMUAT DATA ───────────────────────────────────────── -->
+    <div v-if="loadError" class="ao-error" role="alert">
+      <div class="ao-error-text">
+        <p class="ao-error-title">Pesanan {{ targetDateString }} gagal dimuat</p>
+        <p class="ao-error-msg">{{ loadError }}</p>
+      </div>
+      <button type="button" class="ao-error-btn" @click="retryFetch">Coba lagi</button>
     </div>
 
     <!-- ── ORDERS TABLE ────────────────────────────────────────────── -->
@@ -153,9 +162,20 @@
 
             <tr v-if="filteredOrders.length === 0">
               <td colspan="7" class="ao-empty">
-                <div class="empty-icon">🍱</div>
-                <p class="empty-text">Tidak ada pesanan untuk {{ targetDateString }}</p>
-                <p class="empty-hint">Pesanan baru akan muncul otomatis setiap 5 detik</p>
+                <template v-if="isLoading && !loadError">
+                  <div class="empty-icon">⏳</div>
+                  <p class="empty-text">Memuat pesanan {{ targetDateString }}…</p>
+                </template>
+                <template v-else-if="loadError">
+                  <div class="empty-icon">⚠️</div>
+                  <p class="empty-text">Data tidak bisa dimuat</p>
+                  <p class="empty-hint">Ini bukan berarti tidak ada pesanan — lihat keterangan di atas</p>
+                </template>
+                <template v-else>
+                  <div class="empty-icon">🍱</div>
+                  <p class="empty-text">Tidak ada pesanan untuk {{ targetDateString }}</p>
+                  <p class="empty-hint">Pesanan baru akan muncul otomatis setiap 5 detik</p>
+                </template>
               </td>
             </tr>
           </tbody>
@@ -646,6 +666,8 @@ const kasirName = computed(() => authStore.user?.name || authStore.user?.usernam
 const isOwner = computed(() => (authStore.user?.role || '').toLowerCase() === 'owner');
 
 const currentDate   = ref(new Date());
+const isLoading     = ref(true);    // true sampai jawaban pertama (sukses/gagal) untuk tanggal yang dipilih
+const loadError     = ref("");      // pesan kegagalan memuat; kosong = baik-baik saja
 const orders        = ref([]);
 const searchQuery   = ref("");
 const isModalOpen   = ref(false);
@@ -727,10 +749,19 @@ const targetDateString = computed(() => {
   return `${yyyy}-${mm}-${dd}`;
 });
 
+// Ganti hari: kosongkan daftar lama dulu. Tanpa ini, kalau request hari baru
+// gagal, layar masih menampilkan pesanan hari SEBELUMNYA di bawah tanggal baru.
+const resetForNewDate = () => {
+  orders.value    = [];
+  loadError.value = "";
+  isLoading.value = true;
+};
+
 const changeDate = (days) => {
   const d = new Date(currentDate.value);
   d.setDate(d.getDate() + days);
   currentDate.value = d;
+  resetForNewDate();
   fetchActiveOrders();
 };
 
@@ -739,15 +770,38 @@ const jumpToDate = (value) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value || "")) return;
   const [y, m, d] = value.split("-").map(Number);
   currentDate.value = new Date(y, m - 1, d);
+  resetForNewDate();
   fetchActiveOrders();
 };
 
-const fetchActiveOrders = async () => {
-  try {
-    const res = await orderAPI.getActiveOrders(targetDateString.value);
-    orders.value = res.data;
-  } catch (err) { console.error("Gagal tarik data:", err); }
+// Kegagalan memuat TIDAK boleh tampil sebagai "tidak ada pesanan".
+const describeFetchError = (err) => {
+  const status = err?.response?.status;
+  const detail = err?.response?.data?.error || err?.response?.data?.detail;
+  if (!status)            return "Tidak bisa terhubung ke server. Cek internet, atau server backend sedang mati / sedang restart.";
+  if (status === 401 || status === 403) return `Sesi login habis atau akun tidak punya akses (${status}). Coba login ulang.`;
+  if (status >= 500)      return `Server error (${status}). Data pesanan tidak hilang — masalahnya di backend (cek log server; kalau baru deploy, pastikan migrasi database sudah dijalankan).`;
+  return `Server menolak permintaan (${status})${detail ? `: ${detail}` : "."}`;
 };
+
+const fetchActiveOrders = async () => {
+  const requestedDate = targetDateString.value;
+  try {
+    const res = await orderAPI.getActiveOrders(requestedDate);
+    // Jawaban untuk tanggal yang sudah ditinggalkan (user keburu ganti hari) dibuang.
+    if (requestedDate !== targetDateString.value) return;
+    orders.value    = Array.isArray(res.data) ? res.data : [];
+    loadError.value = "";
+  } catch (err) {
+    if (requestedDate !== targetDateString.value) return;
+    console.error("Gagal tarik data:", err);
+    loadError.value = describeFetchError(err);   // data lama (tanggal sama) dibiarkan tampil
+  } finally {
+    if (requestedDate === targetDateString.value) isLoading.value = false;
+  }
+};
+
+const retryFetch = () => { isLoading.value = true; fetchActiveOrders(); };
 
 const filteredOrders = computed(() =>
   orders.value.filter(o => (o.customer_phone || "").includes(searchQuery.value))
@@ -961,6 +1015,25 @@ onUnmounted(() => { if (pollingTimer) clearInterval(pollingTimer); });
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
 }
+.ao-live.is-error { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.35); }
+.ao-live.is-error .live-dot { background: #ef4444; animation: none; }
+.ao-live.is-error .live-label { color: #f87171; }
+
+.ao-error {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+  margin-bottom: 1rem; padding: 0.85rem 1.1rem; border-radius: 12px;
+  background: rgba(239,68,68,0.07); border: 1px solid rgba(239,68,68,0.3);
+}
+.ao-error-text { min-width: 0; flex: 1 1 260px; }
+.ao-error-title { margin: 0 0 0.2rem; font-size: 0.8rem; font-weight: 600; color: #f87171; }
+.ao-error-msg { margin: 0; font-size: 0.72rem; line-height: 1.5; color: rgba(255,255,255,0.55); }
+.ao-error-btn {
+  padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; flex-shrink: 0;
+  background: transparent; border: 1px solid rgba(239,68,68,0.45); color: #f87171;
+  font-family: 'Oswald', sans-serif; font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase;
+  transition: all 0.15s;
+}
+.ao-error-btn:hover { background: rgba(239,68,68,0.12); color: #fff; }
 
 /* ── Control Bar ───────────────────────────────────────────────────
    Navigasi tanggal + pencarian dipisah dari header jadi satu "toolbar"
