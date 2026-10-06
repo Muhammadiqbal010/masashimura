@@ -10,11 +10,68 @@
           <h1 class="pos-title">New Order (POS)</h1>
           <p class="pos-date">{{ liveFormattedDate }}</p>
         </div>
-        <button @click="showUnpaidDrawer = true" class="unpaid-trigger">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          <span>Tagihan</span>
-          <span v-if="unpaidOrders.length" class="unpaid-badge">{{ unpaidOrders.length }}</span>
-        </button>
+        <div class="header-actions">
+
+          <!-- Waktu order: default "Sekarang"; "Atur Manual" buat input susulan hari/jam lain.
+               Pilihan & tanggal tersimpan di browser sampai admin memilih "Sekarang" lagi. -->
+          <div class="time-chip-wrap">
+            <button
+              type="button"
+              class="time-chip"
+              :class="{ 'is-manual': useCustomTime, 'is-warn': useCustomTime && !!customTimeError }"
+              :aria-expanded="showTimePop"
+              title="Waktu order"
+              @click="showTimePop = !showTimePop"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span>{{ timeChipText }}</span>
+            </button>
+
+            <div v-if="showTimePop" class="time-pop-backdrop" @click="showTimePop = false"></div>
+            <div v-if="showTimePop" class="time-pop" role="dialog" aria-label="Waktu order">
+              <p class="time-pop-title">Waktu Order</p>
+              <div class="toggle-grid">
+                <button
+                  type="button"
+                  @click="setNowMode"
+                  class="toggle-btn"
+                  :class="!useCustomTime ? 'toggle-active-white' : 'toggle-inactive'"
+                >
+                  Sekarang
+                </button>
+                <button
+                  type="button"
+                  @click="enableCustomTime"
+                  class="toggle-btn"
+                  :class="useCustomTime ? 'toggle-active-amber' : 'toggle-inactive'"
+                >
+                  Atur Manual
+                </button>
+              </div>
+
+              <div v-if="useCustomTime" class="time-box">
+                <div class="time-fields">
+                  <input v-model="orderDate" type="date" :max="wibToday()" class="pos-input" aria-label="Tanggal order" />
+                  <input v-model="orderTime" type="time" class="pos-input" aria-label="Jam order" />
+                </div>
+                <p v-if="customTimeError" class="time-error">{{ customTimeError }}</p>
+                <p v-else class="time-note">
+                  Order dicatat pada <strong>{{ customTimeLabel }}</strong> dan masuk ke laporan hari itu.
+                  Mode ini <strong>tetap aktif</strong> (juga setelah pindah halaman/refresh) sampai kamu pilih “Sekarang”.
+                </p>
+              </div>
+              <p v-else class="time-note">Order dicatat saat itu juga.</p>
+
+              <button type="button" class="time-pop-done" @click="showTimePop = false">Selesai</button>
+            </div>
+          </div>
+
+          <button @click="showUnpaidDrawer = true" class="unpaid-trigger">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span>Tagihan</span>
+            <span v-if="unpaidOrders.length" class="unpaid-badge">{{ unpaidOrders.length }}</span>
+          </button>
+        </div>
       </div>
 
       <!-- Banner mode tambah ke tagihan -->
@@ -167,41 +224,6 @@
               class="cart-notes-input"
             />
           </div>
-        </div>
-      </div>
-
-      <!-- Waktu order: default "Sekarang"; "Atur Manual" buat input susulan hari/jam lain -->
-      <div class="order-section">
-        <label class="field-label">Waktu Order</label>
-        <div class="toggle-grid">
-          <button
-            type="button"
-            @click="setNowMode"
-            class="toggle-btn"
-            :class="!useCustomTime ? 'toggle-active-white' : 'toggle-inactive'"
-          >
-            Sekarang
-          </button>
-          <button
-            type="button"
-            @click="enableCustomTime"
-            class="toggle-btn"
-            :class="useCustomTime ? 'toggle-active-amber' : 'toggle-inactive'"
-          >
-            Atur Manual
-          </button>
-        </div>
-
-        <div v-if="useCustomTime" class="time-box">
-          <div class="time-fields">
-            <input v-model="orderDate" type="date" :max="wibToday()" class="pos-input" aria-label="Tanggal order" />
-            <input v-model="orderTime" type="time" class="pos-input" aria-label="Jam order" />
-          </div>
-          <p v-if="customTimeError" class="time-error">{{ customTimeError }}</p>
-          <p v-else class="time-note">
-            Order dicatat pada <strong>{{ customTimeLabel }}</strong> dan masuk ke laporan hari itu.
-            Mode ini tetap aktif untuk order berikutnya — pilih “Sekarang” kalau sudah selesai.
-          </p>
         </div>
       </div>
 
@@ -653,15 +675,52 @@ const isSubmitting  = ref(false);
 // ── State: waktu order manual (input susulan) ────────────────────────
 // Dihitung dalam WIB (UTC+7) tanpa bergantung zona waktu perangkat; nilai
 // dikirim ke server lengkap dengan offset +07:00.
-const useCustomTime = ref(false);
-const orderDate     = ref("");   // YYYY-MM-DD
-const orderTime     = ref("");   // HH:mm
 const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
-const wibParts = () => {
-  const iso = new Date(Date.now() + WIB_OFFSET_MS).toISOString();
+const wibParts = (ms = Date.now()) => {
+  const iso = new Date(ms + WIB_OFFSET_MS).toISOString();
   return { date: iso.slice(0, 10), time: iso.slice(11, 16) };
 };
 const wibToday = () => wibParts().date;
+
+// Pilihan "Atur Manual" + tanggalnya DISIMPAN di browser ini, jadi tetap aktif
+// waktu pindah halaman / refresh — sampai admin sendiri memilih "Sekarang".
+// Jam sengaja TIDAK disimpan: tiap order susulan jamnya harus diisi lagi.
+const CUSTOM_TIME_KEY   = "masashimura.pos.customTime";
+const BACKDATE_MAX_DAYS = 366;   // samakan dengan batas di backend
+const loadSavedTimeMode = () => {
+  try {
+    const saved = JSON.parse(localStorage.getItem(CUSTOM_TIME_KEY) || "null");
+    if (!saved?.on || !/^\d{4}-\d{2}-\d{2}$/.test(saved.date || "")) return null;
+    const oldest = wibParts(Date.now() - BACKDATE_MAX_DAYS * 86400000).date;
+    if (saved.date > wibToday() || saved.date < oldest) return null;   // tidak masuk akal -> abaikan
+    return saved.date;
+  } catch { return null; }
+};
+const savedDate     = loadSavedTimeMode();
+const useCustomTime = ref(!!savedDate);
+const orderDate     = ref(savedDate || "");   // YYYY-MM-DD
+const orderTime     = ref("");                // HH:mm
+const showTimePop   = ref(false);
+
+watch([useCustomTime, orderDate], () => {
+  try {
+    if (useCustomTime.value && orderDate.value) {
+      localStorage.setItem(CUSTOM_TIME_KEY, JSON.stringify({ on: true, date: orderDate.value }));
+    } else {
+      localStorage.removeItem(CUSTOM_TIME_KEY);
+    }
+  } catch { /* localStorage tidak tersedia (mis. mode privat) — fitur tetap jalan tanpa penyimpanan */ }
+});
+
+const timeChipText = computed(() => {
+  if (!useCustomTime.value) return "Sekarang";
+  const day = orderDate.value
+    ? new Date(`${orderDate.value}T12:00:00+07:00`).toLocaleDateString("id-ID", {
+        day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Jakarta",
+      })
+    : "—";
+  return `${day} · ${orderTime.value || "isi jam"}`;
+});
 
 const customCreatedAtValue = () => `${orderDate.value}T${orderTime.value}:00+07:00`;
 
@@ -936,7 +995,7 @@ const submitOrder = async () => {
 
   if (useCustomTime.value) {
     const timeErr = getCustomTimeError();
-    if (timeErr) return toast.error(timeErr);
+    if (timeErr) { showTimePop.value = true; return toast.error(timeErr); }
   }
 
   isSubmitting.value = true;
@@ -1244,6 +1303,44 @@ onBeforeUnmount(() => clearTimeout(debounceTimeout));
   white-space: nowrap;
 }
 .unpaid-trigger:hover { border-color: rgba(255,255,255,0.18); color: #fff; }
+
+/* ── Waktu order (chip di samping Tagihan + popover) ──────────────── */
+.header-actions { display: flex; align-items: flex-start; gap: 0.6rem; flex-wrap: wrap; }
+.time-chip-wrap { position: relative; }
+.time-chip {
+  display: flex; align-items: center; gap: 0.45rem;
+  padding: 0.55rem 1rem;
+  background: #0f0f0f; border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px; color: rgba(255,255,255,0.5);
+  font-family: 'Oswald', sans-serif; font-size: 0.68rem;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.time-chip:hover { border-color: rgba(255,255,255,0.18); color: #fff; }
+.time-chip.is-manual { color: #fbbf24; border-color: rgba(251,191,36,0.45); background: rgba(251,191,36,0.07); }
+.time-chip.is-warn   { color: #f87171; border-color: rgba(248,113,113,0.6); background: rgba(248,113,113,0.07); }
+.time-pop-backdrop { position: fixed; inset: 0; z-index: 40; }
+.time-pop {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 41;
+  width: min(330px, calc(100vw - 2rem)); padding: 0.9rem;
+  display: flex; flex-direction: column; gap: 0.65rem;
+  background: #0f0f0f; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.55);
+}
+.time-pop-title {
+  margin: 0; font-size: 0.62rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: rgba(255,255,255,0.35);
+}
+.time-pop .time-box { margin-top: 0; }
+.time-pop-done {
+  padding: 0.45rem; border-radius: 8px; cursor: pointer;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.6); font-size: 0.7rem; transition: all 0.15s;
+}
+.time-pop-done:hover { color: #fff; background: rgba(255,255,255,0.09); }
+@media (max-width: 640px) {
+  .time-pop { left: 0; right: auto; }
+}
 .unpaid-badge {
   display: inline-flex; align-items: center; justify-content: center;
   width: 18px; height: 18px; border-radius: 50%;
