@@ -20,7 +20,7 @@ from rest_framework.views import APIView
 from finance.models import Expense
 from menu.models import Menu
 from promotions.models import Promo  # validasi & kunci kuota server-side saat create_order
-
+from payments.services import cancel_midtrans_transaction
 from .pricing import web_price
 from .models import (
     CANCEL_REASON_CHOICES,
@@ -162,6 +162,17 @@ def create_order(request):
     if source == 'pos' and not (request.user and request.user.is_authenticated and request.user.is_staff):
         source = 'web'
 
+    # Gateway (Midtrans) hanya untuk order web.
+    if payment_method == 'gateway' and source != 'web':
+        return Response({"error": "Metode gateway hanya untuk order web"}, status=400)
+
+    # Order web cuma boleh: cash (bayar di kasir) atau gateway (Midtrans).
+    # QRIS manual + upload bukti sudah dihapus.
+    if source == 'web' and payment_method not in ('cash', 'gateway'):
+        return Response(
+            {"error": "Metode pembayaran web hanya cash atau gateway"}, status=400
+        )
+
     # Waktu order manual — HANYA berlaku untuk source='pos' (di titik ini sudah
     # dipastikan staff login). Dari order web / tanpa login, created_at diabaikan.
     backdated_at = None
@@ -190,22 +201,14 @@ def create_order(request):
 
     raw_payment_status = data.get('payment_status', '')
 
-    is_qris         = payment_method in ('qris', 'qris_manual', 'gateway')
-    proof_image_url = (data.get('proof_image_url') or '').strip()
-
-    if source == 'web' and is_qris and not proof_image_url:
-        return Response({"error": "Bukti pembayaran QRIS wajib diupload"}, status=400)
+    is_qris = payment_method in ('qris', 'qris_manual')   # QRIS di kasir (POS)
 
     if source == 'web':
-        if is_qris:
-            # Web + QRIS → JANGAN langsung 'paid'. Nunggu admin cek manual
-            # bukti pembayaran lewat endpoint verify-payment sebelum order
-            # dianggap lunas & masuk laporan omzet.
-            payment_status = 'pending_verification'
-        else:
-            payment_status = 'pending'
-        is_deferred  = False
-        order_status = 'pending'
+        # Web + gateway → 'pending' sampai webhook Midtrans bilang settlement.
+        # Web + cash    → 'pending' sampai kasir melunasi di toko.
+        payment_status = 'pending'
+        is_deferred    = False
+        order_status   = 'pending'
     elif raw_payment_status == 'pending' and not is_qris:
         # POS "Makan Dulu" — hanya boleh cash
         payment_status = 'unpaid'
@@ -244,7 +247,6 @@ def create_order(request):
         table_number=table_number,
         notes=notes,
         kasir_name=kasir_name,
-        proof_image_url=proof_image_url,
         promo=promo_obj,
         **time_fields,
     )
@@ -1011,13 +1013,19 @@ def pay_order(request, pk):
             status=400,
         )
 
+    if order.payment_method == "gateway" and order.payment_status == "pending":
+        return Response(
+            {"detail": "Order ini menunggu pembayaran online (Midtrans). Batalkan order dulu kalau customer tidak jadi bayar online."},
+            status=400,
+        )
+
     previous_status = order.status
     kasir_name      = (request.data.get('kasir_name') or '').strip()
     payments_data   = request.data.get('payments')
 
     if payments_data:
         # ── Format baru: banyak baris pembayaran ──
-        valid_methods = {choice[0] for choice in PAYMENT_METHOD_CHOICES if choice[0] != 'mixed'}
+        valid_methods = {choice[0] for choice in PAYMENT_METHOD_CHOICES if choice[0] not in ('mixed', 'gateway')}
         parsed_rows = []
         for row in payments_data:
             method = (row.get('method') or '').strip()
@@ -1088,49 +1096,6 @@ def pay_order(request, pk):
 @api_view(["PATCH"])
 @permission_classes([IsAdminUser])
 @transaction.atomic
-def verify_qris_payment(request, pk):
-    """
-    PATCH /api/orders/<id>/verify-payment/
-    Body: { "approve": true/false, "kasir_name": "...", "reject_note": "..." }
-
-    approve=true → order lunas (paid+completed).
-    approve=false → order dibatalkan (pembayaran tidak valid).
-    """
-    order = get_object_or_404(Order.objects.select_for_update(), pk=pk)
-
-    if order.payment_status != 'pending_verification':
-        return Response(
-            {"detail": "Order ini bukan status menunggu verifikasi."},
-            status=400,
-        )
-
-    approve         = request.data.get('approve', True)
-    kasir_name      = (request.data.get('kasir_name') or '').strip()
-    previous_status = order.status
-
-    if approve:
-        order.payment_status = 'paid'
-        order.status         = 'completed'
-        order.amount_paid    = order.total_price
-        order.kasir_name     = kasir_name or order.kasir_name
-    else:
-        order.payment_status = 'void'
-        order.status         = 'cancelled'
-        order.cancel_reason  = 'other'
-        order.cancel_note    = (request.data.get('reject_note') or 'Bukti pembayaran QRIS tidak valid').strip()
-        order.cancelled_at   = timezone.now()
-        order.cancelled_by   = kasir_name
-
-    order._previous_status = previous_status
-    order.save()
-    order.refresh_from_db()
-
-    return Response(OrderSerializer(order).data)
-
-
-@api_view(["PATCH"])
-@permission_classes([IsAdminUser])
-@transaction.atomic
 def cancel_order(request, pk):
     """
     Void/batalkan order dengan alasan wajib. Order TIDAK dihapus dari
@@ -1138,6 +1103,7 @@ def cancel_order(request, pk):
     """
     order = get_object_or_404(Order.objects.select_for_update(), pk=pk)
     previous_status = order.status
+    was_gateway_pending = order.payment_method == "gateway" and order.payment_status == "pending"
 
     if order.status == "completed":
         return Response(
@@ -1164,6 +1130,12 @@ def cancel_order(request, pk):
 
     order._previous_status = previous_status
     order.save()
+
+    # Tutup transaksi di Midtrans supaya QR lama tidak bisa dibayar lagi.
+    if was_gateway_pending:
+        order_number = order.order_number
+        transaction.on_commit(lambda: cancel_midtrans_transaction(order_number))
+
     order.refresh_from_db()
 
     return Response({
@@ -1536,6 +1508,11 @@ class StoreSettingsView(APIView):
 
 def _check_editable(order):
     """Item cuma boleh diubah selama order belum dibayar & belum dibatalkan."""
+    if order.payment_method == "gateway" and order.payment_status == "pending":
+        return Response(
+            {"detail": "Order menunggu pembayaran online, item tidak bisa diubah. Batalkan order lalu input ulang."},
+            status=400,
+        )
     if order.status in ("completed", "cancelled") or order.payment_status not in ("unpaid", "pending"):
         return Response(
             {"detail": "Order ini sudah lunas / dibatalkan, item tidak bisa diubah lagi."},

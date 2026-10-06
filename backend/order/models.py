@@ -42,7 +42,6 @@ PAYMENT_STATUS_CHOICES = (
     ('unpaid',                'Unpaid'),
     ('paid',                  'Paid'),
     ('pending',                'Pending'),
-    ('pending_verification',  'Menunggu Verifikasi'),
     ('void',                  'Batal'),
 )
 
@@ -118,14 +117,13 @@ class Order(models.Model):
         default=""
     )
 
-    # Link Cloudinary bukti bayar QRIS yang diupload customer saat checkout
-    # web. Diisi otomatis di create_order — sebelumnya ini cuma numpang
-    # lewat di pesan WhatsApp, ga pernah tersimpan sama sekali di DB.
-    proof_image_url = models.URLField(
-        max_length=500, blank=True, default="",
-        help_text="Bukti pembayaran QRIS (link Cloudinary), diisi saat checkout web QRIS",
+    # Snap token Midtrans. Disimpan supaya kalau customer menutup popup lalu
+    # klik bayar lagi, token yang sama dipakai ulang (tidak ada transaksi
+    # Midtrans kedua → tidak ada risiko bayar dobel). Bukti bayar tidak
+    # disimpan di sini: status lunas datang dari webhook Midtrans.
+    midtrans_snap_token = models.CharField(
+        max_length=100, blank=True, default="", editable=False,
     )
-
 
     # ── Audit trail pembatalan (void) ──────────────────────────────
     # Order yang dibatalkan TIDAK dihapus dari database — cuma diubah

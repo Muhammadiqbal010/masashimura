@@ -4,6 +4,7 @@ import api from "./client"; // Ini adalah axios instance (apiClient)
 export { authAPI } from "./auth";
 export { menuAPI } from "./menu";
 export { orderAPI, pointRewardAPI, loyaltySettingsAPI } from "./order";
+export { paymentAPI } from "./payments";
 export { statsAPI } from "./stats";
 export { API_ORIGIN } from "./client"; // Import konstanta saja
 

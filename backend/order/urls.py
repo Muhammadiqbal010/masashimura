@@ -15,7 +15,6 @@ from .views import (
     add_order_item,
     order_item_detail,
     split_order,
-    verify_qris_payment,
     # Loyalty & point rewards
     check_loyalty_status,
     available_point_rewards,
@@ -87,7 +86,6 @@ urlpatterns = [
     path("orders/<int:pk>/",                   get_order,           name="order-detail"),
     path("orders/<int:pk>/pay/",               pay_order,           name="pay-order"),
     path("orders/<int:pk>/cancel/",            cancel_order,        name="cancel-order"),
-    path("orders/<int:pk>/verify-payment/",    verify_qris_payment, name="verify-qris-payment"),
     path("orders/<int:pk>/items/",             add_order_item,      name="order-item-add"),
     path("orders/<int:pk>/items/<int:item_id>/", order_item_detail, name="order-item-detail"),
     path("orders/<int:pk>/split/",             split_order,         name="order-split"),

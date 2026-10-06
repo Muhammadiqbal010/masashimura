@@ -9,7 +9,6 @@ import cloudinary.api
 
 # Load environment variables dari .env
 load_dotenv()
-
 # ========================
 # BASE CONFIG
 # ========================
@@ -21,6 +20,7 @@ ALLOWED_HOSTS = [
     '.vercel.app',
 ]
 
+load_dotenv(BASE_DIR / ".env")
 # ========================
 # CLOUDINARY
 # ========================
@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'finance',
     'prediction',
     'promotions',
+    'payments',
 ]
 
 # ========================
@@ -122,6 +123,13 @@ DATABASES = {
         },
     }
 }
+
+# ========================
+# Midtrans
+# ========================
+MIDTRANS_SERVER_KEY = os.getenv("MIDTRANS_SERVER_KEY", "")
+MIDTRANS_CLIENT_KEY = os.getenv("MIDTRANS_CLIENT_KEY", "")
+MIDTRANS_IS_PRODUCTION = os.getenv("MIDTRANS_IS_PRODUCTION", "False") == "True"
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
