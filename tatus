@@ -1,0 +1,8 @@
+[33mcommit 5dd0e1449a6ebb797e71048e8f5808e9ae57ffca[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: Muhammadiqbal010 <muhammadiiqbal31@gmail.com>
+Date:   Wed Oct 7 17:20:13 2026 +0700
+
+    add midtransclient to requirements
+
+ backend/requirements.txt | 1 [32m+[m
+ 1 file changed, 1 insertion(+)

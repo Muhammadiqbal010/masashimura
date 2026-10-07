@@ -426,10 +426,13 @@ onBeforeUnmount(() => {
 // ══════════════════════════════════════════════════════════════════════════════
 const MIDTRANS_CLIENT_KEY = import.meta.env.VITE_MIDTRANS_CLIENT_KEY || ""
 
-// Client key sandbox selalu berawalan "SB-"; selain itu dianggap production.
-const SNAP_URL = MIDTRANS_CLIENT_KEY.startsWith("SB-")
-  ? "https://app.sandbox.midtrans.com/snap/snap.js"
-  : "https://app.midtrans.com/snap/snap.js"
+// Format client key Midtrans bervariasi (ada "SB-Mid-client-...", ada yang langsung
+// "Mid-client-..."), jadi mode ditentukan eksplisit lewat env, bukan dari awalan key.
+// Default sandbox. Set VITE_MIDTRANS_IS_PRODUCTION=true hanya saat go-live.
+const IS_PRODUCTION = import.meta.env.VITE_MIDTRANS_IS_PRODUCTION === "true"
+const SNAP_URL = IS_PRODUCTION
+  ? "https://app.midtrans.com/snap/snap.js"
+  : "https://app.sandbox.midtrans.com/snap/snap.js"
 
 let snapLoading = null
 const loadSnap = () => {
