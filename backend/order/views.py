@@ -361,11 +361,21 @@ def create_order(request):
     return Response(OrderSerializer(order).data, status=201)
 
 
+# Order gateway (Midtrans) yang belum pernah lunas = belum "resmi masuk" ke
+# operasional (checkout QRIS yang popup-nya ditutup / kedaluwarsa).
+# amount_paid=0 supaya order gateway yang sudah dibayar lalu dibatalkan
+# (refund) tetap kelihatan di admin.
+GATEWAY_NOT_PAID_Q = (
+    Q(payment_method="gateway", amount_paid=0) & ~Q(payment_status="paid")
+)
+
+
 @api_view(["GET"])
 @permission_classes([IsAdminUser])
 def list_orders(request):
     orders = (
         Order.objects
+        .exclude(GATEWAY_NOT_PAID_Q)
         .prefetch_related("items__menu")
         .order_by("-created_at")
     )
@@ -503,7 +513,6 @@ def get_order(request, pk):
 
     return Response(OrderSerializer(order).data)
 
-
 @api_view(["GET"])
 @permission_classes([IsAdminUser])
 def active_orders_per_day(request):
@@ -526,6 +535,7 @@ def active_orders_per_day(request):
         Order.objects
         .filter(created_at__gte=day_start, created_at__lt=day_end)
         .prefetch_related("items__menu")
+        .exclude(GATEWAY_NOT_PAID_Q)
         .order_by("-created_at", "-id")
     )
     return Response(OrderSerializer(orders, many=True).data)
@@ -671,7 +681,7 @@ class DashboardStatsView(APIView):
         date_to   = request.query_params.get('date_to')
 
         paid_qs = Order.objects.filter(payment_status='paid').exclude(status='cancelled')
-        all_qs  = Order.objects.all()
+        all_qs  = Order.objects.exclude(GATEWAY_NOT_PAID_Q)
         top_menu_qs = OrderItem.objects.filter(
             order__payment_status='paid',
         ).exclude(order__status='cancelled')
@@ -975,6 +985,7 @@ def unpaid_orders(request):
         Order.objects
         .filter(payment_status__in=["unpaid", "pending"])
         .exclude(status="cancelled")
+        .exclude(GATEWAY_NOT_PAID_Q)
         .prefetch_related("items__menu")
     )
 
@@ -1157,58 +1168,71 @@ NOTIFICATION_BACKLOG_SKIP_THRESHOLD = 50
 @permission_classes([IsAdminUser])
 def new_order_notifications(request):
     """
-    GET /api/orders/notifications/?after_id=123
+    GET /api/orders/notifications/?after_id=123&after_payment_id=45
 
-    Polling ringan buat deteksi order BARU sejak id terakhir yang diketahui
-    frontend (toast + suara di admin dashboard).
-
-    - Order POS (source='pos') di-exclude.
-    - Tanpa `after_id` (pemanggilan pertama), balikin new_orders kosong +
-      `latest_id` sebagai starting point, biar order lama gak ke-notif ulang.
-    - Gap after_id → latest_id lebih besar dari
-      NOTIFICATION_BACKLOG_SKIP_THRESHOLD dianggap bulk insert: cursor
-      di-jump dan `backlog_skipped: True` dikirim ke frontend.
+    - new_orders      : order BARU (cash/POS-web) sejak after_id. Order gateway
+                        TIDAK ikut di sini.
+    - new_paid_orders : order gateway yang pembayarannya MASUK sejak
+                        after_payment_id (kursor = id OrderPayment).
     """
-    latest_id = Order.objects.order_by('-id').values_list('id', flat=True).first() or 0
+    latest_id = Order.objects.order_by("-id").values_list("id", flat=True).first() or 0
+    latest_payment_id = (
+        OrderPayment.objects.filter(method="gateway")
+        .order_by("-id").values_list("id", flat=True).first() or 0
+    )
+    base = {
+        "new_orders": [], "new_paid_orders": [],
+        "latest_id": latest_id, "latest_payment_id": latest_payment_id,
+    }
 
     after_id_raw = request.query_params.get("after_id")
     if after_id_raw is None:
-        return Response({'new_orders': [], 'latest_id': latest_id})
-
+        return Response(base)
     try:
         after_id = int(after_id_raw)
     except (TypeError, ValueError):
-        return Response({'new_orders': [], 'latest_id': latest_id})
+        return Response(base)
 
     gap = latest_id - after_id
     if gap > NOTIFICATION_BACKLOG_SKIP_THRESHOLD:
-        return Response({
-            'new_orders': [],
-            'latest_id': latest_id,
-            'backlog_skipped': True,
-            'backlog_count': gap,
-        })
+        return Response({**base, "backlog_skipped": True, "backlog_count": gap})
+
+    # Frontend lama (belum kirim after_payment_id): jangan banjir notif.
+    try:
+        after_payment_id = int(request.query_params.get("after_payment_id"))
+    except (TypeError, ValueError):
+        after_payment_id = latest_payment_id
 
     new_orders_qs = (
         Order.objects
         .filter(id__gt=after_id)
-        .exclude(source='pos')
-        .order_by('id')[:20]
+        .exclude(source="pos")
+        .exclude(payment_method="gateway")
+        .order_by("id")[:20]
+    )
+    paid_qs = (
+        OrderPayment.objects
+        .filter(method="gateway", id__gt=after_payment_id)
+        .select_related("order")
+        .order_by("id")[:20]
     )
 
-    data = [
-        {
-            'id':            o.id,
-            'order_number':  o.order_number,
-            'customer_name': o.customer_name or 'Pelanggan',
-            'total_price':   o.total_price,
-            'source':        o.source,
-            'created_at':    o.created_at,
+    def _row(o, **extra):
+        return {
+            "id": o.id,
+            "order_number": o.order_number,
+            "customer_name": o.customer_name or "Pelanggan",
+            "total_price": o.total_price,
+            "source": o.source,
+            "created_at": o.created_at,
+            **extra,
         }
-        for o in new_orders_qs
-    ]
-    return Response({'new_orders': data, 'latest_id': latest_id})
 
+    return Response({
+        **base,
+        "new_orders": [_row(o) for o in new_orders_qs],
+        "new_paid_orders": [_row(p.order, payment_id=p.id, paid=True) for p in paid_qs],
+    })
 
 # ─────────────────────────────────────────────
 # HISTORY & LAPORAN LENGKAP
@@ -1224,7 +1248,7 @@ def order_history(request):
     period = request.query_params.get("period", "today")
     now    = timezone.now()
 
-    qs = Order.objects.prefetch_related("items__menu")
+    qs = Order.objects.exclude(GATEWAY_NOT_PAID_Q).prefetch_related("items__menu")
 
     if period == "today":
         qs = qs.filter(created_at__date=now.date())
