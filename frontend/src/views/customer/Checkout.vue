@@ -330,7 +330,7 @@ import { X, Check, Clock, ShoppingCart, ArrowRight } from "lucide-vue-next"
 import { useStoreSettings } from "@/composables/useStoreSettings"
 import PromoCodeBox from "@/components/ui/PromoCodeBox.vue"
 import PointRedeemBox from "@/components/ui/PointRedeemBox.vue"
-import { unlockPaymentAudio, playPaymentSuccess } from "@/utils/paymentSuccessSound"
+import { unlockPaymentAudio, playPaymentSuccess } from "@/utils/paymentSuccessSound.js"
 
 const cartStore     = useCartStore()
 const router        = useRouter()
