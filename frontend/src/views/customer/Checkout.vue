@@ -90,7 +90,7 @@
             <button
               type="button"
               class="w-full py-3.5 rounded-xl border border-white/[0.1] text-zinc-400 hover:text-white hover:border-white/20 font-sora text-[11px] font-bold uppercase tracking-widest transition-all duration-200"
-              @click="pollStatus(5)"
+              @click="onCheckStatusClick"
             >
               Cek Status
             </button>
@@ -330,6 +330,7 @@ import { X, Check, Clock, ShoppingCart, ArrowRight } from "lucide-vue-next"
 import { useStoreSettings } from "@/composables/useStoreSettings"
 import PromoCodeBox from "@/components/ui/PromoCodeBox.vue"
 import PointRedeemBox from "@/components/ui/PointRedeemBox.vue"
+import { unlockPaymentAudio, playPaymentSuccess } from "@/utils/paymentSuccessSound"
 
 const cartStore     = useCartStore()
 const router        = useRouter()
@@ -486,8 +487,8 @@ watch(gatewayUnavailable, (unavailable) => {
 //   phase: "starting" | "waiting" | "paid" | "failed" | "pending"
 const payment = ref(null)
 
-const POLL_INTERVAL_MS   = 3000
-const POLL_MAX_ATTEMPTS  = 20   // ≈ 60 detik
+const POLL_INTERVAL_MS   = 2000
+const POLL_MAX_ATTEMPTS  = 30   // ≈ 60 detik
 
 let pollRun = 0
 const stopPolling = () => { pollRun++ }
@@ -511,6 +512,9 @@ const pollStatus = async (maxAttempts = POLL_MAX_ATTEMPTS) => {
 
       if (data.payment_status === "paid") {
         p.phase = "paid"
+        // Suara hanya dibunyikan setelah backend mengonfirmasi lunas,
+        // supaya customer tidak pernah dapat "sukses" palsu.
+        playPaymentSuccess()
         toast.success("Pembayaran berhasil!")
         return
       }
@@ -533,11 +537,20 @@ const pollStatus = async (maxAttempts = POLL_MAX_ATTEMPTS) => {
   }
 }
 
+// Tombol "Cek Status" = tap user, jadi sekalian buka kunci audio.
+const onCheckStatusClick = () => {
+  unlockPaymentAudio()
+  pollStatus(5)
+}
+
 // Minta token (token yang sama dipakai ulang backend) lalu buka popup Snap.
 // Fungsi ini tidak pernah throw; error ditampilkan lewat panel.
 const openSnap = async () => {
   const p = payment.value
   if (!p) return
+
+  // Aman dipanggil berulang. Penting kalau dipicu dari tombol "Lanjutkan Bayar".
+  unlockPaymentAudio()
 
   stopPolling()
   p.phase = "starting"
@@ -681,6 +694,11 @@ const resetForm = () => {
 
 // ── Checkout ──────────────────────────────────────────────────────────────────
 const checkout = async () => {
+  // HARUS paling awal dan sebelum `await` apa pun: browser (terutama iOS Safari)
+  // hanya mengizinkan audio dibuka di dalam gesture tap. Kalau ditaruh setelah
+  // await, suara sukses nanti diblok browser.
+  unlockPaymentAudio()
+
   if (!name.value)  return toast.error("Mohon isi nama kamu")
   if (!phone.value) return toast.error("Mohon isi nomor WhatsApp")
 

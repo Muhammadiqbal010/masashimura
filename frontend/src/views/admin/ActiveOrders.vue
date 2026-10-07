@@ -602,7 +602,6 @@ import { orderAPI, apiClient } from "@/api";
 import { toast } from "vue-sonner";
 import { useAuthStore } from '@/stores/auth';
 import html2canvas from 'html2canvas';
-import { unlockPaymentAudio, playPaymentSuccess } from '@/utils/paymentSuccessSound';
 
 const authStore = useAuthStore();
 const kasirName = computed(() => authStore.user?.name || authStore.user?.username || 'Staff');
