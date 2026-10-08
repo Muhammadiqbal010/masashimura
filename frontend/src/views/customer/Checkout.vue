@@ -257,7 +257,7 @@
                     : 'bg-white/[0.03] border-white/[0.08] text-zinc-600 hover:text-zinc-300 hover:border-white/[0.15]'
                 ]"
               >
-                QRIS Online
+                QRIS
               </button>
             </div>
             <p class="font-mono text-[9px] text-zinc-700 leading-relaxed pt-0.5">
@@ -265,7 +265,7 @@
                 Bayar langsung di toko. Kasir yang mengonfirmasi pembayaranmu.
               </template>
               <template v-else>
-                Bayar lewat QRIS di popup Midtrans. Pesanan diproses setelah pembayaran terkonfirmasi otomatis.
+                Bayar lewat QRIS di popup. Pesanan diproses setelah pembayaran terkonfirmasi otomatis.
               </template>
             </p>
             <p v-if="gatewayUnavailable && !cartStore.isEmpty" class="font-mono text-[9px] text-amber-600">
