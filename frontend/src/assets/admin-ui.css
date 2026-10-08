@@ -463,3 +463,18 @@ button.adm-badge:disabled { opacity: 0.5; cursor: wait; }
 .adm-mono { font-family: var(--font-mono); }
 .adm-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .adm-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ── Logo brand di tema terang ─────────────────────────────────────────
+ * Logo Masashimura dirancang untuk latar gelap. Dulu tema terang memberinya
+ * "tile" hitam (token --brand-tile); sekarang tile dimatikan di mana pun token
+ * itu dipakai (sidebar, top bar mobile, dst) dan logo diberi outline tipis supaya
+ * huruf kuningnya tetap terbaca di latar putih.
+ *
+ * Selector logo memakai nama file gambar (bukan nama class) supaya otomatis
+ * berlaku di semua komponen — nama file tetap terbawa walau di-hash oleh Vite.
+ */
+html:root[data-admin-theme='light'] { --brand-tile: transparent; }
+
+html[data-admin-theme='light'] img[src*='masashimura-logo'] {
+  filter: drop-shadow(0 0 1px rgb(24 24 27 / 0.55)) drop-shadow(0 1px 1px rgb(24 24 27 / 0.2));
+}
