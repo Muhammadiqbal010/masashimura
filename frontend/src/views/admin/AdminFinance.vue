@@ -10,13 +10,14 @@
       </div>
 
       <div class="fr-toolbar">
-        <div class="mode-switch">
+        <div class="mode-switch" role="group" aria-label="Periode laporan">
           <button
             v-for="m in viewModes"
             :key="m.key"
             @click="switchMode(m.key)"
             class="mode-btn"
             :class="{ active: viewMode === m.key }"
+            :aria-pressed="viewMode === m.key"
           >
             {{ m.label }}
           </button>
@@ -44,7 +45,7 @@
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
             </button>
           </div>
-          <select v-model.number="selectedYear" @change="fetchMonthlyData" class="nav-select">
+          <select v-model.number="selectedYear" @change="fetchMonthlyData" class="nav-select" aria-label="Pilih tahun">
             <option v-for="y in yearsAvailable" :key="y" :value="y">{{ y }}</option>
           </select>
         </template>
@@ -60,7 +61,7 @@
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
             </button>
           </div>
-          <select v-model.number="selectedYear" @change="fetchYearlyData" class="nav-select">
+          <select v-model.number="selectedYear" @change="fetchYearlyData" class="nav-select" aria-label="Pilih tahun">
             <option v-for="y in yearsAvailable" :key="y" :value="y">{{ y }}</option>
           </select>
         </template>
@@ -121,10 +122,13 @@
               <p class="card-eyebrow">Rincian Hari Ini</p>
               <h3 class="card-title">Log Pengeluaran — {{ targetDateString }}</h3>
             </div>
-            <span class="card-head-meta">{{ dailyExpensesList.length }} entri</span>
+            <div class="card-head-actions">
+              <span class="card-head-meta">{{ dailyExpensesList.length }} entri</span>
+              <button type="button" class="jump-btn" @click="scrollToForm">+ Catat</button>
+            </div>
           </div>
           <div class="table-scroll">
-            <table class="data-table">
+            <table class="data-table daily-table">
               <thead>
                 <tr>
                   <th>Keterangan</th>
@@ -184,7 +188,15 @@
             </div>
 
             <div v-else class="chart-area">
-              <div class="bar-chart" :class="{ 'bar-chart-yearly': viewMode === 'yearly' }">
+              <div class="chart-scale">
+                <span>Skala maks. Rp {{ formatCompact(chartMax) }}</span>
+              </div>
+              <div
+                class="bar-chart"
+                :class="{ 'bar-chart-yearly': viewMode === 'yearly' }"
+                role="img"
+                aria-label="Grafik batang pendapatan dan pengeluaran. Arahkan kursor ke batang untuk melihat nominal."
+              >
                 <div
                   v-for="d in (viewMode === 'monthly' ? monthlyData : yearlyData)"
                   :key="viewMode === 'monthly' ? d.date : d.month"
@@ -192,8 +204,8 @@
                   :title="`${viewMode === 'monthly' ? d.date : d.month_name}\nPendapatan: Rp ${formatNumber(d.revenue)}\nPengeluaran: Rp ${formatNumber(d.expenses)}`"
                 >
                   <div class="bar-pair">
-                    <div class="bar bar-rev" :style="{ height: barHeight(d.revenue, viewMode === 'monthly' ? maxMonthlyRevenue : maxYearlyRevenue) + 'px' }"></div>
-                    <div class="bar bar-exp" :style="{ height: barHeight(d.expenses, viewMode === 'monthly' ? maxMonthlyRevenue : maxYearlyRevenue) * 0.6 + 'px' }"></div>
+                    <div class="bar bar-rev" :style="{ height: barPct(d.revenue, chartMax) + '%' }"></div>
+                    <div class="bar bar-exp" :style="{ height: barPct(d.expenses, chartMax) + '%' }"></div>
                   </div>
                   <span class="bar-label">{{ viewMode === 'monthly' ? d.day : d.month_name.slice(0, 3) }}</span>
                 </div>
@@ -275,20 +287,24 @@
           </div>
           <form @submit.prevent="submitExpense" class="expense-form">
             <div class="field">
-              <label class="field-label">Keterangan</label>
+              <label class="field-label" for="exp-desc">Keterangan</label>
               <input
+                id="exp-desc"
                 v-model="expenseForm.description"
                 type="text"
+                autocomplete="off"
                 placeholder="Beli Daging, Gas 3kg, dll."
                 required
                 class="field-input"
               />
             </div>
             <div class="field">
-              <label class="field-label">Nominal (Rp)</label>
+              <label class="field-label" for="exp-amount">Nominal (Rp)</label>
               <input
+                id="exp-amount"
                 v-model.number="expenseForm.amount"
                 type="number"
+                inputmode="numeric"
                 placeholder="150000"
                 required
                 min="1"
@@ -386,10 +402,10 @@
             </div>
 
             <div class="export-controls">
-              <select v-if="exportMode === 'monthly'" v-model.number="exportMonth" class="nav-select nav-select-block">
+              <select v-if="exportMode === 'monthly'" v-model.number="exportMonth" class="nav-select nav-select-block" aria-label="Bulan yang diexport">
                 <option v-for="(name, idx) in monthNames" :key="idx" :value="idx + 1">{{ name }}</option>
               </select>
-              <select v-model.number="exportYear" class="nav-select nav-select-block">
+              <select v-model.number="exportYear" class="nav-select nav-select-block" aria-label="Tahun yang diexport">
                 <option v-for="y in yearsAvailable" :key="y" :value="y">{{ y }}</option>
               </select>
             </div>
@@ -514,7 +530,22 @@ const yearlyStats = computed(() => {
 });
 
 const formatNumber = (v) => Math.round(v || 0).toLocaleString("id-ID");
-const barHeight    = (value, max, maxPx = 140) => max ? Math.max(0, ((value || 0) / max) * maxPx) : 0;
+// Skala grafik dipakai SAMA untuk pendapatan & pengeluaran (sebelumnya pengeluaran diskala 60%).
+const chartMax = computed(() => (viewMode.value === "monthly" ? maxMonthlyRevenue.value : maxYearlyRevenue.value));
+// Nilai > 0 selalu punya batang minimal 2% supaya tetap terlihat.
+const barPct = (value, max) => {
+  const v = Number(value) || 0;
+  if (!v || !max) return 0;
+  return Math.max((v / max) * 100, 2);
+};
+const formatCompact = (v) => {
+  const n = Number(v) || 0;
+  if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)} M`;
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")} jt`;
+  if (n >= 1_000) return `${Math.round(n / 1_000)} rb`;
+  return String(Math.round(n));
+};
+const scrollToForm = () => formCard.value?.scrollIntoView({ behavior: "smooth", block: "start" });
 
 const switchMode = (mode) => {
   viewMode.value = mode;
@@ -623,31 +654,14 @@ onMounted(async () => {
 <style scoped>
 /* ── Design tokens ───────────────────────────────────────────────── */
 .fr-root {
-  --bg: #08080a;
-  --surface: #101012;
-  --surface-hover: #17171a;
-  --border: rgba(255,255,255,0.06);
-  --border-strong: rgba(255,255,255,0.12);
-  --text: #ffffff;
-  --text-dim: rgba(255,255,255,0.42);
-  --text-faint: rgba(255,255,255,0.22);
-  --accent: #dc2626;
-  --green: #22c55e;
-  --green-soft: #4ade80;
-  --amber: #f59e0b;
-  --amber-soft: #fbbf24;
-  --red-soft: #f87171;
-  --r-sm: 8px;
-  --r-md: 12px;
-  --r-lg: 16px;
 
-  min-height: 100vh;
+  --page-max: 1360px;
+  min-height: 100%;
   background: var(--bg);
   color: var(--text);
-  padding: 2rem 1.75rem 3rem;
-  max-width: 1360px;
-  margin: 0 auto;
+  padding: clamp(1.1rem, 3vw, 2rem) max(clamp(1rem, 3vw, 1.75rem), calc((100% - var(--page-max)) / 2)) 3rem;
   font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -666,8 +680,8 @@ onMounted(async () => {
 .fr-heading { display: flex; flex-direction: column; gap: 0.25rem; }
 .fr-eyebrow {
   font-family: 'Oswald', sans-serif;
-  font-size: 0.62rem; letter-spacing: 0.22em;
-  text-transform: uppercase; color: var(--accent);
+  font-size: 0.68rem; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--accent-text);
   margin: 0;
 }
 .fr-title {
@@ -704,8 +718,8 @@ onMounted(async () => {
   text-transform: uppercase; cursor: pointer;
   transition: all 0.15s;
 }
-.mode-btn:hover { color: rgba(255,255,255,0.7); }
-.mode-btn.active { background: var(--accent); color: #fff; }
+.mode-btn:hover { color: var(--text-2); }
+.mode-btn.active { background: var(--accent); color: var(--on-accent); }
 
 .date-nav {
   display: flex; align-items: center;
@@ -721,10 +735,10 @@ onMounted(async () => {
   cursor: pointer;
   transition: all 0.15s;
 }
-.nav-btn:hover { color: #fff; background: rgba(255,255,255,0.04); }
+.nav-btn:hover { color: var(--text); background: rgb(var(--ink) / 0.04); }
 .nav-current {
   padding: 0.5rem 1rem;
-  font-family: monospace; font-size: 0.82rem; color: #fff;
+  font-family: monospace; font-size: 0.82rem; color: var(--text);
   border-left: 1px solid var(--border);
   border-right: 1px solid var(--border);
   white-space: nowrap;
@@ -734,7 +748,7 @@ onMounted(async () => {
   border: 1px solid var(--border);
   border-radius: var(--r-md);
   padding: 0.55rem 0.85rem;
-  color: #fff; font-family: monospace; font-size: 0.8rem;
+  color: var(--text); font-family: monospace; font-size: 0.8rem;
   outline: none; cursor: pointer;
   transition: border-color 0.15s;
 }
@@ -747,7 +761,7 @@ onMounted(async () => {
   grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
 }
-@media (max-width: 768px) { .summary-grid { grid-template-columns: 1fr; } }
+
 
 .s-card {
   background: var(--surface);
@@ -773,16 +787,16 @@ onMounted(async () => {
 .ic-green { background: rgba(34,197,94,0.1); color: var(--green-soft); }
 .ic-amber { background: rgba(245,158,11,0.1); color: var(--amber-soft); }
 .ic-red   { background: rgba(239,68,68,0.1); color: var(--red-soft); }
-.s-label { font-family: 'Oswald', sans-serif; font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); flex: 1; }
+.s-label { font-family: 'Oswald', sans-serif; font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); flex: 1; }
 .s-badge {
-  font-size: 0.55rem; padding: 0.15rem 0.55rem; border-radius: 100px;
+  font-size: 0.68rem; padding: 0.15rem 0.55rem; border-radius: 100px;
   font-family: 'Oswald', sans-serif; letter-spacing: 0.08em; text-transform: uppercase;
   white-space: nowrap;
 }
 .badge-up   { background: rgba(34,197,94,0.1);  color: var(--green-soft); border: 1px solid rgba(34,197,94,0.2); }
 .badge-down { background: rgba(239,68,68,0.1);  color: var(--red-soft); border: 1px solid rgba(239,68,68,0.2); }
 
-.s-value { font-family: monospace; font-size: 1.45rem; font-weight: 700; color: #fff; letter-spacing: -0.02em; margin-bottom: 0.4rem; }
+.s-value { font-family: monospace; font-size: clamp(1.1rem, 4.2vw, 1.45rem); overflow-wrap: anywhere; font-weight: 700; color: var(--text); letter-spacing: -0.02em; margin-bottom: 0.4rem; }
 .val-green { color: var(--green-soft); }
 .val-red   { color: var(--red-soft); }
 .s-note    { font-size: 0.68rem; color: var(--text-faint); }
@@ -795,7 +809,12 @@ onMounted(async () => {
   align-items: start;
 }
 .fr-main  { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
-.fr-aside { display: flex; flex-direction: column; gap: 1rem; position: sticky; top: 1.5rem; }
+.fr-aside {
+  display: flex; flex-direction: column; gap: 1rem;
+  position: sticky; top: 1rem;
+  max-height: calc(100vh - 2rem); max-height: calc(100dvh - 2rem);
+  overflow-y: auto; scrollbar-width: thin;
+}
 @media (max-width: 980px) {
   .fr-shell { grid-template-columns: 1fr; }
   .fr-aside { position: static; }
@@ -814,29 +833,29 @@ onMounted(async () => {
 }
 .card-head.border-b { border-bottom: 1px solid var(--border); }
 .card-eyebrow {
-  font-family: 'Oswald', sans-serif; font-size: 0.58rem;
+  font-family: 'Oswald', sans-serif; font-size: 0.68rem;
   letter-spacing: 0.18em; text-transform: uppercase;
-  color: var(--accent); margin: 0 0 0.2rem;
+  color: var(--accent-text); margin: 0 0 0.2rem;
 }
-.card-title { font-family: 'Oswald', sans-serif; font-size: 0.88rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin: 0; color: rgba(255,255,255,0.85); }
+.card-title { font-family: 'Oswald', sans-serif; font-size: 0.88rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin: 0; color: var(--text); }
 .card-head-meta { font-family: monospace; font-size: 0.72rem; color: var(--text-faint); white-space: nowrap; }
 
 /* Expense Form */
 .expense-form { padding: 1.25rem 1.4rem; display: flex; flex-direction: column; gap: 1rem; }
 .field { display: flex; flex-direction: column; gap: 0.4rem; }
-.field-label { font-family: 'Oswald', sans-serif; font-size: 0.58rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-faint); }
+.field-label { font-family: 'Oswald', sans-serif; font-size: 0.68rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-faint); }
 .field-input {
-  background: rgba(255,255,255,0.03);
+  background: rgb(var(--ink) / 0.03);
   border: 1px solid var(--border-strong);
   border-radius: var(--r-sm); padding: 0.7rem 1rem;
-  color: #fff; font-size: 0.85rem; font-family: 'Inter', sans-serif;
+  color: var(--text); font-size: 0.85rem; font-family: 'Inter', sans-serif;
   outline: none; transition: border-color 0.15s;
 }
-.field-input::placeholder { color: rgba(255,255,255,0.2); }
+.field-input::placeholder { color: var(--text-faint); }
 .field-input:focus { border-color: rgba(220,38,38,0.45); }
 .submit-btn {
   display: flex; align-items: center; justify-content: center; gap: 0.4rem;
-  padding: 0.75rem; background: rgba(255,255,255,0.04);
+  padding: 0.75rem; background: rgb(var(--ink) / 0.04);
   border: 1px solid var(--border-strong); border-radius: var(--r-sm);
   color: var(--amber-soft); font-family: 'Oswald', sans-serif;
   font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
@@ -849,13 +868,13 @@ onMounted(async () => {
 .modal-backdrop {
   position: fixed; inset: 0; z-index: 100;
   display: flex; align-items: center; justify-content: center; padding: 1rem;
-  background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+  background: var(--overlay); backdrop-filter: blur(4px);
 }
 .modal {
   width: 100%; max-width: 380px;
   background: var(--surface); border: 1px solid var(--border-strong);
   border-radius: var(--r-lg); padding: 1.5rem;
-  box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+  box-shadow: var(--shadow-lg);
   animation: modal-in 0.15s ease-out;
 }
 @keyframes modal-in { from { opacity: 0; transform: translateY(6px) scale(0.98); } to { opacity: 1; transform: none; } }
@@ -867,35 +886,35 @@ onMounted(async () => {
 }
 .modal-title {
   font-family: 'Oswald', sans-serif; font-size: 1rem; font-weight: 500;
-  text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.5rem; color: #fff;
+  text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.5rem; color: var(--text);
 }
 .modal-text { font-size: 0.8rem; line-height: 1.55; color: var(--text-dim); margin: 0 0 1.25rem; }
-.modal-text strong { color: #fff; font-weight: 600; }
+.modal-text strong { color: var(--text); font-weight: 600; }
 .modal-actions { display: flex; gap: 0.5rem; }
 .modal-cancel, .modal-confirm {
   flex: 1; padding: 0.7rem; border-radius: var(--r-sm); border: 1px solid;
   font-family: 'Oswald', sans-serif; font-size: 0.7rem; letter-spacing: 0.1em;
   text-transform: uppercase; cursor: pointer; transition: all 0.15s;
 }
-.modal-cancel { background: rgba(255,255,255,0.04); border-color: var(--border-strong); color: rgba(255,255,255,0.8); }
-.modal-cancel:hover { background: rgba(255,255,255,0.08); }
-.modal-confirm { background: var(--accent); border-color: var(--accent); color: #fff; }
+.modal-cancel { background: rgb(var(--ink) / 0.04); border-color: var(--border-strong); color: var(--text); }
+.modal-cancel:hover { background: rgb(var(--ink) / 0.08); }
+.modal-confirm { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 .modal-confirm:hover:not(:disabled) { background: #b91c1c; }
 .modal-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
 .modal-cancel:focus-visible, .modal-confirm:focus-visible { outline: 2px solid var(--amber-soft); outline-offset: 2px; }
 
 /* Metode pembayaran, badge, dan aksi baris */
 .method-switch {
-  display: flex; background: rgba(255,255,255,0.03);
+  display: flex; background: rgb(var(--ink) / 0.03);
   border: 1px solid var(--border); border-radius: var(--r-sm); padding: 3px; gap: 2px;
 }
 .method-btn {
   flex: 1; padding: 0.5rem 0.7rem; border-radius: 6px; border: none; background: transparent;
-  color: var(--text-faint); font-family: 'Oswald', sans-serif; font-size: 0.66rem;
+  color: var(--text-faint); font-family: 'Oswald', sans-serif; font-size: 0.68rem;
   letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: all 0.15s;
 }
-.method-btn:hover { color: rgba(255,255,255,0.65); }
-.method-btn.active { background: var(--accent); color: #fff; }
+.method-btn:hover { color: var(--text-2); }
+.method-btn.active { background: var(--accent); color: var(--on-accent); }
 .method-btn:focus-visible, .edit-btn:focus-visible, .cancel-btn:focus-visible {
   outline: 2px solid var(--amber-soft); outline-offset: 2px;
 }
@@ -905,55 +924,55 @@ onMounted(async () => {
   font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
   cursor: pointer; transition: all 0.15s;
 }
-.cancel-btn:hover { color: #fff; border-color: var(--border-strong); }
+.cancel-btn:hover { color: var(--text); border-color: var(--border-strong); }
 
 .method-badge {
   display: inline-block; padding: 0.15rem 0.55rem; border-radius: 100px; border: 1px solid;
-  font-family: 'Oswald', sans-serif; font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase;
+  font-family: 'Oswald', sans-serif; font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase;
 }
-.mb-cash { color: var(--text-dim); background: rgba(255,255,255,0.04); border-color: var(--border-strong); }
-.mb-qris { color: #7dd3fc; background: rgba(56,189,248,0.08); border-color: rgba(56,189,248,0.25); }
+.mb-cash { color: var(--text-dim); background: rgb(var(--ink) / 0.04); border-color: var(--border-strong); }
+.mb-qris { color: var(--blue-soft); background: rgba(56,189,248,0.08); border-color: rgba(56,189,248,0.25); }
 
 .row-editing { background: rgba(251,191,36,0.05); }
 .row-actions { display: inline-flex; gap: 0.4rem; }
 .edit-btn {
   padding: 0.25rem 0.65rem; border-radius: 6px;
-  background: rgba(255,255,255,0.04); border: 1px solid var(--border-strong);
+  background: rgb(var(--ink) / 0.04); border: 1px solid var(--border-strong);
   color: var(--text-dim); font-family: 'Oswald', sans-serif;
-  font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase;
+  font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase;
   cursor: pointer; transition: all 0.15s;
 }
-.edit-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
+.edit-btn:hover { color: var(--text); background: rgb(var(--ink) / 0.08); }
 
 /* Insight card */
 .insight-body { padding: 1rem 1.4rem 1.25rem; display: flex; flex-direction: column; gap: 0.85rem; }
 .insight-row { display: flex; flex-direction: column; gap: 0.25rem; }
-.insight-label { font-size: 0.66rem; letter-spacing: 0.03em; color: var(--text-dim); }
-.insight-value { font-family: monospace; font-size: 0.85rem; font-weight: 600; color: #fff; }
+.insight-label { font-size: 0.68rem; letter-spacing: 0.03em; color: var(--text-dim); }
+.insight-value { font-family: monospace; font-size: 0.85rem; font-weight: 600; color: var(--text); }
 
 /* Export card */
 .export-body { padding: 1.1rem 1.4rem 1.4rem; display: flex; flex-direction: column; gap: 0.85rem; }
 .export-toggle {
-  display: flex; background: rgba(255,255,255,0.03);
+  display: flex; background: rgb(var(--ink) / 0.03);
   border: 1px solid var(--border); border-radius: var(--r-sm); padding: 3px; gap: 2px;
 }
 .toggle-btn {
   flex: 1;
   padding: 0.38rem 0.7rem; border-radius: 6px; border: none; background: transparent;
   color: var(--text-faint);
-  font-family: 'Oswald', sans-serif; font-size: 0.62rem;
+  font-family: 'Oswald', sans-serif; font-size: 0.68rem;
   letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: all 0.15s;
 }
-.toggle-btn:hover { color: rgba(255,255,255,0.65); }
-.toggle-btn.active { background: var(--accent); color: #fff; }
+.toggle-btn:hover { color: var(--text-2); }
+.toggle-btn.active { background: var(--accent); color: var(--on-accent); }
 .export-controls { display: flex; gap: 0.5rem; }
 .export-period-label {
   font-family: monospace; font-size: 0.72rem;
   color: var(--text-dim); margin: 0;
-  background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+  background: rgb(var(--ink) / 0.03); border: 1px solid var(--border);
   border-radius: var(--r-sm); padding: 0.5rem 0.75rem;
 }
-.period-highlight { color: var(--accent); }
+.period-highlight { color: var(--accent-text); }
 .export-btns { display: flex; gap: 0.5rem; }
 .export-btn {
   flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.4rem;
@@ -973,44 +992,44 @@ onMounted(async () => {
 .data-table { width: 100%; border-collapse: collapse; min-width: 400px; }
 .data-table th {
   padding: 0.65rem 1.4rem;
-  font-family: 'Oswald', sans-serif; font-size: 0.58rem; font-weight: 400;
+  font-family: 'Oswald', sans-serif; font-size: 0.68rem; font-weight: 400;
   letter-spacing: 0.14em; text-transform: uppercase;
   color: var(--text-faint); text-align: left;
-  background: rgba(255,255,255,0.015);
+  background: rgb(var(--ink) / 0.015);
   border-bottom: 1px solid var(--border);
 }
 .th-right  { text-align: right; }
 .th-center { text-align: center; }
 
 .data-row { border-bottom: 1px solid var(--border); transition: background 0.12s; }
-.data-row:hover { background: rgba(255,255,255,0.02); }
+.data-row:hover { background: rgb(var(--ink) / 0.02); }
 .data-row:last-child { border-bottom: none; }
 .row-empty { opacity: 0.3; }
 
 .data-table td { padding: 0.8rem 1.4rem; font-size: 0.82rem; vertical-align: middle; }
-.td-mono   { font-family: monospace; color: rgba(255,255,255,0.65); }
-.td-month  { font-weight: 600; color: rgba(255,255,255,0.8); }
-.td-desc   { color: rgba(255,255,255,0.8); }
+.td-mono   { font-family: monospace; color: var(--text-2); }
+.td-month  { font-weight: 600; color: var(--text); }
+.td-desc   { color: var(--text); }
 .td-right  { text-align: right; }
 .td-center { text-align: center; }
 .td-rev    { font-family: monospace; font-weight: 700; color: var(--green-soft); }
 .td-exp    { font-family: monospace; color: var(--amber-soft); }
 .td-amount { font-family: monospace; font-weight: 700; color: var(--amber-soft); }
-.td-pos    { font-family: monospace; font-weight: 700; color: #fff; }
+.td-pos    { font-family: monospace; font-weight: 700; color: var(--text); }
 .td-neg    { font-family: monospace; font-weight: 700; color: var(--red-soft); }
 
 .total-row {
-  background: rgba(255,255,255,0.03) !important;
+  background: rgb(var(--ink) / 0.03) !important;
   border-top: 1px solid var(--border-strong) !important;
 }
-.total-row td { font-family: 'Oswald', sans-serif; font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); padding: 0.7rem 1.4rem; }
+.total-row td { font-family: 'Oswald', sans-serif; font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); padding: 0.7rem 1.4rem; }
 .total-row .td-rev, .total-row .td-exp, .total-row .td-pos, .total-row .td-neg { font-size: 0.82rem; }
 
 .delete-btn {
   padding: 0.25rem 0.65rem; border-radius: 6px;
   background: rgba(239,68,68,0.07); border: 1px solid rgba(239,68,68,0.15);
   color: var(--red-soft); font-family: 'Oswald', sans-serif;
-  font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase;
+  font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase;
   cursor: pointer; transition: all 0.15s;
 }
 .delete-btn:hover { background: rgba(239,68,68,0.15); }
@@ -1027,28 +1046,32 @@ onMounted(async () => {
   font-family: 'Oswald', sans-serif; letter-spacing: 0.1em; text-transform: uppercase;
 }
 .spinner-sm {
-  width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.07);
+  width: 20px; height: 20px; border: 2px solid rgb(var(--ink) / 0.07);
   border-top-color: var(--accent); border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .chart-area { padding: 1.25rem 1.4rem 1.1rem; }
+.chart-scale { display: flex; justify-content: flex-end; margin-bottom: 0.5rem; font-family: monospace; font-size: 0.68rem; color: var(--text-faint); }
 .bar-chart {
-  display: flex; align-items: flex-end; gap: 3px;
-  height: 150px; overflow-x: auto; padding-bottom: 0.5rem;
-  background-image: repeating-linear-gradient(to top, transparent 0, transparent calc(25% - 1px), var(--border) calc(25% - 1px), var(--border) 25%);
-  background-size: 100% 150px;
-  background-position: bottom;
-  background-repeat: no-repeat;
+  display: flex; align-items: stretch; gap: 4px;
+  height: 200px; overflow-x: auto; overflow-y: hidden; padding-bottom: 0.25rem;
 }
-.bar-chart-yearly { gap: 6px; overflow-x: visible; }
-.bar-col { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; flex: 1; min-width: 20px; }
-.bar-pair { display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; width: 100%; flex: 1; align-items: center; }
-.bar { width: 100%; border-radius: 3px 3px 0 0; transition: height 0.5s ease; min-width: 6px; }
+.bar-chart-yearly { gap: 8px; overflow-x: visible; }
+.bar-col { display: flex; flex-direction: column; align-items: stretch; gap: 0.35rem; flex: 1 0 22px; min-width: 22px; cursor: default; }
+.bar-chart-yearly .bar-col { flex-basis: 0; min-width: 0; }
+.bar-pair {
+  display: flex; align-items: flex-end; justify-content: center; gap: 2px;
+  flex: 1; min-height: 0; width: 100%;
+  border-bottom: 1px solid var(--border-strong);
+  background-image: repeating-linear-gradient(to top, transparent 0, transparent calc(25% - 1px), var(--border) calc(25% - 1px), var(--border) 25%);
+}
+.bar { flex: 1; max-width: 18px; min-width: 4px; border-radius: 3px 3px 0 0; transition: height 0.5s ease, filter 0.15s; }
+.bar-col:hover .bar { filter: brightness(1.18); }
 .bar-rev { background: var(--green); }
 .bar-exp { background: var(--amber); opacity: 0.75; }
-.bar-label { font-size: 0.55rem; font-family: monospace; color: var(--text-faint); white-space: nowrap; }
+.bar-label { font-size: 0.68rem; font-family: monospace; color: var(--text-faint); white-space: nowrap; }
 .chart-legend { display: flex; gap: 1.25rem; margin-top: 0.75rem; }
 .legend-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.7rem; color: var(--text-dim); }
 .legend-dot { width: 8px; height: 8px; border-radius: 2px; }
@@ -1057,7 +1080,6 @@ onMounted(async () => {
 
 /* ── Responsive ─────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .fr-root { padding: 1.25rem 1rem 2rem; }
   .fr-header { flex-direction: column; align-items: flex-start; }
   .fr-title { font-size: 1.4rem; }
   .fr-toolbar { width: 100%; }
@@ -1069,4 +1091,96 @@ onMounted(async () => {
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 input[type=number] { -moz-appearance: textfield; }
+/* ══ Tambahan: tema, UX, responsif ═════════════════════════════════ */
+.s-card, .card, .mode-switch, .date-nav { box-shadow: var(--shadow-sm); }
+.s-value, .insight-value, .nav-current { font-variant-numeric: tabular-nums; }
+.fr-title { font-size: clamp(1.4rem, 4vw, 1.85rem); }
+.mode-btn.active, .toggle-btn.active, .method-btn.active, .modal-confirm { color: var(--on-accent); }
+.card-title { color: var(--text); }
+.card-head-actions { display: flex; align-items: center; gap: 0.75rem; }
+.jump-btn {
+  display: none; min-height: 34px; padding: 0.3rem 0.8rem; border-radius: 8px;
+  background: var(--accent); border: none; color: var(--on-accent);
+  font-family: 'Oswald', sans-serif; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+  cursor: pointer;
+}
+.jump-btn:hover { background: var(--accent-hover); }
+.nav-btn { min-width: 40px; justify-content: center; }
+.data-row:hover { background: var(--surface-hover); }
+.nav-select, .field-input { color-scheme: inherit; }
+.field-input { min-height: 42px; }
+
+@media (max-width: 980px) {
+  .jump-btn { display: inline-flex; align-items: center; }
+  .fr-aside { max-height: none; overflow: visible; }
+}
+
+@media (max-width: 768px) {
+  .fr-root { gap: 1.1rem; }
+  .fr-header { gap: 1rem; padding-bottom: 1.1rem; }
+  .fr-toolbar { flex-direction: column; align-items: stretch; }
+  .mode-btn { min-height: 40px; }
+  .date-nav { width: 100%; }
+  .nav-current { flex: 1; text-align: center; }
+  .nav-select { width: 100%; min-height: 42px; }
+
+  .summary-grid { grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  .s-profit { grid-column: 1 / -1; }
+  .s-card { padding: 1.1rem; }
+
+  .card-head { padding: 1rem 1.1rem; }
+  .expense-form, .insight-body, .export-body { padding-inline: 1.1rem; }
+  .chart-area { padding: 1rem 1.1rem; }
+  .bar-chart { height: 170px; }
+}
+
+@media (max-width: 640px) {
+  /* log pengeluaran harian: tabel → kartu */
+  .daily-table { min-width: 0; }
+  .daily-table, .daily-table tbody, .daily-table tfoot { display: block; width: 100%; }
+  .daily-table thead {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip: rect(0 0 0 0); white-space: nowrap;
+  }
+  .daily-table tbody tr.data-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "desc amount" "method actions";
+    gap: 0.55rem 0.75rem;
+    align-items: center;
+    padding: 0.85rem 1rem;
+  }
+  .daily-table td { display: block; padding: 0; }
+  .daily-table .td-desc   { grid-area: desc; font-weight: 500; word-break: break-word; }
+  .daily-table .td-amount { grid-area: amount; text-align: right; }
+  .daily-table .td-method { grid-area: method; }
+  .daily-table .td-center { grid-area: actions; text-align: right; }
+  .daily-table tfoot tr.total-row { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem 1rem; }
+  .daily-table tfoot td { padding: 0; }
+  .daily-table tfoot td:empty { display: none; }
+  .edit-btn, .delete-btn { min-height: 34px; padding-inline: 0.85rem; }
+
+  /* tabel bulanan/tahunan: tetap tabel, kolom pertama menempel saat scroll samping */
+  .data-table:not(.daily-table) th,
+  .data-table:not(.daily-table) td { padding: 0.65rem 0.8rem; }
+  .data-table:not(.daily-table) th:first-child,
+  .data-table:not(.daily-table) td:first-child {
+    position: sticky; left: 0; z-index: 1; background: var(--surface);
+  }
+  .data-table:not(.daily-table) .total-row td:first-child { background: var(--surface-2); }
+  .data-table:not(.daily-table) td { font-size: 0.78rem; }
+
+  .export-btns { flex-direction: column; }
+  .export-btn { min-height: 44px; }
+}
+
+@media (max-width: 380px) {
+  .summary-grid { grid-template-columns: 1fr; }
+}
+
+@media (pointer: coarse) {
+  .nav-btn, .mode-btn, .toggle-btn, .method-btn { min-height: 42px; }
+  .field-input, .nav-select { font-size: 1rem; }
+}
+
 </style>

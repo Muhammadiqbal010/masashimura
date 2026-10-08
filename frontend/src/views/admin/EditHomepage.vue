@@ -1,620 +1,660 @@
 <template>
-  <div class="max-w-5xl mx-auto p-4 sm:p-6 text-white box-border space-y-8 font-inter">
+  <div class="adm-page adm-page--form">
 
-    <!-- HEADER CMS -->
-    <div class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <!-- ── Header ─────────────────────────────────────────────────── -->
+    <header class="adm-header">
       <div>
-        <h1 class="font-sora text-3xl font-extrabold uppercase tracking-tight text-white">
-          Edit Homepage
-        </h1>
-        <p class="text-white/40 text-xs font-light mt-1">
-          Kendalikan semua konten, gambar, teks berjalan, dan statistik halaman depan Masashimura
-        </p>
+        <p class="adm-eyebrow">Masashimura · Admin</p>
+        <h1 class="adm-title">Edit Homepage</h1>
+        <p class="adm-sub">Kendalikan konten, gambar, teks berjalan, dan statistik halaman depan Masashimura.</p>
       </div>
-      <div class="flex gap-3">
-        <button
-          @click="saveHomepageData"
-          :disabled="isSaving"
-          class="bg-[#DC2626] hover:bg-red-700 text-white font-sora text-xs uppercase tracking-widest px-6 py-3.5 rounded-xl font-bold transition disabled:opacity-50 cursor-pointer w-full sm:w-auto shadow-lg"
-        >
-          {{ isSaving ? "Menyimpan..." : "Simpan Perubahan Teks Utama" }}
+    </header>
+
+    <!-- ── 01. Hero ───────────────────────────────────────────────── -->
+    <section class="adm-card">
+      <div class="adm-card-head">
+        <span class="eh-num">01</span>
+        <div class="adm-card-head-main">
+          <h2 class="adm-card-title">Hero Section</h2>
+          <p class="adm-card-desc">Bagian paling atas halaman, tampil selebar layar.</p>
+        </div>
+      </div>
+      <div class="adm-card-body">
+        <div class="adm-grid-2">
+          <div class="adm-field">
+            <label class="adm-label" for="hero-headline">Headline utama</label>
+            <input id="hero-headline" v-model="form.hero_headline" type="text" class="adm-input eh-strong" />
+          </div>
+          <div class="adm-field">
+            <label class="adm-label" for="hero-sub">Sub-headline singkat</label>
+            <input id="hero-sub" v-model="form.hero_subheadline" type="text" class="adm-input" />
+          </div>
+        </div>
+
+        <div class="adm-field">
+          <span class="adm-label">Foto background parallax <span class="adm-opt">(16:9)</span></span>
+          <AdminImageField
+            v-model="form.hero_bg_image" label="background hero" ratio="16 / 9" thumb-width="10rem" removable
+            hint="Dipotong otomatis ke rasio 16:9 sebelum diupload."
+            @pick="(f) => startCrop(f, 'hero_bg')" @clear="form.hero_bg_image = null"
+          />
+        </div>
+
+        <div class="adm-field">
+          <span class="adm-label">Foto makanan kotak kanan hero <span class="adm-opt">(1:1)</span></span>
+          <AdminImageField
+            v-model="form.hero_food_image" label="makanan hero" removable
+            hint="Dipotong otomatis ke rasio 1:1 sebelum diupload."
+            @pick="(f) => startCrop(f, 'hero_food')" @clear="form.hero_food_image = null"
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 02. Marquee ────────────────────────────────────────────── -->
+    <section class="adm-card">
+      <div class="adm-card-head">
+        <span class="eh-num">02</span>
+        <div class="adm-card-head-main">
+          <h2 class="adm-card-title">Aksen Teks Berjalan</h2>
+          <p class="adm-card-desc">Teks marquee di bawah hero. Kecepatan dan warna diatur otomatis.</p>
+        </div>
+      </div>
+      <div class="adm-card-body">
+        <div class="adm-field">
+          <label class="adm-label" for="marquee">Konten teks berjalan</label>
+          <input id="marquee" v-model="form.marquee_text" type="text" class="adm-input adm-input--mono" />
+          <p class="adm-hint">Pisahkan tiap frasa dengan tanda <code class="eh-code">•</code></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 03. Tentang & statistik ────────────────────────────────── -->
+    <section class="adm-card">
+      <div class="adm-card-head">
+        <span class="eh-num">03</span>
+        <div class="adm-card-head-main">
+          <h2 class="adm-card-title">Tentang Masashimura & Statistik</h2>
+          <p class="adm-card-desc">Deskripsi kedai, foto suasana, dan tiga angka ringkasan.</p>
+        </div>
+      </div>
+      <div class="adm-card-body">
+        <div class="adm-field">
+          <label class="adm-label" for="about-text">Deskripsi panjang <span class="adm-opt">(kolom teks kanan)</span></label>
+          <textarea id="about-text" v-model="form.about_text" rows="4" class="adm-input"></textarea>
+        </div>
+
+        <div class="adm-field">
+          <span class="adm-label">Foto outlet suasana kedai <span class="adm-opt">(kolom kiri, 1:1)</span></span>
+          <AdminImageField
+            v-model="form.about_image" label="suasana kedai" thumb-width="6rem" removable
+            hint="Dipotong otomatis ke rasio 1:1 sebelum diupload."
+            @pick="(f) => startCrop(f, 'about')" @clear="form.about_image = null"
+          />
+        </div>
+
+        <div class="adm-grid-3">
+          <div class="adm-field">
+            <label class="adm-label" for="metric-1">Angka 1 <span class="adm-opt">(tahun berdiri)</span></label>
+            <input id="metric-1" v-model="form.metric_1" type="text" class="adm-input eh-metric" />
+          </div>
+          <div class="adm-field">
+            <label class="adm-label" for="metric-2">Angka 2 <span class="adm-opt">(jumlah menu)</span></label>
+            <input id="metric-2" v-model="form.metric_2" type="text" class="adm-input eh-metric" />
+          </div>
+          <div class="adm-field">
+            <label class="adm-label" for="metric-3">Angka 3 <span class="adm-opt">(rating)</span></label>
+            <input id="metric-3" v-model="form.metric_3" type="text" class="adm-input eh-metric eh-metric--star" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Pratinjau cepat ────────────────────────────────────────── -->
+    <section class="adm-card">
+      <div class="adm-card-head">
+        <div class="adm-card-icon tone-blue"><Eye :size="18" /></div>
+        <div class="adm-card-head-main">
+          <h2 class="adm-card-title">Pratinjau Cepat</h2>
+          <p class="adm-card-desc">Cuplikan teks utama sesuai isian di atas (belum termasuk gambar).</p>
+        </div>
+      </div>
+      <div class="adm-card-body">
+        <div class="eh-preview-hero">
+          <p class="eh-preview-title">{{ form.hero_headline || 'Headline kosong' }}</p>
+          <p v-if="form.hero_subheadline" class="eh-preview-sub">{{ form.hero_subheadline }}</p>
+        </div>
+        <div class="eh-preview-marquee adm-mono">
+          <span>Marquee</span>{{ form.marquee_text || '—' }}
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Bar simpan (teks utama 01–03) ──────────────────────────── -->
+    <div class="adm-savebar" :class="{ 'is-clean': !hasChanges }">
+      <p class="adm-savebar-text" aria-live="polite">
+        <span class="adm-dot"></span>
+        {{ hasChanges ? 'Ada perubahan teks/foto utama yang belum dipublikasikan' : 'Konten utama sudah tersimpan' }}
+      </p>
+      <div class="adm-savebar-actions">
+        <button v-if="hasChanges && !isSaving" type="button" class="adm-btn adm-btn--ghost" @click="resetMain">Batalkan</button>
+        <button type="button" class="adm-btn adm-btn--primary" :disabled="isSaving || !hasChanges" @click="saveHomepageData">
+          <span v-if="isSaving" class="adm-spinner"></span>
+          <Save v-else :size="15" />
+          {{ isSaving ? 'Menyimpan…' : 'Simpan Konten Utama' }}
         </button>
       </div>
     </div>
 
-    <div class="space-y-6">
-
-      <!-- 01. HERO SECTION -->
-      <div class="bg-[#0F0F0F] border border-white/5 rounded-xl p-6 space-y-4">
-        <h2 class="font-sora text-sm font-bold uppercase tracking-wider text-[#DC2626] flex items-center gap-2">
-          <span>01.</span> Hero Section (100vh)
-        </h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-          <div class="space-y-1.5">
-            <label class="text-white/40 uppercase font-bold tracking-wider">Headline Utama</label>
-            <input v-model="form.hero_headline" type="text"
-              class="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-sm focus:border-red-600 outline-none text-white font-sora font-bold" />
-          </div>
-          <div class="space-y-1.5">
-            <label class="text-white/40 uppercase font-bold tracking-wider">Sub-Headline Singkat</label>
-            <input v-model="form.hero_subheadline" type="text"
-              class="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-sm focus:border-red-600 outline-none text-white" />
-          </div>
-
-          <!-- FOTO BACKGROUND PARALLAX (16:9) -->
-          <div class="space-y-1.5 md:col-span-2">
-            <label class="text-white/40 uppercase font-bold tracking-wider">
-              Foto Background Parallax Hero (16:9)
-            </label>
-            <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center bg-white/[0.02] border border-white/5 p-4 rounded-xl">
-              <div
-                @click="triggerImageCrop(null, 'hero_bg')"
-                class="w-32 aspect-video bg-zinc-900 rounded-lg overflow-hidden border border-white/10 flex-shrink-0 cursor-pointer group relative"
-                title="Klik untuk ganti foto"
-              >
-                <img v-if="form.hero_bg_image" :src="form.hero_bg_image"
-                  class="w-full h-full object-cover group-hover:opacity-60 transition" />
-                <div v-else class="w-full h-full flex items-center justify-center text-[10px] text-white/20">No Image</div>
-                <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-                  <span class="text-[10px] text-white font-bold bg-black/60 px-2 py-1 rounded">✏️ Ganti</span>
-                </div>
-              </div>
-              <div class="space-y-2 w-full">
-                <input type="text" :value="form.hero_bg_image" readonly
-                  class="w-full bg-black/40 border border-white/5 rounded-lg p-2.5 text-xs font-mono text-zinc-400 outline-none cursor-not-allowed"
-                  placeholder="URL Cloudinary terisi otomatis..." />
-                <label class="inline-block bg-white/5 border border-white/10 hover:bg-white/10 text-white font-sora text-[10px] uppercase tracking-widest px-4 py-2.5 rounded-md font-bold transition cursor-pointer">
-                  Pilih & Potong Foto Background (16:9)
-                  <input type="file" accept="image/*" class="hidden" @change="triggerImageCrop($event, 'hero_bg')" />
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <!-- FOTO MAKANAN KOTAK KANAN (1:1) -->
-          <div class="space-y-1.5 md:col-span-2">
-            <label class="text-white/40 uppercase font-bold tracking-wider">
-              Foto Makanan Kotak Kanan Hero (1:1)
-            </label>
-            <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center bg-white/[0.02] border border-white/5 p-4 rounded-xl">
-              <div
-                @click="triggerImageCrop(null, 'hero_food')"
-                class="w-32 aspect-square bg-zinc-900 rounded-lg overflow-hidden border border-white/10 flex-shrink-0 cursor-pointer group relative"
-                title="Klik untuk ganti foto"
-              >
-                <img v-if="form.hero_food_image" :src="form.hero_food_image"
-                  class="w-full h-full object-cover group-hover:opacity-60 transition" />
-                <div v-else class="w-full h-full flex items-center justify-center text-[10px] text-white/20">No Image</div>
-                <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-                  <span class="text-[10px] text-white font-bold bg-black/60 px-2 py-1 rounded">✏️ Ganti</span>
-                </div>
-              </div>
-              <div class="space-y-2 w-full">
-                <input type="text" :value="form.hero_food_image" readonly
-                  class="w-full bg-black/40 border border-white/5 rounded-lg p-2.5 text-xs font-mono text-zinc-400 outline-none cursor-not-allowed"
-                  placeholder="URL Cloudinary terisi otomatis..." />
-                <label class="inline-block bg-white/5 border border-white/10 hover:bg-white/10 text-white font-sora text-[10px] uppercase tracking-widest px-4 py-2.5 rounded-md font-bold transition cursor-pointer">
-                  Pilih & Potong Foto Makanan (1:1)
-                  <input type="file" accept="image/*" class="hidden" @change="triggerImageCrop($event, 'hero_food')" />
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <!--
-            NB: Form foto "Outlet Suasana Kedai (1:1)" yang tadinya ada di sini
-            SUDAH DIHAPUS karena duplikat 100% dengan form foto about di Section 03
-            (sama-sama bind ke form.about_image). Cukup satu saja di Section 03.
-          -->
+    <!-- ── 04. Bento ──────────────────────────────────────────────── -->
+    <section class="adm-card adm-card--flush">
+      <div class="adm-card-head">
+        <span class="eh-num">04</span>
+        <div class="adm-card-head-main">
+          <h2 class="adm-card-title">Bento Grid Fasilitas</h2>
+          <p class="adm-card-desc">Kartu fasilitas di homepage. Perubahan di bagian ini <strong>langsung tersimpan</strong>.</p>
         </div>
-      </div>
-
-      <!-- 02. AKSEN TEKS BERJALAN -->
-      <div class="bg-[#0F0F0F] border border-white/5 rounded-xl p-6 space-y-4">
-        <h2 class="font-sora text-sm font-bold uppercase tracking-wider text-[#DC2626] flex items-center gap-2">
-          <span>02.</span> Aksen Teks Berjalan (Marquee)
-        </h2>
-        <div class="text-xs space-y-1.5">
-          <label class="text-white/40 uppercase font-bold tracking-wider">Konten Teks Berjalan (Gunakan • Sebagai Pemisah)</label>
-          <input v-model="form.marquee_text" type="text" class="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-sm focus:border-red-600 outline-none text-white font-mono tracking-wide" />
-          <p class="text-[10px] text-zinc-600 italic">*Teks berjalan diatur lambat dengan warna abu transparan otomatis.</p>
-        </div>
-      </div>
-
-      <!-- 03. TENTANG MASASHIMURA & STATISTIK -->
-      <div class="bg-[#0F0F0F] border border-white/5 rounded-xl p-6 space-y-4">
-        <h2 class="font-sora text-sm font-bold uppercase tracking-wider text-[#DC2626] flex items-center gap-2">
-          <span>03.</span> Tentang Masashimura & Statistik
-        </h2>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-          <div class="sm:col-span-3 space-y-1.5">
-            <label class="text-white/40 uppercase font-bold tracking-wider">Deskripsi Panjang (Teks 50%)</label>
-            <textarea v-model="form.about_text" rows="3" class="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-sm focus:border-red-600 outline-none text-white resize-none"></textarea>
-          </div>
-
-          <!-- SATU-SATUNYA FORM FOTO ABOUT (dulu duplikat, sekarang cuma di sini) -->
-          <div class="sm:col-span-3 space-y-1.5">
-            <label class="text-white/40 uppercase font-bold tracking-wider">Foto Outlet Suasana Kedai (Kiri 50%)</label>
-            <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center bg-white/[0.02] border border-white/5 p-4 rounded-xl">
-              <div
-                @click="triggerImageCrop(null, 'about')"
-                class="w-24 aspect-square bg-zinc-900 rounded-lg overflow-hidden border border-white/10 flex-shrink-0 cursor-pointer group relative"
-                title="Klik untuk ganti foto"
-              >
-                <img v-if="form.about_image" :src="form.about_image" class="w-full h-full object-cover group-hover:opacity-60 transition" alt="Preview About" />
-                <div v-else class="w-full h-full flex items-center justify-center text-[10px] text-white/20">No Image</div>
-                <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-                  <span class="text-[10px] text-white font-bold bg-black/60 px-2 py-1 rounded">✏️ Ganti</span>
-                </div>
-              </div>
-              <div class="space-y-2 w-full">
-                <input type="text" :value="form.about_image" readonly class="w-full bg-black/40 border border-white/5 rounded-lg p-2.5 text-xs font-mono text-zinc-400 outline-none cursor-not-allowed" placeholder="URL Cloudinary terisi otomatis..." />
-                <label class="inline-block bg-white/5 border border-white/10 hover:bg-white/10 text-white font-sora text-[10px] uppercase tracking-widest px-4 py-2.5 rounded-md font-bold transition cursor-pointer">
-                  Pilih & Potong Foto (1:1)
-                  <input type="file" accept="image/*" class="hidden" @change="triggerImageCrop($event, 'about')" />
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <div class="space-y-1.5">
-            <label class="text-white/40 uppercase font-bold tracking-wider">Data Angka 1 (Tahun Berdiri)</label>
-            <input v-model="form.metric_1" type="text" class="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-sm focus:border-red-600 outline-none text-white font-sora font-bold text-center" />
-          </div>
-          <div class="space-y-1.5">
-            <label class="text-white/40 uppercase font-bold tracking-wider">Data Angka 2 (Jumlah Menu)</label>
-            <input v-model="form.metric_2" type="text" class="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-sm focus:border-red-600 outline-none text-white font-sora font-bold text-center" />
-          </div>
-          <div class="space-y-1.5">
-            <label class="text-white/40 uppercase font-bold tracking-wider">Data Angka 3 (Rating Simbol)</label>
-            <input v-model="form.metric_3" type="text" class="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-sm focus:border-red-600 outline-none text-amber-500 font-bold text-center" />
-          </div>
-        </div>
-      </div>
-
-      <!-- 04. CORE BENTO GRID LAMA (TETAP DIAMANKAN UNTUK COMPATIBILITY) -->
-      <div class="hidden bg-[#0F0F0F] border border-white/5 rounded-xl p-6 space-y-4">
-        <h2 class="font-sora text-sm font-bold uppercase tracking-wider text-[#DC2626] flex items-center gap-2">
-          <span>04.</span> Core Bento Grid Teks & Status (Legacy Columns)
-        </h2>
-      </div>
-
-      <!-- 🔥 05. NEW BENTO GRID MANAGEMENT MODULAR (Dinamis CRUD) -->
-      <div class="bg-[#0F0F0F] border border-white/5 rounded-xl p-6 space-y-4">
-        <div class="flex items-center justify-between">
-          <h2 class="font-sora text-sm font-bold uppercase tracking-wider text-[#DC2626] flex items-center gap-2">
-            <span>05.</span> Sistem Arsitektur Bento Grid (Dinamis)
-          </h2>
-          <button @click="openBentoModal(null)" class="bg-[#DC2626]/10 border border-[#DC2626]/20 text-[#DC2626] hover:bg-[#DC2626]/20 text-[10px] font-sora font-bold uppercase tracking-widest px-4 py-2 rounded-lg transition-all flex items-center gap-1 cursor-pointer">
-            + Tambah Fasilitas
+        <div class="adm-card-head-actions">
+          <button type="button" class="adm-btn adm-btn--soft adm-btn--sm" @click="openBentoModal(null)">
+            <Plus :size="14" /> Tambah
           </button>
         </div>
-
-        <div class="overflow-x-auto rounded-xl border border-white/5 text-xs">
-          <table class="w-full text-left font-sora">
-            <thead class="bg-white/[0.02] text-zinc-400 uppercase font-bold tracking-wider border-b border-white/5">
-              <tr>
-                <th class="p-4">Fasilitas</th>
-                <th class="p-4">Icon Name</th>
-                <th class="p-4">Card Size</th>
-                <th class="p-4 text-center">Aksi</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-white/5">
-              <tr v-for="bento in bentoFacilities" :key="bento.id" class="hover:bg-white/[0.01] transition-colors">
-                <td class="p-4 font-bold text-white tracking-wide">{{ bento.title }}</td>
-                <td class="p-4 font-mono text-zinc-400">{{ bento.icon_name }}</td>
-                <td class="p-4">
-                  <span :class="bento.size === 'large' ? 'bg-red-600/10 text-red-500 border border-red-500/20' : 'bg-zinc-800 text-zinc-400'" class="px-2 py-0.5 rounded text-[9px] font-bold uppercase">
-                    {{ bento.size === 'large' ? 'Large (2x2)' : 'Normal (1x1)' }}
-                  </span>
-                </td>
-                <td class="p-4 flex justify-center gap-3">
-                  <button @click="openBentoModal(bento)" class="text-zinc-400 hover:text-white transition-colors cursor-pointer">Edit</button>
-                  <button @click="deleteBento(bento.id)" class="text-zinc-500 hover:text-red-500 transition-colors cursor-pointer">Hapus</button>
-                </td>
-              </tr>
-              <tr v-if="bentoFacilities.length === 0">
-                <td colspan="4" class="p-6 text-center text-zinc-600 italic">Belum ada fasilitas bento di database.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
       </div>
 
-      <!-- 🔥 06. NEW GALLERY & EVENT MANAGEMENT MODULAR (Dinamis CRUD, kini bisa full-edit) -->
-      <div class="bg-[#0F0F0F] border border-white/5 rounded-xl p-6 space-y-4">
-        <div class="flex items-center justify-between">
-          <h2 class="font-sora text-sm font-bold uppercase tracking-wider text-[#DC2626] flex items-center gap-2">
-            <span>06.</span> Gallery & Dokumentasi Event (Dinamis)
-          </h2>
-          <button @click="openGalleryModal()" class="bg-[#DC2626]/10 border border-[#DC2626]/20 text-[#DC2626] hover:bg-[#DC2626]/20 text-[10px] font-sora font-bold uppercase tracking-widest px-4 py-2 rounded-lg transition-all flex items-center gap-1 cursor-pointer">
-            + Upload Foto Event
+      <ul v-if="bentoFacilities.length" class="eh-bento-list">
+        <li v-for="bento in bentoFacilities" :key="bento.id" class="eh-bento-row">
+          <span class="eh-bento-icon"><component :is="iconMap[bento.icon_name] || Coffee" :size="18" /></span>
+          <div class="eh-bento-info">
+            <p class="eh-bento-title adm-truncate">{{ bento.title }}</p>
+            <p class="eh-bento-meta adm-mono">{{ bento.icon_name }}</p>
+          </div>
+          <span class="adm-badge" :class="bento.size === 'large' ? 'adm-badge--red' : ''">
+            {{ bento.size === 'large' ? 'Large 2×2' : 'Normal 1×1' }}
+          </span>
+          <div class="eh-row-actions">
+            <button type="button" class="adm-icon-btn" :aria-label="`Edit ${bento.title}`" @click="openBentoModal(bento)"><Pencil :size="15" /></button>
+            <button type="button" class="adm-icon-btn adm-icon-btn--danger" :aria-label="`Hapus ${bento.title}`" @click="deleteBento(bento)"><Trash2 :size="15" /></button>
+          </div>
+        </li>
+      </ul>
+      <div v-else class="adm-empty">
+        <div class="adm-empty-icon"><LayoutGrid :size="22" /></div>
+        <p class="adm-empty-title">Belum ada fasilitas bento</p>
+        <p class="adm-empty-text">Tambahkan fasilitas pertama untuk ditampilkan di homepage.</p>
+      </div>
+    </section>
+
+    <!-- ── 05. Galeri ─────────────────────────────────────────────── -->
+    <section class="adm-card">
+      <div class="adm-card-head">
+        <span class="eh-num">05</span>
+        <div class="adm-card-head-main">
+          <h2 class="adm-card-title">Galeri & Dokumentasi Event</h2>
+          <p class="adm-card-desc">Foto suasana dan event. Perubahan di bagian ini <strong>langsung tersimpan</strong>.</p>
+        </div>
+        <div class="adm-card-head-actions">
+          <button type="button" class="adm-btn adm-btn--soft adm-btn--sm" @click="openGalleryModal()">
+            <Plus :size="14" /> Upload
           </button>
         </div>
-
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 pt-2">
-          <div v-for="img in galleryData" :key="img.id" class="group relative aspect-square rounded-xl overflow-hidden border border-white/5 bg-zinc-900 shadow-md">
-            <img :src="img.image_url" class="w-full h-full object-cover" />
-            <div class="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-between p-3">
-              <div class="flex justify-end gap-2">
-                <button @click="openGalleryModal(img)" class="bg-white/10 hover:bg-white/20 border border-white/20 text-white text-[10px] font-bold px-2 py-1 rounded transition-all cursor-pointer">Edit</button>
-                <button @click="deleteGalleryItem(img.id)" class="bg-red-600/20 hover:bg-red-600 border border-red-500/30 text-white text-[10px] font-bold px-2 py-1 rounded transition-all cursor-pointer">Hapus</button>
-              </div>
-              <p class="text-[9px] font-sora font-bold uppercase tracking-wider text-white line-clamp-2">{{ img.title || 'Tanpa Judul' }}</p>
-            </div>
-          </div>
-          <div v-if="galleryData.length === 0" class="col-span-full py-8 text-center text-zinc-600 italic border border-dashed border-white/10 rounded-xl text-xs">Belum ada data dokumentasi foto event.</div>
-        </div>
       </div>
 
-    </div>
-
-    <!-- LIVE CHECK PREVIEW -->
-    <div class="pt-6 border-t border-white/10">
-      <h3 class="font-sora text-xs font-bold uppercase tracking-widest text-zinc-500 mb-4">// LIVE CONTENT PREVIEW CHECK</h3>
-      <div class="bg-[#050505] border border-white/10 rounded-2xl p-6 space-y-4">
-        <div class="border-l-2 border-[#DC2626] pl-4">
-          <p class="font-sora text-lg font-extrabold uppercase text-white">{{ form.hero_headline || 'Headline Kosong' }}</p>
-          <p class="text-zinc-500 text-xs mt-1">{{ form.hero_subheadline }}</p>
-        </div>
-        <div class="bg-[#0F0F0F] p-3 rounded-lg text-[11px] font-mono text-zinc-400 overflow-hidden text-ellipsis whitespace-nowrap">
-          <span class="text-[#DC2626] font-bold">Marquee Realtime:</span> {{ form.marquee_text }}
+      <div class="adm-card-body">
+        <ul v-if="galleryData.length" class="eh-gallery">
+          <li v-for="img in galleryData" :key="img.id" class="eh-tile">
+            <img :src="img.image_url" :alt="img.title || 'Foto galeri'" loading="lazy" />
+            <div class="eh-tile-actions">
+              <button type="button" class="eh-tile-btn" :aria-label="`Edit ${img.title || 'foto'}`" @click="openGalleryModal(img)"><Pencil :size="13" /></button>
+              <button type="button" class="eh-tile-btn eh-tile-btn--danger" :aria-label="`Hapus ${img.title || 'foto'}`" @click="deleteGalleryItem(img)"><Trash2 :size="13" /></button>
+            </div>
+            <div class="eh-tile-caption">
+              <p class="adm-truncate">{{ img.title || 'Tanpa judul' }}</p>
+              <span v-if="img.category">{{ img.category }}</span>
+            </div>
+          </li>
+        </ul>
+        <div v-else class="adm-empty">
+          <div class="adm-empty-icon"><ImageIcon :size="22" /></div>
+          <p class="adm-empty-title">Belum ada dokumentasi foto</p>
+          <p class="adm-empty-text">Upload foto event pertama untuk mengisi galeri.</p>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- 🔥 MODAL POPUP FORM CRUD UNTUK SUB-MODUL BENTO & GALLERY -->
-    <div v-if="showModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-      <div class="bg-[#0A0A0A] border border-white/10 rounded-2xl p-6 max-w-sm w-full space-y-5 shadow-2xl">
-
-        <h3 class="font-sora text-xs font-bold uppercase tracking-wider text-white border-b border-white/5 pb-2">
-          <span v-if="modalType === 'bento'">{{ editingBentoId ? '✏️ Edit Fasilitas Bento' : '➕ Tambah Fasilitas Bento' }}</span>
-          <span v-else>{{ editingGalleryId ? '✏️ Edit Dokumentasi Foto' : '📸 Upload Foto Event Baru' }}</span>
-        </h3>
-
-        <!-- FORM BENTO -->
-        <div v-if="modalType === 'bento'" class="space-y-4 text-xs font-sora">
-          <div>
-            <label class="block uppercase text-zinc-500 mb-2 tracking-wide font-bold">Nama Fasilitas</label>
-            <input v-model="bentoForm.title" type="text" placeholder="Contoh: WiFi 150Mbps" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-red-600 outline-none text-white font-bold" />
-          </div>
-
-          <!-- DROPDOWN ICON DINAMIS DENGAN PREVIEW -->
-          <div>
-            <label class="block uppercase text-zinc-500 mb-2 tracking-wide font-bold">Pilih Icon</label>
-            <div class="grid grid-cols-6 gap-2 bg-white/5 p-2 rounded-xl border border-white/10">
-              <button
-                v-for="(comp, name) in iconMap"
-                :key="name"
-                @click="bentoForm.icon_name = name"
-                :class="[
-                  bentoForm.icon_name === name ? 'bg-red-600 text-white' : 'hover:bg-white/10 text-zinc-400',
-                  'p-2 rounded-lg flex items-center justify-center transition-all'
-                ]"
-                type="button"
-              >
-                <component :is="comp" :size="16" />
-              </button>
-            </div>
-            <p class="text-[9px] text-zinc-500 mt-1 uppercase font-bold tracking-wider">Terpilih: {{ bentoForm.icon_name }}</p>
-          </div>
-
-          <div>
-            <label class="block uppercase text-zinc-500 mb-2 tracking-wide font-bold">Ukuran Grid Layout</label>
-            <select v-model="bentoForm.size" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-red-600 outline-none text-white font-bold">
-              <option value="normal" class="bg-[#0A0A0A]">Standard Card (1x1)</option>
-              <option value="large" class="bg-[#0A0A0A]">Large Card (2x2)</option>
-            </select>
-          </div>
+    <!-- ══ Modal Bento ══════════════════════════════════════════════ -->
+    <AdminModal
+      v-model="bentoOpen"
+      :title="editingBentoId ? 'Edit Fasilitas Bento' : 'Tambah Fasilitas Bento'"
+      :persistent="isSavingSub"
+    >
+      <form id="bento-form" class="eh-form" @submit.prevent="saveBento">
+        <div class="adm-field">
+          <label class="adm-label" for="bento-title">Nama fasilitas <span class="adm-req">*</span></label>
+          <input id="bento-title" v-model="bentoForm.title" data-autofocus type="text" class="adm-input" placeholder="Contoh: WiFi 150Mbps" />
         </div>
 
-        <!-- FORM GALLERY EVENT (FULL EDIT: JUDUL, KATEGORI, FOTO DENGAN CROP) -->
-        <div v-if="modalType === 'gallery'" class="space-y-3 text-[11px] font-sora">
-          <div class="space-y-1">
-            <label class="block uppercase text-zinc-500 font-bold tracking-wide">Judul Event / Dokumentasi</label>
-            <input v-model="galleryForm.title" type="text" placeholder="Contoh: Nobar Akbar Semifinal" class="w-full bg-white/5 border border-white/10 rounded-lg p-3 focus:border-red-600 outline-none text-white font-bold" />
+        <div class="adm-field">
+          <span id="bento-icon-label" class="adm-label">Icon</span>
+          <div class="eh-icons" role="radiogroup" aria-labelledby="bento-icon-label">
+            <button
+              v-for="(comp, name) in iconMap" :key="name"
+              type="button" role="radio" class="eh-icon-btn"
+              :class="{ 'is-selected': bentoForm.icon_name === name }"
+              :aria-checked="bentoForm.icon_name === name" :aria-label="name" :title="name"
+              @click="bentoForm.icon_name = name"
+            >
+              <component :is="comp" :size="18" />
+            </button>
           </div>
-
-          <div class="space-y-1">
-            <label class="block uppercase text-zinc-500 font-bold tracking-wide">Kategori</label>
-            <input v-model="galleryForm.category" type="text" placeholder="Contoh: Suasana Kedai, Event, Best Seller" class="w-full bg-white/5 border border-white/10 rounded-lg p-3 focus:border-red-600 outline-none text-white" />
-          </div>
-
-          <div class="space-y-1">
-            <label class="block uppercase text-zinc-500 font-bold tracking-wide">Foto Dokumentasi (1:1)</label>
-            <div class="flex flex-col items-center gap-3 bg-white/5 border border-dashed border-white/10 rounded-lg p-4">
-              <div
-                @click="triggerImageCrop(null, 'gallery')"
-                class="w-24 aspect-square bg-zinc-900 rounded-lg overflow-hidden border border-white/10 cursor-pointer group relative flex-shrink-0"
-                title="Klik untuk pilih & potong foto"
-              >
-                <img v-if="galleryForm.image_url" :src="galleryForm.image_url" class="w-full h-full object-cover group-hover:opacity-60 transition" />
-                <div v-else class="w-full h-full flex items-center justify-center text-[9px] text-white/20">No Image</div>
-                <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-                  <span class="text-[9px] text-white font-bold bg-black/60 px-2 py-1 rounded">✏️ Ganti</span>
-                </div>
-              </div>
-              <label class="inline-block bg-white/5 border border-white/10 hover:bg-white/10 text-white font-sora text-[10px] uppercase tracking-widest px-4 py-2.5 rounded-md font-bold transition cursor-pointer">
-                Pilih & Potong Foto (1:1)
-                <input type="file" accept="image/*" class="hidden" @change="triggerImageCrop($event, 'gallery')" />
-              </label>
-            </div>
-          </div>
+          <p class="adm-hint">Terpilih: <strong class="adm-mono">{{ bentoForm.icon_name }}</strong></p>
         </div>
 
-        <!-- BUTTONS ACTION -->
-        <div class="flex justify-end gap-2 pt-3 border-t border-white/5 text-[10px] font-bold uppercase tracking-wider">
-          <button @click="showModal = false" class="bg-transparent border border-white/10 hover:bg-white/5 text-white px-4 py-2.5 rounded-lg cursor-pointer">Batal</button>
-          <button @click="modalType === 'bento' ? saveBento() : saveGalleryItem()" :disabled="isSavingSub" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-lg disabled:opacity-50 cursor-pointer">
-            {{ isSavingSub ? 'Menyimpan...' : 'Simpan Data' }}
-          </button>
+        <div class="adm-field">
+          <span id="bento-size-label" class="adm-label">Ukuran kartu</span>
+          <div class="adm-seg adm-seg--fill" role="radiogroup" aria-labelledby="bento-size-label">
+            <button type="button" role="radio" class="adm-seg-btn" :aria-checked="bentoForm.size === 'normal'" @click="bentoForm.size = 'normal'">Standard 1×1</button>
+            <button type="button" role="radio" class="adm-seg-btn" :aria-checked="bentoForm.size === 'large'" @click="bentoForm.size = 'large'">Large 2×2</button>
+          </div>
         </div>
+      </form>
+      <template #footer>
+        <button type="button" class="adm-btn adm-btn--ghost" :disabled="isSavingSub" @click="bentoOpen = false">Batal</button>
+        <button type="submit" form="bento-form" class="adm-btn adm-btn--primary" :disabled="isSavingSub">
+          <span v-if="isSavingSub" class="adm-spinner"></span>{{ isSavingSub ? 'Menyimpan…' : 'Simpan' }}
+        </button>
+      </template>
+    </AdminModal>
 
-      </div>
-    </div>
+    <!-- ══ Modal Galeri ═════════════════════════════════════════════
+         Disembunyikan sementara saat cropper terbuka agar tidak saling tumpuk;
+         isi form tetap aman karena state-nya ada di halaman ini. -->
+    <AdminModal
+      :model-value="galleryOpen && !isCropping"
+      :title="editingGalleryId ? 'Edit Dokumentasi Foto' : 'Upload Foto Event'"
+      :persistent="isSavingSub"
+      @update:model-value="(v) => !v && (galleryOpen = false)"
+    >
+      <form id="gallery-form" class="eh-form" @submit.prevent="saveGalleryItem">
+        <div class="adm-field">
+          <label class="adm-label" for="gal-title">Judul event / dokumentasi <span class="adm-req">*</span></label>
+          <input id="gal-title" v-model="galleryForm.title" data-autofocus type="text" class="adm-input" placeholder="Contoh: Nobar Akbar Semifinal" />
+        </div>
+        <div class="adm-field">
+          <label class="adm-label" for="gal-cat">Kategori</label>
+          <input id="gal-cat" v-model="galleryForm.category" type="text" class="adm-input" placeholder="Suasana Kedai, Event, Best Seller…" />
+        </div>
+        <div class="adm-field">
+          <span class="adm-label">Foto <span class="adm-req">*</span> <span class="adm-opt">(1:1)</span></span>
+          <AdminImageField
+            v-model="galleryForm.image_url" label="dokumentasi" stack thumb-width="8rem"
+            hint="Dipotong otomatis ke rasio 1:1 sebelum diupload."
+            @pick="(f) => startCrop(f, 'gallery')"
+          />
+        </div>
+      </form>
+      <template #footer>
+        <button type="button" class="adm-btn adm-btn--ghost" :disabled="isSavingSub" @click="galleryOpen = false">Batal</button>
+        <button type="submit" form="gallery-form" class="adm-btn adm-btn--primary" :disabled="isSavingSub">
+          <span v-if="isSavingSub" class="adm-spinner"></span>{{ isSavingSub ? 'Menyimpan…' : 'Simpan' }}
+        </button>
+      </template>
+    </AdminModal>
 
-    <!-- COMPONENT CROPPER BAWAAN LO -->
+    <AdminConfirm :state="confirmState" @confirm="acceptConfirm" @cancel="cancelConfirm" />
+
+    <!-- Cropper -->
     <ImageCropper
       v-if="isCropping"
       :image="imageSrc"
       :type="cropType"
       @crop-complete="handleUploadToCloudinary"
-      @cancel="isCropping = false"
+      @cancel="closeCropper"
     />
-
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from "vue";
-import { toast } from "vue-sonner";
-import axios from "axios";
-import apiClient from "@/api/client";
-import ImageCropper from "@/components/ui/ImageCropper.vue";
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { toast } from 'vue-sonner'
+import axios from 'axios'
+import apiClient from '@/api/client'
+import ImageCropper from '@/components/ui/ImageCropper.vue'
+import AdminModal from '@/components/admin/AdminModal.vue'
+import AdminConfirm from '@/components/admin/AdminConfirm.vue'
+import AdminImageField from '@/components/admin/AdminImageField.vue'
+import { useAdminConfirm } from '@/composables/useAdminConfirm'
 import {
   Coffee, Wifi, Zap, Utensils, DollarSign, Moon, Shield, Tv,
-  Music, Gamepad2, Beer, BatteryCharging, Heart, Award, Smartphone
-} from "lucide-vue-next";
+  Music, Gamepad2, Beer, BatteryCharging, Heart, Award, Smartphone,
+  Plus, Pencil, Trash2, Save, Eye, LayoutGrid, Image as ImageIcon,
+} from 'lucide-vue-next'
 
 // Objek mapping icon agar bisa di-looping di template
 const iconMap = {
   Coffee, Wifi, Zap, Utensils, DollarSign, Moon, Shield, Tv,
-  Music, Gamepad2, Beer, BatteryCharging, Heart, Award, Smartphone
-};
+  Music, Gamepad2, Beer, BatteryCharging, Heart, Award, Smartphone,
+}
 
-// Cloudinary tetap pakai axios biasa karena base URL-nya beda (bukan backend sendiri)
-const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
+const { state: confirmState, ask, accept: acceptConfirm, cancel: cancelConfirm } = useAdminConfirm()
 
-const isSaving = ref(false);
-const isSavingSub = ref(false);
-const isCropping = ref(false);
-const showModal = ref(false);
-const modalType = ref("bento");
+// Cloudinary pakai axios biasa karena base URL-nya beda (bukan backend sendiri)
+const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
+const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
+const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`
 
-const imageSrc = ref("");
-const cropType = ref("hero");
+const isSaving = ref(false)
+const isSavingSub = ref(false)
+const isCropping = ref(false)
+const bentoOpen = ref(false)
+const galleryOpen = ref(false)
 
-// Form Teks Utama 01-04
-const form = ref({
-  hero_headline: "Warkop Level Up Masashimura",
-  hero_subheadline: "Tempat nongkrong kasual modern di Bekasi.",
+const imageSrc = ref('')
+const cropType = ref('hero')
+
+// Form teks utama (01–03)
+const defaultMain = () => ({
+  hero_headline: 'Warkop Level Up Masashimura',
+  hero_subheadline: 'Tempat nongkrong kasual modern di Bekasi.',
   hero_bg_image: null,
   hero_food_image: null,
-  marquee_text: "MASA SIH MURAH? • WARKOP EVOLUTION • GOOD FOOD • GOOD VIBES",
-  about_text: "",
+  marquee_text: 'MASA SIH MURAH? • WARKOP EVOLUTION • GOOD FOOD • GOOD VIBES',
+  about_text: '',
   about_image: null,
-  metric_1: "2024",
-  metric_2: "50+",
-  metric_3: "★★★★★",
+  metric_1: '2024',
+  metric_2: '50+',
+  metric_3: '★★★★★',
 })
+const form = ref(defaultMain())
+const savedMain = ref(JSON.stringify(defaultMain()))
+const hasChanges = computed(() => JSON.stringify(form.value) !== savedMain.value)
 
-// State Sub-Modul 05 & 06 Dinamis
-const bentoFacilities = ref([]);
-const galleryData = ref([]);
+// Sub-modul dinamis
+const bentoFacilities = ref([])
+const galleryData = ref([])
 
-// Form State CRUD Modal Local
-const editingBentoId = ref(null);
-const bentoForm = ref({ title: "", icon_name: "Coffee", size: "normal", order: 0 });
+const editingBentoId = ref(null)
+const bentoForm = ref({ title: '', icon_name: 'Coffee', size: 'normal', order: 0 })
 
-const editingGalleryId = ref(null);
-const galleryForm = ref({ title: "", image_url: "", category: "Event" });
+const editingGalleryId = ref(null)
+const galleryForm = ref({ title: '', image_url: '', category: 'Event' })
 
-// ================= INTEGRASI FETCH DATA SINKRONUS =================
+// ── Fetch ───────────────────────────────────────────────────────────
 const fetchHomepageData = async () => {
   try {
     const [coreRes, bentoRes, galleryRes] = await Promise.all([
-      apiClient.get(`/homepage/config/current/`),
-      apiClient.get(`/homepage/bento/`),
-      apiClient.get(`/homepage/gallery/`)
-    ]);
-
-    if (coreRes.data) form.value = { ...form.value, ...coreRes.data };
-    if (bentoRes.data) bentoFacilities.value = bentoRes.data;
-    if (galleryRes.data) galleryData.value = galleryRes.data;
+      apiClient.get('/homepage/config/current/'),
+      apiClient.get('/homepage/bento/'),
+      apiClient.get('/homepage/gallery/'),
+    ])
+    if (coreRes.data) form.value = { ...form.value, ...coreRes.data }
+    if (bentoRes.data) bentoFacilities.value = bentoRes.data
+    if (galleryRes.data) galleryData.value = galleryRes.data
+    savedMain.value = JSON.stringify(form.value)
   } catch (err) {
-    console.error("Gagal sinkronisasi data CMS homepage:", err);
-    toast.error("Gagal memuat konfigurasi variabel homepage dari server database.");
+    console.error('Gagal sinkronisasi data CMS homepage:', err)
+    toast.error('Gagal memuat konfigurasi homepage dari server.')
   }
-};
+}
 
-// ================= MANAJEMEN DATA 01-04 TEKS UTAMA =================
+// ── Simpan teks utama ───────────────────────────────────────────────
 const saveHomepageData = async () => {
-  const token = localStorage.getItem("token");
-  if (!token) return toast.error("Sesi login tidak ditemukan. Silakan login ulang.");
-  isSaving.value = true;
+  const token = localStorage.getItem('token')
+  if (!token) return toast.error('Sesi login tidak ditemukan. Silakan login ulang.')
+  isSaving.value = true
 
-  const payload = { ...form.value };
-  if (payload.hero_food_image === "") payload.hero_food_image = null;
-  if (payload.hero_bg_image === "") payload.hero_bg_image = null;
-  if (payload.about_image === "") payload.about_image = null;
+  const payload = { ...form.value }
+  for (const k of ['hero_food_image', 'hero_bg_image', 'about_image']) {
+    if (payload[k] === '') payload[k] = null
+  }
 
   try {
-    await apiClient.post(`/homepage/config/update/`, payload);
-    toast.success("Konten Teks Utama Homepage berhasil dipublikasikan!");
+    await apiClient.post('/homepage/config/update/', payload)
+    savedMain.value = JSON.stringify(form.value)
+    toast.success('Konten utama homepage berhasil dipublikasikan!')
   } catch (err) {
-    console.error("Gagal menyimpan konfigurasi homepage:", err);
-    toast.error("Gagal menyimpan konfigurasi teks ke database server.");
+    console.error('Gagal menyimpan konfigurasi homepage:', err)
+    toast.error('Gagal menyimpan konten ke server.')
   } finally {
-    isSaving.value = false;
+    isSaving.value = false
   }
-};
+}
 
-// ================= ENGINE CLOUDINARY UNTUK CROPPER (HERO, ABOUT, GALLERY) =================
-// Satu jalur upload+crop terpusat dipakai bersama oleh hero/about/gallery — ngga ada lagi
-// fungsi upload duplikat khusus galeri (uploadGalleryToCloudinary lama sudah dihapus).
-const triggerImageCrop = (event, type) => {
+const resetMain = () => { form.value = JSON.parse(savedMain.value) }
+
+const onBeforeUnload = (e) => {
+  if (!hasChanges.value) return
+  e.preventDefault()
+  e.returnValue = ''
+}
+window.addEventListener('beforeunload', onBeforeUnload)
+
+// ── Cropper + upload Cloudinary (satu jalur untuk hero/about/gallery) ──
+const closeCropper = () => {
+  isCropping.value = false
+  if (imageSrc.value) URL.revokeObjectURL(imageSrc.value)
+  imageSrc.value = ''
+}
+
+const startCrop = (file, type) => {
+  if (imageSrc.value) URL.revokeObjectURL(imageSrc.value)
   cropType.value = type
-
-  if (event === null) {
-    // Klik dari foto preview — buat hidden input secara programatis
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = 'image/*'
-    input.onchange = (e) => {
-      const file = e.target.files[0]
-      if (!file) return
-      imageSrc.value = URL.createObjectURL(file)
-      isCropping.value = true
-    }
-    input.click()
-    return
-  }
-
-  // Dari input file biasa
-  const file = event.target.files[0]
-  if (!file) return
   imageSrc.value = URL.createObjectURL(file)
   isCropping.value = true
 }
 
 onBeforeUnmount(() => {
-  if (imageSrc.value) URL.revokeObjectURL(imageSrc.value);
-});
+  window.removeEventListener('beforeunload', onBeforeUnload)
+  if (imageSrc.value) URL.revokeObjectURL(imageSrc.value)
+})
 
 const handleUploadToCloudinary = async (blobData) => {
-  isCropping.value = false
-  const toastId = toast.loading("Mengupload foto ke Cloudinary...")
+  closeCropper()
+  const toastId = toast.loading('Mengupload foto…')
   const formData = new FormData()
-  formData.append("file", blobData)
-  formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET)
+  formData.append('file', blobData)
+  formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET)
 
   try {
     const { data } = await axios.post(CLOUDINARY_UPLOAD_URL, formData)
-    if (data?.secure_url) {
-      if (cropType.value === "hero_bg")   form.value.hero_bg_image   = data.secure_url
-      if (cropType.value === "hero_food") form.value.hero_food_image = data.secure_url
-      if (cropType.value === "hero")      form.value.hero_food_image = data.secure_url // legacy
-      if (cropType.value === "about")     form.value.about_image     = data.secure_url
-      if (cropType.value === "gallery")   galleryForm.value.image_url = data.secure_url
-      toast.success("Foto berhasil diupload!", { id: toastId })
-    }
+    if (!data?.secure_url) throw new Error('no url')
+    const url = data.secure_url
+    if (cropType.value === 'hero_bg')   form.value.hero_bg_image   = url
+    if (cropType.value === 'hero_food') form.value.hero_food_image = url
+    if (cropType.value === 'hero')      form.value.hero_food_image = url // legacy
+    if (cropType.value === 'about')     form.value.about_image     = url
+    if (cropType.value === 'gallery')   galleryForm.value.image_url = url
+    toast.success('Foto berhasil diupload!', { id: toastId })
   } catch {
-    toast.error("Gagal upload gambar.", { id: toastId })
+    toast.error('Gagal upload gambar.', { id: toastId })
   }
 }
 
-// ================= CRUD SERVICES: 05. BENTO GRID =================
+// ── CRUD Bento ──────────────────────────────────────────────────────
 const openBentoModal = (bento = null) => {
-  modalType.value = "bento";
   if (bento) {
-    editingBentoId.value = bento.id;
-    bentoForm.value = { title: bento.title, icon_name: bento.icon_name, size: bento.size, order: bento.order };
+    editingBentoId.value = bento.id
+    bentoForm.value = { title: bento.title, icon_name: bento.icon_name, size: bento.size, order: bento.order }
   } else {
-    editingBentoId.value = null;
-    bentoForm.value = { title: "", icon_name: "Coffee", size: "normal", order: bentoFacilities.value.length };
+    editingBentoId.value = null
+    bentoForm.value = { title: '', icon_name: 'Coffee', size: 'normal', order: bentoFacilities.value.length }
   }
-  showModal.value = true;
-};
+  bentoOpen.value = true
+}
 
 const saveBento = async () => {
-  if (!bentoForm.value.title.trim()) return toast.warning("Nama fasilitas bento tidak boleh kosong!");
-  isSavingSub.value = true;
-
+  if (!bentoForm.value.title.trim()) return toast.warning('Nama fasilitas tidak boleh kosong!')
+  isSavingSub.value = true
   try {
     if (editingBentoId.value) {
-      await apiClient.put(`/homepage/bento/${editingBentoId.value}/`, bentoForm.value);
-      toast.success("Variabel bento grid diperbarui!");
+      await apiClient.put(`/homepage/bento/${editingBentoId.value}/`, bentoForm.value)
+      toast.success('Fasilitas diperbarui!')
     } else {
-      await apiClient.post(`/homepage/bento/create/`, bentoForm.value);
-      toast.success("Fasilitas bento baru ditambahkan!");
+      await apiClient.post('/homepage/bento/create/', bentoForm.value)
+      toast.success('Fasilitas baru ditambahkan!')
     }
-    showModal.value = false;
-    const res = await apiClient.get(`/homepage/bento/`);
-    bentoFacilities.value = res.data;
-  } catch (err) {
-    toast.error("Gagal memproses data bento grid.");
+    bentoOpen.value = false
+    const res = await apiClient.get('/homepage/bento/')
+    bentoFacilities.value = res.data
+  } catch {
+    toast.error('Gagal menyimpan data bento.')
   } finally {
-    isSavingSub.value = false;
+    isSavingSub.value = false
   }
-};
+}
 
-const deleteBento = async (id) => {
-  if (!confirm("Hapus item fasilitas bento grid ini?")) return;
+const deleteBento = async (bento) => {
+  const ok = await ask({
+    title: 'Hapus fasilitas?',
+    message: `"${bento.title}" akan dihapus dari bento grid homepage.`,
+    confirmText: 'Ya, hapus',
+    danger: true,
+  })
+  if (!ok) return
   try {
-    await apiClient.delete(`/homepage/bento/${id}/`);
-    toast.success("Fasilitas bento sukses dibersihkan!");
-    bentoFacilities.value = bentoFacilities.value.filter(b => b.id !== id);
-  } catch (err) {
-    toast.error("Gagal menghapus entitas bento.");
+    await apiClient.delete(`/homepage/bento/${bento.id}/`)
+    bentoFacilities.value = bentoFacilities.value.filter((b) => b.id !== bento.id)
+    toast.success('Fasilitas dihapus.')
+  } catch {
+    toast.error('Gagal menghapus fasilitas.')
   }
-};
+}
 
-// ================= CRUD SERVICES: 06. GALLERY EVENT (SEKARANG FULL EDIT) =================
+// ── CRUD Galeri ─────────────────────────────────────────────────────
 const openGalleryModal = (item = null) => {
-  modalType.value = "gallery";
   if (item) {
-    // Mode edit: prefill judul, kategori, dan foto yang sudah ada
-    editingGalleryId.value = item.id;
-    galleryForm.value = {
-      title: item.title || "",
-      image_url: item.image_url,
-      category: item.category || "Event",
-    };
+    editingGalleryId.value = item.id
+    galleryForm.value = { title: item.title || '', image_url: item.image_url, category: item.category || 'Event' }
   } else {
-    // Mode tambah baru
-    editingGalleryId.value = null;
-    galleryForm.value = { title: "", image_url: "", category: "Event" };
+    editingGalleryId.value = null
+    galleryForm.value = { title: '', image_url: '', category: 'Event' }
   }
-  showModal.value = true;
-};
+  galleryOpen.value = true
+}
 
 const saveGalleryItem = async () => {
-  if (!galleryForm.value.image_url) return toast.warning("Unggah berkas foto terlebih dahulu!");
-  if (!galleryForm.value.title.trim()) return toast.warning("Judul event wajib diisi!");
-  isSavingSub.value = true;
-
+  if (!galleryForm.value.image_url) return toast.warning('Upload foto terlebih dahulu!')
+  if (!galleryForm.value.title.trim()) return toast.warning('Judul event wajib diisi!')
+  isSavingSub.value = true
   try {
     if (editingGalleryId.value) {
-      // Update data yang sudah ada — tidak perlu hapus dulu
-      await apiClient.put(`/homepage/gallery/${editingGalleryId.value}/`, galleryForm.value);
-      toast.success("Dokumentasi event berhasil diperbarui!");
+      await apiClient.put(`/homepage/gallery/${editingGalleryId.value}/`, galleryForm.value)
+      toast.success('Dokumentasi diperbarui!')
     } else {
-      await apiClient.post(`/homepage/gallery/create/`, galleryForm.value);
-      toast.success("Dokumentasi event berhasil dipublikasikan!");
+      await apiClient.post('/homepage/gallery/create/', galleryForm.value)
+      toast.success('Dokumentasi dipublikasikan!')
     }
-    showModal.value = false;
-    const res = await apiClient.get(`/homepage/gallery/`);
-    galleryData.value = res.data;
-  } catch (err) {
-    toast.error("Gagal menyimpan data dokumentasi foto ke database.");
+    galleryOpen.value = false
+    const res = await apiClient.get('/homepage/gallery/')
+    galleryData.value = res.data
+  } catch {
+    toast.error('Gagal menyimpan dokumentasi foto.')
   } finally {
-    isSavingSub.value = false;
+    isSavingSub.value = false
   }
-};
+}
 
-const deleteGalleryItem = async (id) => {
-  if (!confirm("Hapus dokumentasi foto ini dari server cloud Cloudinary?")) return;
+const deleteGalleryItem = async (img) => {
+  const ok = await ask({
+    title: 'Hapus foto?',
+    message: `"${img.title || 'Foto ini'}" akan dihapus dari galeri. Tindakan ini tidak bisa dibatalkan.`,
+    confirmText: 'Ya, hapus',
+    danger: true,
+  })
+  if (!ok) return
   try {
-    await apiClient.delete(`/homepage/gallery/${id}/`);
-    toast.success("Foto event berhasil dibuang!");
-    galleryData.value = galleryData.value.filter(g => g.id !== id);
-  } catch (err) {
-    toast.error("Gagal menghapus aset media galeri.");
+    await apiClient.delete(`/homepage/gallery/${img.id}/`)
+    galleryData.value = galleryData.value.filter((g) => g.id !== img.id)
+    toast.success('Foto dihapus.')
+  } catch {
+    toast.error('Gagal menghapus foto.')
   }
-};
+}
 
-onMounted(fetchHomepageData);
+onMounted(fetchHomepageData)
 </script>
+
+<style scoped>
+/* Nomor section di header card */
+.eh-num {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 38px; height: 38px; border-radius: var(--r-sm);
+  background: var(--tint-accent); border: 1px solid var(--line-accent);
+  color: var(--accent-text); font-family: var(--font-mono); font-size: 0.78rem; font-weight: 700;
+}
+.eh-strong { font-weight: 700; }
+.eh-code { padding: 1px 6px; border-radius: 4px; background: rgb(var(--ink) / 0.07); font-family: var(--font-mono); color: var(--text-2); }
+.eh-metric { text-align: center; font-family: var(--font-display); font-size: 1.1rem; font-weight: 600; }
+.eh-metric--star { color: var(--amber-soft); }
+.eh-form { display: flex; flex-direction: column; gap: 1rem; }
+
+/* Pratinjau */
+.eh-preview-hero { padding: 0.25rem 0 0.25rem 1rem; border-left: 3px solid var(--accent); }
+.eh-preview-title { margin: 0; font-family: var(--font-display); font-size: clamp(1.05rem, 0.9rem + 1vw, 1.4rem); font-weight: 600; text-transform: uppercase; color: var(--text); overflow-wrap: anywhere; }
+.eh-preview-sub { margin: 0.3rem 0 0; font-size: 0.8125rem; color: var(--text-dim); }
+.eh-preview-marquee {
+  display: flex; align-items: center; gap: 0.75rem; min-width: 0;
+  padding: 0.65rem 0.85rem; border-radius: var(--r-md);
+  background: var(--surface-2); border: 1px solid var(--border);
+  font-size: 0.75rem; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.eh-preview-marquee span { flex-shrink: 0; font-weight: 700; color: var(--accent-text); }
+
+/* Bento */
+.eh-bento-list { margin: 0; padding: 0; list-style: none; }
+.eh-bento-row {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 0.85rem;
+  padding: 0.8rem 1.25rem; border-bottom: 1px solid var(--border);
+}
+.eh-bento-row:last-child { border-bottom: none; }
+.eh-bento-icon {
+  display: flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: var(--r-sm);
+  background: rgb(var(--ink) / 0.06); color: var(--text-2);
+}
+.eh-bento-title { margin: 0; font-size: 0.875rem; font-weight: 600; color: var(--text); }
+.eh-bento-meta { margin: 0.1rem 0 0; font-size: 0.7rem; color: var(--text-faint); }
+.eh-row-actions { display: flex; gap: 0.15rem; }
+
+/* Pemilih icon */
+.eh-icons { display: grid; grid-template-columns: repeat(auto-fill, minmax(2.75rem, 1fr)); gap: 0.4rem; padding: 0.5rem; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-2); }
+.eh-icon-btn {
+  display: flex; align-items: center; justify-content: center;
+  aspect-ratio: 1; min-height: 40px; border: 1px solid transparent; border-radius: var(--r-sm);
+  background: transparent; color: var(--text-dim); cursor: pointer; transition: background 0.15s, color 0.15s;
+}
+.eh-icon-btn:hover { background: var(--surface-hover); color: var(--text); }
+.eh-icon-btn.is-selected { background: var(--accent); color: var(--on-accent); }
+
+/* Galeri */
+.eh-gallery { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: 0.85rem; }
+.eh-tile { position: relative; aspect-ratio: 1; overflow: hidden; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-2); }
+.eh-tile img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.eh-tile-caption {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 1.5rem 0.65rem 0.55rem;
+  background: linear-gradient(to top, rgb(0 0 0 / 0.78), transparent); color: #fff;
+}
+.eh-tile-caption p { margin: 0; font-size: 0.75rem; font-weight: 600; }
+.eh-tile-caption span { font-size: 0.65rem; opacity: 0.75; }
+.eh-tile-actions { position: absolute; top: 0.4rem; right: 0.4rem; display: flex; gap: 0.3rem; transition: opacity 0.15s; }
+.eh-tile-btn {
+  display: flex; align-items: center; justify-content: center; width: 32px; height: 32px;
+  border: 1px solid rgb(255 255 255 / 0.25); border-radius: var(--r-sm);
+  background: rgb(0 0 0 / 0.6); color: #fff; cursor: pointer; backdrop-filter: blur(4px);
+}
+.eh-tile-btn:hover { background: rgb(0 0 0 / 0.85); }
+.eh-tile-btn--danger:hover { background: var(--accent); border-color: var(--accent); }
+/* Perangkat dengan mouse: aksi muncul saat hover/fokus. Layar sentuh: selalu tampil. */
+@media (hover: hover) {
+  .eh-tile-actions { opacity: 0; }
+  .eh-tile:hover .eh-tile-actions, .eh-tile:focus-within .eh-tile-actions { opacity: 1; }
+}
+
+@media (max-width: 560px) {
+  .eh-bento-row { grid-template-columns: auto minmax(0, 1fr) auto; padding: 0.8rem 1rem; }
+  .eh-bento-row .adm-badge { grid-column: 2; grid-row: 2; justify-self: start; }
+  .eh-bento-row .eh-row-actions { grid-column: 3; grid-row: 1 / span 2; }
+  .adm-card-head { flex-wrap: wrap; }
+  .adm-card-head-actions { margin-left: 3.2rem; }
+  .eh-gallery { grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
+}
+</style>

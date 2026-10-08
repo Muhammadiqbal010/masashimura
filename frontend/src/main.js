@@ -5,6 +5,8 @@ import App from "./App.vue";
 import router from "./router";
 import { useAuthStore } from "./stores/auth";
 import "./index.css";
+import "@/assets/admin-theme.css";
+import "@/assets/admin-ui.css";
 
 const app = createApp(App);
 const pinia = createPinia();

@@ -6,9 +6,12 @@
         <p class="dash-eyebrow">Masashimura</p>
         <h1 class="dash-title">Admin Dashboard</h1>
       </div>
-      <div class="dash-live">
-        <span class="live-dot"></span>
-        <span class="live-label">Live</span>
+      <div class="dash-meta">
+        <span v-if="lastUpdated" class="dash-updated">Diperbarui {{ lastUpdated }}</span>
+        <button type="button" class="refresh-btn" :disabled="loading || predictionLoading" @click="refreshAll">
+          <svg class="refresh-icon" :class="{ spinning: loading || predictionLoading }" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 11-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+          <span>Muat ulang</span>
+        </button>
       </div>
     </div>
 
@@ -16,38 +19,48 @@
     <div class="filter-bar">
       <div class="date-inputs">
         <div class="date-field">
-          <label class="date-label">Dari</label>
-          <input v-model="dateFrom" type="date" class="date-input" @change="onDateChange" />
+          <label class="date-label" for="dash-from">Dari</label>
+          <input id="dash-from" v-model="dateFrom" type="date" class="date-input" :max="dateTo" @change="onDateChange" />
         </div>
         <div class="date-sep">—</div>
         <div class="date-field">
-          <label class="date-label">Sampai</label>
-          <input v-model="dateTo" type="date" class="date-input" @change="onDateChange" />
+          <label class="date-label" for="dash-to">Sampai</label>
+          <input id="dash-to" v-model="dateTo" type="date" class="date-input" :min="dateFrom" @change="onDateChange" />
         </div>
       </div>
 
-      <div class="shortcuts">
+      <div class="shortcuts" role="group" aria-label="Rentang cepat">
         <button
           v-for="sc in shortcuts"
           :key="sc.label"
           @click="applyShortcut(sc)"
           class="shortcut-btn"
           :class="{ active: activeShortcut === sc.label }"
+          :aria-pressed="activeShortcut === sc.label"
         >
           {{ sc.label }}
         </button>
       </div>
     </div>
 
+    <!-- ERROR -->
+    <div v-if="loadError && !loading" class="error-banner" role="alert">
+      <div class="error-text">
+        <p class="error-title">Statistik gagal dimuat</p>
+        <p class="error-msg">{{ loadError }}</p>
+      </div>
+      <button type="button" class="retry-btn" @click="fetchStats">Coba lagi</button>
+    </div>
+
     <!-- LOADING -->
-    <div v-if="loading" class="loading-state">
+    <div v-if="loading" class="loading-state" role="status" aria-live="polite">
       <div class="spinner"></div>
       <p>Memuat data...</p>
     </div>
 
     <template v-else>
       <!-- HERO STAT: Total Revenue -->
-      <div class="hero-row">
+      <div v-if="!loadError" class="hero-row">
         <div class="stat-hero">
           <div class="stat-hero-top">
             <span class="stat-hero-label">Total Revenue</span>
@@ -65,7 +78,7 @@
       </div>
 
       <!-- SUPPORTING STATS: sama besar, jelas di bawah hero -->
-      <div class="support-grid">
+      <div v-if="!loadError" class="support-grid">
 
         <div class="stat-card">
           <div class="stat-top">
@@ -150,7 +163,7 @@
       </div>
 
       <!-- TOP MENU TABLE -->
-      <div class="table-card">
+      <div v-if="!loadError" class="table-card">
         <div class="table-header">
           <div>
             <h3 class="table-title">Top 5 Menu Terlaris</h3>
@@ -172,7 +185,7 @@
                 <th>Nama Menu</th>
                 <th class="th-center">Porsi Terjual</th>
                 <th class="th-right">Omzet</th>
-                <th class="th-bar">Proporsi</th>
+                <th class="th-bar">Proporsi vs #1</th>
               </tr>
             </thead>
             <tbody>
@@ -189,10 +202,12 @@
                 </td>
                 <td class="td-right td-revenue">{{ formatPrice(menu.total_revenue) }}</td>
                 <td class="td-bar">
-                  <div class="bar-track">
-                    <div class="bar-fill" :style="{ width: barWidth(menu.total_qty) + '%' }"></div>
+                  <div class="bar-cell">
+                    <div class="bar-track">
+                      <div class="bar-fill" :style="{ width: barWidth(menu.total_qty) + '%' }"></div>
+                    </div>
+                    <span class="bar-pct">{{ barWidth(menu.total_qty) }}%</span>
                   </div>
-                  <span class="bar-pct">{{ barWidth(menu.total_qty) }}%</span>
                 </td>
               </tr>
             </tbody>
@@ -212,10 +227,15 @@ import {
   CategoryScale, LinearScale, Filler, Tooltip, Legend,
 } from 'chart.js';
 import apiClient from '@/api/client';
+import { useTheme } from '@/composables/useTheme';
 
 ChartJS.register(LineElement, PointElement, BarElement, CategoryScale, LinearScale, Filler, Tooltip, Legend);
 
+const { isDark } = useTheme();
+
 const loading        = ref(true);
+const loadError      = ref('');
+const lastUpdated    = ref('');
 const dateFrom       = ref(today());
 const dateTo         = ref(today());
 const activeShortcut = ref('Hari Ini');
@@ -268,13 +288,21 @@ const activeDateLabel = computed(() => {
 
 const fetchStats = async () => {
   loading.value = true;
+  loadError.value = '';
   try {
     const { data } = await apiClient.get('/orders/stats/', {
       params: { date_from: dateFrom.value, date_to: dateTo.value },
     });
     stats.value = data;
+    lastUpdated.value = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false });
   } catch (err) {
     console.error('Gagal load dashboard stats:', err);
+    const status = err?.response?.status;
+    loadError.value = !status
+      ? 'Tidak bisa terhubung ke server. Cek koneksi internet atau status backend.'
+      : status === 401 || status === 403
+        ? 'Sesi login habis atau akun tidak punya akses. Coba login ulang.'
+        : `Server mengembalikan error (${status}). Data kamu tidak hilang — coba lagi sebentar.`;
   } finally {
     loading.value = false;
   }
@@ -323,6 +351,8 @@ const retrainModel = async () => {
 };
 
 onMounted(fetchPrediction);
+
+const refreshAll = () => Promise.all([fetchStats(), fetchPrediction()]);
 
 function formatDateTime(iso) {
   if (!iso) return '';
@@ -389,8 +419,8 @@ const trendChartData = computed(() => {
       {
         label: 'Data Historis',
         data: historyData,
-        borderColor: '#60a5fa',
-        backgroundColor: '#60a5fa',
+        borderColor: isDark.value ? '#60a5fa' : '#2563eb',
+        backgroundColor: isDark.value ? '#60a5fa' : '#2563eb',
         pointRadius: 2,
         tension: 0.3,
         fill: false,
@@ -399,30 +429,45 @@ const trendChartData = computed(() => {
   };
 });
 
-const trendChartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  interaction: { mode: 'index', intersect: false },
-  plugins: {
-    legend: {
-      labels: {
-        color: 'rgba(255,255,255,0.5)',
-        font: { family: 'Inter', size: 10 },
-        filter: (item) => item.text === 'Data Historis' || item.text === 'Prediksi',
+// Warna chart (canvas tidak bisa baca CSS variable) → ikut tema aktif.
+const chartTheme = computed(() => isDark.value
+  ? { tick: 'rgba(255,255,255,0.55)', grid: 'rgba(255,255,255,0.07)', legend: 'rgba(255,255,255,0.7)', tipBg: '#18181b', tipText: '#fafafa', tipBorder: 'rgba(255,255,255,0.14)' }
+  : { tick: 'rgba(24,24,27,0.62)',    grid: 'rgba(24,24,27,0.08)',    legend: 'rgba(24,24,27,0.75)',    tipBg: '#ffffff', tipText: '#18181b', tipBorder: 'rgba(24,24,27,0.18)' });
+
+const tooltipBase = (t) => ({
+  backgroundColor: t.tipBg, titleColor: t.tipText, bodyColor: t.tipText,
+  borderColor: t.tipBorder, borderWidth: 1, padding: 10, cornerRadius: 8,
+});
+
+const trendChartOptions = computed(() => {
+  const t = chartTheme.value;
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: {
+        labels: {
+          color: t.legend,
+          font: { family: 'Inter', size: 11 },
+          boxWidth: 12,
+          filter: (item) => item.text === 'Data Historis' || item.text === 'Prediksi',
+        },
+      },
+      tooltip: {
+        ...tooltipBase(t),
+        filter: (item) => item.dataset.label === 'Data Historis' || item.dataset.label === 'Prediksi',
+        callbacks: {
+          label: (ctx) => `${ctx.dataset.label}: ${formatPrice(ctx.parsed.y)}`,
+        },
       },
     },
-    tooltip: {
-      filter: (item) => item.dataset.label === 'Data Historis' || item.dataset.label === 'Prediksi',
-      callbacks: {
-        label: (ctx) => `${ctx.dataset.label}: ${formatPrice(ctx.parsed.y)}`,
-      },
+    scales: {
+      x: { ticks: { color: t.tick, font: { size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 }, grid: { color: t.grid } },
+      y: { ticks: { color: t.tick, font: { size: 10 }, callback: (v) => formatPriceShort(v) }, grid: { color: t.grid } },
     },
-  },
-  scales: {
-    x: { ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
-    y: { ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 9 }, callback: (v) => formatPriceShort(v) }, grid: { color: 'rgba(255,255,255,0.04)' } },
-  },
-};
+  };
+});
 
 const forecastBarData = computed(() => {
   if (!prediction.value) return { labels: [], datasets: [] };
@@ -439,18 +484,21 @@ const forecastBarData = computed(() => {
   };
 });
 
-const forecastBarOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: { display: false },
-    tooltip: { callbacks: { label: (ctx) => formatPrice(ctx.parsed.y) } },
-  },
-  scales: {
-    x: { ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 9 } }, grid: { display: false } },
-    y: { ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 9 }, callback: (v) => formatPriceShort(v) }, grid: { color: 'rgba(255,255,255,0.04)' } },
-  },
-};
+const forecastBarOptions = computed(() => {
+  const t = chartTheme.value;
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { ...tooltipBase(t), callbacks: { label: (ctx) => formatPrice(ctx.parsed.y) } },
+    },
+    scales: {
+      x: { ticks: { color: t.tick, font: { size: 10 } }, grid: { display: false } },
+      y: { ticks: { color: t.tick, font: { size: 10 }, callback: (v) => formatPriceShort(v) }, grid: { color: t.grid } },
+    },
+  };
+});
 
 function formatPriceShort(value) {
   if (value >= 1_000_000_000) return `Rp ${(value / 1_000_000_000).toFixed(1)}M`;
@@ -477,14 +525,14 @@ const formatPrice = (value) =>
 <style scoped>
 /* ── Root ─────────────────────────────────────────────────────────── */
 .dashboard-root {
-  min-height: 100vh;
-  background: #080808;
-  color: #fff;
-  padding: 2.5rem 1.5rem;
+  --page-max: 1280px;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  /* konten dibatasi --page-max, tapi latar tetap full-width */
+  padding: clamp(1.1rem, 3vw, 2.5rem) max(clamp(1rem, 3vw, 1.5rem), calc((100% - var(--page-max)) / 2));
   font-family: 'Inter', sans-serif;
-  max-width: 1280px;
-  margin: 0 auto;
-  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* ── Header ──────────────────────────────────────────────────────── */
@@ -494,14 +542,14 @@ const formatPrice = (value) =>
   justify-content: space-between;
   margin-bottom: 2.5rem;
   padding-bottom: 1.5rem;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid rgb(var(--ink) / 0.06);
 }
 .dash-eyebrow {
   font-family: 'Oswald', sans-serif;
-  font-size: 0.65rem;
+  font-size: 0.68rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: #dc2626;
+  color: var(--accent-text);
   margin-bottom: 0.3rem;
 }
 .dash-title {
@@ -510,34 +558,8 @@ const formatPrice = (value) =>
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #fff;
+  color: var(--text);
   margin: 0;
-}
-.dash-live {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.35rem 0.8rem;
-  background: rgba(34,197,94,0.08);
-  border: 1px solid rgba(34,197,94,0.2);
-  border-radius: 100px;
-}
-.live-dot {
-  width: 6px; height: 6px;
-  background: #22c55e;
-  border-radius: 50%;
-  animation: pulse 2s infinite;
-}
-.live-label {
-  font-size: 0.65rem;
-  font-family: 'Oswald', sans-serif;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #22c55e;
-}
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
 }
 
 /* ── Filter Bar ───────────────────────────────────────────────────── */
@@ -548,8 +570,8 @@ const formatPrice = (value) =>
   gap: 1rem;
   margin-bottom: 2.5rem;
   padding: 1rem 1.25rem;
-  background: #0f0f0f;
-  border: 1px solid rgba(255,255,255,0.06);
+  background: var(--surface);
+  border: 1px solid rgb(var(--ink) / 0.06);
   border-radius: 14px;
 }
 .date-inputs {
@@ -563,25 +585,25 @@ const formatPrice = (value) =>
   gap: 0.2rem;
 }
 .date-label {
-  font-size: 0.6rem;
+  font-size: 0.68rem;
   font-family: 'Oswald', sans-serif;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.25);
+  color: var(--text-faint);
 }
 .date-input {
   background: transparent;
   border: none;
   outline: none;
-  color: #fff;
+  color: var(--text);
   font-size: 0.85rem;
   font-family: 'Inter', monospace;
   cursor: pointer;
   min-width: 130px;
-  color-scheme: dark;
+
 }
 .date-input::-webkit-calendar-picker-indicator { filter: invert(0.4); cursor: pointer; }
-.date-sep { color: rgba(255,255,255,0.15); font-size: 0.9rem; }
+.date-sep { color: var(--text-faint); font-size: 0.9rem; }
 
 .shortcuts {
   display: flex;
@@ -592,9 +614,9 @@ const formatPrice = (value) =>
 .shortcut-btn {
   padding: 0.35rem 0.9rem;
   border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgb(var(--ink) / 0.1);
   background: transparent;
-  color: rgba(255,255,255,0.4);
+  color: var(--text-dim);
   font-family: 'Oswald', sans-serif;
   font-size: 0.7rem;
   letter-spacing: 0.1em;
@@ -603,13 +625,13 @@ const formatPrice = (value) =>
   transition: all 0.18s ease;
 }
 .shortcut-btn:hover {
-  border-color: rgba(255,255,255,0.25);
-  color: rgba(255,255,255,0.75);
+  border-color: rgb(var(--ink) / 0.25);
+  color: var(--text-2);
 }
 .shortcut-btn.active {
   background: #dc2626;
   border-color: #dc2626;
-  color: #fff;
+  color: var(--on-accent);
 }
 
 /* ── Loading ─────────────────────────────────────────────────────── */
@@ -620,7 +642,7 @@ const formatPrice = (value) =>
   justify-content: center;
   gap: 1rem;
   padding: 6rem 2rem;
-  color: rgba(255,255,255,0.25);
+  color: var(--text-faint);
   font-size: 0.75rem;
   font-family: 'Oswald', sans-serif;
   letter-spacing: 0.15em;
@@ -628,7 +650,7 @@ const formatPrice = (value) =>
 }
 .spinner {
   width: 32px; height: 32px;
-  border: 2px solid rgba(255,255,255,0.08);
+  border: 2px solid rgb(var(--ink) / 0.08);
   border-top-color: #dc2626;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -642,10 +664,10 @@ const formatPrice = (value) =>
   margin-bottom: 1.25rem;
 }
 .stat-hero {
-  background: linear-gradient(135deg, #150808 0%, #0f0f0f 65%);
+  background: linear-gradient(135deg, var(--hero-from) 0%, var(--surface) 65%);
   border: 1px solid rgba(220,38,38,0.25);
   border-radius: 18px;
-  padding: 2rem 2.25rem;
+  padding: clamp(1.25rem, 3vw, 2rem) clamp(1.25rem, 3vw, 2.25rem);
   position: relative;
   overflow: hidden;
 }
@@ -667,14 +689,14 @@ const formatPrice = (value) =>
   font-size: 0.75rem;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.5);
+  color: var(--text-dim);
 }
 .stat-hero-value {
   font-family: 'Inter', monospace;
-  font-size: 3rem;
+  font-size: clamp(2rem, 6vw, 3rem);
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: #f87171;
+  color: var(--red-soft);
   line-height: 1.05;
   margin-bottom: 0.85rem;
 }
@@ -686,7 +708,7 @@ const formatPrice = (value) =>
 }
 .stat-hero-sub {
   font-size: 0.8rem;
-  color: rgba(255,255,255,0.35);
+  color: var(--text-dim);
 }
 .trend-pill {
   display: inline-flex;
@@ -698,8 +720,8 @@ const formatPrice = (value) =>
   font-size: 0.78rem;
   font-weight: 700;
 }
-.trend-up   { background: rgba(34,197,94,0.1);  color: #4ade80; border: 1px solid rgba(34,197,94,0.25); }
-.trend-down { background: rgba(248,113,113,0.1); color: #f87171; border: 1px solid rgba(248,113,113,0.25); }
+.trend-up   { background: rgba(34,197,94,0.1);  color: var(--green-soft); border: 1px solid rgba(34,197,94,0.25); }
+.trend-down { background: rgba(248,113,113,0.1); color: var(--red-soft); border: 1px solid rgba(248,113,113,0.25); }
 .trend-pill-note {
   font-family: 'Inter', sans-serif;
   font-weight: 400;
@@ -708,18 +730,18 @@ const formatPrice = (value) =>
 }
 
 .stat-badge {
-  font-size: 0.55rem;
+  font-size: 0.68rem;
   font-family: 'Oswald', sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   padding: 0.15rem 0.5rem;
   border-radius: 100px;
-  border: 1px solid rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.3);
+  border: 1px solid rgb(var(--ink) / 0.1);
+  color: var(--text-faint);
   white-space: nowrap;
   flex-shrink: 0;
 }
-.badge-green { border-color: rgba(34,197,94,0.3); color: #4ade80; background: rgba(34,197,94,0.08); }
+.badge-green { border-color: rgba(34,197,94,0.3); color: var(--green-soft); background: rgba(34,197,94,0.08); }
 
 /* ── Supporting Stats ────────────────────────────────────────────── */
 .support-grid {
@@ -732,8 +754,8 @@ const formatPrice = (value) =>
 @media (max-width: 560px) { .support-grid { grid-template-columns: 1fr; } }
 
 .stat-card {
-  background: #0f0f0f;
-  border: 1px solid rgba(255,255,255,0.05);
+  background: var(--surface);
+  border: 1px solid rgb(var(--ink) / 0.05);
   border-radius: 14px;
   padding: 1.15rem 1.3rem;
   position: relative;
@@ -759,10 +781,10 @@ const formatPrice = (value) =>
 }
 .stat-label {
   font-family: 'Oswald', sans-serif;
-  font-size: 0.65rem;
+  font-size: 0.68rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.35);
+  color: var(--text-dim);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -772,12 +794,12 @@ const formatPrice = (value) =>
   font-family: 'Inter', monospace;
   font-size: 1.4rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--text);
   line-height: 1.1;
   margin-bottom: 0.4rem;
   letter-spacing: -0.02em;
 }
-.accent-purple .stat-value { color: #c084fc; }
+.accent-purple .stat-value { color: var(--purple-soft); }
 
 .stat-value-text {
   font-family: 'Inter', sans-serif;
@@ -789,14 +811,14 @@ const formatPrice = (value) =>
 
 .stat-sub {
   font-size: 0.7rem;
-  color: rgba(255,255,255,0.2);
+  color: var(--text-faint);
   font-family: 'Inter', sans-serif;
 }
 
 /* ── Table Card ──────────────────────────────────────────────────── */
 .table-card {
-  background: #0f0f0f;
-  border: 1px solid rgba(255,255,255,0.05);
+  background: var(--surface);
+  border: 1px solid rgb(var(--ink) / 0.05);
   border-radius: 16px;
   overflow: hidden;
   margin-bottom: 1.5rem;
@@ -806,7 +828,7 @@ const formatPrice = (value) =>
   align-items: flex-start;
   justify-content: space-between;
   padding: 1.5rem 1.75rem;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgb(var(--ink) / 0.05);
 }
 .table-title {
   font-family: 'Oswald', sans-serif;
@@ -814,12 +836,12 @@ const formatPrice = (value) =>
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #fff;
+  color: var(--text);
   margin: 0 0 0.25rem;
 }
 .table-sub {
   font-size: 0.7rem;
-  color: rgba(255,255,255,0.25);
+  color: var(--text-faint);
   font-family: 'Inter', sans-serif;
   margin: 0;
 }
@@ -831,12 +853,12 @@ const formatPrice = (value) =>
 }
 .empty-icon { font-size: 2rem; margin-bottom: 0.75rem; }
 .empty-text {
-  color: rgba(255,255,255,0.3);
+  color: var(--text-faint);
   font-size: 0.85rem;
   margin: 0 0 0.3rem;
 }
 .empty-hint {
-  color: rgba(255,255,255,0.15);
+  color: var(--text-faint);
   font-size: 0.72rem;
   margin: 0;
 }
@@ -849,28 +871,28 @@ const formatPrice = (value) =>
   min-width: 600px;
 }
 .menu-table thead tr {
-  background: rgba(255,255,255,0.02);
+  background: rgb(var(--ink) / 0.02);
 }
 .menu-table th {
   padding: 0.75rem 1.5rem;
   font-family: 'Oswald', sans-serif;
-  font-size: 0.6rem;
+  font-size: 0.68rem;
   font-weight: 400;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.25);
+  color: var(--text-faint);
   text-align: left;
   white-space: nowrap;
 }
 .th-center { text-align: center; }
 .th-right  { text-align: right; }
-.th-bar    { min-width: 160px; }
+.th-bar    { min-width: 160px; white-space: nowrap; }
 
 .menu-row {
-  border-top: 1px solid rgba(255,255,255,0.04);
+  border-top: 1px solid rgb(var(--ink) / 0.04);
   transition: background 0.15s;
 }
-.menu-row:hover { background: rgba(255,255,255,0.02); }
+.menu-row:hover { background: rgb(var(--ink) / 0.02); }
 
 .menu-table td {
   padding: 1rem 1.5rem;
@@ -888,28 +910,25 @@ const formatPrice = (value) =>
   font-weight: 700;
   font-family: 'Inter', monospace;
 }
-.rank-gold   { background: rgba(251,191,36,0.15); color: #fbbf24; }
-.rank-silver { background: rgba(156,163,175,0.12); color: #9ca3af; }
-.rank-bronze { background: rgba(180,83,9,0.15);  color: #d97706; }
-.rank-default{ background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.3); }
+.rank-gold   { background: rgba(251,191,36,0.15); color: var(--amber-soft); }
+.rank-silver { background: rgba(156,163,175,0.12); color: var(--text-dim); }
+.rank-bronze { background: rgba(180,83,9,0.15);  color: var(--amber-soft); }
+.rank-default{ background: rgb(var(--ink) / 0.04); color: var(--text-faint); }
 
-.td-name { font-weight: 500; color: #fff; }
+.td-name { font-weight: 500; color: var(--text); }
 
 .td-center { text-align: center; }
 .qty-val { font-weight: 700; font-family: monospace; font-size: 1rem; }
-.qty-unit { font-size: 0.7rem; color: rgba(255,255,255,0.3); margin-left: 0.25rem; }
+.qty-unit { font-size: 0.7rem; color: var(--text-faint); margin-left: 0.25rem; }
 
 .td-right { text-align: right; }
-.td-revenue { font-family: monospace; font-weight: 700; color: #fbbf24; }
+.td-revenue { font-family: monospace; font-weight: 700; color: var(--amber-soft); }
 
-.td-bar {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
+.td-bar { min-width: 160px; }
+.bar-cell { display: flex; align-items: center; gap: 0.6rem; }
 .bar-track {
   flex: 1;
-  background: rgba(255,255,255,0.06);
+  background: rgb(var(--ink) / 0.06);
   height: 4px;
   border-radius: 99px;
   overflow: hidden;
@@ -921,17 +940,17 @@ const formatPrice = (value) =>
   transition: width 0.7s ease;
 }
 .bar-pct {
-  font-size: 0.65rem;
+  font-size: 0.68rem;
   font-family: monospace;
-  color: rgba(255,255,255,0.25);
+  color: var(--text-faint);
   min-width: 2.5rem;
   text-align: right;
 }
 
 /* ── Predict Section ─────────────────────────────────────────────── */
 .predict-section {
-  background: #0f0f0f;
-  border: 1px solid rgba(255,255,255,0.05);
+  background: var(--surface);
+  border: 1px solid rgb(var(--ink) / 0.05);
   border-radius: 16px;
   padding: 1.5rem 1.75rem;
   margin-bottom: 2.5rem;
@@ -957,7 +976,7 @@ const formatPrice = (value) =>
   border-left: 2px solid rgba(168,85,247,0.4);
 }
 .predict-inline-icon {
-  color: #a855f7;
+  color: var(--purple-soft);
   font-size: 0.9rem;
 }
 .predict-inline-text {
@@ -967,16 +986,16 @@ const formatPrice = (value) =>
 }
 .predict-inline-label {
   font-family: 'Oswald', sans-serif;
-  font-size: 0.6rem;
+  font-size: 0.68rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.3);
+  color: var(--text-faint);
 }
 .predict-inline-value {
   font-family: 'Inter', monospace;
   font-size: 1.05rem;
   font-weight: 700;
-  color: #c084fc;
+  color: var(--purple-soft);
 }
 
 .predict-actions {
@@ -989,9 +1008,9 @@ const formatPrice = (value) =>
   border-radius: 8px;
   border: 1px solid rgba(220,38,38,0.3);
   background: rgba(220,38,38,0.08);
-  color: #ef4444;
+  color: var(--red-soft);
   font-family: 'Oswald', sans-serif;
-  font-size: 0.65rem;
+  font-size: 0.68rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   cursor: pointer;
@@ -1010,8 +1029,8 @@ const formatPrice = (value) =>
 @media (max-width: 900px) { .chart-grid { grid-template-columns: 1fr; } }
 
 .chart-card {
-  background: #131313;
-  border: 1px solid rgba(255,255,255,0.05);
+  background: var(--surface-2);
+  border: 1px solid rgb(var(--ink) / 0.05);
   border-radius: 12px;
   padding: 1.1rem 1.2rem;
   min-width: 0;
@@ -1022,7 +1041,7 @@ const formatPrice = (value) =>
   font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.6);
+  color: var(--text-2);
   margin: 0 0 1rem 0;
 }
 .chart-wrap {
@@ -1043,7 +1062,105 @@ const formatPrice = (value) =>
   .predict-header { flex-direction: column; align-items: flex-start; }
   .predict-inline-stat { border-left: none; padding-left: 0; }
 }
-@media (max-width: 480px) {
-  .dash-live { display: none; }
+
+
+/* ══ Tambahan: tema, UX, responsif ═════════════════════════════════ */
+.stat-card, .stat-hero, .table-card, .predict-section, .filter-bar { box-shadow: var(--shadow-sm); }
+.stat-hero { border-color: rgb(220 38 38 / 0.3); }
+.stat-hero-value, .stat-value, .qty-val, .td-revenue, .bar-pct { font-variant-numeric: tabular-nums; }
+
+/* meta header: info update + tombol muat ulang */
+.dash-meta { display: flex; align-items: center; gap: 0.75rem; }
+.dash-updated { font-size: 0.72rem; color: var(--text-dim); white-space: nowrap; }
+.refresh-btn {
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  min-height: 36px; padding: 0.4rem 0.85rem;
+  border-radius: 10px; border: 1px solid var(--border-strong);
+  background: transparent; color: var(--text-2);
+  font-family: 'Oswald', sans-serif; font-size: 0.7rem;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  cursor: pointer; transition: all 0.15s;
 }
+.refresh-btn:hover:not(:disabled) { background: var(--surface-hover); color: var(--text); }
+.refresh-btn:disabled { opacity: 0.55; cursor: progress; }
+.refresh-icon.spinning { animation: spin 0.9s linear infinite; }
+
+/* error banner */
+.error-banner {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+  margin-bottom: 1.5rem; padding: 0.9rem 1.1rem; border-radius: 12px;
+  background: rgb(239 68 68 / 0.08); border: 1px solid rgb(239 68 68 / 0.35);
+}
+.error-text { flex: 1 1 260px; min-width: 0; }
+.error-title { margin: 0 0 0.2rem; font-size: 0.85rem; font-weight: 600; color: var(--red-soft); }
+.error-msg { margin: 0; font-size: 0.75rem; line-height: 1.5; color: var(--text-2); }
+.retry-btn {
+  min-height: 36px; padding: 0.45rem 1rem; border-radius: 8px; flex-shrink: 0;
+  background: transparent; border: 1px solid rgb(239 68 68 / 0.5); color: var(--red-soft);
+  font-family: 'Oswald', sans-serif; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+  cursor: pointer; transition: background 0.15s;
+}
+.retry-btn:hover { background: rgb(239 68 68 / 0.12); }
+
+/* filter bar */
+.date-input { color-scheme: inherit; }
+.date-input:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; border-radius: 4px; }
+.date-sep { color: var(--text-faint); }
+.shortcut-btn { min-height: 36px; }
+.shortcut-btn.active { color: var(--on-accent); }
+
+/* stat */
+.stat-card:hover { border-color: var(--border-strong); }
+.stat-label { white-space: normal; }
+
+/* tabel */
+.menu-table th { padding-block: 0.85rem; }
+.th-rank { width: 56px; }
+.menu-row:hover { background: var(--surface-hover); }
+.bar-track { min-width: 60px; }
+
+/* sedikit lebih tinggi di desktop lebar */
+@media (min-width: 1100px) { .chart-wrap { height: 300px; } }
+
+@media (max-width: 768px) {
+  .dash-header { align-items: flex-start; gap: 0.75rem; margin-bottom: 1.5rem; padding-bottom: 1.1rem; }
+  .filter-bar { align-items: stretch; margin-bottom: 1.5rem; padding: 0.9rem; }
+  .date-inputs { width: 100%; }
+  .date-field { flex: 1; min-width: 0; }
+  .date-input { width: 100%; min-width: 0; min-height: 36px; }
+  .shortcuts { width: 100%; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; }
+  .shortcut-btn { padding-inline: 0.3rem; text-align: center; }
+  .support-grid { margin-bottom: 1.5rem; }
+  .stat-hero-foot { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+  .table-header { padding: 1.1rem 1.1rem; }
+  .predict-section { padding: 1.1rem; margin-bottom: 1.5rem; }
+  .predict-actions { width: 100%; }
+  .retrain-btn { width: 100%; min-height: 40px; }
+  .chart-card { padding: 0.9rem; }
+  .chart-wrap { height: 220px; }
+}
+
+@media (max-width: 640px) {
+  .dash-updated { display: none; }
+  .refresh-btn span { display: none; }
+  .refresh-btn { padding: 0.4rem 0.6rem; }
+
+  /* tabel top menu: sembunyikan kolom proporsi, rapatkan padding */
+  .menu-table { min-width: 0; }
+  .menu-table th, .menu-table td { padding: 0.75rem 0.7rem; }
+  .th-bar, .td-bar { display: none; }
+  .th-rank, .td-rank { width: 40px; padding-right: 0; }
+  .td-name { word-break: break-word; }
+}
+
+@media (max-width: 480px) {
+  .shortcuts { grid-template-columns: repeat(2, 1fr); }
+  .stat-hero { border-radius: 14px; }
+  .qty-unit { display: none; }
+}
+
+@media (pointer: coarse) {
+  .shortcut-btn, .refresh-btn, .retrain-btn { min-height: 44px; }
+}
+
 </style>

@@ -1,0 +1,156 @@
+/* src/assets/admin-theme.css
+ *
+ * Token warna & aturan global untuk area admin.
+ * Import SEKALI saja, mis. di main.js:   import '@/assets/admin-theme.css'
+ *
+ * Semua token hanya aktif kalau <html> punya atribut data-admin-theme
+ * (dipasang oleh useTheme), jadi halaman customer tidak terpengaruh.
+ */
+
+/* ── Token yang sama di kedua tema ─────────────────────────────────── */
+html[data-admin-theme] {
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --on-accent: #ffffff;
+  --accent: #dc2626;
+  --accent-hover: #b91c1c;
+  --green: #22c55e;
+  --amber: #f59e0b;
+  --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+}
+
+/* ── Tema GELAP (default) ──────────────────────────────────────────── */
+html[data-admin-theme='dark'] {
+  color-scheme: dark;
+
+  /* "ink" = warna tinta untuk overlay transparan: putih di gelap, hitam di terang.
+     Dipakai sebagai rgb(var(--ink) / .06) di seluruh stylesheet. */
+  --ink: 255 255 255;
+
+  --bg: #08080a;
+  --bg-sidebar: #0a0a0b;
+  --surface: #0f0f11;
+  --surface-2: #151518;
+  --surface-hover: rgb(255 255 255 / 0.035);
+
+  --border: rgb(255 255 255 / 0.07);
+  --border-strong: rgb(255 255 255 / 0.14);
+
+  --text: #fafafa;
+  --text-2: rgb(255 255 255 / 0.74);
+  --text-dim: rgb(255 255 255 / 0.54);
+  --text-faint: rgb(255 255 255 / 0.38);
+
+  --accent-text: #ef4444;
+  --green-soft: #4ade80;
+  --amber-soft: #fbbf24;
+  --red-soft: #f87171;
+  --blue-soft: #7dd3fc;
+  --purple-soft: #c084fc;
+
+  --hero-from: #1a0a0a;
+  --overlay: rgb(0 0 0 / 0.72);
+  --shadow-sm: none;
+  --shadow-lg: 0 24px 60px rgb(0 0 0 / 0.55);
+  --ring: #fbbf24;
+
+  /* Logo brand dirancang untuk latar gelap → di tema terang dikasih "tile" gelap */
+  --brand-tile: transparent;
+}
+
+/* ── Tema TERANG ───────────────────────────────────────────────────── */
+html[data-admin-theme='light'] {
+  color-scheme: light;
+  --ink: 24 24 27;
+
+  --bg: #f4f4f5;
+  --bg-sidebar: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f7f7f8;
+  --surface-hover: rgb(24 24 27 / 0.04);
+
+  --border: rgb(24 24 27 / 0.09);
+  --border-strong: rgb(24 24 27 / 0.18);
+
+  --text: #18181b;
+  --text-2: #3f3f46;
+  --text-dim: #63636b;
+  --text-faint: #8a8a93;
+
+  --accent-text: #b91c1c;
+  --green: #16a34a;
+  --green-soft: #15803d;
+  --amber: #d97706;
+  --amber-soft: #b45309;
+  --red-soft: #b91c1c;
+  --blue-soft: #0369a1;
+  --purple-soft: #7e22ce;
+
+  --hero-from: #fff1f1;
+  --overlay: rgb(24 24 27 / 0.5);
+  --shadow-sm: 0 1px 2px rgb(24 24 27 / 0.05), 0 1px 1px rgb(24 24 27 / 0.03);
+  --shadow-lg: 0 20px 50px rgb(24 24 27 / 0.2);
+  --ring: #2563eb;
+
+  --brand-tile: #0a0a0b;
+}
+
+/* ── Aturan global area admin ──────────────────────────────────────── */
+html[data-admin-theme] body {
+  background: var(--bg);
+  color: var(--text);
+  scrollbar-color: rgb(var(--ink) / 0.22) transparent;
+  scrollbar-width: thin;
+}
+
+/* Fokus keyboard yang jelas di semua elemen interaktif.
+   Input/textarea/select sengaja dikecualikan: mereka sudah punya
+   indikator fokus sendiri (border + glow) di tiap halaman. */
+html[data-admin-theme] :focus-visible:not(input):not(textarea):not(select) {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+html[data-admin-theme] input:focus-visible,
+html[data-admin-theme] textarea:focus-visible,
+html[data-admin-theme] select:focus-visible {
+  box-shadow: 0 0 0 3px rgb(220 38 38 / 0.18);
+}
+
+/* Angka rata kolom — biar nominal rupiah tidak "bergoyang" */
+html[data-admin-theme] table,
+html[data-admin-theme] .tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Kunci scroll body saat sidebar mobile terbuka */
+html[data-admin-theme] body.adm-no-scroll { overflow: hidden; }
+
+/* Matikan semua transition sesaat ketika tema diganti (lihat useTheme) */
+html[data-theme-switching] *,
+html[data-theme-switching] *::before,
+html[data-theme-switching] *::after {
+  transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-admin-theme] *,
+  html[data-admin-theme] *::before,
+  html[data-admin-theme] *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+/* Bayangan hitam bawaan Tailwind (shadow-black/xx) terlalu pekat di tema terang */
+html[data-admin-theme='light'] [class*='shadow-black'] { --tw-shadow-color: rgb(24 24 27 / 0.12) !important; }
+
+/* Scrollbar horizontal disembunyikan (tab filter, segmented) */
+html[data-admin-theme] .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+html[data-admin-theme] .no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Input tanggal/jam & scrollbar native ikut tema */
+html[data-admin-theme] input[type='date'],
+html[data-admin-theme] input[type='time'],
+html[data-admin-theme] input[type='datetime-local'] { color-scheme: inherit; }

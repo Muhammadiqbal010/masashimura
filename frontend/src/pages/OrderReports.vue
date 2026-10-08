@@ -1,19 +1,19 @@
 <template>
-  <div class="w-full min-h-screen bg-[#070707]">
+  <div class="w-full min-h-screen bg-[color:var(--bg)]">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 pb-24">
 
       <!-- ═══ STICKY HEADER ═════════════════════════════════════════════ -->
-      <div class="sticky top-0 z-30 -mx-4 sm:-mx-6 px-4 sm:px-6 pt-6 pb-4 bg-[#070707]/85 backdrop-blur-xl border-b border-white/[0.06]">
+      <div class="lg:sticky lg:top-0 z-30 -mx-4 sm:-mx-6 px-4 sm:px-6 pt-6 pb-4 bg-[color:color-mix(in_srgb,var(--bg)_85%,transparent)] backdrop-blur-xl border-b border-[color:rgb(var(--ink)/0.06)]">
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
           <div>
             <div class="flex items-center gap-2 mb-2">
               <span class="w-1 h-1 rounded-full bg-red-600"></span>
-              <p class="text-white/30 text-[10px] font-oswald uppercase tracking-[0.25em]">Masashimura · Admin</p>
+              <p class="text-[color:var(--text-faint)] text-[10px] font-oswald uppercase tracking-[0.25em]">Masashimura · Admin</p>
             </div>
-            <h1 class="font-oswald text-3xl sm:text-4xl lg:text-5xl uppercase italic tracking-tighter text-red-600 leading-none">
+            <h1 class="font-oswald text-3xl sm:text-4xl lg:text-5xl uppercase italic tracking-tighter text-[color:var(--accent-text)] leading-none">
               Order Reports
             </h1>
-            <p class="text-white/35 text-xs sm:text-sm font-light mt-2">
+            <p class="text-[color:var(--text-faint)] text-xs sm:text-sm font-light mt-2">
               Analisis omzet, performa menu, dan pelanggan
             </p>
           </div>
@@ -24,7 +24,7 @@
               @click="fetch()"
               :disabled="loading"
               aria-label="Muat ulang data"
-              class="flex items-center justify-center w-11 h-11 bg-white/[0.04] border border-white/10 rounded-xl text-white/50 hover:text-white hover:bg-white/[0.08] transition-all disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/60"
+              class="flex items-center justify-center w-11 h-11 bg-[color:rgb(var(--ink)/0.04)] border border-[color:rgb(var(--ink)/0.1)] rounded-xl text-[color:var(--text-dim)] hover:text-[color:var(--text)] hover:bg-[color:rgb(var(--ink)/0.08)] transition-all disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/60"
             >
               <RefreshCw :size="14" :class="{ 'animate-spin': loading }" />
             </button>
@@ -34,12 +34,14 @@
               <button
                 v-if="activeGroup !== 'lifetime'"
                 @click="exportOpen = !exportOpen"
+                aria-haspopup="menu"
+                :aria-expanded="exportOpen"
                 :disabled="loading"
-                class="flex items-center gap-2 bg-white/[0.04] border border-white/10 px-4 sm:px-5 h-11 rounded-xl text-[10px] font-oswald uppercase tracking-widest hover:bg-white/[0.08] transition-all text-white disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/60"
+                class="flex items-center gap-2 bg-[color:rgb(var(--ink)/0.04)] border border-[color:rgb(var(--ink)/0.1)] px-4 sm:px-5 h-11 rounded-xl text-[10px] font-oswald uppercase tracking-widest hover:bg-[color:rgb(var(--ink)/0.08)] transition-all text-[color:var(--text)] disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/60"
               >
-                <Download :size="13" class="text-red-500" />
+                <Download :size="13" class="text-[color:var(--accent-text)]" />
                 <span class="hidden sm:inline">Export</span>
-                <ChevronDown :size="12" class="text-white/40" />
+                <ChevronDown :size="12" class="text-[color:var(--text-faint)]" />
               </button>
 
               <Transition
@@ -52,19 +54,19 @@
               >
                 <div
                   v-if="exportOpen"
-                  class="absolute right-0 mt-2 w-44 bg-[#0d0d0d] border border-white/10 rounded-xl shadow-2xl shadow-black/50 overflow-hidden z-40"
+                  class="absolute right-0 mt-2 w-44 bg-[color:var(--surface)] border border-[color:rgb(var(--ink)/0.1)] rounded-xl shadow-2xl shadow-black/50 overflow-hidden z-40"
                 >
                   <button
                     @click="exportDocument('pdf')"
-                    class="w-full flex items-center gap-2.5 px-4 py-3 text-[11px] font-oswald uppercase tracking-widest text-white/70 hover:bg-white/5 hover:text-white transition-colors"
+                    class="w-full flex items-center gap-2.5 px-4 py-3 text-[11px] font-oswald uppercase tracking-widest text-[color:var(--text-2)] hover:bg-[color:rgb(var(--ink)/0.05)] hover:text-[color:var(--text)] transition-colors"
                   >
-                    <FileText :size="13" class="text-red-500" /> Export PDF
+                    <FileText :size="13" class="text-[color:var(--accent-text)]" /> Export PDF
                   </button>
                   <button
                     @click="exportDocument('excel')"
-                    class="w-full flex items-center gap-2.5 px-4 py-3 text-[11px] font-oswald uppercase tracking-widest text-white/70 hover:bg-white/5 hover:text-white transition-colors border-t border-white/5"
+                    class="w-full flex items-center gap-2.5 px-4 py-3 text-[11px] font-oswald uppercase tracking-widest text-[color:var(--text-2)] hover:bg-[color:rgb(var(--ink)/0.05)] hover:text-[color:var(--text)] transition-colors border-t border-[color:rgb(var(--ink)/0.05)]"
                   >
-                    <Sheet :size="13" class="text-emerald-500" /> Export Excel
+                    <Sheet :size="13" class="text-[color:var(--green-soft)]" /> Export Excel
                   </button>
                 </div>
               </Transition>
@@ -73,7 +75,7 @@
         </div>
 
         <!-- ═══ FILTER BAR ══════════════════════════════════════════════ -->
-        <div class="bg-[#0d0d0d] border border-white/8 rounded-2xl p-1.5 mt-5 flex flex-col sm:flex-row gap-1.5 sm:gap-1">
+        <div class="bg-[color:var(--surface)] border border-[color:rgb(var(--ink)/0.08)] rounded-2xl p-1.5 mt-5 flex flex-col sm:flex-row gap-1.5 sm:gap-1">
 
           <!-- Group tabs — horizontal scroll on mobile instead of wrapping -->
           <div class="flex gap-1 overflow-x-auto no-scrollbar sm:flex-1 sm:min-w-[260px]">
@@ -85,7 +87,7 @@
                 'flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[11px] font-oswald uppercase tracking-widest transition-all duration-200 whitespace-nowrap shrink-0 sm:flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/60',
                 activeGroup === g.value
                   ? 'bg-red-600 text-white shadow-lg shadow-red-900/30'
-                  : 'text-white/30 hover:text-white/60 hover:bg-white/5'
+                  : 'text-[color:var(--text-faint)] hover:text-[color:var(--text-dim)] hover:bg-[color:rgb(var(--ink)/0.05)]'
               ]"
             >
               <component :is="g.icon" :size="12" />
@@ -94,8 +96,8 @@
           </div>
 
           <!-- Divider -->
-          <div class="w-px bg-white/8 my-1 hidden sm:block"></div>
-          <div class="h-px bg-white/8 mx-1 sm:hidden" v-if="activeGroup !== 'lifetime'"></div>
+          <div class="w-px bg-[color:rgb(var(--ink)/0.08)] my-1 hidden sm:block"></div>
+          <div class="h-px bg-[color:rgb(var(--ink)/0.08)] mx-1 sm:hidden" v-if="activeGroup !== 'lifetime'"></div>
 
           <!-- Sub-filter: Mingguan -->
           <template v-if="activeGroup === 'weekly'">
@@ -106,7 +108,7 @@
                 @click="activeWeek = w.value; fetch()"
                 :class="[
                   'px-4 py-3 rounded-xl text-[10px] font-oswald uppercase tracking-widest transition-all whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/60',
-                  activeWeek === w.value ? 'bg-white/10 text-white' : 'text-white/30 hover:text-white/50'
+                  activeWeek === w.value ? 'bg-[color:rgb(var(--ink)/0.1)] text-[color:var(--text)]' : 'text-[color:var(--text-faint)] hover:text-[color:var(--text-dim)]'
                 ]"
               >
                 {{ w.label }}
@@ -120,16 +122,16 @@
               <select
                 v-model.number="activeMonth"
                 @change="fetch()"
-                class="flex-1 sm:flex-none bg-transparent border border-white/10 rounded-lg px-3 py-2.5 text-[11px] font-oswald uppercase tracking-widest outline-none focus:border-red-600 text-white cursor-pointer"
+                class="flex-1 sm:flex-none bg-transparent border border-[color:rgb(var(--ink)/0.1)] rounded-lg px-3 py-2.5 text-[11px] font-oswald uppercase tracking-widest outline-none focus:border-red-600 text-[color:var(--text)] cursor-pointer"
               >
-                <option v-for="m in 12" :key="m" :value="m" class="bg-[#111]">{{ monthName(m) }}</option>
+                <option v-for="m in 12" :key="m" :value="m" class="bg-[color:var(--surface)]">{{ monthName(m) }}</option>
               </select>
               <select
                 v-model.number="activeYear"
                 @change="fetch()"
-                class="flex-1 sm:flex-none bg-transparent border border-white/10 rounded-lg px-3 py-2.5 text-[11px] font-oswald uppercase tracking-widest outline-none focus:border-red-600 text-white cursor-pointer"
+                class="flex-1 sm:flex-none bg-transparent border border-[color:rgb(var(--ink)/0.1)] rounded-lg px-3 py-2.5 text-[11px] font-oswald uppercase tracking-widest outline-none focus:border-red-600 text-[color:var(--text)] cursor-pointer"
               >
-                <option v-for="y in yearOptions" :key="y" :value="y" class="bg-[#111]">{{ y }}</option>
+                <option v-for="y in yearOptions" :key="y" :value="y" class="bg-[color:var(--surface)]">{{ y }}</option>
               </select>
             </div>
           </template>
@@ -143,7 +145,7 @@
                 @click="activeYear = y; fetch()"
                 :class="[
                   'px-4 py-3 rounded-xl text-[11px] font-oswald uppercase tracking-widest transition-all whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/60',
-                  activeYear === y ? 'bg-white/10 text-white' : 'text-white/30 hover:text-white/50'
+                  activeYear === y ? 'bg-[color:rgb(var(--ink)/0.1)] text-[color:var(--text)]' : 'text-[color:var(--text-faint)] hover:text-[color:var(--text-dim)]'
                 ]"
               >
                 {{ y }}
@@ -154,18 +156,18 @@
           <!-- Sub-filter: Lifetime — just a label -->
           <template v-if="activeGroup === 'lifetime'">
             <div class="flex items-center px-4 py-2 sm:py-0">
-              <span class="text-white/20 text-[10px] font-oswald uppercase tracking-widest">Semua waktu</span>
+              <span class="text-[color:var(--text-faint)] text-[10px] font-oswald uppercase tracking-widest">Semua waktu</span>
             </div>
           </template>
         </div>
 
         <!-- ═══ PERIOD BADGE ════════════════════════════════════════════ -->
         <div class="flex items-center gap-3 mt-5">
-          <div class="h-px flex-1 bg-white/5"></div>
-          <span class="text-white/25 text-[10px] font-oswald uppercase tracking-[0.25em] whitespace-nowrap">
+          <div class="h-px flex-1 bg-[color:rgb(var(--ink)/0.05)]"></div>
+          <span class="text-[color:var(--text-faint)] text-[10px] font-oswald uppercase tracking-[0.25em] whitespace-nowrap">
             {{ periodLabel }}
           </span>
-          <div class="h-px flex-1 bg-white/5"></div>
+          <div class="h-px flex-1 bg-[color:rgb(var(--ink)/0.05)]"></div>
         </div>
       </div>
 
@@ -174,17 +176,17 @@
         <!-- ═══ LOADING SKELETON ═══════════════════════════════════════ -->
         <div v-if="loading" class="space-y-5 animate-pulse">
           <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            <div v-for="i in 4" :key="i" class="bg-[#0a0a0a] border border-white/5 rounded-2xl p-5 h-[112px]">
-              <div class="w-10 h-10 rounded-xl bg-white/5 mb-4"></div>
-              <div class="w-16 h-4 bg-white/5 rounded mb-2"></div>
-              <div class="w-20 h-2.5 bg-white/5 rounded"></div>
+            <div v-for="i in 4" :key="i" class="bg-[color:var(--surface)] border border-[color:rgb(var(--ink)/0.05)] rounded-2xl p-5 h-[112px]">
+              <div class="w-10 h-10 rounded-xl bg-[color:rgb(var(--ink)/0.05)] mb-4"></div>
+              <div class="w-16 h-4 bg-[color:rgb(var(--ink)/0.05)] rounded mb-2"></div>
+              <div class="w-20 h-2.5 bg-[color:rgb(var(--ink)/0.05)] rounded"></div>
             </div>
           </div>
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <div class="bg-[#0a0a0a] border border-white/5 rounded-2xl p-6 h-64"></div>
-            <div class="bg-[#0a0a0a] border border-white/5 rounded-2xl p-6 h-64"></div>
+            <div class="bg-[color:var(--surface)] border border-[color:rgb(var(--ink)/0.05)] rounded-2xl p-6 h-64"></div>
+            <div class="bg-[color:var(--surface)] border border-[color:rgb(var(--ink)/0.05)] rounded-2xl p-6 h-64"></div>
           </div>
-          <p class="text-center text-white/20 text-[10px] font-oswald uppercase tracking-widest pt-2">
+          <p class="text-center text-[color:var(--text-faint)] text-[10px] font-oswald uppercase tracking-widest pt-2">
             Memuat data laporan...
           </p>
         </div>
@@ -220,7 +222,7 @@
               <!-- Desktop table -->
               <table class="w-full text-sm hidden sm:table">
                 <thead>
-                  <tr class="text-white/25 text-[9px] uppercase tracking-[0.15em]">
+                  <tr class="text-[color:var(--text-faint)] text-[10px] uppercase tracking-[0.15em]">
                     <th class="pb-4 text-left font-normal w-8">#</th>
                     <th class="pb-4 text-left font-normal">Menu</th>
                     <th class="pb-4 text-right font-normal">Qty</th>
@@ -231,14 +233,14 @@
                   <tr
                     v-for="(m, i) in report.top_menu"
                     :key="i"
-                    class="border-t border-white/4 group hover:bg-white/[0.03] transition-colors"
+                    class="border-t border-[color:rgb(var(--ink)/0.04)] group hover:bg-[color:rgb(var(--ink)/0.03)] transition-colors"
                   >
-                    <td class="py-3 pr-3 text-white/20 text-xs font-oswald">{{ String(i+1).padStart(2,'0') }}</td>
-                    <td class="py-3 text-white font-oswald uppercase tracking-tight text-sm">{{ m.name }}</td>
+                    <td class="py-3 pr-3 text-[color:var(--text-faint)] text-xs font-oswald">{{ String(i+1).padStart(2,'0') }}</td>
+                    <td class="py-3 text-[color:var(--text)] font-oswald uppercase tracking-tight text-sm">{{ m.name }}</td>
                     <td class="py-3 text-right">
-                      <span class="bg-amber-500/10 text-amber-400 font-bold text-xs px-2.5 py-1 rounded-lg">{{ m.qty }}</span>
+                      <span class="bg-amber-500/10 text-[color:var(--amber-soft)] font-bold text-xs px-2.5 py-1 rounded-lg">{{ m.qty }}</span>
                     </td>
-                    <td class="py-3 text-right text-white/50 font-mono text-xs">{{ formatRp(m.omzet) }}</td>
+                    <td class="py-3 text-right text-[color:var(--text-dim)] font-mono text-xs">{{ formatRp(m.omzet) }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -248,16 +250,16 @@
                 <div
                   v-for="(m, i) in report.top_menu"
                   :key="i"
-                  class="flex items-center justify-between bg-white/[0.02] border border-white/5 rounded-xl px-3.5 py-3"
+                  class="flex items-center justify-between bg-[color:rgb(var(--ink)/0.02)] border border-[color:rgb(var(--ink)/0.05)] rounded-xl px-3.5 py-3"
                 >
                   <div class="flex items-center gap-3 min-w-0">
-                    <span class="text-white/20 text-[11px] font-oswald shrink-0">{{ String(i+1).padStart(2,'0') }}</span>
+                    <span class="text-[color:var(--text-faint)] text-[11px] font-oswald shrink-0">{{ String(i+1).padStart(2,'0') }}</span>
                     <div class="min-w-0">
-                      <p class="text-white font-oswald uppercase tracking-tight text-xs truncate">{{ m.name }}</p>
-                      <p class="text-white/40 text-[10px] font-mono mt-0.5">{{ formatRp(m.omzet) }}</p>
+                      <p class="text-[color:var(--text)] font-oswald uppercase tracking-tight text-xs truncate">{{ m.name }}</p>
+                      <p class="text-[color:var(--text-faint)] text-[10px] font-mono mt-0.5">{{ formatRp(m.omzet) }}</p>
                     </div>
                   </div>
-                  <span class="bg-amber-500/10 text-amber-400 font-bold text-[11px] px-2 py-1 rounded-lg shrink-0 ml-2">{{ m.qty }}</span>
+                  <span class="bg-amber-500/10 text-[color:var(--amber-soft)] font-bold text-[11px] px-2 py-1 rounded-lg shrink-0 ml-2">{{ m.qty }}</span>
                 </div>
               </div>
 
@@ -268,10 +270,10 @@
               <div class="space-y-5">
                 <div v-for="(m, i) in report.menu_paling_menghasilkan" :key="i">
                   <div class="flex justify-between text-xs mb-2 gap-2">
-                    <span class="text-white font-oswald uppercase tracking-tight truncate">{{ m.name }}</span>
-                    <span class="text-emerald-400 font-bold tabular-nums shrink-0">{{ formatRp(m.omzet) }}</span>
+                    <span class="text-[color:var(--text)] font-oswald uppercase tracking-tight truncate">{{ m.name }}</span>
+                    <span class="text-[color:var(--green-soft)] font-bold tabular-nums shrink-0">{{ formatRp(m.omzet) }}</span>
                   </div>
-                  <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+                  <div class="w-full bg-[color:rgb(var(--ink)/0.05)] h-1.5 rounded-full overflow-hidden">
                     <div
                       class="h-full rounded-full transition-all duration-700"
                       :style="{ width: pct(m.omzet, maxMenghasilkan) + '%', background: 'linear-gradient(90deg, #10b981, #34d399)' }"
@@ -292,10 +294,10 @@
                 <div
                   v-for="(m, i) in report.menu_tidak_laku"
                   :key="i"
-                  class="flex justify-between items-center bg-red-950/20 border border-red-500/8 rounded-xl px-4 py-3"
+                  class="flex justify-between items-center bg-[color:var(--tint-accent)] border border-red-500/8 rounded-xl px-4 py-3"
                 >
-                  <span class="text-white text-xs font-oswald uppercase tracking-tight truncate mr-2">{{ m.name }}</span>
-                  <span class="text-red-400/70 text-[9px] font-bold uppercase tracking-wider shrink-0">
+                  <span class="text-[color:var(--text)] text-xs font-oswald uppercase tracking-tight truncate mr-2">{{ m.name }}</span>
+                  <span class="text-[color:color-mix(in_srgb,var(--red-soft)_70%,transparent)] text-[10px] font-bold uppercase tracking-wider shrink-0">
                     {{ m.transaksi }}×
                   </span>
                 </div>
@@ -317,9 +319,9 @@
                   >
                     <div class="flex items-center gap-2 min-w-0">
                       <div class="w-2 h-2 rounded-full shrink-0" :style="{ background: payColors[p.method] || '#6b7280' }"></div>
-                      <span class="text-white/50 text-xs truncate">{{ p.label }}</span>
+                      <span class="text-[color:var(--text-dim)] text-xs truncate">{{ p.label }}</span>
                     </div>
-                    <span class="text-white text-xs font-bold tabular-nums shrink-0">{{ p.percent }}%</span>
+                    <span class="text-[color:var(--text)] text-xs font-bold tabular-nums shrink-0">{{ p.percent }}%</span>
                   </div>
                   <EmptyState v-if="!report.metode_pembayaran.length" text="Belum ada transaksi" compact />
                 </div>
@@ -338,16 +340,16 @@
           <RCard title="Pelanggan" icon="Users" accent="pink">
             <div class="grid grid-cols-3 gap-3 sm:gap-6 text-center">
               <div class="py-3 sm:py-4">
-                <p class="font-oswald text-2xl sm:text-4xl font-bold text-white mb-1">{{ report.pelanggan.baru }}</p>
-                <p class="text-[8px] sm:text-[9px] text-white/30 uppercase tracking-[0.15em] sm:tracking-[0.2em]">Pelanggan Baru</p>
+                <p class="font-oswald text-2xl sm:text-4xl font-bold text-[color:var(--text)] mb-1">{{ report.pelanggan.baru }}</p>
+                <p class="text-[10px] sm:text-[10px] text-[color:var(--text-faint)] uppercase tracking-[0.15em] sm:tracking-[0.2em]">Pelanggan Baru</p>
               </div>
-              <div class="py-3 sm:py-4 border-x border-white/5">
-                <p class="font-oswald text-2xl sm:text-4xl font-bold text-white mb-1">{{ report.pelanggan.lama }}</p>
-                <p class="text-[8px] sm:text-[9px] text-white/30 uppercase tracking-[0.15em] sm:tracking-[0.2em]">Pelanggan Lama</p>
+              <div class="py-3 sm:py-4 border-x border-[color:rgb(var(--ink)/0.05)]">
+                <p class="font-oswald text-2xl sm:text-4xl font-bold text-[color:var(--text)] mb-1">{{ report.pelanggan.lama }}</p>
+                <p class="text-[10px] sm:text-[10px] text-[color:var(--text-faint)] uppercase tracking-[0.15em] sm:tracking-[0.2em]">Pelanggan Lama</p>
               </div>
               <div class="py-3 sm:py-4">
-                <p class="font-oswald text-2xl sm:text-4xl font-bold text-amber-400 mb-1">{{ report.pelanggan.loyal_member }}</p>
-                <p class="text-[8px] sm:text-[9px] text-white/30 uppercase tracking-[0.15em] sm:tracking-[0.2em]">Member Loyal</p>
+                <p class="font-oswald text-2xl sm:text-4xl font-bold text-[color:var(--amber-soft)] mb-1">{{ report.pelanggan.loyal_member }}</p>
+                <p class="text-[10px] sm:text-[10px] text-[color:var(--text-faint)] uppercase tracking-[0.15em] sm:tracking-[0.2em]">Member Loyal</p>
               </div>
             </div>
           </RCard>
@@ -356,10 +358,10 @@
         <!-- ═══ ERROR / EMPTY ═════════════════════════════════════════════ -->
         <div v-else class="flex flex-col items-center justify-center py-24 sm:py-32 text-center">
           <div class="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center mb-4">
-            <AlertTriangle :size="20" class="text-red-500" />
+            <AlertTriangle :size="20" class="text-[color:var(--accent-text)]" />
           </div>
-          <p class="text-white text-sm font-oswald uppercase tracking-wide mb-1">Gagal memuat data</p>
-          <p class="text-white/30 text-xs mb-5">Periksa koneksi atau coba lagi beberapa saat.</p>
+          <p class="text-[color:var(--text)] text-sm font-oswald uppercase tracking-wide mb-1">Gagal memuat data</p>
+          <p class="text-[color:var(--text-faint)] text-xs mb-5">Periksa koneksi atau coba lagi beberapa saat.</p>
           <button
             @click="fetch()"
             class="flex items-center gap-2 bg-red-600 hover:bg-red-500 text-white text-[11px] font-oswald uppercase tracking-widest px-5 py-3 rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
@@ -387,6 +389,7 @@ import {
   FileText, Sheet,
 } from "lucide-vue-next";
 import apiClient from "@/api/client";
+import { useTheme } from "@/composables/useTheme";
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, ArcElement, Tooltip, Legend);
 
@@ -427,8 +430,9 @@ const handleClickOutside = (e) => {
     exportOpen.value = false;
   }
 };
-onMounted(() => document.addEventListener("click", handleClickOutside));
-onBeforeUnmount(() => document.removeEventListener("click", handleClickOutside));
+const handleEsc = (e) => { if (e.key === "Escape") exportOpen.value = false; };
+onMounted(() => { document.addEventListener("click", handleClickOutside); document.addEventListener("keydown", handleEsc); });
+onBeforeUnmount(() => { document.removeEventListener("click", handleClickOutside); document.removeEventListener("keydown", handleEsc); });
 
 // ── Derived labels ────────────────────────────────────────────────────────
 const periodLabel = computed(() => {
@@ -528,52 +532,47 @@ const maxMenghasilkan = computed(() =>
 );
 const pct = (v, max) => Math.round((v / max) * 100);
 
-// ── Chart options ─────────────────────────────────────────────────────────
-const gridColor = "rgba(255,255,255,0.04)";
-const tickStyle = { color: "rgba(255,255,255,0.35)", font: { size: 10, family: "Oswald" } };
+// ── Chart options (ikut tema: canvas tidak bisa baca CSS variable) ───────
+const { isDark } = useTheme();
+const chartTheme = computed(() => isDark.value
+  ? { grid: "rgba(255,255,255,0.05)", tick: "rgba(255,255,255,0.5)", tipBg: "#151518", tipBorder: "rgba(255,255,255,0.12)", tipTitle: "#fafafa", tipBody: "rgba(255,255,255,0.7)" }
+  : { grid: "rgba(24,24,27,0.07)",   tick: "#63636b",                tipBg: "#ffffff", tipBorder: "rgba(24,24,27,0.15)",    tipTitle: "#18181b", tipBody: "#3f3f46" });
 
-const barOpts = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: { display: false },
-    tooltip: {
-      backgroundColor: "#111",
-      borderColor: "rgba(255,255,255,0.08)",
-      borderWidth: 1,
-      titleColor: "#fff",
-      titleFont: { family: "Oswald" },
-      bodyColor: "rgba(255,255,255,0.6)",
-      padding: 10,
-      cornerRadius: 8,
+const barOpts = computed(() => {
+  const c = chartTheme.value;
+  const tick = { color: c.tick, font: { size: 11, family: "Oswald" } };
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: c.tipBg, borderColor: c.tipBorder, borderWidth: 1,
+        titleColor: c.tipTitle, titleFont: { family: "Oswald" },
+        bodyColor: c.tipBody, padding: 10, cornerRadius: 8,
+      },
     },
-  },
-  scales: {
-    x: { grid: { display: false }, ticks: tickStyle, border: { display: false } },
-    y: { grid: { color: gridColor }, ticks: tickStyle, border: { display: false } },
-  },
-};
-
-const barOptsY = {
-  ...barOpts,
-  indexAxis: "y",
-};
-
-const pieOpts = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: { display: false },
-    tooltip: {
-      backgroundColor: "#111",
-      borderColor: "rgba(255,255,255,0.08)",
-      borderWidth: 1,
-      padding: 10,
-      cornerRadius: 8,
+    scales: {
+      x: { grid: { display: false }, ticks: tick, border: { display: false } },
+      y: { grid: { color: c.grid }, ticks: tick, border: { display: false } },
     },
-  },
-  cutout: "62%",
-};
+  };
+});
+
+const barOptsY = computed(() => ({ ...barOpts.value, indexAxis: "y" }));
+
+const pieOpts = computed(() => {
+  const c = chartTheme.value;
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { backgroundColor: c.tipBg, borderColor: c.tipBorder, borderWidth: 1, titleColor: c.tipTitle, bodyColor: c.tipBody, padding: 10, cornerRadius: 8 },
+    },
+    cutout: "62%",
+  };
+});
 
 // ── Format ────────────────────────────────────────────────────────────────
 const formatRp = (v) => "Rp " + Math.round(v || 0).toLocaleString("id-ID");
@@ -593,19 +592,19 @@ const exportDocument = (type) => {
 const iconMap = { TrendingUp, Award, ShoppingBag, DollarSign, Utensils, AlertTriangle, CreditCard, Clock, Users, Gem };
 
 const accentText = {
-  red: "text-red-400", amber: "text-amber-400", emerald: "text-emerald-400",
-  sky: "text-sky-400", violet: "text-violet-400", pink: "text-pink-400",
+  red: "text-[color:var(--red-soft)]", amber: "text-[color:var(--amber-soft)]", emerald: "text-[color:var(--green-soft)]",
+  sky: "text-[color:var(--blue-soft)]", violet: "text-[color:var(--purple-soft)]", pink: "text-[color:var(--purple-soft)]",
 };
 
 const RCard = (props, { slots }) =>
-  h("div", { class: "bg-[#0a0a0a] border border-white/5 rounded-2xl p-4 sm:p-6 hover:border-white/10 transition-all duration-500" }, [
+  h("div", { class: "bg-[color:var(--surface)] border border-[color:rgb(var(--ink)/0.05)] rounded-2xl p-4 sm:p-6 hover:border-[color:rgb(var(--ink)/0.1)] transition-all duration-500" }, [
     h("div", { class: "flex items-center gap-2 mb-4 sm:mb-5" }, [
       props.icon && iconMap[props.icon]
-        ? h(iconMap[props.icon], { size: 13, class: accentText[props.accent] || "text-red-400" })
+        ? h(iconMap[props.icon], { size: 13, class: accentText[props.accent] || "text-[color:var(--red-soft)]" })
         : null,
-      h("h3", { class: "font-oswald uppercase text-white/30 text-[10px] tracking-[0.18em]" }, props.title),
+      h("h3", { class: "font-oswald uppercase text-[color:var(--text-faint)] text-[10px] tracking-[0.18em]" }, props.title),
       props.subtitle
-        ? h("span", { class: "text-white/15 text-[10px] font-light ml-1" }, `· ${props.subtitle}`)
+        ? h("span", { class: "text-[color:var(--text-faint)] text-[10px] font-light ml-1" }, `· ${props.subtitle}`)
         : null,
     ]),
     slots.default ? slots.default() : null,
@@ -613,21 +612,21 @@ const RCard = (props, { slots }) =>
 
 const StatCard = (props) => {
   const bgMap  = { red: "bg-red-500/8", amber: "bg-amber-500/8", emerald: "bg-emerald-500/8", sky: "bg-sky-500/8" };
-  const txtMap = { red: "text-red-400", amber: "text-amber-400", emerald: "text-emerald-400", sky: "text-sky-400" };
-  return h("div", { class: "bg-[#0a0a0a] border border-white/5 p-4 sm:p-5 rounded-2xl hover:border-white/10 transition-all duration-300" }, [
+  const txtMap = { red: "text-[color:var(--red-soft)]", amber: "text-[color:var(--amber-soft)]", emerald: "text-[color:var(--green-soft)]", sky: "text-[color:var(--blue-soft)]" };
+  return h("div", { class: "bg-[color:var(--surface)] border border-[color:rgb(var(--ink)/0.05)] p-4 sm:p-5 rounded-2xl hover:border-[color:rgb(var(--ink)/0.1)] transition-all duration-300" }, [
     h("div", { class: `w-9 h-9 sm:w-10 sm:h-10 rounded-xl ${bgMap[props.color]} flex items-center justify-center mb-3 sm:mb-4` }, [
       iconMap[props.icon] ? h(iconMap[props.icon], { size: 17, class: txtMap[props.color] }) : null,
     ]),
-    h("p", { class: "font-oswald text-lg sm:text-xl font-bold text-white leading-tight truncate" }, String(props.value)),
-    h("p", { class: "text-[8.5px] sm:text-[9px] text-white/30 uppercase tracking-[0.15em] sm:tracking-[0.18em] mt-1" }, props.label),
+    h("p", { class: "font-oswald text-lg sm:text-xl font-bold text-[color:var(--text)] leading-tight truncate" }, String(props.value)),
+    h("p", { class: "text-[10px] sm:text-[10px] text-[color:var(--text-faint)] uppercase tracking-[0.15em] sm:tracking-[0.18em] mt-1" }, props.label),
     props.sub
-      ? h("p", { class: "text-[9px] text-white/15 mt-1.5" }, props.sub)
+      ? h("p", { class: "text-[10px] text-[color:var(--text-faint)] mt-1.5" }, props.sub)
       : null,
   ]);
 };
 
 const EmptyState = (props) =>
-  h("div", { class: `text-center text-white/20 text-xs ${props.compact ? "py-4" : "py-8 sm:py-10"}` }, [
+  h("div", { class: `text-center text-[color:var(--text-faint)] text-xs ${props.compact ? "py-4" : "py-8 sm:py-10"}` }, [
     props.emoji ? h("p", { class: "mb-1 text-base" }, props.emoji) : null,
     h("p", null, props.text),
   ]);
@@ -638,7 +637,7 @@ onMounted(fetch);
 <style scoped>
 .custom-scroll::-webkit-scrollbar { width: 3px; }
 .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-.custom-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 99px; }
+.custom-scroll::-webkit-scrollbar-thumb { background: rgb(var(--ink) / 0.1); border-radius: 99px; }
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

@@ -1,370 +1,412 @@
 <template>
-  <div class="settings-page">
+  <div class="adm-page adm-page--form">
 
     <!-- ── Header ─────────────────────────────────────────────────────────── -->
-    <div class="page-header">
-      <div class="header-icon">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
-        </svg>
-      </div>
+    <header class="adm-header">
       <div>
-        <h1 class="page-title">System Settings</h1>
-        <p class="page-subtitle">Konfigurasi sistem Masashimura</p>
+        <p class="adm-eyebrow">Masashimura · Admin</p>
+        <h1 class="adm-title">System Settings</h1>
+        <p class="adm-sub">Konfigurasi sistem Masashimura: kontak, status toko, dan jam operasional.</p>
       </div>
-    </div>
+    </header>
 
-    <!-- ── Offline / cache banner (tampil hanya jika data BUKAN dari server) ── -->
-    <div v-if="isOffline" class="status-bar status-bar--offline">
-      <div class="status-dot status-dot--closed"></div>
-      <span class="status-text">
+    <!-- ── Banner cache (tampil hanya jika data BUKAN dari server) ───────── -->
+    <div v-if="isOffline" class="set-banner set-banner--amber" role="alert">
+      <WifiOff :size="16" class="set-banner-icon" />
+      <p>
         Tidak dapat terhubung ke server — menampilkan <strong>data cache lokal</strong> (mungkin tidak terbaru).
         Perubahan tidak akan tersimpan sampai koneksi ke server pulih.
-      </span>
+      </p>
     </div>
 
-    <!-- ── STATUS TOKO (live indicator) ───────────────────────────────────── -->
-    <div class="status-bar" :class="isStoreOpen ? 'status-bar--open' : 'status-bar--closed'">
-      <div class="status-dot" :class="isStoreOpen ? 'status-dot--open' : 'status-dot--closed'"></div>
-      <span class="status-text">
-        Toko sekarang:
-        <strong>{{ isStoreOpen ? "BUKA" : "TUTUP" }}</strong>
-        <span v-if="form.is_open_override !== null" class="status-override">
-          (override manual aktif)
-        </span>
-        <span v-else class="status-auto">· mengikuti jadwal</span>
-      </span>
+    <!-- ── Status toko (live) ─────────────────────────────────────────────── -->
+    <div class="set-banner" :class="isStoreOpen ? 'set-banner--green' : 'set-banner--red'" role="status">
+      <span class="set-pulse" :class="{ 'is-open': isStoreOpen }" aria-hidden="true"></span>
+      <p>
+        Toko sekarang: <strong>{{ isStoreOpen ? 'BUKA' : 'TUTUP' }}</strong>
+        <span v-if="form.is_open_override !== null" class="set-banner-note set-banner-note--amber">· override manual aktif</span>
+        <span v-else class="set-banner-note">· mengikuti jadwal</span>
+      </p>
     </div>
 
-    <!-- CARD 1 — WhatsApp -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-icon whatsapp-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-            <path d="M12 0C5.373 0 0 5.373 0 12c0 2.125.558 4.126 1.535 5.862L.057 23.215a.75.75 0 00.916.938l5.532-1.453A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.702 9.702 0 01-4.964-1.362l-.356-.212-3.684.968.984-3.595-.232-.369A9.711 9.711 0 012.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/>
-          </svg>
-        </div>
-        <div>
-          <h2 class="card-title">Nomor WhatsApp Admin</h2>
-          <p class="card-desc">Nomor tujuan pengiriman bukti pembayaran dari customer</p>
+    <!-- ── CARD 1 — WhatsApp ──────────────────────────────────────────────── -->
+    <section class="adm-card">
+      <div class="adm-card-head">
+        <div class="adm-card-icon tone-green"><MessageCircle :size="18" /></div>
+        <div class="adm-card-head-main">
+          <h2 class="adm-card-title">Nomor WhatsApp Admin</h2>
+          <p class="adm-card-desc">Nomor tujuan pengiriman bukti pembayaran dari customer.</p>
         </div>
       </div>
-      <div class="divider"></div>
-      <div class="field-group">
-        <div class="field">
-          <label class="label" for="admin-whatsapp">Nomor WhatsApp</label>
-          <div class="input-wrapper">
-            <span class="input-prefix">+</span>
+
+      <div class="adm-card-body">
+        <div class="adm-field">
+          <div class="adm-label-row">
+            <label class="adm-label" for="admin-whatsapp">Nomor WhatsApp</label>
+            <span v-if="isWhatsappSaved" class="adm-badge adm-badge--green"><Check :size="11" /> Aktif</span>
+          </div>
+          <div class="adm-affix">
+            <span class="adm-affix-pre" aria-hidden="true">+</span>
             <input
               id="admin-whatsapp"
               v-model="form.admin_whatsapp"
               type="tel"
               inputmode="numeric"
-              class="input"
+              autocomplete="off"
+              class="adm-input adm-input--mono has-pre"
               placeholder="628xxxxxxxxxx"
-              :class="{ 'input--error': errors.whatsapp }"
               :aria-invalid="!!errors.whatsapp"
-              @input="errors.whatsapp = ''"
+              aria-describedby="whatsapp-help"
+              @input="onWhatsappInput"
+              @blur="validateWhatsapp"
             />
-            <span v-if="savedForm.admin_whatsapp && !errors.whatsapp && form.admin_whatsapp === savedForm.admin_whatsapp" class="input-badge">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-              Aktif
-            </span>
           </div>
-          <p v-if="errors.whatsapp" class="field-error">{{ errors.whatsapp }}</p>
-          <p v-else class="field-hint">
-            Format internasional tanpa "+", diawali kode negara 62, contoh: <span class="hint-code">6281234567890</span>
+          <p v-if="errors.whatsapp" id="whatsapp-help" class="adm-error">{{ errors.whatsapp }}</p>
+          <p v-else id="whatsapp-help" class="adm-hint">
+            Format internasional tanpa "+", diawali kode negara 62. Contoh: <code class="set-code">6281234567890</code>
           </p>
         </div>
-        <div v-if="form.admin_whatsapp" class="preview-box">
-          <span class="preview-label">Preview link</span>
-          <span class="preview-link">https://wa.me/<strong>{{ form.admin_whatsapp }}</strong></span>
-        </div>
-      </div>
-      <div class="info-box">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="info-icon">
-          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-        </svg>
-        <p>Nomor ini digunakan saat customer checkout. Customer akan diarahkan ke WhatsApp ini untuk mengirimkan bukti pembayaran.</p>
-      </div>
-    </div>
 
-    <!-- CARD 2 — Override Manual -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-icon override-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M18.36 6.64a9 9 0 11-12.73 0M12 2v10"/>
-          </svg>
+        <div v-if="form.admin_whatsapp" class="set-preview">
+          <span class="set-preview-label">Preview link</span>
+          <span class="set-preview-link adm-mono">https://wa.me/<strong>{{ form.admin_whatsapp }}</strong></span>
         </div>
-        <div>
-          <h2 class="card-title">Kontrol Manual Toko</h2>
-          <p class="card-desc">Override jadwal — berguna saat ada situasi mendadak</p>
+
+        <div class="set-note">
+          <Info :size="15" class="set-note-icon" />
+          <p>Nomor ini digunakan saat customer checkout. Customer akan diarahkan ke WhatsApp ini untuk mengirimkan bukti pembayaran.</p>
         </div>
       </div>
-      <div class="divider"></div>
-      <div class="field-group">
-        <div class="override-grid">
-          <button @click="requestOverride(null)" :class="['override-btn', form.is_open_override === null ? 'override-btn--active-auto' : '']">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            Ikut Jadwal
+    </section>
+
+    <!-- ── CARD 2 — Override manual ───────────────────────────────────────── -->
+    <section class="adm-card">
+      <div class="adm-card-head">
+        <div class="adm-card-icon tone-amber"><Power :size="18" /></div>
+        <div class="adm-card-head-main">
+          <h2 class="adm-card-title">Kontrol Manual Toko</h2>
+          <p class="adm-card-desc">Override jadwal — berguna saat ada situasi mendadak.</p>
+        </div>
+      </div>
+
+      <div class="adm-card-body">
+        <div class="adm-field">
+          <span id="override-label" class="adm-label">Status toko</span>
+          <div class="set-override" role="radiogroup" aria-labelledby="override-label">
+            <button
+              v-for="opt in overrideOptions"
+              :key="String(opt.value)"
+              type="button"
+              role="radio"
+              class="set-override-btn"
+              :class="[`is-${opt.tone}`, { 'is-active': form.is_open_override === opt.value }]"
+              :aria-checked="form.is_open_override === opt.value"
+              @click="requestOverride(opt.value)"
+            >
+              <component :is="opt.icon" :size="16" />
+              <span>{{ opt.label }}</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="adm-field">
+          <label class="adm-label" for="closed-message">Pesan saat toko tutup</label>
+          <textarea
+            id="closed-message"
+            v-model="form.closed_message"
+            class="adm-input"
+            rows="3"
+            maxlength="240"
+            placeholder="Maaf, kami sedang tidak beroperasi…"
+          ></textarea>
+          <p class="adm-hint">Tampil di halaman menu & checkout saat toko tutup. ({{ form.closed_message.length }}/240)</p>
+        </div>
+
+        <div v-if="form.is_open_override !== null" class="set-note set-note--amber" role="status">
+          <AlertTriangle :size="15" class="set-note-icon" />
+          <p>
+            Override manual aktif — toko dipaksa <strong>{{ form.is_open_override ? 'BUKA' : 'TUTUP' }}</strong>.
+            Pilih "Ikut Jadwal" untuk menonaktifkan. Perubahan baru berlaku setelah klik "Simpan Perubahan".
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── CARD 3 — Jam operasional ───────────────────────────────────────── -->
+    <section class="adm-card">
+      <div class="adm-card-head">
+        <div class="adm-card-icon tone-purple"><Clock :size="18" /></div>
+        <div class="adm-card-head-main">
+          <h2 class="adm-card-title">Jam Operasional</h2>
+          <p class="adm-card-desc">Atur hari dan jam buka. Hari yang tidak diaktifkan dianggap libur.</p>
+        </div>
+        <div class="adm-card-head-actions">
+          <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" :disabled="!firstOpenDay" @click="copyToAll">
+            <Copy :size="13" /> Samakan semua
           </button>
-          <button @click="requestOverride(true)" :class="['override-btn', form.is_open_override === true ? 'override-btn--active-open' : '']">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
-            Paksa Buka
-          </button>
-          <button @click="requestOverride(false)" :class="['override-btn', form.is_open_override === false ? 'override-btn--active-closed' : '']">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-            Paksa Tutup
-          </button>
-        </div>
-
-        <div class="field">
-          <label class="label" for="closed-message">Pesan saat toko tutup</label>
-          <textarea id="closed-message" v-model="form.closed_message" class="textarea" rows="2" placeholder="Maaf, kami sedang tidak beroperasi..."></textarea>
-          <p class="field-hint">Tampil di halaman menu & checkout saat toko tutup</p>
         </div>
       </div>
 
-      <div v-if="form.is_open_override !== null" class="info-box info-box--warning">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="info-icon">
-          <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-          <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-        </svg>
-        <p>Override manual aktif — toko dipaksa <strong>{{ form.is_open_override ? "BUKA" : "TUTUP" }}</strong>. Klik "Ikut Jadwal" untuk menonaktifkan. Perubahan baru berlaku setelah klik "Simpan Semua".</p>
-      </div>
-    </div>
-
-    <!-- CARD 3 — Jam Operasional -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-icon hours-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-          </svg>
-        </div>
-        <div>
-          <h2 class="card-title">Jam Operasional</h2>
-          <p class="card-desc">Atur hari dan jam buka. Hari yang tidak diaktifkan = hari libur.</p>
-        </div>
-      </div>
-      <div class="divider"></div>
-      <div class="hours-list">
-        <div v-for="(day, idx) in DAY_OPTIONS" :key="idx" class="hours-row-wrap">
+      <ul class="hours-list">
+        <li v-for="(day, idx) in DAY_OPTIONS" :key="idx" class="hours-item">
           <div class="hours-row">
-            <div class="hours-day">
-              <span class="day-label">{{ day.short }}</span>
+            <span class="hours-day" :title="day.label">{{ day.short }}</span>
+
+            <div class="hours-toggle">
+              <button
+                type="button"
+                class="adm-switch"
+                role="switch"
+                :aria-checked="!!form.operating_hours[idx]"
+                :aria-label="`${day.label} buka`"
+                @click="toggleDay(idx)"
+              ></button>
+              <span class="hours-state" :class="{ 'is-on': form.operating_hours[idx] }">
+                {{ form.operating_hours[idx] ? 'Buka' : 'Libur' }}
+              </span>
             </div>
 
-            <button
-              class="day-toggle"
-              :class="form.operating_hours[idx] ? 'day-toggle--on' : 'day-toggle--off'"
-              @click="toggleDay(idx)"
-            >
-              {{ form.operating_hours[idx] ? "Buka" : "Libur" }}
-            </button>
-
-            <transition name="fade-slide">
-              <div v-if="form.operating_hours[idx]" class="time-fields">
-                <div class="time-group">
-                  <span class="time-label">Buka</span>
-                  <div class="time-inputs">
-                    <select :value="getHour(form.operating_hours[idx]?.open)" @change="setHour(idx, 'open', $event.target.value)" class="time-select">
-                      <option v-for="h in HOURS" :key="h" :value="h">{{ h }}</option>
-                    </select>
-                    <span class="time-sep">:</span>
-                    <select :value="getMinute(form.operating_hours[idx]?.open)" @change="setMinute(idx, 'open', $event.target.value)" class="time-select">
-                      <option v-for="m in MINUTES" :key="m" :value="m">{{ m }}</option>
-                    </select>
-                  </div>
-                </div>
-                <span class="time-arrow">→</span>
-                <div class="time-group">
-                  <span class="time-label">Tutup</span>
-                  <div class="time-inputs">
-                    <select :value="getHour(form.operating_hours[idx]?.close)" @change="setHour(idx, 'close', $event.target.value)" class="time-select">
-                      <option v-for="h in HOURS" :key="h" :value="h">{{ h }}</option>
-                    </select>
-                    <span class="time-sep">:</span>
-                    <select :value="getMinute(form.operating_hours[idx]?.close)" @change="setMinute(idx, 'close', $event.target.value)" class="time-select">
-                      <option v-for="m in MINUTES" :key="m" :value="m">{{ m }}</option>
-                    </select>
-                  </div>
+            <div v-if="form.operating_hours[idx]" class="time-fields">
+              <div v-for="field in TIME_FIELDS" :key="field.key" class="time-group">
+                <span class="time-label">{{ field.label }}</span>
+                <div class="time-inputs">
+                  <select
+                    class="adm-input time-select"
+                    :value="getHour(form.operating_hours[idx][field.key])"
+                    :aria-label="`${day.label} jam ${field.label.toLowerCase()} (jam)`"
+                    @change="setPart(idx, field.key, 'h', $event.target.value)"
+                  >
+                    <option v-for="h in HOURS" :key="h" :value="h">{{ h }}</option>
+                  </select>
+                  <span class="time-sep" aria-hidden="true">:</span>
+                  <select
+                    class="adm-input time-select"
+                    :value="getMinute(form.operating_hours[idx][field.key])"
+                    :aria-label="`${day.label} jam ${field.label.toLowerCase()} (menit)`"
+                    @change="setPart(idx, field.key, 'm', $event.target.value)"
+                  >
+                    <option v-for="m in minuteOptions(idx, field.key)" :key="m" :value="m">{{ m }}</option>
+                  </select>
                 </div>
               </div>
-            </transition>
-
-            <div v-if="!form.operating_hours[idx]" class="day-off-label">Hari libur</div>
+            </div>
+            <span v-else class="hours-off">Hari libur</span>
           </div>
-          <p v-if="hoursErrors[idx]" class="field-error hours-row-error">{{ hoursErrors[idx] }}</p>
-        </div>
+          <p v-if="hoursErrors[idx]" class="adm-error hours-error">{{ hoursErrors[idx] }}</p>
+        </li>
+      </ul>
+    </section>
+
+    <!-- ── Bar simpan melayang ────────────────────────────────────────────── -->
+    <div class="adm-savebar" :class="{ 'is-clean': !hasChanges }">
+      <p class="adm-savebar-text" aria-live="polite">
+        <span class="adm-dot"></span>
+        {{ hasChanges ? 'Ada perubahan yang belum disimpan' : 'Semua perubahan sudah tersimpan' }}
+      </p>
+      <div class="adm-savebar-actions">
+        <button v-if="hasChanges && !loading" type="button" class="adm-btn adm-btn--ghost" @click="resetForm">Batalkan</button>
+        <button type="button" class="adm-btn adm-btn--primary" :disabled="loading || !hasChanges" @click="saveAll">
+          <span v-if="loading" class="adm-spinner"></span>
+          <Save v-else :size="15" />
+          {{ loading ? 'Menyimpan…' : 'Simpan Perubahan' }}
+        </button>
       </div>
     </div>
 
-    <!-- Actions -->
-    <div class="actions">
-      <button @click="saveAll" :disabled="loading || !hasChanges" class="btn-save">
-        <span v-if="loading" class="btn-spinner"></span>
-        <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
-          <polyline points="17 21 17 13 7 13 7 21"/>
-          <polyline points="7 3 7 8 15 8"/>
-        </svg>
-        {{ loading ? "Menyimpan..." : "Simpan Semua" }}
-      </button>
-      <button v-if="hasChanges && !loading" @click="resetForm" class="btn-cancel">Batalkan</button>
-    </div>
-
+    <AdminConfirm :state="confirmState" @confirm="acceptConfirm" @cancel="cancelConfirm" />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue"
-import { toast } from "vue-sonner"
-import apiClient from "@/api/client"
-import { useStoreSettings } from "@/composables/useStoreSettings"
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { toast } from 'vue-sonner'
+import {
+  MessageCircle, Power, Clock, Info, AlertTriangle, WifiOff, Check, Copy, Save,
+  CalendarClock, Store, Lock,
+} from 'lucide-vue-next'
+import apiClient from '@/api/client'
+import { useStoreSettings } from '@/composables/useStoreSettings'
+import { useAdminConfirm } from '@/composables/useAdminConfirm'
+import AdminConfirm from '@/components/admin/AdminConfirm.vue'
 
 const { isStoreOpen, refetchSettings } = useStoreSettings()
+const { state: confirmState, ask, accept: acceptConfirm, cancel: cancelConfirm } = useAdminConfirm()
 
 const DAY_OPTIONS = [
-  { label: "Senin",  short: "Sen" },
-  { label: "Selasa", short: "Sel" },
-  { label: "Rabu",   short: "Rab" },
-  { label: "Kamis",  short: "Kam" },
-  { label: "Jumat",  short: "Jum" },
-  { label: "Sabtu",  short: "Sab" },
-  { label: "Minggu", short: "Min" },
+  { label: 'Senin',  short: 'Sen' },
+  { label: 'Selasa', short: 'Sel' },
+  { label: 'Rabu',   short: 'Rab' },
+  { label: 'Kamis',  short: 'Kam' },
+  { label: 'Jumat',  short: 'Jum' },
+  { label: 'Sabtu',  short: 'Sab' },
+  { label: 'Minggu', short: 'Min' },
+]
+const TIME_FIELDS = [
+  { key: 'open',  label: 'Buka' },
+  { key: 'close', label: 'Tutup' },
+]
+const overrideOptions = [
+  { value: null,  label: 'Ikut Jadwal', icon: CalendarClock, tone: 'blue' },
+  { value: true,  label: 'Paksa Buka',  icon: Store,         tone: 'green' },
+  { value: false, label: 'Paksa Tutup', icon: Lock,          tone: 'red' },
 ]
 
-const HOURS   = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"))
-const MINUTES = ["00", "15", "30", "45"]
+const HOURS   = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'))
+const MINUTES = ['00', '15', '30', '45']
 const WHATSAPP_REGEX = /^62[0-9]{8,13}$/ // kode negara 62 + 8-13 digit
 
-const loading    = ref(false)
-const isOffline  = ref(false) // true hanya jika data yang tampil BUKAN dari server
-const errors     = ref({ whatsapp: "" })
+const loading     = ref(false)
+const isOffline   = ref(false) // true hanya jika data yang tampil BUKAN dari server
+const errors      = ref({ whatsapp: '' })
 const hoursErrors = ref({})
 
 const defaultForm = () => ({
-  admin_whatsapp:   "",
+  admin_whatsapp:   '',
   is_open_override: null,
-  closed_message:   "Maaf, kami sedang tidak beroperasi. Silakan kembali sesuai jam operasional kami.",
+  closed_message:   'Maaf, kami sedang tidak beroperasi. Silakan kembali sesuai jam operasional kami.',
   operating_hours:  {},
 })
 
 const form      = ref(defaultForm())
 const savedForm = ref(defaultForm())
+const clone     = (v) => JSON.parse(JSON.stringify(v))
 
 const hasChanges = computed(() => JSON.stringify(form.value) !== JSON.stringify(savedForm.value))
+const isWhatsappSaved = computed(
+  () => !!savedForm.value.admin_whatsapp && !errors.value.whatsapp && form.value.admin_whatsapp === savedForm.value.admin_whatsapp
+)
+const firstOpenDay = computed(() => {
+  const idx = DAY_OPTIONS.findIndex((_, i) => form.value.operating_hours[i])
+  return idx === -1 ? null : idx
+})
 
-const getHour   = (t) => t?.split(":")?.[0] ?? "08"
-const getMinute = (t) => t?.split(":")?.[1] ?? "00"
+// ── Jam ────────────────────────────────────────────────────────────
+const getHour   = (t) => t?.split(':')?.[0] ?? '08'
+const getMinute = (t) => t?.split(':')?.[1] ?? '00'
 
-const setHour = (idx, field, val) => {
-  if (!form.value.operating_hours[idx]) return
-  const min = getMinute(form.value.operating_hours[idx][field])
-  form.value.operating_hours = {
-    ...form.value.operating_hours,
-    [idx]: { ...form.value.operating_hours[idx], [field]: `${val}:${min}` }
-  }
+// Menit non-standar dari server (mis. "08:10") tetap ditampilkan, bukan dikosongkan.
+const minuteOptions = (idx, field) => {
+  const current = getMinute(form.value.operating_hours[idx]?.[field])
+  return MINUTES.includes(current) ? MINUTES : [...MINUTES, current].sort()
 }
-const setMinute = (idx, field, val) => {
-  if (!form.value.operating_hours[idx]) return
-  const hr = getHour(form.value.operating_hours[idx][field])
+
+const setPart = (idx, field, part, val) => {
+  const range = form.value.operating_hours[idx]
+  if (!range) return
+  const h = part === 'h' ? val : getHour(range[field])
+  const m = part === 'm' ? val : getMinute(range[field])
   form.value.operating_hours = {
     ...form.value.operating_hours,
-    [idx]: { ...form.value.operating_hours[idx], [field]: `${hr}:${val}` }
+    [idx]: { ...range, [field]: `${h}:${m}` },
   }
+  delete hoursErrors.value[idx]
 }
 
 const toggleDay = (idx) => {
   const updated = { ...form.value.operating_hours }
-  if (updated[idx]) {
-    delete updated[idx]
-  } else {
-    updated[idx] = { open: "08:00", close: "22:00" }
-  }
+  if (updated[idx]) delete updated[idx]
+  else updated[idx] = { open: '08:00', close: '22:00' }
   form.value.operating_hours = updated
   delete hoursErrors.value[idx]
 }
 
-// Override toko: minta konfirmasi untuk "Paksa Buka"/"Paksa Tutup" karena
-// langsung berdampak pada customer yang sedang mengakses situs.
-const requestOverride = (val) => {
+// Salin jam dari hari buka pertama ke semua hari yang sedang buka
+const copyToAll = () => {
+  const src = form.value.operating_hours[firstOpenDay.value]
+  if (!src) return
+  const updated = {}
+  for (const idx of Object.keys(form.value.operating_hours)) updated[idx] = { ...src }
+  form.value.operating_hours = updated
+  hoursErrors.value = {}
+  toast.success(`Jam ${DAY_OPTIONS[firstOpenDay.value].label} disalin ke semua hari buka`)
+}
+
+// ── Override toko ──────────────────────────────────────────────────
+// Konfirmasi untuk "Paksa Buka"/"Paksa Tutup" karena langsung berdampak ke customer.
+const requestOverride = async (val) => {
   if (val === form.value.is_open_override) return
-  if (val === false) {
-    const ok = window.confirm(
-      "Yakin ingin memaksa toko TUTUP? Customer tidak akan bisa checkout sampai Anda mengembalikan status ini."
-    )
-    if (!ok) return
-  } else if (val === true) {
-    const ok = window.confirm(
-      "Yakin ingin memaksa toko BUKA di luar jadwal normal? Pastikan dapur/kasir memang siap menerima pesanan."
+  if (val !== null) {
+    const ok = await ask(
+      val === false
+        ? {
+            title: 'Paksa toko tutup?',
+            message: 'Customer tidak akan bisa checkout sampai Anda mengembalikan status ini.',
+            confirmText: 'Ya, tutup toko',
+            danger: true,
+          }
+        : {
+            title: 'Paksa toko buka?',
+            message: 'Toko akan dibuka di luar jadwal normal. Pastikan dapur/kasir memang siap menerima pesanan.',
+            confirmText: 'Ya, buka toko',
+          }
     )
     if (!ok) return
   }
   form.value.is_open_override = val
 }
 
+// ── Validasi ───────────────────────────────────────────────────────
+const validateWhatsapp = () => {
+  const v = form.value.admin_whatsapp
+  errors.value.whatsapp = v && !WHATSAPP_REGEX.test(v) ? 'Format tidak valid. Gunakan: 628xxxxxxxxxx' : ''
+  return !errors.value.whatsapp
+}
+const onWhatsappInput = () => {
+  form.value.admin_whatsapp = form.value.admin_whatsapp.replace(/\D/g, '') // hanya angka
+  errors.value.whatsapp = ''
+}
+
 const validateHours = () => {
-  const newErrors = {}
-  let ok = true
+  const next = {}
   for (const [idx, range] of Object.entries(form.value.operating_hours)) {
     if (range?.open && range?.close && range.open >= range.close) {
-      newErrors[idx] = "Jam tutup harus lebih besar dari jam buka"
-      ok = false
+      next[idx] = 'Jam tutup harus lebih besar dari jam buka'
     }
   }
-  hoursErrors.value = newErrors
-  return ok
+  hoursErrors.value = next
+  return Object.keys(next).length === 0
 }
 
 const validate = () => {
-  let ok = true
-  if (form.value.admin_whatsapp && !WHATSAPP_REGEX.test(form.value.admin_whatsapp)) {
-    errors.value.whatsapp = "Format tidak valid. Gunakan: 628xxxxxxxxxx"
-    ok = false
-  }
-  if (!validateHours()) ok = false
-  return ok
+  const okWa = validateWhatsapp()
+  const okHours = validateHours()
+  return okWa && okHours
 }
 
+// ── Data ───────────────────────────────────────────────────────────
 const applyFetchedData = (data, offline) => {
   const f = {
-    admin_whatsapp:   data.admin_whatsapp   || "",
+    admin_whatsapp:   data.admin_whatsapp   || '',
     is_open_override: data.is_open_override ?? null,
     closed_message:   data.closed_message   || defaultForm().closed_message,
     operating_hours:  data.operating_hours  || {},
   }
-  form.value      = JSON.parse(JSON.stringify(f))
-  savedForm.value = JSON.parse(JSON.stringify(f))
+  form.value      = clone(f)
+  savedForm.value = clone(f)
   isOffline.value = offline
 }
 
 const fetchData = async () => {
   try {
-    const res = await apiClient.get("/orders/settings/")
+    const res = await apiClient.get('/orders/settings/')
     applyFetchedData(res.data, false)
   } catch (err) {
     console.error(err)
-    // Cache lokal hanya dipakai untuk BACA cepat saat server tidak terjangkau.
-    // Kita tetap beri tahu admin secara eksplisit bahwa ini bukan data live,
-    // supaya tidak ada kesan pengaturan "aman" padahal belum tentu sinkron.
-    const cached = localStorage.getItem("store_settings")
+    // Cache lokal hanya untuk BACA cepat saat server tidak terjangkau, dan admin
+    // diberi tahu eksplisit bahwa ini bukan data live.
+    const cached = localStorage.getItem('store_settings')
     if (cached) {
-      try {
-        applyFetchedData(JSON.parse(cached), true)
-      } catch {
-        // cache korup, abaikan dan pakai default kosong
-      }
+      try { applyFetchedData(JSON.parse(cached), true) } catch { /* cache korup, abaikan */ }
     }
-    toast.error("Gagal memuat konfigurasi dari server" + (cached ? " — menampilkan cache lokal" : ""))
+    toast.error('Gagal memuat konfigurasi dari server' + (cached ? ' — menampilkan cache lokal' : ''))
   }
 }
 
 const saveAll = async () => {
-  if (!validate()) return
+  if (!validate()) {
+    toast.error('Periksa kembali isian yang bertanda merah.')
+    return
+  }
   loading.value = true
   try {
     const payload = {
@@ -373,194 +415,146 @@ const saveAll = async () => {
       closed_message:   form.value.closed_message,
       operating_hours:  form.value.operating_hours,
     }
-    await apiClient.put("/orders/settings/", payload)
+    await apiClient.put('/orders/settings/', payload)
 
-    // Simpan cache lokal HANYA setelah server mengonfirmasi sukses —
-    // jadi cache selalu merepresentasikan state server yang valid, bukan
-    // tebakan optimistis saat request sebenarnya gagal.
-    localStorage.setItem("store_settings", JSON.stringify(payload))
+    // Cache disimpan HANYA setelah server mengonfirmasi sukses.
+    localStorage.setItem('store_settings', JSON.stringify(payload))
 
-    savedForm.value = JSON.parse(JSON.stringify(form.value))
+    savedForm.value = clone(form.value)
     isOffline.value = false
     await refetchSettings()
-    toast.success("Pengaturan berhasil disimpan!")
+    toast.success('Pengaturan berhasil disimpan!')
   } catch (err) {
     console.error(err)
-    toast.error("Gagal menyimpan ke server. Perubahan Anda BELUM tersimpan — coba lagi.")
+    toast.error('Gagal menyimpan ke server. Perubahan Anda BELUM tersimpan — coba lagi.')
   } finally {
     loading.value = false
   }
 }
 
 const resetForm = () => {
-  form.value    = JSON.parse(JSON.stringify(savedForm.value))
-  errors.value  = { whatsapp: "" }
+  form.value        = clone(savedForm.value)
+  errors.value      = { whatsapp: '' }
   hoursErrors.value = {}
 }
 
-onMounted(fetchData)
+// Peringatan bila tab ditutup saat masih ada perubahan
+const onBeforeUnload = (e) => {
+  if (!hasChanges.value) return
+  e.preventDefault()
+  e.returnValue = ''
+}
+onMounted(() => {
+  fetchData()
+  window.addEventListener('beforeunload', onBeforeUnload)
+})
+onBeforeUnmount(() => window.removeEventListener('beforeunload', onBeforeUnload))
 </script>
 
 <style scoped>
-.settings-page {
-  max-width: 720px; margin: 0 auto;
-  padding: 32px 24px 80px; color: white;
-  display: flex; flex-direction: column; gap: 24px;
+/* ── Banner status ─────────────────────────────────────────────── */
+.set-banner {
+  display: flex; align-items: center; gap: 0.7rem;
+  padding: 0.75rem 1.1rem;
+  border: 1px solid var(--border); border-radius: var(--r-md);
+  background: var(--surface);
 }
-.page-header { display: flex; align-items: center; gap: 14px; }
-.header-icon {
-  width: 42px; height: 42px; border-radius: 12px;
-  background: rgba(220,38,38,0.12); border: 1px solid rgba(220,38,38,0.2);
-  display: flex; align-items: center; justify-content: center;
-  color: #ef4444; flex-shrink: 0;
+.set-banner p { margin: 0; font-size: 0.8125rem; line-height: 1.5; color: var(--text-dim); }
+.set-banner strong { color: var(--text); }
+.set-banner--green { background: var(--tint-green); border-color: var(--line-green); }
+.set-banner--red   { background: var(--tint-accent); border-color: var(--line-accent); }
+.set-banner--amber { background: var(--tint-amber); border-color: var(--line-amber); align-items: flex-start; }
+.set-banner-icon { flex-shrink: 0; margin-top: 2px; color: var(--amber-soft); }
+.set-banner-note { margin-left: 0.25rem; color: var(--text-faint); }
+.set-banner-note--amber { color: var(--amber-soft); font-weight: 600; }
+
+.set-pulse { flex-shrink: 0; width: 9px; height: 9px; border-radius: 50%; background: var(--red-soft); }
+.set-pulse.is-open { background: var(--green); animation: set-pulse 2s infinite; }
+@keyframes set-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 25%, transparent); }
+  50%      { box-shadow: 0 0 0 6px color-mix(in srgb, var(--green) 8%, transparent); }
 }
-.page-title { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; font-family: 'Oswald', sans-serif; text-transform: uppercase; }
-.page-subtitle { font-size: 13px; color: rgba(255,255,255,0.35); margin-top: 2px; }
 
-.status-bar { display: flex; align-items: center; gap: 10px; padding: 12px 18px; border-radius: 12px; border: 1px solid; }
-.status-bar--open    { background: rgba(34,197,94,0.06);  border-color: rgba(34,197,94,0.15); }
-.status-bar--closed  { background: rgba(239,68,68,0.06);  border-color: rgba(239,68,68,0.15); }
-.status-bar--offline { background: rgba(245,158,11,0.06); border-color: rgba(245,158,11,0.2); }
-.status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.status-dot--open   { background: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,0.2); animation: pulse 2s infinite; }
-.status-dot--closed { background: #ef4444; }
-@keyframes pulse { 0%,100% { box-shadow: 0 0 0 3px rgba(34,197,94,0.2); } 50% { box-shadow: 0 0 0 6px rgba(34,197,94,0.08); } }
-.status-text { font-size: 12.5px; color: rgba(255,255,255,0.5); }
-.status-text strong { font-weight: 700; color: white; }
-.status-override { color: #f59e0b; margin-left: 4px; }
-.status-auto     { color: rgba(255,255,255,0.2); margin-left: 4px; }
-
-.card { background: #0d0d0d; border: 1px solid rgba(255,255,255,0.07); border-radius: 18px; overflow: hidden; }
-.card-header { display: flex; align-items: flex-start; gap: 14px; padding: 22px 26px; }
-.card-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.whatsapp-icon { background: rgba(37,211,102,0.1); color: #25d366; }
-.override-icon { background: rgba(245,158,11,0.1); color: #f59e0b; }
-.hours-icon    { background: rgba(99,102,241,0.1); color: #818cf8; }
-.card-title { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
-.card-desc  { font-size: 12.5px; color: rgba(255,255,255,0.35); margin-top: 3px; line-height: 1.5; }
-.divider    { height: 1px; background: rgba(255,255,255,0.05); }
-.field-group { padding: 22px 26px; display: flex; flex-direction: column; gap: 16px; }
-
-.field { display: flex; flex-direction: column; gap: 8px; }
-.label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.35); }
-
-.input-wrapper { position: relative; display: flex; align-items: center; }
-.input-prefix  { position: absolute; left: 14px; font-size: 15px; color: rgba(255,255,255,0.3); pointer-events: none; }
-.input {
-  width: 100%; background: #111; border: 1px solid rgba(255,255,255,0.08);
-  padding: 12px 110px 12px 28px; border-radius: 12px; color: white;
-  font-size: 14px; transition: border-color 0.2s, box-shadow 0.2s;
-  font-family: 'SF Mono','Fira Code',monospace;
+/* ── WhatsApp ──────────────────────────────────────────────────── */
+.set-code {
+  padding: 1px 6px; border-radius: 4px;
+  background: rgb(var(--ink) / 0.07); color: var(--text-2);
+  font-family: var(--font-mono); font-size: 0.72rem;
 }
-.input::placeholder { color: rgba(255,255,255,0.18); font-family: inherit; }
-.input:focus { outline: none; border-color: rgba(220,38,38,0.5); box-shadow: 0 0 0 3px rgba(220,38,38,0.08); }
-.input--error { border-color: rgba(239,68,68,0.6) !important; }
-.input-badge {
-  position: absolute; right: 12px; display: flex; align-items: center; gap: 5px;
-  font-size: 11px; font-weight: 600; color: #22c55e;
-  background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2);
-  padding: 4px 9px; border-radius: 20px;
+.set-preview {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.65rem 0.9rem; min-width: 0;
+  border: 1px solid var(--border); border-radius: var(--r-md);
+  background: rgb(var(--ink) / 0.03);
 }
-.field-error { font-size: 12px; color: #f87171; }
-.field-hint  { font-size: 12px; color: rgba(255,255,255,0.22); line-height: 1.5; }
-.hint-code   { font-family: 'SF Mono','Fira Code',monospace; font-size: 11.5px; color: rgba(255,255,255,0.45); background: rgba(255,255,255,0.05); padding: 1px 5px; border-radius: 4px; }
+.set-preview-label { flex-shrink: 0; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); }
+.set-preview-link { min-width: 0; font-size: 0.78rem; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.set-preview-link strong { color: var(--green-soft); font-weight: 600; }
 
-.textarea {
-  width: 100%; background: #111; border: 1px solid rgba(255,255,255,0.08);
-  padding: 12px 14px; border-radius: 12px; color: white; font-size: 13px;
-  resize: none; line-height: 1.6; font-family: inherit; transition: border-color 0.2s;
+.set-note {
+  display: flex; align-items: flex-start; gap: 0.65rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--line-blue); border-radius: var(--r-md);
+  background: var(--tint-blue);
 }
-.textarea::placeholder { color: rgba(255,255,255,0.18); }
-.textarea:focus { outline: none; border-color: rgba(220,38,38,0.4); }
+.set-note p { margin: 0; font-size: 0.78rem; line-height: 1.6; color: var(--text-dim); }
+.set-note strong { color: var(--text); }
+.set-note-icon { flex-shrink: 0; margin-top: 2px; color: var(--blue-soft); }
+.set-note--amber { background: var(--tint-amber); border-color: var(--line-amber); }
+.set-note--amber .set-note-icon { color: var(--amber-soft); }
 
-.preview-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 11px 15px; display: flex; align-items: center; gap: 10px; }
-.preview-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.18); white-space: nowrap; }
-.preview-link  { font-size: 12.5px; color: rgba(255,255,255,0.3); font-family: 'SF Mono','Fira Code',monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.preview-link strong { color: #25d366; font-weight: 600; }
-
-.info-box { margin: 0 26px 22px; background: rgba(59,130,246,0.04); border: 1px solid rgba(59,130,246,0.1); border-radius: 10px; padding: 12px 14px; display: flex; align-items: flex-start; gap: 10px; }
-.info-box--warning { background: rgba(245,158,11,0.05); border-color: rgba(245,158,11,0.15); }
-.info-box--warning .info-icon { color: rgba(251,191,36,0.6); }
-.info-icon { color: rgba(147,197,253,0.5); flex-shrink: 0; margin-top: 1px; }
-.info-box p { font-size: 12.5px; color: rgba(255,255,255,0.3); line-height: 1.6; }
-.info-box strong { color: rgba(255,255,255,0.6); }
-
-.override-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
-.override-btn {
-  display: flex; align-items: center; justify-content: center; gap: 7px;
-  padding: 11px 10px; border-radius: 12px; font-size: 11.5px; font-weight: 600;
-  border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03);
-  color: rgba(255,255,255,0.4); cursor: pointer; transition: all 0.15s;
+/* ── Override ──────────────────────────────────────────────────── */
+.set-override { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+.set-override-btn {
+  display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+  min-height: 46px; padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border-strong); border-radius: var(--r-md);
+  background: var(--surface-2); color: var(--text-dim);
+  font-family: inherit; font-size: 0.8125rem; font-weight: 600;
+  cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
-.override-btn:hover { border-color: rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); }
-.override-btn--active-auto   { background: rgba(99,102,241,0.12); border-color: rgba(99,102,241,0.3); color: #a5b4fc; }
-.override-btn--active-open   { background: rgba(34,197,94,0.1);  border-color: rgba(34,197,94,0.3);  color: #4ade80; }
-.override-btn--active-closed { background: rgba(239,68,68,0.1);  border-color: rgba(239,68,68,0.3);  color: #f87171; }
+.set-override-btn:hover { color: var(--text); background: var(--surface-hover); }
+.set-override-btn.is-active.is-blue  { background: var(--tint-blue);   border-color: var(--line-blue);   color: var(--blue-soft); }
+.set-override-btn.is-active.is-green { background: var(--tint-green);  border-color: var(--line-green);  color: var(--green-soft); }
+.set-override-btn.is-active.is-red   { background: var(--tint-accent); border-color: var(--line-accent); color: var(--red-soft); }
 
-.hours-list { padding: 8px 26px 22px; display: flex; flex-direction: column; gap: 0; }
-.hours-row-wrap { border-bottom: 1px solid rgba(255,255,255,0.04); }
-.hours-row-wrap:last-child { border-bottom: none; }
-.hours-row { display: flex; align-items: center; gap: 12px; padding: 11px 0; }
-.hours-row-error { padding: 0 0 8px 52px; }
-.hours-day { width: 40px; flex-shrink: 0; }
-.day-label { font-size: 13px; font-weight: 700; color: white; display: block; }
-
-.day-toggle {
-  flex-shrink: 0; padding: 5px 0; border-radius: 8px;
-  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
-  cursor: pointer; border: 1px solid; transition: all 0.15s; width: 58px; text-align: center;
+/* ── Jam operasional ───────────────────────────────────────────── */
+.hours-list { margin: 0; padding: 0.25rem 1.25rem 0.5rem; list-style: none; }
+.hours-item { border-bottom: 1px solid var(--border); }
+.hours-item:last-child { border-bottom: none; }
+.hours-row {
+  display: grid;
+  grid-template-columns: 2.75rem 6.5rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.5rem 0.85rem;
+  padding: 0.75rem 0;
 }
-.day-toggle--on  { background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.25); color: #4ade80; }
-.day-toggle--off { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); color: rgba(255,255,255,0.25); }
+.hours-day { font-size: 0.875rem; font-weight: 700; color: var(--text); }
+.hours-toggle { display: flex; align-items: center; gap: 0.6rem; }
+.hours-state { font-size: 0.72rem; font-weight: 600; color: var(--text-faint); }
+.hours-state.is-on { color: var(--green-soft); }
+.hours-off { font-size: 0.78rem; font-style: italic; color: var(--text-faint); }
+.hours-error { padding: 0 0 0.6rem 3.6rem; }
 
-.time-fields { display: flex; align-items: center; gap: 10px; flex: 1; }
-.time-group  { display: flex; flex-direction: column; gap: 3px; }
-.time-label  { font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.2); }
-.time-inputs { display: flex; align-items: center; gap: 3px; }
+.time-fields { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 0.5rem 1.25rem; }
+.time-group { display: flex; flex-direction: column; gap: 0.2rem; }
+.time-label { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); }
+.time-inputs { display: flex; align-items: center; gap: 0.25rem; }
+.time-sep { font-weight: 700; color: var(--text-faint); }
 .time-select {
-  background: #111; border: 1px solid rgba(255,255,255,0.09);
-  color: white; font-size: 13px; font-family: 'SF Mono','Fira Code',monospace;
-  padding: 6px 2px; border-radius: 8px; text-align: center;
-  cursor: pointer; appearance: none; -webkit-appearance: none;
-  width: 42px; transition: border-color 0.15s;
-}
-.time-select:focus { outline: none; border-color: rgba(220,38,38,0.4); }
-.time-sep   { color: rgba(255,255,255,0.3); font-size: 14px; font-weight: 700; }
-.time-arrow { color: rgba(255,255,255,0.15); font-size: 12px; flex-shrink: 0; margin: 0 2px; }
-.day-off-label { flex: 1; font-size: 11.5px; color: rgba(255,255,255,0.12); font-style: italic; }
-
-.fade-slide-enter-active { transition: all 0.2s ease-out; }
-.fade-slide-leave-active { transition: all 0.15s ease-in; }
-.fade-slide-enter-from, .fade-slide-leave-to { opacity: 0; transform: translateX(-6px); }
-
-.actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.btn-save {
-  display: flex; align-items: center; gap: 8px; background: #dc2626; color: white;
-  border: none; padding: 13px 28px; border-radius: 12px; font-size: 13.5px;
-  font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
-  cursor: pointer; transition: background 0.2s, transform 0.15s, opacity 0.2s;
-}
-.btn-save:hover:not(:disabled) { background: #ef4444; transform: translateY(-1px); }
-.btn-save:disabled { opacity: 0.4; cursor: not-allowed; }
-.btn-spinner { width: 15px; height: 15px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.btn-cancel { background: transparent; border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.4); padding: 13px 20px; border-radius: 12px; font-size: 13.5px; font-weight: 600; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
-.btn-cancel:hover { border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.7); }
-
-@media (max-width: 540px) {
-  .settings-page { padding: 20px 14px 60px; gap: 18px; }
-  .card-header { padding: 18px; }
-  .field-group { padding: 18px; }
-  .hours-list  { padding: 8px 18px 18px; }
-  .info-box    { margin: 0 18px 18px; }
-  .override-grid { grid-template-columns: 1fr; gap: 6px; }
-  .override-btn  { justify-content: flex-start; padding: 10px 14px; }
-  .page-title    { font-size: 18px; }
-  .actions       { flex-direction: column; align-items: stretch; }
-  .btn-save, .btn-cancel { justify-content: center; width: 100%; }
-  .time-fields { flex-wrap: wrap; gap: 6px; }
+  width: 4.1rem; min-height: 40px; padding: 0.4rem 0.2rem;
+  font-family: var(--font-mono); font-size: 0.875rem; text-align: center; text-align-last: center;
+  background-image: none; padding-right: 0.2rem;
 }
 
-.time-select::-webkit-scrollbar { display: none; }
-.time-select { -ms-overflow-style: none; scrollbar-width: none; }
+/* ── Responsif ─────────────────────────────────────────────────── */
+@media (max-width: 560px) {
+  .set-override { grid-template-columns: 1fr; }
+  .set-override-btn { justify-content: flex-start; }
+  .hours-row { grid-template-columns: 2.5rem minmax(0, 1fr); }
+  .hours-row .time-fields, .hours-row .hours-off { grid-column: 1 / -1; }
+  .hours-error { padding-left: 0; }
+  .adm-card-head { flex-wrap: wrap; }
+  .adm-card-head-actions { margin-left: 3.2rem; }
+}
 </style>
