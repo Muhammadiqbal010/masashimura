@@ -1,27 +1,27 @@
 <template>
   <aside
     :class="[
-      'fixed lg:sticky top-0 h-screen w-64 bg-white border-r border-zinc-200 flex flex-col shrink-0 text-zinc-900 select-none font-inter z-40',
+      'fixed lg:sticky top-0 h-screen w-64 bg-[#0a0a0a] border-r border-white/[0.06] flex flex-col shrink-0 text-white select-none font-inter z-40',
       'transition-transform duration-300 ease-in-out lg:translate-x-0',
       open ? 'translate-x-0 shadow-2xl' : '-translate-x-full',
     ]"
   >
     <!-- Header Brand -->
-    <div class="relative flex items-start justify-between px-7 pt-7 pb-5 border-b border-zinc-100">
+    <div class="relative flex items-start justify-between px-7 pt-7 pb-5 border-b border-white/[0.04]">
       <div>
         <img
           src="@/assets/masashimura-logo.png"
           alt="Masashimura"
-          class="h-8 w-auto object-contain select-none pointer-events-none"
+          class="h-8 w-auto object-contain select-none pointer-events-none opacity-90"
         />
-        <p class="text-[9px] text-zinc-500 tracking-[0.25em] uppercase mt-2 font-mono">
+        <p class="text-[9px] text-white/25 tracking-[0.25em] uppercase mt-2 font-mono">
           Admin System
         </p>
       </div>
       <!-- Tombol close — mobile only -->
       <button
         @click="emit('close')"
-        class="lg:hidden w-7 h-7 rounded-lg flex items-center justify-center text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-all mt-0.5"
+        class="lg:hidden w-7 h-7 rounded-lg flex items-center justify-center text-white/20 hover:text-white/60 hover:bg-white/5 transition-all mt-0.5"
         aria-label="Tutup navigasi"
       >
         <X size="14" />
@@ -29,23 +29,23 @@
     </div>
 
     <!-- Profil Mini Pengguna -->
-    <div class="px-5 py-4 border-b border-zinc-100">
-      <div class="flex items-center gap-3 px-3 py-3 rounded-xl bg-zinc-50 border border-zinc-200">
-        <div class="w-8 h-8 rounded-full bg-white border border-zinc-200 flex items-center justify-center shrink-0">
-          <Crown v-if="userRole === 'owner'" size="14" class="text-amber-500" />
-          <User  v-else-if="userRole === 'admin'" size="14" class="text-blue-600" />
-          <BriefcaseBusiness v-else size="14" class="text-emerald-600" />
+    <div class="px-5 py-4 border-b border-white/[0.04]">
+      <div class="flex items-center gap-3 px-3 py-3 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+        <div class="w-8 h-8 rounded-full bg-white/[0.06] border border-white/10 flex items-center justify-center shrink-0">
+          <Crown v-if="userRole === 'owner'" size="14" class="text-amber-400/80" />
+          <User  v-else-if="userRole === 'admin'" size="14" class="text-blue-400/80" />
+          <BriefcaseBusiness v-else size="14" class="text-emerald-400/80" />
         </div>
         <div class="min-w-0 flex-1">
-          <p class="text-[12px] font-semibold text-zinc-900 truncate leading-none mb-1">
+          <p class="text-[12px] font-semibold text-white/80 truncate leading-none mb-1">
             {{ user?.name || "Guest" }}
           </p>
           <span
             class="inline-block text-[8px] uppercase font-bold tracking-[0.15em] font-mono px-1.5 py-0.5 rounded-md"
             :class="
-              userRole === 'owner' ? 'bg-amber-100 text-amber-700' :
-              userRole === 'admin' ? 'bg-blue-100 text-blue-700' :
-                                    'bg-emerald-100 text-emerald-700'
+              userRole === 'owner' ? 'bg-amber-500/10 text-amber-500/80' :
+              userRole === 'admin' ? 'bg-blue-500/10 text-blue-400/80' :
+                                    'bg-emerald-500/10 text-emerald-400/80'
             "
           >
             {{ userRole || "Kasir" }}
@@ -63,16 +63,16 @@
           to="/admin/"
           @click="emit('close')"
           class="group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200"
-          :class="navClass(isActive('/admin/'))"
+          :class="isActive('/admin/') ? 'bg-white/[0.07] text-white' : 'text-white/35 hover:text-white/80 hover:bg-white/[0.04]'"
         >
-          <LayoutDashboard size="15" :class="navIconClass(isActive('/admin/'))" />
+          <LayoutDashboard size="15" :class="isActive('/admin/') ? 'text-white/70' : 'text-white/25 group-hover:text-white/50'" />
           <span class="text-[13px] font-medium font-inter tracking-normal">Dashboard</span>
         </router-link>
       </div>
 
       <!-- Divider label -->
       <div class="pt-2 pb-1 px-3">
-        <span class="font-mono text-[8px] tracking-[0.25em] uppercase text-zinc-500">Navigasi</span>
+        <span class="font-mono text-[8px] tracking-[0.25em] uppercase text-white/15">Navigasi</span>
       </div>
 
       <!-- KELOMPOK 1: OPERASIONAL TOKO -->
@@ -80,15 +80,15 @@
         <button
           type="button"
           @click="toggleGroup('operational')"
-          class="group w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-zinc-50 transition-colors"
+          class="group w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/[0.03] transition-colors"
         >
           <span class="flex items-center gap-2.5">
-            <Zap size="14" class="text-amber-500" />
-            <span class="text-[12px] font-semibold text-zinc-600 group-hover:text-zinc-900 tracking-wide font-inter transition-colors">Operasional</span>
+            <Zap size="14" class="text-amber-500/50" />
+            <span class="text-[12px] font-semibold text-white/50 group-hover:text-white/70 tracking-wide font-inter transition-colors">Operasional</span>
           </span>
           <ChevronDown
             size="13"
-            class="text-zinc-400 transition-transform duration-300 group-hover:text-zinc-600"
+            class="text-white/20 transition-transform duration-300 group-hover:text-white/40"
             :class="openGroups.operational ? 'rotate-180' : ''"
           />
         </button>
@@ -102,9 +102,9 @@
               :to="link.to"
               @click="handleNavClick(link.to)"
               class="group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200"
-              :class="navClass(isActive(link.to))"
+              :class="isActive(link.to) ? 'bg-white/[0.07] text-white' : 'text-white/35 hover:text-white/80 hover:bg-white/[0.04]'"
             >
-              <component :is="link.icon" size="14" :class="navIconClass(isActive(link.to))" />
+              <component :is="link.icon" size="14" :class="isActive(link.to) ? 'text-white/70' : 'text-white/20 group-hover:text-white/50'" />
               <span class="text-[13px] font-medium font-inter tracking-normal flex-1">{{ link.label }}</span>
               <span
                 v-if="link.to === '/admin/orders' && notifStore.unreadCount > 0"
@@ -122,15 +122,15 @@
         <button
           type="button"
           @click="toggleGroup('dataManagement')"
-          class="group w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-zinc-50 transition-colors"
+          class="group w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/[0.03] transition-colors"
         >
           <span class="flex items-center gap-2.5">
-            <FolderOpen size="14" class="text-sky-500" />
-            <span class="text-[12px] font-semibold text-zinc-600 group-hover:text-zinc-900 tracking-wide font-inter transition-colors">Data &amp; CMS</span>
+            <FolderOpen size="14" class="text-sky-500/50" />
+            <span class="text-[12px] font-semibold text-white/50 group-hover:text-white/70 tracking-wide font-inter transition-colors">Data &amp; CMS</span>
           </span>
           <ChevronDown
             size="13"
-            class="text-zinc-400 transition-transform duration-300 group-hover:text-zinc-600"
+            class="text-white/20 transition-transform duration-300 group-hover:text-white/40"
             :class="openGroups.dataManagement ? 'rotate-180' : ''"
           />
         </button>
@@ -143,9 +143,9 @@
               :to="link.to"
               @click="emit('close')"
               class="group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200"
-              :class="navClass(isActive(link.to))"
+              :class="isActive(link.to) ? 'bg-white/[0.07] text-white' : 'text-white/35 hover:text-white/80 hover:bg-white/[0.04]'"
             >
-              <component :is="link.icon" size="14" :class="navIconClass(isActive(link.to))" />
+              <component :is="link.icon" size="14" :class="isActive(link.to) ? 'text-white/70' : 'text-white/20 group-hover:text-white/50'" />
               <span class="text-[13px] font-medium font-inter tracking-normal">{{ link.label }}</span>
             </router-link>
           </template>
@@ -157,15 +157,15 @@
         <button
           type="button"
           @click="toggleGroup('internal')"
-          class="group w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-zinc-50 transition-colors"
+          class="group w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/[0.03] transition-colors"
         >
           <span class="flex items-center gap-2.5">
-            <ShieldCheck size="14" class="text-zinc-400" />
-            <span class="text-[12px] font-semibold text-zinc-600 group-hover:text-zinc-900 tracking-wide font-inter transition-colors">Internal</span>
+            <ShieldCheck size="14" class="text-white/20" />
+            <span class="text-[12px] font-semibold text-white/50 group-hover:text-white/70 tracking-wide font-inter transition-colors">Internal</span>
           </span>
           <ChevronDown
             size="13"
-            class="text-zinc-400 transition-transform duration-300 group-hover:text-zinc-600"
+            class="text-white/20 transition-transform duration-300 group-hover:text-white/40"
             :class="openGroups.internal ? 'rotate-180' : ''"
           />
         </button>
@@ -178,9 +178,9 @@
               :to="link.to"
               @click="emit('close')"
               class="group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200"
-              :class="navClass(isActive(link.to))"
+              :class="isActive(link.to) ? 'bg-white/[0.07] text-white' : 'text-white/35 hover:text-white/80 hover:bg-white/[0.04]'"
             >
-              <component :is="link.icon" size="14" :class="navIconClass(isActive(link.to))" />
+              <component :is="link.icon" size="14" :class="isActive(link.to) ? 'text-white/70' : 'text-white/20 group-hover:text-white/50'" />
               <span class="text-[13px] font-medium font-inter tracking-normal">{{ link.label }}</span>
             </router-link>
           </template>
@@ -188,14 +188,14 @@
       </div>
 
       <!-- PROFIL -->
-      <div class="pt-2 border-t border-zinc-100 mt-2 space-y-0.5">
+      <div class="pt-2 border-t border-white/[0.04] mt-2 space-y-0.5">
         <router-link
           to="/admin/profile"
           @click="emit('close')"
           class="group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200"
-          :class="navClass(isActive('/admin/profile'))"
+          :class="isActive('/admin/profile') ? 'bg-white/[0.07] text-white' : 'text-white/35 hover:text-white/80 hover:bg-white/[0.04]'"
         >
-          <UserCheck size="14" :class="navIconClass(isActive('/admin/profile'))" />
+          <UserCheck size="14" :class="isActive('/admin/profile') ? 'text-white/70' : 'text-white/20 group-hover:text-white/50'" />
           <span class="text-[13px] font-medium font-inter tracking-normal">Profil Saya</span>
         </router-link>
       </div>
@@ -203,18 +203,18 @@
     </nav>
 
     <!-- Footer Logout -->
-    <div class="px-5 py-4 border-t border-zinc-100">
+    <div class="px-5 py-4 border-t border-white/[0.04]">
       <button
         @click="showLogoutModal = true"
-        class="group flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-zinc-500 hover:text-red-600 hover:bg-red-50 transition-all text-[13px] font-medium font-inter cursor-pointer"
+        class="group flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-white/25 hover:text-white/60 hover:bg-white/[0.04] transition-all text-[13px] font-medium font-inter cursor-pointer"
       >
-        <LogOut size="14" class="text-zinc-400 group-hover:text-red-600 transition-colors" />
+        <LogOut size="14" class="group-hover:text-white/50 transition-colors" />
         Keluar
       </button>
     </div>
   </aside>
 
-  <!-- ── CONFIRM MODAL LOGOUT (tetap gelap, sama seperti halaman lain) ── -->
+  <!-- ── CONFIRM MODAL LOGOUT ── -->
   <Teleport to="body">
     <Transition name="modal">
       <div
@@ -300,21 +300,12 @@ import { computed, reactive, ref, watch } from 'vue'
 const props = defineProps({ open: Boolean })
 const emit  = defineEmits(['close'])
 
-const auth       = useAuthStore()
+const auth      = useAuthStore()
 const notifStore = useOrderNotificationsStore()
-const route      = useRoute()
-const user       = computed(() => auth.user)
-const userRole   = computed(() => auth.user?.role?.toLowerCase() || 'kasir')
-const isActive   = (path) => route.path === path
-
-// Warna menu sidebar (tema terang). Satu tempat, dipakai semua link.
-const navClass = (active) =>
-  active
-    ? 'bg-zinc-100 text-zinc-900'
-    : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50'
-
-const navIconClass = (active) =>
-  active ? 'text-[#DC2626]' : 'text-zinc-400 group-hover:text-zinc-600'
+const route     = useRoute()
+const user      = computed(() => auth.user)
+const userRole  = computed(() => auth.user?.role?.toLowerCase() || 'kasir')
+const isActive  = (path) => route.path === path
 
 const handleNavClick = (path) => {
   if (path === '/admin/orders') notifStore.clearUnread()
