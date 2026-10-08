@@ -441,6 +441,9 @@ onBeforeUnmount(() => {
   transition: background 0.15s, color 0.15s;
 }
 .sb-close:hover { background: var(--surface-hover); color: var(--text); }
+@media (min-width: 1024px) {
+  .sb-close { display: none; }
+}
 
 /* ── Profil ──────────────────────────────────────────────────────── */
 .sb-profile-wrap { padding: 0.9rem 1rem; border-bottom: 1px solid var(--border); }
