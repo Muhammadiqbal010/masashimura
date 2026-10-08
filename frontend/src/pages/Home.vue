@@ -102,7 +102,7 @@
       <!-- ═══════════════════════════════════════════
            2. MARQUEE
       ═══════════════════════════════════════════ -->
-      <div class="marquee-wrap marquee-mask border-y border-white/[0.06] bg-[#0a0a0a] overflow-hidden py-4" aria-hidden="true">
+      <div class="marquee-wrap border-y border-white/[0.06] bg-[#0a0a0a] overflow-hidden py-4" aria-hidden="true">
         <div class="animate-marquee flex">
           <div v-for="g in 2" :key="g" class="flex shrink-0 items-center">
             <template v-for="m in 4" :key="m">
@@ -124,7 +124,7 @@
           <div class="space-y-3">
             <div class="flex items-center gap-3">
               <span class="w-6 h-px bg-[#DC2626]"></span>
-              <span class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">01 — Most Ordered</span>
+              <span class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">Most Ordered</span>
             </div>
             <h2 class="font-sora text-3xl sm:text-4xl font-extrabold uppercase tracking-tight">Menu Terlaris</h2>
           </div>
@@ -220,7 +220,7 @@
             <div class="space-y-4">
               <div class="flex items-center gap-3">
                 <span class="w-6 h-px bg-[#DC2626]"></span>
-                <span class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">02 — Tentang Kami</span>
+                <span class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">Tentang Kami</span>
               </div>
               <h2 class="font-sora text-3xl sm:text-4xl font-extrabold uppercase tracking-tight leading-tight">
                 Masashimura
@@ -263,7 +263,7 @@
         <div class="mb-10 sm:mb-14 space-y-3">
           <div class="flex items-center gap-3">
             <span class="w-6 h-px bg-[#DC2626]"></span>
-            <span class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">03 — Fasilitas</span>
+            <span class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">Fasilitas</span>
           </div>
           <h2 class="font-sora text-3xl sm:text-4xl font-extrabold uppercase tracking-tight">Apa yang Lo Dapet</h2>
         </div>
@@ -321,7 +321,7 @@
           <div class="mb-8 sm:mb-10 space-y-3">
             <div class="flex items-center gap-3">
               <span class="w-6 h-px bg-[#DC2626]"></span>
-              <span class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">04 — Dokumentasi</span>
+              <span class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">Dokumentasi</span>
             </div>
             <h2 class="font-sora text-3xl sm:text-4xl font-extrabold uppercase tracking-tight">Gallery</h2>
           </div>
@@ -436,18 +436,12 @@
         <div class="mb-10 sm:mb-14 space-y-3">
           <div class="flex items-center gap-3">
             <span class="w-6 h-px bg-[#DC2626]"></span>
-            <span class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">05 — Kata Mereka</span>
+            <span class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">Kata Mereka</span>
           </div>
           <h2 class="font-sora text-3xl sm:text-4xl font-extrabold uppercase tracking-tight">Review Pelanggan</h2>
         </div>
 
-        <div v-if="reviews.length"
-          class="select-none touch-pan-y"
-          @pointerenter="pauseOnHover"
-          @pointerleave="resumeOnLeave"
-          @touchstart.passive="onTouchStart"
-          @touchend="handleSwipe($event, nextReviewManual, prevReviewManual)"
-        >
+        <div v-if="reviews.length" class="select-none">
           <!-- Semua review ditumpuk di 1 sel grid → tinggi = review terpanjang, nggak ada yang kepotong -->
           <div class="grid">
             <figure
@@ -473,30 +467,11 @@
             </figure>
           </div>
 
-          <!-- Kontrol -->
-          <div v-if="reviews.length > 1" class="mt-10 sm:mt-12 flex items-center justify-between gap-4">
-            <div class="flex items-center gap-1 -ml-1">
-              <button v-for="(r, i) in reviews" :key="i" type="button" @click="goToReview(i)"
-                :aria-label="'Review ' + (i + 1)"
-                class="group py-3 px-1 cursor-pointer">
-                <span class="block h-0.5 transition-all duration-300"
-                  :class="i === currentReviewIndex ? 'w-8 bg-[#DC2626]' : 'w-4 bg-zinc-700 group-hover:bg-zinc-500'"></span>
-              </button>
-            </div>
-
-            <div class="flex items-center gap-3">
-              <span class="font-mono text-[10px] tracking-[0.25em] text-zinc-600 uppercase">
-                {{ String(currentReviewIndex + 1).padStart(2, '0') }} / {{ String(reviews.length).padStart(2, '0') }}
-              </span>
-              <button type="button" @click="prevReviewManual" aria-label="Review sebelumnya"
-                class="w-11 h-11 border border-white/10 hover:border-white/40 hover:bg-white/5 flex items-center justify-center text-zinc-300 hover:text-white transition cursor-pointer">
-                <ChevronLeft :size="18" />
-              </button>
-              <button type="button" @click="nextReviewManual" aria-label="Review berikutnya"
-                class="w-11 h-11 border border-white/10 hover:border-white/40 hover:bg-white/5 flex items-center justify-center text-zinc-300 hover:text-white transition cursor-pointer">
-                <ChevronRight :size="18" />
-              </button>
-            </div>
+          <!-- Indikator saja (otomatis jalan, tanpa tombol) -->
+          <div v-if="reviews.length > 1" class="mt-10 sm:mt-12 flex items-center gap-2" aria-hidden="true">
+            <span v-for="(r, i) in reviews" :key="i"
+              class="block h-0.5 transition-all duration-500"
+              :class="i === currentReviewIndex ? 'w-8 bg-[#DC2626]' : 'w-4 bg-zinc-700'"></span>
           </div>
         </div>
       </section>
@@ -750,9 +725,6 @@ const handleSwipe = (e, onLeft, onRight) => {
 }
 
 // ── Review slider ─────────────────────────────────────────────────────────
-const prefersReducedMotion = () =>
-  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
-
 const stopAutoplay = () => {
   if (reviewInterval) {
     clearInterval(reviewInterval)
@@ -768,22 +740,9 @@ const nextReview = () => {
 
 const startAutoplay = () => {
   stopAutoplay()
-  if (reviews.value.length < 2 || prefersReducedMotion()) return
+  if (reviews.value.length < 2) return
   reviewInterval = setInterval(nextReview, 6000)
 }
-
-const nextReviewManual = () => { nextReview(); startAutoplay() }
-const prevReviewManual = () => {
-  const n = reviews.value.length
-  if (n === 0) return
-  currentReviewIndex.value = (currentReviewIndex.value - 1 + n) % n
-  startAutoplay()
-}
-const goToReview = (i) => { currentReviewIndex.value = i; startAutoplay() }
-
-// Pause saat di-hover (mouse saja, supaya di HP autoplay nggak mati sendiri)
-const pauseOnHover  = (e) => { if (e.pointerType === "mouse") stopAutoplay() }
-const resumeOnLeave = (e) => { if (e.pointerType === "mouse") startAutoplay() }
 
 // ── Data fetchers ─────────────────────────────────────────────────────────
 const fetchCMSData = async () => {
@@ -949,10 +908,20 @@ button:focus-visible {
 .marquee-wrap:hover .animate-marquee {
   animation-play-state: paused;
 }
-.marquee-mask {
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+/* Fade di sisi kiri & kanan: teks masuk/keluar pelan-pelan, garis border tetap solid */
+.marquee-wrap { position: relative; }
+.marquee-wrap::before,
+.marquee-wrap::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 14%;
+  z-index: 1;
+  pointer-events: none;
 }
+.marquee-wrap::before { left: 0;  background: linear-gradient(90deg,  #0a0a0a, transparent); }
+.marquee-wrap::after  { right: 0; background: linear-gradient(270deg, #0a0a0a, transparent); }
 
 /* ── Lightbox ── */
 .lightbox-fade-enter-active,
