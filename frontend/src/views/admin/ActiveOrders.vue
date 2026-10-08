@@ -1,89 +1,126 @@
 <template>
-  <div class="ao-root">
+  <div class="adm-page ao-page">
 
-    <!-- ── PAGE HEADER ─────────────────────────────────────────────── -->
-    <div class="ao-header">
-      <div class="ao-header-left">
-        <p class="ao-eyebrow">Masashimura · Operasional</p>
-        <h1 class="ao-title">Active Orders</h1>
-        <p class="ao-date-label">{{ formattedCurrentDate }}</p>
+    <!-- ── HEADER ──────────────────────────────────────────────────── -->
+    <header class="adm-header">
+      <div>
+        <p class="adm-eyebrow">Masashimura · Operasional</p>
+        <h1 class="adm-title">Active Orders</h1>
+        <p class="adm-sub">
+          {{ formattedCurrentDate }}
+          <template v-if="lastUpdated"> · diperbarui {{ lastUpdated }}</template>
+        </p>
       </div>
 
-      <div class="ao-live" :class="{ 'is-error': !!loadError }">
-        <span class="live-dot"></span>
-        <span class="live-label">{{ loadError ? 'Gagal memuat · coba lagi tiap 5 detik' : 'Live · update tiap 5 detik' }}</span>
+      <div class="adm-header-actions">
+        <span class="adm-badge" :class="loadError ? 'adm-badge--red' : 'adm-badge--green'" role="status">
+          <span class="adm-dot" :class="{ 'ao-pulse': !loadError }"></span>
+          {{ loadError ? 'Gagal memuat · mencoba lagi' : 'Live · tiap 5 detik' }}
+        </span>
       </div>
-    </div>
+    </header>
 
-    <!-- ── CONTROL BAR ─────────────────────────────────────────────── -->
-    <div class="control-bar">
-      <div class="date-nav">
-        <button class="date-nav-btn" @click="changeDate(-1)">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
-          Kemarin
+    <!-- ── TOOLBAR: tanggal + pencarian ────────────────────────────── -->
+    <div class="adm-toolbar ao-toolbar">
+      <div class="ao-date" role="group" aria-label="Navigasi tanggal">
+        <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" aria-label="Hari sebelumnya" @click="changeDate(-1)">
+          <ChevronLeft :size="14" /><span class="ao-hide-xs">Sebelumnya</span>
         </button>
         <input
           type="date"
-          class="date-nav-current date-nav-input"
+          class="adm-input adm-input--mono ao-date-input"
           :value="targetDateString"
+          aria-label="Pilih tanggal"
           @change="jumpToDate($event.target.value)"
-          title="Pilih tanggal"
         />
-        <button class="date-nav-btn" @click="changeDate(1)">
-          Besok
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+        <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" aria-label="Hari berikutnya" @click="changeDate(1)">
+          <span class="ao-hide-xs">Berikutnya</span><ChevronRight :size="14" />
         </button>
+        <button v-if="!isToday" type="button" class="adm-btn adm-btn--soft adm-btn--sm" @click="goToday">Hari ini</button>
       </div>
 
-      <div class="search-wrap">
-        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <div class="adm-search">
+        <Search :size="14" class="adm-search-icon" aria-hidden="true" />
         <input
           v-model="searchQuery"
-          type="text"
-          placeholder="Cari no. HP..."
-          class="search-input"
+          type="search"
+          class="adm-input"
+          placeholder="Cari no. HP, nama, atau no. order…"
+          aria-label="Cari pesanan"
         />
+        <button v-if="searchQuery" type="button" class="adm-search-clear" aria-label="Hapus pencarian" @click="searchQuery = ''">
+          <X :size="14" />
+        </button>
       </div>
+    </div>
+
+    <!-- ── FILTER STATUS (sekaligus ringkasan angka) ───────────────── -->
+    <div class="adm-seg" role="group" aria-label="Filter status pesanan">
+      <button
+        v-for="tab in statusTabs"
+        :key="tab.value"
+        type="button"
+        class="adm-seg-btn"
+        :aria-pressed="statusFilter === tab.value"
+        @click="statusFilter = tab.value"
+      >
+        {{ tab.label }}
+        <span class="ao-count">{{ counts[tab.value] }}</span>
+      </button>
     </div>
 
     <!-- ── ERROR MEMUAT DATA ───────────────────────────────────────── -->
-    <div v-if="loadError" class="ao-error" role="alert">
+    <div v-if="loadError" class="adm-alert ao-error" role="alert">
+      <AlertTriangle :size="16" class="ao-error-icon" aria-hidden="true" />
       <div class="ao-error-text">
-        <p class="ao-error-title">Pesanan {{ targetDateString }} gagal dimuat</p>
-        <p class="ao-error-msg">{{ loadError }}</p>
+        <strong>Pesanan {{ targetDateString }} gagal dimuat</strong>
+        <span>{{ loadError }}</span>
       </div>
-      <button type="button" class="ao-error-btn" @click="retryFetch">Coba lagi</button>
+      <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" @click="retryFetch">
+        <RefreshCw :size="13" /> Coba lagi
+      </button>
     </div>
 
-    <!-- ── ORDERS TABLE ────────────────────────────────────────────── -->
-    <div class="ao-table-card">
-      <!-- Summary chips -->
-      <div class="ao-summary">
-        <div class="summary-chip">
-          <span class="summary-chip-value">{{ filteredOrders.length }}</span>
-          <span class="summary-chip-label">Total Pesanan</span>
-        </div>
-        <div class="summary-chip chip-pending">
-          <span class="summary-chip-value">{{ filteredOrders.filter(o => o.payment_status !== 'paid' && o.payment_status !== 'void').length }}</span>
-          <span class="summary-chip-label">Belum Lunas</span>
-        </div>
-        <div class="summary-chip chip-paid">
-          <span class="summary-chip-value">{{ filteredOrders.filter(o => o.payment_status === 'paid').length }}</span>
-          <span class="summary-chip-label">Lunas</span>
-        </div>
+    <!-- ── DAFTAR PESANAN ──────────────────────────────────────────── -->
+    <section class="adm-card adm-card--flush" aria-label="Daftar pesanan">
+
+      <!-- Loading awal -->
+      <div v-if="isLoading && !orders.length && !loadError" class="ao-skeleton" aria-busy="true" aria-label="Memuat pesanan">
+        <span v-for="i in 5" :key="i" class="adm-skel ao-skel-row"></span>
       </div>
 
-      <div class="table-scroll">
-        <table class="ao-table">
+      <!-- Kosong -->
+      <div v-else-if="!filteredOrders.length" class="adm-empty">
+        <template v-if="loadError">
+          <div class="adm-empty-icon"><AlertTriangle :size="22" /></div>
+          <p class="adm-empty-title">Data tidak bisa dimuat</p>
+          <p class="adm-empty-text">Ini bukan berarti tidak ada pesanan — lihat keterangan di atas.</p>
+        </template>
+        <template v-else-if="orders.length">
+          <div class="adm-empty-icon"><Search :size="22" /></div>
+          <p class="adm-empty-title">Tidak ada pesanan yang cocok</p>
+          <p class="adm-empty-text">Coba ubah kata kunci atau filter status.</p>
+          <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" @click="resetFilters">Reset filter</button>
+        </template>
+        <template v-else>
+          <div class="adm-empty-icon"><Receipt :size="22" /></div>
+          <p class="adm-empty-title">Belum ada pesanan untuk {{ targetDateString }}</p>
+          <p class="adm-empty-text">Pesanan baru akan muncul otomatis, tidak perlu refresh.</p>
+        </template>
+      </div>
+
+      <!-- Tabel (jadi kartu bertumpuk di HP) -->
+      <div v-else class="adm-table-wrap">
+        <table class="adm-table adm-table--stack">
           <thead>
             <tr>
               <th>Order</th>
               <th>Customer</th>
-              <th class="th-right">Tagihan</th>
-              <th class="th-center">Status</th>
+              <th class="adm-th-r">Tagihan</th>
+              <th class="adm-th-c">Status</th>
               <th>Metode</th>
-              <th class="th-center">Waktu</th>
-              <th class="th-center">Aksi</th>
+              <th class="adm-th-c">Waktu</th>
+              <th class="adm-th-c">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -91,218 +128,172 @@
               v-for="order in filteredOrders"
               :key="order.id"
               class="ao-row"
+              tabindex="0"
+              :aria-label="`Buka struk order ${order.order_number || order.id}`"
               @click="openOrderModal(order)"
+              @keydown.enter.self="openOrderModal(order)"
             >
-              <td class="td-id">#{{ order.id }}</td>
+              <td class="adm-td-first ao-id">#{{ order.id }}</td>
 
-              <td class="td-customer">
-                <span class="customer-phone">{{ order.customer_phone || '—' }}</span>
-                <span v-if="!order.customer_phone" class="guest-badge">Guest</span>
+              <td data-label="Customer">
+                <span class="ao-phone">{{ order.customer_phone || '—' }}</span>
+                <span v-if="!order.customer_phone" class="adm-badge ao-guest">Guest</span>
               </td>
 
-              <td class="td-right td-price">{{ formatPrice(order.total_price) }}</td>
+              <td class="adm-td-r ao-price" data-label="Tagihan">{{ formatPrice(order.total_price) }}</td>
 
-              <td class="td-center">
-                <div class="status-stack">
-                  <span
-                    class="status-pill"
-                    :class="order.status === 'completed' ? 'pill-green' : (order.status === 'cancelled' ? 'pill-red' : 'pill-amber')"
-                  >
-                    {{ order.status === 'completed' ? 'Selesai' : (order.status === 'cancelled' ? 'Dibatalkan' : 'Proses') }}
-                  </span>
-                  <span
-                    class="status-pill pill-sub"
-                    :class="order.payment_status === 'paid' ? 'pill-green' : (order.payment_status === 'void' ? 'pill-gray' : 'pill-yellow')"
-                  >
-                    {{ order.payment_status === 'paid' ? 'Lunas' : (order.payment_status === 'void' ? 'Batal' : 'Pending') }}
-                  </span>
+              <td class="adm-td-c" data-label="Status">
+                <div class="ao-status">
+                  <span class="adm-badge" :class="orderBadge(order).cls">{{ orderBadge(order).label }}</span>
+                  <span class="adm-badge" :class="payBadge(order).cls">{{ payBadge(order).label }}</span>
                 </div>
               </td>
 
-              <td class="td-method">
-                <span class="method-icon">{{ methodIcon(order.payment_method) }}</span>
-                {{ methodLabel(order.payment_method) }}
+              <td data-label="Metode">
+                <span class="ao-method">
+                  <component :is="methodIcon(order.payment_method)" :size="14" aria-hidden="true" />
+                  {{ methodLabel(order.payment_method) }}
+                </span>
               </td>
 
-              <td class="td-center td-time">
+              <td class="adm-td-c ao-time" data-label="Waktu">
                 {{ formatTime(order.created_at) }}
                 <span
                   v-if="order.entered_at"
-                  class="late-tag"
+                  class="ao-late"
                   :title="`Diinput ${formatFullDateTime(order.entered_at)}`"
                 >Input susulan</span>
               </td>
 
-              <td class="td-center td-actions" @click.stop>
+              <td class="adm-td-c ao-actions" data-label="" @click.stop>
                 <button
-                  v-if="order.payment_status !== 'paid' && order.status !== 'cancelled' && order.payment_method !== 'gateway'"
-                  class="lunasi-btn"
+                  v-if="canPay(order)"
+                  type="button"
+                  class="adm-btn adm-btn--primary adm-btn--sm"
                   @click="openPayModal(order)"
-                >
-                  Lunasi
-                </button>
-                <span v-else-if="order.status !== 'cancelled'" class="td-dash">✓</span>
+                >Lunasi</button>
+                <span v-else-if="order.status !== 'cancelled'" class="ao-done" title="Sudah lunas">✓ Lunas</span>
+
                 <button
                   v-if="order.status !== 'completed' && order.status !== 'cancelled'"
-                  class="batalkan-btn"
+                  type="button"
+                  class="adm-btn adm-btn--soft adm-btn--sm"
                   @click="openCancelModal(order)"
-                >
-                  Batalkan
-                </button>
+                >Batalkan</button>
+
                 <button
                   v-if="isOwner"
-                  class="hapus-btn"
-                  @click="openDeleteModal(order)"
+                  type="button"
+                  class="adm-icon-btn adm-icon-btn--danger adm-icon-btn--bordered"
                   title="Hapus permanen (khusus owner)"
+                  aria-label="Hapus permanen"
+                  @click="openDeleteModal(order)"
                 >
-                  Hapus
+                  <Trash2 :size="14" />
                 </button>
-              </td>
-            </tr>
-
-            <tr v-if="filteredOrders.length === 0">
-              <td colspan="7" class="ao-empty">
-                <template v-if="isLoading && !loadError">
-                  <div class="empty-icon">⏳</div>
-                  <p class="empty-text">Memuat pesanan {{ targetDateString }}…</p>
-                </template>
-                <template v-else-if="loadError">
-                  <div class="empty-icon">⚠️</div>
-                  <p class="empty-text">Data tidak bisa dimuat</p>
-                  <p class="empty-hint">Ini bukan berarti tidak ada pesanan — lihat keterangan di atas</p>
-                </template>
-                <template v-else>
-                  <div class="empty-icon">🍱</div>
-                  <p class="empty-text">Tidak ada pesanan untuk {{ targetDateString }}</p>
-                  <p class="empty-hint">Pesanan baru akan muncul otomatis setiap 5 detik</p>
-                </template>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
 
     <!-- ── MODAL STRUK ─────────────────────────────────────────────── -->
-    <div v-if="isModalOpen" class="modal-overlay" @click.self="isModalOpen = false">
-      <div class="modal-box">
-        <!-- Modal header -->
-        <div class="modal-header">
-          <div>
-            <p class="modal-eyebrow">Struk Pesanan</p>
-            <h2 class="modal-title">{{ selectedOrder?.order_number }}</h2>
-          </div>
-          <button class="modal-close" @click="isModalOpen = false">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
-          </button>
+    <AdminModal v-model="isModalOpen" :title="`Struk ${selectedOrder?.order_number || ''}`" size="sm">
+      <div v-if="selectedOrder" class="rcpt">
+        <div class="rcpt-head">
+          <img :src="logoUrl" alt="Masashimura" class="rcpt-logo" />
+          <p class="rcpt-address">Jl. Pintu air no 48 Depan Pengadilan bekasi, Bekasi, Jawa Barat</p>
         </div>
 
-        <!-- Receipt body — hanya konten yang boleh ikut saat di-share / di-print. -->
-        <div class="receipt-body">
-          <div class="receipt-logo-area">
-            <img src="/src/assets/masashimura-logo.png" alt="Logo" class="receipt-logo" />
-            <p class="receipt-address">Jl. Pintu air no 48 Depan Pengadilan bekasi, Bekasi, Jawa Barat</p>
+        <hr class="rcpt-div" />
+
+        <div class="rcpt-rows">
+          <div class="rcpt-row"><span>No. Nota</span><b>{{ selectedOrder.order_number }}</b></div>
+          <div class="rcpt-row"><span>Kasir</span><b>{{ selectedOrder.kasir_name || kasirName }}</b></div>
+          <div class="rcpt-row"><span>Waktu</span><b>{{ formatFullDateTime(selectedOrder.created_at) }}</b></div>
+          <div class="rcpt-row"><span>Pelanggan</span><b>{{ selectedOrder.customer_name || selectedOrder.customer_phone || 'Guest' }}</b></div>
+        </div>
+
+        <div v-if="selectedOrder.status === 'cancelled'" class="rcpt-cancel">
+          <p class="rcpt-cancel-title"><AlertTriangle :size="13" /> Order Dibatalkan</p>
+          <div class="rcpt-row"><span>Alasan</span><b>{{ selectedOrder.cancel_reason_display || '—' }}</b></div>
+          <div v-if="selectedOrder.cancel_note" class="rcpt-row"><span>Catatan</span><b>{{ selectedOrder.cancel_note }}</b></div>
+          <div class="rcpt-row"><span>Oleh</span><b>{{ selectedOrder.cancelled_by || '—' }}</b></div>
+          <div class="rcpt-row"><span>Waktu</span><b>{{ formatFullDateTime(selectedOrder.cancelled_at) }}</b></div>
+        </div>
+
+        <hr class="rcpt-div" />
+
+        <p class="rcpt-heading">Detail Pesanan</p>
+        <div v-for="(item, idx) in selectedOrder.items" :key="idx" class="rcpt-item">
+          <div class="rcpt-item-main">
+            <span class="rcpt-qty">{{ item.quantity }}×</span>
+            <span class="rcpt-name">{{ item.menu_name }}</span>
+            <span class="rcpt-sub">{{ formatPrice(item.price * item.quantity) }}</span>
           </div>
+          <div v-if="item.notes" class="rcpt-note">{{ item.notes }}</div>
+        </div>
 
-          <div class="receipt-divider">· · · · · · · · · · · · · · · · · · · ·</div>
+        <hr class="rcpt-div" />
 
-          <div class="receipt-meta">
-            <div class="meta-row"><span>No. Nota</span><span class="meta-val">{{ selectedOrder?.order_number }}</span></div>
-            <div class="meta-row"><span>Kasir</span><span class="meta-val">{{ selectedOrder?.kasir_name || kasirName }}</span></div>
-            <div class="meta-row"><span>Waktu</span><span class="meta-val">{{ formatFullDateTime(selectedOrder?.created_at) }}</span></div>
-            <div class="meta-row"><span>Pelanggan</span><span class="meta-val">{{ selectedOrder?.customer_name || selectedOrder?.customer_phone || 'Guest' }}</span></div>
+        <div class="rcpt-rows">
+          <div class="rcpt-row"><span>Subtotal</span><span>{{ formatPrice(computedSubtotal) }}</span></div>
+          <div v-if="num(selectedOrder.promo_discount_amount) > 0" class="rcpt-row rcpt-discount">
+            <span>Diskon Promo</span><span>-{{ formatPrice(selectedOrder.promo_discount_amount) }}</span>
           </div>
-
-          <!-- Info pembatalan, cuma muncul kalau order berstatus cancelled -->
-          <div v-if="selectedOrder?.status === 'cancelled'" class="cancel-info-box">
-            <p class="cancel-info-title">⚠ Order Dibatalkan</p>
-            <div class="meta-row"><span>Alasan</span><span class="meta-val">{{ selectedOrder?.cancel_reason_display || '—' }}</span></div>
-            <div v-if="selectedOrder?.cancel_note" class="meta-row"><span>Catatan</span><span class="meta-val">{{ selectedOrder?.cancel_note }}</span></div>
-            <div class="meta-row"><span>Oleh</span><span class="meta-val">{{ selectedOrder?.cancelled_by || '—' }}</span></div>
-            <div class="meta-row"><span>Waktu</span><span class="meta-val">{{ formatFullDateTime(selectedOrder?.cancelled_at) }}</span></div>
+          <div class="rcpt-row rcpt-final"><span>Total</span><span>{{ formatPrice(selectedOrder.total_price) }}</span></div>
+          <div v-if="num(selectedOrder.amount_paid) > 0" class="rcpt-row rcpt-muted">
+            <span>Dibayar</span><span>{{ formatPrice(selectedOrder.amount_paid) }}</span>
           </div>
-
-          <div class="receipt-divider">· · · · · · · · · · · · · · · · · · · ·</div>
-
-          <div class="receipt-items">
-            <p class="items-heading">Detail Pesanan</p>
-            <div v-for="(item, idx) in selectedOrder?.items" :key="idx" class="item-row">
-              <div class="item-main">
-                <span class="item-qty">{{ item.quantity }}×</span>
-                <span class="item-name">{{ item.menu_name }}</span>
-                <span class="item-subtotal">{{ formatPrice(item.price * item.quantity) }}</span>
-              </div>
-              <div v-if="item.notes" class="item-note">{{ item.notes }}</div>
-            </div>
-          </div>
-
-          <div class="receipt-divider">· · · · · · · · · · · · · · · · · · · ·</div>
-
-          <div class="receipt-totals">
-            <div class="total-row"><span>Subtotal</span><span>{{ formatPrice(computedSubtotal) }}</span></div>
-            <div v-if="parseFloat(selectedOrder?.promo_discount_amount) > 0" class="total-row total-discount">
-              <span>Diskon Promo</span><span>-{{ formatPrice(selectedOrder?.promo_discount_amount) }}</span>
-            </div>
-            <div class="total-row total-final">
-              <span>Total</span><span>{{ formatPrice(selectedOrder?.total_price) }}</span>
-            </div>
-            <div v-if="parseFloat(selectedOrder?.amount_paid) > 0" class="total-row total-paid">
-              <span>Dibayar</span><span>{{ formatPrice(selectedOrder?.amount_paid) }}</span>
-            </div>
-            <div v-if="parseFloat(selectedOrder?.change_amount) > 0" class="total-row total-change">
-              <span>Kembalian</span><span>{{ formatPrice(selectedOrder?.change_amount) }}</span>
-            </div>
-          </div>
-
-          <div class="receipt-info-card">
-            <div class="info-row"><span>Metode</span><span class="info-val">{{ methodLabel(selectedOrder?.payment_method, true) }}</span></div>
-            <template v-if="selectedOrder?.payment_method === 'mixed' && selectedOrder?.payments?.length">
-              <div v-for="p in selectedOrder.payments" :key="p.id" class="info-row" style="padding-left:0.75rem;">
-                <span>— {{ p.method_display }}</span>
-                <span class="info-val">{{ formatPrice(p.amount) }}</span>
-              </div>
-            </template>
-            <div class="info-row"><span>Kasir</span><span class="info-val">{{ selectedOrder?.kasir_name || kasirName }}</span></div>
-            <div class="info-row">
-              <span>Status</span>
-              <span :class="selectedOrder?.payment_status === 'paid' ? 'info-paid' : (selectedOrder?.payment_status === 'void' ? 'info-void' : 'info-pending')">
-                {{ selectedOrder?.payment_status === 'paid' ? 'LUNAS' : (selectedOrder?.payment_status === 'void' ? 'BATAL' : 'PENDING') }}
-              </span>
-            </div>
+          <div v-if="num(selectedOrder.change_amount) > 0" class="rcpt-row rcpt-change">
+            <span>Kembalian</span><span>{{ formatPrice(selectedOrder.change_amount) }}</span>
           </div>
         </div>
 
-        <!-- Modal footer actions -->
-        <div class="modal-footer">
-          <button class="btn-share" :disabled="isCapturing" @click="shareReceiptAsImage">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
-            {{ isCapturing ? 'Memproses...' : 'Kirim via WA' }}
-          </button>
-          <button class="btn-print" @click="printReceipt(80)">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>
-            Cetak
-          </button>
-          <button class="btn-close-modal" @click="isModalOpen = false">Tutup</button>
-        </div>
-        <div class="print-size-row">
-          <span class="print-size-label">Ukuran kertas:</span>
-          <button
-            class="print-size-btn"
-            :class="{ active: printPaperWidth === 58 }"
-            @click="printReceipt(58)"
-          >58mm</button>
-          <button
-            class="print-size-btn"
-            :class="{ active: printPaperWidth === 80 }"
-            @click="printReceipt(80)"
-          >80mm</button>
+        <div class="rcpt-card">
+          <div class="rcpt-row"><span>Metode</span><b>{{ methodLabel(selectedOrder.payment_method, true) }}</b></div>
+          <template v-if="selectedOrder.payment_method === 'mixed' && selectedOrder.payments?.length">
+            <div v-for="p in selectedOrder.payments" :key="p.id" class="rcpt-row rcpt-split">
+              <span>— {{ p.method_display }}</span><b>{{ formatPrice(p.amount) }}</b>
+            </div>
+          </template>
+          <div class="rcpt-row"><span>Kasir</span><b>{{ selectedOrder.kasir_name || kasirName }}</b></div>
+          <div class="rcpt-row">
+            <span>Status</span>
+            <b :class="['rcpt-status', `is-${selectedOrder.payment_status || 'pending'}`]">{{ payStatusText(selectedOrder) }}</b>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- ── STRUK TERSEMBUNYI (untuk screenshot / WA) ────────────────── -->
+      <template #footer>
+        <div class="ao-foot">
+          <div class="ao-paper" role="group" aria-label="Ukuran kertas cetak">
+            <span class="ao-paper-label">Kertas</span>
+            <div class="adm-seg">
+              <button type="button" class="adm-seg-btn" :aria-pressed="printPaperWidth === 58" @click="setPaper(58)">58 mm</button>
+              <button type="button" class="adm-seg-btn" :aria-pressed="printPaperWidth === 80" @click="setPaper(80)">80 mm</button>
+            </div>
+          </div>
+          <div class="ao-foot-actions">
+            <button type="button" class="adm-btn ao-btn-wa" :disabled="isCapturing" @click="shareReceiptAsImage">
+              <span v-if="isCapturing" class="adm-spinner"></span><Send v-else :size="14" />
+              {{ isCapturing ? 'Memproses…' : 'Kirim via WA' }}
+            </button>
+            <button type="button" class="adm-btn adm-btn--primary" @click="printReceipt">
+              <Printer :size="14" /> Cetak
+            </button>
+          </div>
+        </div>
+      </template>
+    </AdminModal>
+
+    <!-- ── STRUK TERSEMBUNYI (untuk screenshot / WA) ────────────────────
+         Sengaja gelap & fixed — gambar yang dikirim ke customer harus sama
+         apa pun tema admin yang sedang dipakai kasir. -->
     <div
       ref="receiptRef"
+      aria-hidden="true"
       style="
         position: fixed; left: -9999px; top: 0;
         width: 400px; background-color: #0f0f0f;
@@ -312,7 +303,7 @@
       "
     >
       <div style="text-align:center; margin-bottom:16px;">
-        <img src="/src/assets/masashimura-logo.png" alt="Logo" style="height:60px; margin:0 auto 8px; object-fit:contain; display:block;" />
+        <img :src="logoUrl" alt="Logo" style="height:60px; margin:0 auto 8px; object-fit:contain; display:block;" />
         <div style="font-size:10px; color:#71717a;">Jl. Pintu air no 48 Depan Pengadilan bekasi, Bekasi, Jawa Barat</div>
         <div style="color:#3f3f46; margin-top:8px;">========================================</div>
       </div>
@@ -333,17 +324,17 @@
       <div style="color:#3f3f46; margin-bottom:12px;">----------------------------------------</div>
       <div style="font-size:11px; margin-bottom:12px;">
         <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>Subtotal</span><span>{{ formatPrice(computedSubtotal) }}</span></div>
-        <div v-if="parseFloat(selectedOrder?.promo_discount_amount) > 0" style="display:flex; justify-content:space-between; color:#f87171; margin-bottom:4px;"><span>Diskon Promo</span><span>-{{ formatPrice(selectedOrder?.promo_discount_amount) }}</span></div>
+        <div v-if="num(selectedOrder?.promo_discount_amount) > 0" style="display:flex; justify-content:space-between; color:#f87171; margin-bottom:4px;"><span>Diskon Promo</span><span>-{{ formatPrice(selectedOrder?.promo_discount_amount) }}</span></div>
         <div style="color:#3f3f46; margin:6px 0;">----------------------------------------</div>
         <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:900; color:#ffffff; margin-bottom:6px;"><span>TOTAL AKHIR</span><span style="color:#ef4444;">{{ formatPrice(selectedOrder?.total_price) }}</span></div>
-        <div v-if="parseFloat(selectedOrder?.amount_paid) > 0" style="display:flex; justify-content:space-between; margin-bottom:2px; color:#a1a1aa;"><span>Bayar</span><span style="color:#ffffff; font-weight:600;">{{ formatPrice(selectedOrder.amount_paid) }}</span></div>
-        <div v-if="parseFloat(selectedOrder?.change_amount) > 0" style="display:flex; justify-content:space-between;"><span>Kembalian</span><span style="color:#34d399; font-weight:700;">{{ formatPrice(selectedOrder.change_amount) }}</span></div>
+        <div v-if="num(selectedOrder?.amount_paid) > 0" style="display:flex; justify-content:space-between; margin-bottom:2px; color:#a1a1aa;"><span>Bayar</span><span style="color:#ffffff; font-weight:600;">{{ formatPrice(selectedOrder?.amount_paid) }}</span></div>
+        <div v-if="num(selectedOrder?.change_amount) > 0" style="display:flex; justify-content:space-between;"><span>Kembalian</span><span style="color:#34d399; font-weight:700;">{{ formatPrice(selectedOrder?.change_amount) }}</span></div>
       </div>
       <div style="color:#3f3f46; margin-bottom:12px;">========================================</div>
       <div style="background-color:#1a1a1a; padding:12px; border-radius:12px; border:1px solid #2a2a2a; font-size:10px; line-height:2; margin-bottom:12px;">
         <div>• Metode Bayar : <span style="color:#ffffff; font-weight:700; text-transform:uppercase;">{{ methodLabel(selectedOrder?.payment_method, true) }}</span></div>
         <div>• Kasir : <span style="color:#ffffff; font-weight:700;">{{ selectedOrder?.kasir_name || kasirName }}</span></div>
-        <div>• Status : <span :style="selectedOrder?.payment_status === 'paid' ? 'color:#34d399; font-weight:700;' : (selectedOrder?.payment_status === 'void' ? 'color:#a1a1aa; font-weight:700;' : 'color:#fbbf24; font-weight:700;')">{{ selectedOrder?.payment_status === 'paid' ? 'LUNAS' : (selectedOrder?.payment_status === 'void' ? 'BATAL' : 'PENDING') }}</span></div>
+        <div>• Status : <span :style="selectedOrder?.payment_status === 'paid' ? 'color:#34d399; font-weight:700;' : (selectedOrder?.payment_status === 'void' ? 'color:#a1a1aa; font-weight:700;' : 'color:#fbbf24; font-weight:700;')">{{ payStatusText(selectedOrder) }}</span></div>
       </div>
       <div style="text-align:center; font-size:10px; color:#a1a1aa; padding-top:4px; font-weight:700;">Terima kasih sudah makan di Masashimura! 🙏</div>
     </div>
@@ -361,7 +352,7 @@
       <div class="pr-row"><span>Pelanggan</span><span>{{ selectedOrder?.customer_name || selectedOrder?.customer_phone || 'Guest' }}</span></div>
       <div class="pr-divider"></div>
       <div class="pr-heading">Detail Pesanan</div>
-      <div v-for="(item, idx) in selectedOrder?.items" :key="'pr'+idx" class="pr-item">
+      <div v-for="(item, idx) in selectedOrder?.items" :key="'pr' + idx" class="pr-item">
         <div class="pr-item-row">
           <span>{{ item.quantity }}x {{ item.menu_name }}</span>
           <span>{{ formatPrice(item.price * item.quantity) }}</span>
@@ -370,1208 +361,748 @@
       </div>
       <div class="pr-divider"></div>
       <div class="pr-row"><span>Subtotal</span><span>{{ formatPrice(computedSubtotal) }}</span></div>
-      <div v-if="parseFloat(selectedOrder?.promo_discount_amount) > 0" class="pr-row">
+      <div v-if="num(selectedOrder?.promo_discount_amount) > 0" class="pr-row">
         <span>Diskon Promo</span><span>-{{ formatPrice(selectedOrder?.promo_discount_amount) }}</span>
       </div>
       <div class="pr-row pr-total"><span>TOTAL</span><span>{{ formatPrice(selectedOrder?.total_price) }}</span></div>
-      <div v-if="parseFloat(selectedOrder?.amount_paid) > 0" class="pr-row pr-sub">
+      <div v-if="num(selectedOrder?.amount_paid) > 0" class="pr-row pr-sub">
         <span>Bayar</span><span>{{ formatPrice(selectedOrder?.amount_paid) }}</span>
       </div>
-      <div v-if="parseFloat(selectedOrder?.change_amount) > 0" class="pr-row pr-sub">
+      <div v-if="num(selectedOrder?.change_amount) > 0" class="pr-row pr-sub">
         <span>Kembalian</span><span>{{ formatPrice(selectedOrder?.change_amount) }}</span>
       </div>
       <div class="pr-divider pr-divider-strong"></div>
       <div class="pr-row"><span>Metode</span><span class="pr-upper">{{ methodLabel(selectedOrder?.payment_method, true) }}</span></div>
-      <div class="pr-row"><span>Status</span><span class="pr-upper">{{ selectedOrder?.payment_status === 'paid' ? 'LUNAS' : (selectedOrder?.payment_status === 'void' ? 'BATAL' : 'PENDING') }}</span></div>
+      <div class="pr-row"><span>Status</span><span class="pr-upper">{{ payStatusText(selectedOrder) }}</span></div>
       <div class="pr-divider pr-divider-strong"></div>
       <div class="pr-footer">Terima kasih sudah makan di Masashimura!</div>
     </div>
 
     <!-- ── MODAL LUNASI ────────────────────────────────────────────── -->
-    <div v-if="isPayModalOpen && selectedPayOrder" class="modal-overlay" @click.self="isPayModalOpen = false">
-      <div class="pay-modal-box">
-        <div class="modal-header">
-          <div>
-            <p class="modal-eyebrow">Konfirmasi Pembayaran</p>
-            <h2 class="modal-title">{{ selectedPayOrder.order_number }}</h2>
-          </div>
-          <button class="modal-close" @click="isPayModalOpen = false">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
-          </button>
+    <AdminModal v-model="isPayModalOpen" :title="`Lunasi ${selectedPayOrder?.order_number || ''}`" size="md" :persistent="isPaying">
+      <template v-if="selectedPayOrder">
+        <div class="ao-person">
+          <p class="ao-person-name">{{ selectedPayOrder.customer_name || 'Walk In' }}</p>
+          <p class="ao-person-phone">{{ selectedPayOrder.customer_phone || 'Tanpa nomor' }}</p>
         </div>
 
-        <div class="pay-body">
-          <!-- Customer info -->
-          <div class="pay-customer">
-            <p class="pay-name">{{ selectedPayOrder.customer_name || 'Walk In' }}</p>
-            <p class="pay-phone">{{ selectedPayOrder.customer_phone || 'Tanpa nomor' }}</p>
-          </div>
+        <div class="ao-total">
+          <span>Total tagihan</span>
+          <strong>{{ formatPrice(selectedPayOrder.total_price) }}</strong>
+        </div>
 
-          <!-- Total -->
-          <div class="pay-total-strip">
-            <span class="pay-total-label">Total Tagihan</span>
-            <span class="pay-total-val">{{ formatPrice(selectedPayOrder.total_price) }}</span>
-          </div>
-
-          <!-- Split bayar: banyak baris pembayaran -->
-          <div class="pay-section">
-            <div class="pay-split-header">
-              <p class="pay-section-label" style="margin:0;">Pembayaran</p>
-              <button type="button" class="pay-add-row-btn" @click="addPayRow">+ Tambah Baris</button>
-            </div>
-
-            <div v-for="(row, idx) in payRows" :key="idx" class="pay-split-row">
-              <div class="pay-method-grid pay-method-grid-compact">
-                <button
-                  type="button"
-                  @click="row.method = 'cash'"
-                  class="pay-method-btn pay-method-btn-sm"
-                  :class="{ active: row.method === 'cash' }"
-                >💵 Cash</button>
-                <button
-                  type="button"
-                  @click="row.method = 'qris_manual'"
-                  class="pay-method-btn pay-method-btn-sm"
-                  :class="{ active: row.method === 'qris_manual' }"
-                >📱 QRIS</button>
-              </div>
-              <input
-                v-model.number="row.amount"
-                type="number"
-                placeholder="0"
-                class="pay-amount-input pay-split-input"
-              />
-              <button
-                v-if="payRows.length > 1"
-                type="button"
-                class="pay-remove-row-btn"
-                @click="removePayRow(idx)"
-                aria-label="Hapus baris"
-              >✕</button>
-            </div>
-
-            <button type="button" class="pay-split-fill-btn" @click="fillRemainingToLastRow" v-if="paySplitRemaining !== 0">
-              Isi otomatis sisa {{ formatPrice(Math.abs(paySplitRemaining)) }} ke baris terakhir
+        <div class="adm-field">
+          <div class="adm-label-row">
+            <span class="adm-label">Pembayaran</span>
+            <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" @click="addPayRow">
+              <Plus :size="13" /> Tambah baris
             </button>
           </div>
 
-          <!-- Ringkasan total vs tagihan -->
-          <div
-            class="change-box"
-            :class="paySplitRemaining > 0 ? 'change-err' : 'change-ok'"
-          >
-            <span>{{ paySplitRemaining > 0 ? 'Kurang' : (paySplitRemaining < 0 ? 'Kembalian' : 'Pas') }}</span>
-            <span>{{ formatPrice(Math.abs(paySplitRemaining)) }}</span>
-          </div>
-
-          <button
-            @click="confirmPay"
-            :disabled="isPaying || paySplitRemaining > 0 || payRows.some(r => !r.amount || r.amount <= 0)"
-            class="pay-confirm-btn"
-          >
-            {{ isPaying ? 'Memproses...' : 'Konfirmasi Lunas' }}
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── MODAL BATALKAN ORDER ────────────────────────────────────── -->
-    <div v-if="isCancelModalOpen && selectedCancelOrder" class="modal-overlay" @click.self="isCancelModalOpen = false">
-      <div class="pay-modal-box">
-        <div class="modal-header">
-          <div>
-            <p class="modal-eyebrow">Batalkan Order</p>
-            <h2 class="modal-title">{{ selectedCancelOrder.order_number }}</h2>
-          </div>
-          <button class="modal-close" @click="isCancelModalOpen = false">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
-          </button>
-        </div>
-
-        <div class="pay-body">
-          <div class="pay-customer">
-            <p class="pay-name">{{ selectedCancelOrder.customer_name || 'Walk In' }}</p>
-            <p class="pay-phone">{{ selectedCancelOrder.customer_phone || 'Tanpa nomor' }}</p>
-          </div>
-
-          <div class="pay-total-strip">
-            <span class="pay-total-label">Total Tagihan</span>
-            <span class="pay-total-val">{{ formatPrice(selectedCancelOrder.total_price) }}</span>
-          </div>
-
-          <!-- Alasan pembatalan (wajib) -->
-          <div class="pay-section">
-            <p class="pay-section-label">Alasan Pembatalan <span style="color:#dc2626;">*</span></p>
-            <div class="pay-method-grid" style="grid-template-columns: repeat(2, 1fr);">
-              <button
-                v-for="reason in cancelReasonOptions"
-                :key="reason.value"
-                @click="cancelReason = reason.value"
-                class="pay-method-btn"
-                :class="{ active: cancelReason === reason.value }"
-              >
-                {{ reason.label }}
+          <div v-for="(row, idx) in payRows" :key="idx" class="ao-payrow">
+            <div class="adm-seg" role="group" :aria-label="`Metode baris ${idx + 1}`">
+              <button type="button" class="adm-seg-btn" :aria-pressed="row.method === 'cash'" @click="row.method = 'cash'">
+                <Banknote :size="13" /> Cash
+              </button>
+              <button type="button" class="adm-seg-btn" :aria-pressed="row.method === 'qris_manual'" @click="row.method = 'qris_manual'">
+                <QrCode :size="13" /> QRIS
               </button>
             </div>
+            <input
+              v-model.number="row.amount"
+              type="number"
+              inputmode="numeric"
+              min="0"
+              placeholder="0"
+              class="adm-input adm-input--mono ao-payrow-input"
+              :aria-label="`Nominal baris ${idx + 1}`"
+              :data-autofocus="idx === 0 ? '' : null"
+            />
+            <button
+              v-if="payRows.length > 1"
+              type="button"
+              class="adm-icon-btn adm-icon-btn--danger"
+              :aria-label="`Hapus baris ${idx + 1}`"
+              @click="removePayRow(idx)"
+            ><X :size="14" /></button>
           </div>
 
-          <!-- Catatan opsional -->
-          <div class="pay-section">
-            <p class="pay-section-label">Catatan Tambahan (opsional)</p>
-            <textarea
-              v-model="cancelNote"
-              rows="2"
-              placeholder="Cth: kelebihan input qty, salah pencet menu, dll."
-              class="pay-amount-input"
-              style="font-family: inherit; font-size: 0.85rem; resize: vertical;"
-            ></textarea>
-          </div>
-
-          <button
-            @click="confirmCancel"
-            :disabled="isCancelling || !cancelReason"
-            class="pay-confirm-btn cancel-confirm-btn"
-          >
-            {{ isCancelling ? 'Memproses...' : 'Batalkan Order Ini' }}
+          <button v-if="paySplitRemaining > 0" type="button" class="ao-link" @click="fillRemainingToLastRow">
+            Isi sisa {{ formatPrice(paySplitRemaining) }} ke baris terakhir
           </button>
         </div>
-      </div>
-    </div>
+
+        <div class="ao-diff" :class="paySplitRemaining > 0 ? 'is-short' : 'is-ok'" role="status">
+          <span>{{ paySplitRemaining > 0 ? 'Kurang' : (paySplitRemaining < 0 ? 'Kembalian' : 'Pas') }}</span>
+          <span>{{ formatPrice(Math.abs(paySplitRemaining)) }}</span>
+        </div>
+      </template>
+
+      <template #footer>
+        <button type="button" class="adm-btn adm-btn--ghost" :disabled="isPaying" @click="isPayModalOpen = false">Batal</button>
+        <button type="button" class="adm-btn adm-btn--primary" :disabled="!canConfirmPay" @click="confirmPay">
+          <span v-if="isPaying" class="adm-spinner"></span>
+          {{ isPaying ? 'Memproses…' : 'Konfirmasi lunas' }}
+        </button>
+      </template>
+    </AdminModal>
+
+    <!-- ── MODAL BATALKAN ORDER ────────────────────────────────────── -->
+    <AdminModal v-model="isCancelModalOpen" :title="`Batalkan ${selectedCancelOrder?.order_number || ''}`" size="sm" :persistent="isCancelling">
+      <template v-if="selectedCancelOrder">
+        <div class="ao-person">
+          <p class="ao-person-name">{{ selectedCancelOrder.customer_name || 'Walk In' }}</p>
+          <p class="ao-person-phone">{{ selectedCancelOrder.customer_phone || 'Tanpa nomor' }}</p>
+        </div>
+
+        <div class="ao-total">
+          <span>Total tagihan</span>
+          <strong>{{ formatPrice(selectedCancelOrder.total_price) }}</strong>
+        </div>
+
+        <div class="adm-field">
+          <span class="adm-label">Alasan pembatalan <span class="adm-req">*</span></span>
+          <div class="ao-reasons" role="group" aria-label="Alasan pembatalan">
+            <button
+              v-for="reason in cancelReasonOptions"
+              :key="reason.value"
+              type="button"
+              class="ao-choice"
+              :aria-pressed="cancelReason === reason.value"
+              @click="cancelReason = reason.value"
+            >{{ reason.label }}</button>
+          </div>
+        </div>
+
+        <div class="adm-field">
+          <label class="adm-label" for="ao-cancel-note">Catatan tambahan <span class="adm-opt">(opsional)</span></label>
+          <textarea
+            id="ao-cancel-note"
+            v-model="cancelNote"
+            rows="2"
+            class="adm-input"
+            placeholder="Cth: kelebihan input qty, salah pencet menu, dll."
+          ></textarea>
+        </div>
+      </template>
+
+      <template #footer>
+        <button type="button" class="adm-btn adm-btn--ghost" :disabled="isCancelling" @click="isCancelModalOpen = false">Kembali</button>
+        <button type="button" class="adm-btn adm-btn--danger" :disabled="isCancelling || !cancelReason" @click="confirmCancel">
+          <span v-if="isCancelling" class="adm-spinner"></span>
+          {{ isCancelling ? 'Memproses…' : 'Batalkan order' }}
+        </button>
+      </template>
+    </AdminModal>
 
     <!-- ── MODAL HAPUS PERMANEN (khusus owner) ─────────────────────── -->
-    <div v-if="isDeleteModalOpen && selectedDeleteOrder" class="modal-overlay" @click.self="closeDeleteModal">
-      <div class="pay-modal-box">
-        <div class="modal-header">
-          <div>
-            <p class="modal-eyebrow delete-eyebrow">⚠ Hapus Permanen</p>
-            <h2 class="modal-title">{{ selectedDeleteOrder.order_number }}</h2>
-          </div>
-          <button class="modal-close" @click="closeDeleteModal">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
-          </button>
+    <AdminModal v-model="isDeleteModalOpen" title="Hapus permanen" size="sm" :persistent="isDeleting" @close="closeDeleteModal">
+      <template v-if="selectedDeleteOrder">
+        <div class="ao-person">
+          <p class="ao-person-name">{{ selectedDeleteOrder.order_number }} · {{ selectedDeleteOrder.customer_name || 'Walk In' }}</p>
+          <p class="ao-person-phone">{{ selectedDeleteOrder.customer_phone || 'Tanpa nomor' }} · {{ formatPrice(selectedDeleteOrder.total_price) }}</p>
         </div>
 
-        <div class="pay-body">
-          <div class="pay-customer">
-            <p class="pay-name">{{ selectedDeleteOrder.customer_name || 'Walk In' }}</p>
-            <p class="pay-phone">{{ selectedDeleteOrder.customer_phone || 'Tanpa nomor' }}</p>
-          </div>
+        <p class="adm-alert" role="alert">
+          <AlertTriangle :size="16" class="ao-error-icon" aria-hidden="true" />
+          <span>
+            Order ini akan <strong>dihapus permanen</strong> dari database{{ selectedDeleteOrder.payment_status === 'paid' ? ', termasuk data transaksi yang sudah LUNAS' : '' }}.
+            Laporan penjualan, data prediksi, dan riwayat poin pelanggan ikut terpengaruh. Tindakan ini <strong>tidak bisa dibatalkan</strong>.
+          </span>
+        </p>
 
-          <div class="pay-total-strip">
-            <span class="pay-total-label">Total Tagihan</span>
-            <span class="pay-total-val">{{ formatPrice(selectedDeleteOrder.total_price) }}</span>
-          </div>
-
-          <div class="delete-warning-box">
-            <p>
-              Order ini akan <strong>dihapus permanen</strong> dari database{{ selectedDeleteOrder.payment_status === 'paid' ? ', termasuk data transaksi yang sudah LUNAS' : '' }}.
-              Ini akan mempengaruhi laporan penjualan, data prediksi, dan riwayat poin pelanggan. Tindakan ini <strong>tidak bisa dibatalkan</strong>.
-            </p>
-          </div>
-
-          <div class="pay-section">
-            <p class="pay-section-label">
-              Ketik <span class="delete-order-code">{{ selectedDeleteOrder.order_number }}</span> untuk konfirmasi
-            </p>
-            <input
-              v-model="deleteConfirmText"
-              type="text"
-              class="pay-amount-input delete-confirm-input"
-              placeholder="Ketik nomor order di sini..."
-              autocomplete="off"
-            />
-          </div>
-
-          <button
-            @click="confirmDelete"
-            :disabled="isDeleting || deleteConfirmText !== selectedDeleteOrder.order_number"
-            class="pay-confirm-btn delete-confirm-btn"
-          >
-            {{ isDeleting ? 'Menghapus...' : 'Hapus Permanen' }}
-          </button>
+        <div class="adm-field">
+          <label class="adm-label" for="ao-delete-confirm">
+            Ketik <code class="ao-code">{{ selectedDeleteOrder.order_number }}</code> untuk konfirmasi
+          </label>
+          <input
+            id="ao-delete-confirm"
+            v-model="deleteConfirmText"
+            type="text"
+            class="adm-input adm-input--mono"
+            placeholder="Ketik nomor order di sini…"
+            autocomplete="off"
+            data-autofocus
+            @keydown.enter="canConfirmDelete && confirmDelete()"
+          />
         </div>
-      </div>
-    </div>
+      </template>
+
+      <template #footer>
+        <button type="button" class="adm-btn adm-btn--ghost" :disabled="isDeleting" @click="closeDeleteModal">Batal</button>
+        <button type="button" class="adm-btn adm-btn--danger" :disabled="!canConfirmDelete" @click="confirmDelete">
+          <span v-if="isDeleting" class="adm-spinner"></span>
+          {{ isDeleting ? 'Menghapus…' : 'Hapus permanen' }}
+        </button>
+      </template>
+    </AdminModal>
 
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
-import { orderAPI, apiClient } from "@/api";
-import { toast } from "vue-sonner";
-import { useAuthStore } from '@/stores/auth';
-import html2canvas from 'html2canvas';
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import {
+  Search, X, ChevronLeft, ChevronRight, Printer, Send, Plus, Trash2,
+  Banknote, QrCode, Shuffle, RefreshCw, AlertTriangle, Receipt,
+} from 'lucide-vue-next'
+import { orderAPI, apiClient } from '@/api'
+import { toast } from 'vue-sonner'
+import { useAuthStore } from '@/stores/auth'
+import html2canvas from 'html2canvas'
+import AdminModal from '@/components/ui/admin/Adminmodal.vue'
+// Di-import (bukan "/src/assets/…") supaya path-nya ikut di-hash & tetap jalan di build production.
+import logoUrl from '@/assets/masashimura-logo.png'
 
-const authStore = useAuthStore();
-const kasirName = computed(() => authStore.user?.name || authStore.user?.username || 'Staff');
+const authStore = useAuthStore()
+const kasirName = computed(() => authStore.user?.name || authStore.user?.username || 'Staff')
 
 // Role owner — cuma role ini yang boleh hapus order permanen.
 // NOTE: ini cuma nyembunyiin tombol di UI. Endpoint DELETE di backend
-// WAJIB juga dikasih permission check role owner, kalau belum ada,
-// karena request langsung ke API bisa bypass tombol ini.
-const isOwner = computed(() => (authStore.user?.role || '').toLowerCase() === 'owner');
+// WAJIB juga dikasih permission check role owner: request langsung ke API
+// bisa bypass tombol ini.
+const isOwner = computed(() => (authStore.user?.role || '').toLowerCase() === 'owner')
 
-const currentDate   = ref(new Date());
-const isLoading     = ref(true);    // true sampai jawaban pertama (sukses/gagal) untuk tanggal yang dipilih
-const loadError     = ref("");      // pesan kegagalan memuat; kosong = baik-baik saja
-const orders        = ref([]);
-const searchQuery   = ref("");
-const isModalOpen   = ref(false);
-const selectedOrder = ref(null);
-const isCapturing   = ref(false);
-const receiptRef    = ref(null);
-const printRef       = ref(null);
-const printPaperWidth = ref(80); // 58 atau 80 (mm)
-let pollingTimer    = null;
+// ── State utama ─────────────────────────────────────────────────────
+const POLL_MS = 5000
+const currentDate = ref(new Date())
+const isLoading = ref(true)       // true sampai jawaban pertama (sukses/gagal) untuk tanggal yang dipilih
+const loadError = ref('')         // pesan kegagalan memuat; kosong = baik-baik saja
+const lastUpdated = ref('')
+const orders = ref([])
+const searchQuery = ref('')
+const statusFilter = ref('all')
 
-const isPayModalOpen   = ref(false);
-const selectedPayOrder = ref(null);
-const isPaying         = ref(false);
-const payRows          = ref([{ method: "cash", amount: 0 }]);
+const num = (v) => parseFloat(v) || 0
 
-const paySplitTotalEntered = computed(() =>
-  payRows.value.reduce((sum, r) => sum + (Number(r.amount) || 0), 0)
-);
-const paySplitRemaining = computed(() => {
-  if (!selectedPayOrder.value) return 0;
-  return parseFloat(selectedPayOrder.value.total_price) - paySplitTotalEntered.value;
-});
-
-const isCancelModalOpen   = ref(false);
-const selectedCancelOrder = ref(null);
-const cancelReason        = ref("");
-const cancelNote          = ref("");
-const isCancelling        = ref(false);
-
-const cancelReasonOptions = [
-  { value: "wrong_input",     label: "Salah Input" },
-  { value: "customer_cancel", label: "Pelanggan Batal" },
-  { value: "out_of_stock",    label: "Stok Habis" },
-  { value: "other",           label: "Lainnya" },
-];
-
-// ── Hapus permanen (khusus owner) ───────────────────────────────────
-const isDeleteModalOpen   = ref(false);
-const selectedDeleteOrder = ref(null);
-const deleteConfirmText   = ref("");
-const isDeleting          = ref(false);
-
-const openDeleteModal = (order) => {
-  selectedDeleteOrder.value = order;
-  deleteConfirmText.value   = "";
-  isDeleteModalOpen.value   = true;
-};
-
-const closeDeleteModal = () => {
-  isDeleteModalOpen.value   = false;
-  selectedDeleteOrder.value = null;
-  deleteConfirmText.value   = "";
-};
-
-const confirmDelete = async () => {
-  if (!selectedDeleteOrder.value) return;
-  if (deleteConfirmText.value !== selectedDeleteOrder.value.order_number) return;
-  isDeleting.value = true;
-  try {
-    await apiClient.delete(`/orders/${selectedDeleteOrder.value.id}/`);
-    toast.success(`Order ${selectedDeleteOrder.value.order_number} dihapus permanen`);
-    closeDeleteModal();
-    fetchActiveOrders();
-  } catch (err) {
-    toast.error(err?.response?.data?.detail || "Gagal menghapus order. Cek apakah endpoint DELETE sudah tersedia di backend.");
-  } finally {
-    isDeleting.value = false;
-  }
-};
-
+// ── Tanggal ─────────────────────────────────────────────────────────
+const toDateString = (d) => {
+  const yyyy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+const targetDateString = computed(() => toDateString(currentDate.value))
+const isToday = computed(() => targetDateString.value === toDateString(new Date()))
 const formattedCurrentDate = computed(() =>
   currentDate.value.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-);
-const targetDateString = computed(() => {
-  const yyyy = currentDate.value.getFullYear();
-  const mm   = String(currentDate.value.getMonth() + 1).padStart(2, '0');
-  const dd   = String(currentDate.value.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
-});
+)
 
 // Ganti hari: kosongkan daftar lama dulu. Tanpa ini, kalau request hari baru
 // gagal, layar masih menampilkan pesanan hari SEBELUMNYA di bawah tanggal baru.
 const resetForNewDate = () => {
-  orders.value    = [];
-  loadError.value = "";
-  isLoading.value = true;
-};
-
+  orders.value = []
+  loadError.value = ''
+  isLoading.value = true
+}
 const changeDate = (days) => {
-  const d = new Date(currentDate.value);
-  d.setDate(d.getDate() + days);
-  currentDate.value = d;
-  resetForNewDate();
-  fetchActiveOrders();
-};
-
-// Loncat langsung ke tanggal tertentu (cek order input susulan di hari lain).
+  const d = new Date(currentDate.value)
+  d.setDate(d.getDate() + days)
+  currentDate.value = d
+  resetForNewDate()
+  fetchActiveOrders({ force: true })
+}
 const jumpToDate = (value) => {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value || "")) return;
-  const [y, m, d] = value.split("-").map(Number);
-  currentDate.value = new Date(y, m - 1, d);
-  resetForNewDate();
-  fetchActiveOrders();
-};
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return
+  const [y, m, d] = value.split('-').map(Number)
+  currentDate.value = new Date(y, m - 1, d)
+  resetForNewDate()
+  fetchActiveOrders({ force: true })
+}
+const goToday = () => {
+  currentDate.value = new Date()
+  resetForNewDate()
+  fetchActiveOrders({ force: true })
+}
 
+// ── Fetch + polling ─────────────────────────────────────────────────
 // Kegagalan memuat TIDAK boleh tampil sebagai "tidak ada pesanan".
 const describeFetchError = (err) => {
-  const status = err?.response?.status;
-  const detail = err?.response?.data?.error || err?.response?.data?.detail;
-  if (!status)            return "Tidak bisa terhubung ke server. Cek internet, atau server backend sedang mati / sedang restart.";
-  if (status === 401 || status === 403) return `Sesi login habis atau akun tidak punya akses (${status}). Coba login ulang.`;
-  if (status >= 500)      return `Server error (${status}). Data pesanan tidak hilang — masalahnya di backend (cek log server; kalau baru deploy, pastikan migrasi database sudah dijalankan).`;
-  return `Server menolak permintaan (${status})${detail ? `: ${detail}` : "."}`;
-};
+  const status = err?.response?.status
+  const detail = err?.response?.data?.error || err?.response?.data?.detail
+  if (!status) return 'Tidak bisa terhubung ke server. Cek internet, atau server backend sedang mati / sedang restart.'
+  if (status === 401 || status === 403) return `Sesi login habis atau akun tidak punya akses (${status}). Coba login ulang.`
+  if (status >= 500) return `Server error (${status}). Data pesanan tidak hilang — masalahnya di backend (cek log server; kalau baru deploy, pastikan migrasi database sudah dijalankan).`
+  return `Server menolak permintaan (${status})${detail ? `: ${detail}` : '.'}`
+}
 
-const fetchActiveOrders = async () => {
-  const requestedDate = targetDateString.value;
+let reqSeq = 0
+let inflight = false
+const fetchActiveOrders = async ({ force = false } = {}) => {
+  if (inflight && !force) return           // jangan numpuk request kalau server lambat
+  const seq = ++reqSeq
+  inflight = true
   try {
-    const res = await orderAPI.getActiveOrders(requestedDate);
-    // Jawaban untuk tanggal yang sudah ditinggalkan (user keburu ganti hari) dibuang.
-    if (requestedDate !== targetDateString.value) return;
-    orders.value    = Array.isArray(res.data) ? res.data : [];
-    loadError.value = "";
+    const res = await orderAPI.getActiveOrders(targetDateString.value)
+    if (seq !== reqSeq) return             // jawaban usang (user keburu ganti hari) dibuang
+    orders.value = Array.isArray(res.data) ? res.data : []
+    loadError.value = ''
+    lastUpdated.value = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
   } catch (err) {
-    if (requestedDate !== targetDateString.value) return;
-    console.error("Gagal tarik data:", err);
-    loadError.value = describeFetchError(err);   // data lama (tanggal sama) dibiarkan tampil
+    if (seq !== reqSeq) return
+    console.error('Gagal tarik data:', err)
+    loadError.value = describeFetchError(err) // data lama (tanggal sama) dibiarkan tampil
   } finally {
-    if (requestedDate === targetDateString.value) isLoading.value = false;
+    if (seq === reqSeq) { inflight = false; isLoading.value = false }
   }
-};
+}
+const retryFetch = () => { isLoading.value = true; fetchActiveOrders({ force: true }) }
 
-const retryFetch = () => { isLoading.value = true; fetchActiveOrders(); };
+let pollingTimer = null
+const onVisibility = () => { if (!document.hidden) fetchActiveOrders() }
+onMounted(() => {
+  fetchActiveOrders()
+  // Tab yang lagi tidak dilihat tidak perlu menembak server tiap 5 detik.
+  pollingTimer = setInterval(() => { if (!document.hidden) fetchActiveOrders() }, POLL_MS)
+  document.addEventListener('visibilitychange', onVisibility)
+})
+onUnmounted(() => {
+  if (pollingTimer) clearInterval(pollingTimer)
+  document.removeEventListener('visibilitychange', onVisibility)
+})
 
-const filteredOrders = computed(() =>
-  orders.value.filter(o => (o.customer_phone || "").includes(searchQuery.value))
-);
+// ── Pencarian + filter status ───────────────────────────────────────
+const isUnpaid = (o) => o.status !== 'cancelled' && o.payment_status !== 'paid' && o.payment_status !== 'void'
+const searchedOrders = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase()
+  if (!q) return orders.value
+  return orders.value.filter((o) =>
+    [o.customer_phone, o.customer_name, o.order_number, o.id].some((v) => String(v ?? '').toLowerCase().includes(q))
+  )
+})
+const counts = computed(() => {
+  const list = searchedOrders.value
+  return {
+    all: list.length,
+    unpaid: list.filter(isUnpaid).length,
+    paid: list.filter((o) => o.payment_status === 'paid').length,
+    cancelled: list.filter((o) => o.status === 'cancelled').length,
+  }
+})
+const statusTabs = [
+  { value: 'all', label: 'Semua' },
+  { value: 'unpaid', label: 'Belum lunas' },
+  { value: 'paid', label: 'Lunas' },
+  { value: 'cancelled', label: 'Dibatalkan' },
+]
+const filteredOrders = computed(() => {
+  const list = searchedOrders.value
+  switch (statusFilter.value) {
+    case 'unpaid': return list.filter(isUnpaid)
+    case 'paid': return list.filter((o) => o.payment_status === 'paid')
+    case 'cancelled': return list.filter((o) => o.status === 'cancelled')
+    default: return list
+  }
+})
+const resetFilters = () => { searchQuery.value = ''; statusFilter.value = 'all' }
 
-const openOrderModal = (order) => { selectedOrder.value = order; isModalOpen.value = true; };
+// ── Badge & label ───────────────────────────────────────────────────
+const orderBadge = (o) =>
+  o.status === 'completed' ? { cls: 'adm-badge--green', label: 'Selesai' }
+  : o.status === 'cancelled' ? { cls: 'adm-badge--red', label: 'Dibatalkan' }
+  : { cls: 'adm-badge--amber', label: 'Proses' }
+const payBadge = (o) =>
+  o.payment_status === 'paid' ? { cls: 'adm-badge--green', label: 'Lunas' }
+  : o.payment_status === 'void' ? { cls: '', label: 'Batal' }
+  : { cls: 'adm-badge--amber', label: 'Pending' }
+const payStatusText = (o) =>
+  o?.payment_status === 'paid' ? 'LUNAS' : (o?.payment_status === 'void' ? 'BATAL' : 'PENDING')
+
+const canPay = (o) => o.payment_status !== 'paid' && o.status !== 'cancelled' && o.payment_method !== 'gateway'
+
+const methodIcon = (m) => (['gateway', 'qris_manual', 'qris'].includes(m) ? QrCode : (m === 'mixed' ? Shuffle : Banknote))
+const methodLabel = (m, full = false) => {
+  if (['gateway', 'qris_manual', 'qris'].includes(m)) return 'QRIS'
+  if (m === 'mixed') return full ? 'Split Bayar' : 'Split'
+  return m || 'Cash'
+}
+
+const formatPrice = (p) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(p || 0)
+const formatTime = (s) => {
+  const d = new Date(s)
+  return isNaN(d) ? '—' : d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false })
+}
+const formatFullDateTime = (s) => {
+  const d = new Date(s)
+  if (!s || isNaN(d)) return '—'
+  return d.toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' WIB'
+}
+
+// ── Modal struk ─────────────────────────────────────────────────────
+const isModalOpen = ref(false)
+const selectedId = ref(null)
+const selectedSnapshot = ref(null)
+// Ambil dari daftar terbaru supaya struk yang sedang dibuka ikut ter-update oleh polling
+// (mis. status berubah jadi Lunas), dengan snapshot sebagai cadangan.
+const selectedOrder = computed(() => orders.value.find((o) => o.id === selectedId.value) ?? selectedSnapshot.value)
+const openOrderModal = (order) => {
+  selectedId.value = order.id
+  selectedSnapshot.value = order
+  isModalOpen.value = true
+}
+
+const computedSubtotal = computed(() => {
+  const items = selectedOrder.value?.items || []
+  if (items.length) return items.reduce((sum, item) => sum + parseFloat(item.price) * parseInt(item.quantity || 1), 0)
+  return num(selectedOrder.value?.subtotal || selectedOrder.value?.total_price)
+})
+
+// ── Cetak thermal ───────────────────────────────────────────────────
+const printRef = ref(null)
+const PAPER_KEY = 'masashimura-print-width'
+const readPaper = () => {
+  try { return Number(localStorage.getItem(PAPER_KEY)) === 58 ? 58 : 80 } catch { return 80 }
+}
+const printPaperWidth = ref(readPaper())
+// Memilih ukuran kertas TIDAK lagi langsung mencetak; ukuran diingat untuk cetak berikutnya.
+const setPaper = (w) => {
+  printPaperWidth.value = w
+  try { localStorage.setItem(PAPER_KEY, String(w)) } catch { /* abaikan */ }
+}
+const printReceipt = () => {
+  if (!selectedOrder.value) return
+  // @page tidak bisa pakai CSS variable → set ukuran halaman cetak secara dinamis
+  let tag = document.getElementById('thermal-page-style')
+  if (!tag) {
+    tag = document.createElement('style')
+    tag.id = 'thermal-page-style'
+    document.head.appendChild(tag)
+  }
+  tag.textContent = `@page { size: ${printPaperWidth.value}mm auto; margin: 0; }`
+  // Jeda singkat biar lebar & isi struk sempat re-render sebelum dialog print muncul
+  setTimeout(() => window.print(), 80)
+}
+
+// ── Kirim struk via WA ──────────────────────────────────────────────
+// Capture cuma dari #receiptRef — bukti pembayaran memang tidak pernah
+// dirender di node itu, jadi otomatis tidak ikut ke gambar untuk customer.
+const receiptRef = ref(null)
+const isCapturing = ref(false)
+const canvasToBlob = (canvas) => new Promise((resolve) => canvas.toBlob(resolve, 'image/png'))
+
+const shareReceiptAsImage = async () => {
+  if (!receiptRef.value || !selectedOrder.value) return
+  isCapturing.value = true
+  try {
+    await new Promise((r) => setTimeout(r, 200))
+    const canvas = await html2canvas(receiptRef.value, { backgroundColor: '#0f0f0f', scale: 2, useCORS: true })
+    const blob = await canvasToBlob(canvas)
+    if (!blob) throw new Error('Gagal membuat blob gambar')
+
+    const order = selectedOrder.value
+    const file = new File([blob], `struk-${order.order_number}.png`, { type: 'image/png' })
+
+    if (navigator.share && navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], text: 'Bukti Pembelian di Masashimura 🙏' })
+      } catch (e) {
+        if (e?.name !== 'AbortError') throw e   // user menutup menu share = bukan error
+      }
+    } else {
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = file.name
+      a.click()
+      URL.revokeObjectURL(url)
+      const raw = order.customer_phone || ''
+      const phone = raw.startsWith('0') ? '62' + raw.slice(1) : raw
+      const caption = encodeURIComponent('Bukti Pembelian di Masashimura 🙏')
+      setTimeout(() => window.open(phone ? `https://wa.me/${phone}?text=${caption}` : `https://wa.me/?text=${caption}`, '_blank'), 500)
+      toast.info('Gambar diunduh. Lampirkan ke WhatsApp secara manual jika perlu.')
+    }
+  } catch (err) {
+    console.error(err)
+    toast.error('Gagal membuat gambar struk')
+  } finally {
+    isCapturing.value = false     // sebelumnya bisa nyangkut "Memproses…" kalau share dibatalkan
+  }
+}
+
+// ── Lunasi ──────────────────────────────────────────────────────────
+const isPayModalOpen = ref(false)
+const selectedPayOrder = ref(null)
+const isPaying = ref(false)
+const payRows = ref([{ method: 'cash', amount: 0 }])
+
+const paySplitTotalEntered = computed(() => payRows.value.reduce((sum, r) => sum + (Number(r.amount) || 0), 0))
+const paySplitRemaining = computed(() =>
+  selectedPayOrder.value ? num(selectedPayOrder.value.total_price) - paySplitTotalEntered.value : 0
+)
+const canConfirmPay = computed(() =>
+  !isPaying.value && paySplitRemaining.value <= 0 && payRows.value.every((r) => Number(r.amount) > 0)
+)
+
 const openPayModal = (order) => {
-  selectedPayOrder.value = order;
-  payRows.value          = [{ method: "cash", amount: 0 }];
-  isPayModalOpen.value   = true;
-};
-
-const addPayRow = () => {
-  payRows.value.push({ method: "cash", amount: 0 });
-};
-
-const removePayRow = (idx) => {
-  payRows.value.splice(idx, 1);
-};
-
+  selectedPayOrder.value = order
+  payRows.value = [{ method: 'cash', amount: 0 }]
+  isPayModalOpen.value = true
+}
+const addPayRow = () => payRows.value.push({ method: 'cash', amount: 0 })
+const removePayRow = (idx) => payRows.value.splice(idx, 1)
 const fillRemainingToLastRow = () => {
-  if (!payRows.value.length) return;
-  const last = payRows.value[payRows.value.length - 1];
-  const currentOthers = paySplitTotalEntered.value - (Number(last.amount) || 0);
-  const target = parseFloat(selectedPayOrder.value.total_price) - currentOthers;
-  last.amount = Math.max(target, 0);
-};
+  const last = payRows.value[payRows.value.length - 1]
+  if (!last) return
+  const others = paySplitTotalEntered.value - (Number(last.amount) || 0)
+  last.amount = Math.max(num(selectedPayOrder.value.total_price) - others, 0)
+}
 
 const confirmPay = async () => {
-  if (!selectedPayOrder.value) return;
-  isPaying.value = true;
+  if (!selectedPayOrder.value || !canConfirmPay.value) return
+  isPaying.value = true
   try {
     await apiClient.patch(`/orders/${selectedPayOrder.value.id}/pay/`, {
-      payments: payRows.value.map(r => ({ method: r.method, amount: Number(r.amount) || 0 })),
+      payments: payRows.value.map((r) => ({ method: r.method, amount: Number(r.amount) || 0 })),
       kasir_name: kasirName.value,
-    });
-    toast.success(`Order ${selectedPayOrder.value.order_number} berhasil dilunasi`);
-    isPayModalOpen.value = false;
-    selectedPayOrder.value = null;
-    payRows.value = [{ method: "cash", amount: 0 }];
-    fetchActiveOrders();
+    })
+    toast.success(`Order ${selectedPayOrder.value.order_number} berhasil dilunasi`)
+    isPayModalOpen.value = false
+    selectedPayOrder.value = null
+    payRows.value = [{ method: 'cash', amount: 0 }]
+    fetchActiveOrders({ force: true })
   } catch (err) {
-    toast.error(err?.response?.data?.detail || "Gagal melunasi pembayaran");
+    toast.error(err?.response?.data?.detail || 'Gagal melunasi pembayaran')
   } finally {
-    isPaying.value = false;
+    isPaying.value = false
   }
-};
+}
+
+// ── Batalkan ────────────────────────────────────────────────────────
+const isCancelModalOpen = ref(false)
+const selectedCancelOrder = ref(null)
+const cancelReason = ref('')
+const cancelNote = ref('')
+const isCancelling = ref(false)
+
+const cancelReasonOptions = [
+  { value: 'wrong_input', label: 'Salah Input' },
+  { value: 'customer_cancel', label: 'Pelanggan Batal' },
+  { value: 'out_of_stock', label: 'Stok Habis' },
+  { value: 'other', label: 'Lainnya' },
+]
 
 const openCancelModal = (order) => {
-  selectedCancelOrder.value = order;
-  cancelReason.value        = "";
-  cancelNote.value          = "";
-  isCancelModalOpen.value   = true;
-};
+  selectedCancelOrder.value = order
+  cancelReason.value = ''
+  cancelNote.value = ''
+  isCancelModalOpen.value = true
+}
 
 const confirmCancel = async () => {
-  if (!selectedCancelOrder.value || !cancelReason.value) return;
-  isCancelling.value = true;
+  if (!selectedCancelOrder.value || !cancelReason.value) return
+  isCancelling.value = true
   try {
     await apiClient.patch(`/orders/${selectedCancelOrder.value.id}/cancel/`, {
       cancel_reason: cancelReason.value,
-      cancel_note:   cancelNote.value,
-      kasir_name:    kasirName.value,
-    });
-    toast.success(`Order ${selectedCancelOrder.value.order_number} dibatalkan`);
-    isCancelModalOpen.value = false;
-    selectedCancelOrder.value = null;
-    cancelReason.value = "";
-    cancelNote.value = "";
-    fetchActiveOrders();
+      cancel_note: cancelNote.value,
+      kasir_name: kasirName.value,
+    })
+    toast.success(`Order ${selectedCancelOrder.value.order_number} dibatalkan`)
+    isCancelModalOpen.value = false
+    selectedCancelOrder.value = null
+    cancelReason.value = ''
+    cancelNote.value = ''
+    fetchActiveOrders({ force: true })
   } catch (err) {
-    toast.error(err?.response?.data?.detail || "Gagal membatalkan order");
+    toast.error(err?.response?.data?.detail || 'Gagal membatalkan order')
   } finally {
-    isCancelling.value = false;
+    isCancelling.value = false
   }
-};
+}
 
-// Capture struk cuma dari #receiptRef — proof pembayaran memang tidak
-// pernah dirender di dalam node itu, jadi otomatis tidak ikut ke gambar
-// yang di-share ke customer via WA.
-const shareReceiptAsImage = async () => {
-  if (!receiptRef.value || !selectedOrder.value) return;
-  isCapturing.value = true;
-  await new Promise(r => setTimeout(r, 200));
+// ── Hapus permanen (khusus owner) ───────────────────────────────────
+const isDeleteModalOpen = ref(false)
+const selectedDeleteOrder = ref(null)
+const deleteConfirmText = ref('')
+const isDeleting = ref(false)
+
+const canConfirmDelete = computed(() =>
+  !isDeleting.value && !!selectedDeleteOrder.value && deleteConfirmText.value.trim() === selectedDeleteOrder.value.order_number
+)
+
+const openDeleteModal = (order) => {
+  selectedDeleteOrder.value = order
+  deleteConfirmText.value = ''
+  isDeleteModalOpen.value = true
+}
+const closeDeleteModal = () => {
+  isDeleteModalOpen.value = false
+  selectedDeleteOrder.value = null
+  deleteConfirmText.value = ''
+}
+
+const confirmDelete = async () => {
+  if (!canConfirmDelete.value) return
+  isDeleting.value = true
   try {
-    const canvas = await html2canvas(receiptRef.value, { backgroundColor: '#0f0f0f', scale: 2, useCORS: true });
-    canvas.toBlob(async (blob) => {
-      if (!blob) { toast.error("Gagal membuat gambar struk"); isCapturing.value = false; return; }
-      const file = new File([blob], `struk-${selectedOrder.value.order_number}.png`, { type: 'image/png' });
-      if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], text: 'Bukti Pembelian di Masashimura 🙏' });
-      } else {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = file.name; a.click();
-        URL.revokeObjectURL(url);
-        const phone = (selectedOrder.value.customer_phone || '').startsWith('0')
-          ? '62' + selectedOrder.value.customer_phone.slice(1) : selectedOrder.value.customer_phone || '';
-        const caption = encodeURIComponent('Bukti Pembelian di Masashimura 🙏');
-        setTimeout(() => window.open(phone ? `https://wa.me/${phone}?text=${caption}` : `https://wa.me/?text=${caption}`, '_blank'), 500);
-        toast.info("Gambar diunduh. Lampirkan ke WhatsApp secara manual jika perlu.");
-      }
-      isCapturing.value = false;
-    }, 'image/png');
-  } catch (err) { console.error(err); toast.error("Gagal screenshot struk"); isCapturing.value = false; }
-};
-
-// ── Cetak struk thermal (58mm / 80mm) — cetak cuma dari #printRef,
-// yang juga tidak pernah memuat bukti pembayaran ──────────────────
-const printReceipt = (widthMm = 80) => {
-  if (!selectedOrder.value) return;
-  printPaperWidth.value = widthMm;
-
-  // Set ukuran halaman cetak secara dinamis (@page tidak bisa pakai CSS variable)
-  let pageStyleTag = document.getElementById('thermal-page-style');
-  if (!pageStyleTag) {
-    pageStyleTag = document.createElement('style');
-    pageStyleTag.id = 'thermal-page-style';
-    document.head.appendChild(pageStyleTag);
+    await apiClient.delete(`/orders/${selectedDeleteOrder.value.id}/`)
+    toast.success(`Order ${selectedDeleteOrder.value.order_number} dihapus permanen`)
+    closeDeleteModal()
+    fetchActiveOrders({ force: true })
+  } catch (err) {
+    toast.error(err?.response?.data?.detail || 'Gagal menghapus order. Cek apakah endpoint DELETE sudah tersedia di backend.')
+  } finally {
+    isDeleting.value = false
   }
-  pageStyleTag.innerHTML = `@page { size: ${widthMm}mm auto; margin: 0; }`;
-
-  // Kasih jeda dikit biar width & isi struk sempat re-render sebelum dialog print muncul
-  setTimeout(() => window.print(), 80);
-};
-
-const computedSubtotal = computed(() => {
-  const items = selectedOrder.value?.items || [];
-  if (items.length) return items.reduce((sum, item) => sum + (parseFloat(item.price) * parseInt(item.quantity || 1)), 0);
-  return parseFloat(selectedOrder.value?.subtotal || selectedOrder.value?.total_price || 0);
-});
-
-const methodIcon  = (m) => (['gateway', 'qris_manual', 'qris'].includes(m) ? '📱' : (m === 'mixed' ? '🔀' : '💵'));
-const methodLabel = (m, full = false) => {
-  if (['gateway', 'qris_manual', 'qris'].includes(m)) return 'QRIS';
-  if (m === 'mixed') return full ? 'Split Bayar' : 'Split';
-  return m || 'Cash';
-};
-
-const formatPrice = (p) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(p || 0);
-const formatTime = (s) => new Date(s).toLocaleTimeString('id-ID', { hour: "2-digit", minute: "2-digit", hour12: false });
-const formatFullDateTime = (s) => new Date(s).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' WIB';
-
-onMounted(() => { fetchActiveOrders(); pollingTimer = setInterval(fetchActiveOrders, 5000); });
-onUnmounted(() => { if (pollingTimer) clearInterval(pollingTimer); });
+}
 </script>
 
 <style scoped>
-/* ── Root ─────────────────────────────────────────────────────────── */
-.ao-root {
-  min-height: 100vh;
-  background: #080808;
-  color: #fff;
-  padding: 2.5rem 1.5rem;
-  max-width: 1400px;
-  margin: 0 auto;
-  font-family: 'Inter', sans-serif;
+/* Halaman ini punya 7 kolom → butuh ruang lebih lebar dari default .adm-page */
+.ao-page { max-width: 87.5rem; }
+
+/* ── Header ──────────────────────────────────────────────────────── */
+.ao-pulse { animation: ao-pulse 2s ease-in-out infinite; }
+@keyframes ao-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+/* ── Toolbar ─────────────────────────────────────────────────────── */
+.ao-toolbar { justify-content: space-between; }
+.ao-date { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem; }
+.ao-date-input { width: auto; min-width: 9.5rem; cursor: pointer; }
+.adm-search { flex: 1 1 16rem; max-width: 26rem; }
+@media (max-width: 720px) {
+  .ao-toolbar { flex-direction: column; align-items: stretch; }
+  .ao-date { justify-content: space-between; flex-wrap: nowrap; }
+  .ao-date-input { flex: 1; min-width: 0; }
+  .adm-search { max-width: none; }
+}
+@media (max-width: 480px) { .ao-hide-xs { display: none; } }
+
+/* Hitungan di tab filter */
+.ao-count {
+  min-width: 1.25rem; padding: 0 0.35rem; border-radius: 99px;
+  background: rgb(var(--ink) / 0.1);
+  font-family: var(--font-mono); font-size: 0.68rem; line-height: 1.35rem; text-align: center;
+}
+.adm-seg-btn[aria-pressed='true'] .ao-count { background: rgb(255 255 255 / 0.22); }
+
+/* ── Error ───────────────────────────────────────────────────────── */
+.ao-error { align-items: center; flex-wrap: wrap; }
+.ao-error-icon { flex-shrink: 0; margin-top: 2px; }
+.ao-error-text { display: flex; flex-direction: column; gap: 0.15rem; flex: 1 1 16rem; min-width: 0; }
+.ao-error-text span { color: var(--text-dim); font-size: 0.75rem; }
+
+/* ── Skeleton ────────────────────────────────────────────────────── */
+.ao-skeleton { display: flex; flex-direction: column; gap: 0.6rem; padding: 1rem; }
+.ao-skel-row { height: 3.25rem; border-radius: var(--r-md); }
+
+/* ── Tabel ───────────────────────────────────────────────────────── */
+.ao-row { cursor: pointer; }
+.ao-row:focus-visible { outline-offset: -2px; }
+.ao-row:focus-visible td { background: var(--surface-hover); }
+.adm-table td { padding-block: 0.9rem; }
+
+.ao-id { font-family: var(--font-mono); font-weight: 700; color: var(--accent-text); }
+.ao-phone { font-family: var(--font-mono); color: var(--text); }
+.ao-guest { margin-left: 0.4rem; padding-block: 0.1rem; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.ao-price { font-family: var(--font-mono); font-weight: 700; color: var(--amber-soft); white-space: nowrap; }
+.ao-status { display: inline-flex; flex-direction: column; align-items: center; gap: 0.3rem; }
+.ao-method { display: inline-flex; align-items: center; gap: 0.4rem; text-transform: capitalize; color: var(--text-dim); }
+.ao-time { font-family: var(--font-mono); color: var(--text-dim); white-space: nowrap; }
+.ao-late { display: block; margin-top: 2px; font-family: var(--font-body); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--amber-soft); }
+.ao-done { font-size: 0.75rem; font-weight: 600; color: var(--green-soft); }
+.ao-actions { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 0.4rem; }
+
+@media (max-width: 720px) {
+  .ao-row { margin: 0.6rem; padding: 0.4rem 0 !important; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-2); }
+  .adm-table--stack tbody tr.ao-row:last-child { border-bottom: 1px solid var(--border); }
+  .ao-status { flex-direction: row; }
+  .ao-actions { justify-content: stretch !important; padding-top: 0.6rem !important; }
+  .ao-actions .adm-btn { flex: 1; min-height: 44px; }
+  .ao-actions .ao-done { flex: 1; text-align: center; }
 }
 
-/* ── Page Header ─────────────────────────────────────────────────── */
-.ao-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-  flex-wrap: wrap;
+/* ── Footer modal struk ──────────────────────────────────────────── */
+.ao-foot { display: flex; align-items: center; flex-wrap: wrap; gap: 0.6rem; width: 100%; }
+.ao-paper { display: flex; align-items: center; gap: 0.5rem; }
+.ao-paper-label { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); }
+.ao-foot-actions { display: flex; gap: 0.5rem; margin-left: auto; }
+@media (max-width: 560px) {
+  .ao-paper { width: 100%; justify-content: space-between; }
+  .ao-foot-actions { width: 100%; }
+  .ao-foot-actions .adm-btn { flex: 1; }
 }
-.ao-eyebrow {
-  font-family: 'Oswald', sans-serif;
-  font-size: 0.6rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: #dc2626;
-  margin: 0 0 0.3rem;
-}
-.ao-title {
-  font-family: 'Oswald', sans-serif;
-  font-size: 1.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin: 0 0 0.3rem;
-}
-.ao-date-label {
-  font-size: 0.72rem;
-  color: rgba(255,255,255,0.3);
-  margin: 0;
+.ao-btn-wa { background: var(--green); border-color: var(--green); color: #fff; }
+.ao-btn-wa:hover:not(:disabled) { filter: brightness(0.92); }
+
+/* ── Struk di dalam modal (ikut tema) ────────────────────────────── */
+.rcpt { font-family: var(--font-mono); font-size: 0.78rem; line-height: 1.5; color: var(--text-2); }
+.rcpt-head { text-align: center; }
+.rcpt-logo { display: block; height: 50px; margin: 0 auto 0.5rem; object-fit: contain; }
+:global(html[data-admin-theme='light']) .rcpt-logo { filter: drop-shadow(0 0 1px rgb(24 24 27 / 0.55)) drop-shadow(0 1px 1px rgb(24 24 27 / 0.2)); }
+.rcpt-address { margin: 0; font-size: 0.66rem; color: var(--text-faint); }
+.rcpt-div { margin: 0.85rem 0; border: 0; border-top: 1px dashed var(--border-strong); }
+.rcpt-rows { display: flex; flex-direction: column; gap: 0.25rem; }
+.rcpt-row { display: flex; justify-content: space-between; gap: 1rem; }
+.rcpt-row > :last-child { text-align: right; }
+.rcpt-row b { color: var(--text); font-weight: 600; }
+.rcpt-heading { margin: 0 0 0.6rem; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); }
+.rcpt-item { margin-bottom: 0.5rem; }
+.rcpt-item-main { display: flex; gap: 0.4rem; }
+.rcpt-qty { min-width: 1.8rem; color: var(--text-faint); }
+.rcpt-name { flex: 1; color: var(--text); }
+.rcpt-sub { font-weight: 600; }
+.rcpt-note { padding-left: 2.2rem; font-size: 0.68rem; font-style: italic; color: var(--amber-soft); }
+.rcpt-discount { color: var(--red-soft); }
+.rcpt-final { margin-top: 0.25rem; padding-top: 0.45rem; border-top: 1px dashed var(--border-strong); font-size: 0.95rem; font-weight: 800; color: var(--text); }
+.rcpt-final > :last-child { color: var(--accent-text); }
+.rcpt-muted { color: var(--text-dim); }
+.rcpt-change > :last-child { color: var(--green-soft); font-weight: 700; }
+.rcpt-card { display: flex; flex-direction: column; gap: 0.25rem; margin-top: 1rem; padding: 0.75rem 1rem; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-2); }
+.rcpt-card b { text-transform: uppercase; }
+.rcpt-split { padding-left: 0.75rem; }
+.rcpt-status.is-paid { color: var(--green-soft); }
+.rcpt-status.is-void { color: var(--text-dim); }
+.rcpt-status.is-pending { color: var(--amber-soft); }
+.rcpt-cancel { display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.75rem; padding: 0.7rem 0.85rem; border: 1px solid var(--line-accent); border-radius: var(--r-md); background: var(--tint-accent); }
+.rcpt-cancel-title { display: flex; align-items: center; gap: 0.35rem; margin: 0 0 0.25rem; font-weight: 700; color: var(--red-soft); }
+
+/* ── Modal lunasi / batalkan / hapus ─────────────────────────────── */
+.ao-person { padding: 0.8rem 1rem; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-2); }
+.ao-person-name { margin: 0 0 0.15rem; font-size: 0.9rem; font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
+.ao-person-phone { margin: 0; font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-dim); }
+
+.ao-total { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.8rem 1rem; border: 1px solid var(--line-accent); border-radius: var(--r-md); background: var(--tint-accent); }
+.ao-total span { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); }
+.ao-total strong { font-family: var(--font-mono); font-size: 1.2rem; font-weight: 800; color: var(--accent-text); }
+
+.ao-payrow { display: flex; align-items: center; gap: 0.5rem; }
+.ao-payrow .adm-seg { flex-shrink: 0; }
+.ao-payrow-input { flex: 1; min-width: 0; }
+@media (max-width: 480px) {
+  .ao-payrow { flex-wrap: wrap; }
+  .ao-payrow .adm-seg { width: 100%; }
+  .ao-payrow .adm-seg-btn { flex: 1; }
 }
 
-/* Live indicator — jujur nunjukin tabel ini auto-refresh, bukan statis */
-.ao-live {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.35rem 0.8rem;
-  background: rgba(34,197,94,0.08);
-  border: 1px solid rgba(34,197,94,0.2);
-  border-radius: 100px;
-  flex-shrink: 0;
-}
-.live-dot {
-  width: 6px; height: 6px;
-  background: #22c55e;
-  border-radius: 50%;
-  animation: pulse 2s infinite;
-}
-.live-label {
-  font-size: 0.65rem;
-  font-family: 'Oswald', sans-serif;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #22c55e;
-  white-space: nowrap;
-}
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-.ao-live.is-error { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.35); }
-.ao-live.is-error .live-dot { background: #ef4444; animation: none; }
-.ao-live.is-error .live-label { color: #f87171; }
+.ao-link { align-self: flex-start; padding: 0.25rem 0; border: 0; background: none; color: var(--accent-text); font-family: inherit; font-size: 0.75rem; font-weight: 600; text-decoration: underline; cursor: pointer; }
+.ao-link:hover { color: var(--text); }
 
-.ao-error {
-  display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
-  margin-bottom: 1rem; padding: 0.85rem 1.1rem; border-radius: 12px;
-  background: rgba(239,68,68,0.07); border: 1px solid rgba(239,68,68,0.3);
-}
-.ao-error-text { min-width: 0; flex: 1 1 260px; }
-.ao-error-title { margin: 0 0 0.2rem; font-size: 0.8rem; font-weight: 600; color: #f87171; }
-.ao-error-msg { margin: 0; font-size: 0.72rem; line-height: 1.5; color: rgba(255,255,255,0.55); }
-.ao-error-btn {
-  padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; flex-shrink: 0;
-  background: transparent; border: 1px solid rgba(239,68,68,0.45); color: #f87171;
-  font-family: 'Oswald', sans-serif; font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase;
-  transition: all 0.15s;
-}
-.ao-error-btn:hover { background: rgba(239,68,68,0.12); color: #fff; }
+.ao-diff { display: flex; justify-content: space-between; padding: 0.65rem 0.9rem; border: 1px solid; border-radius: var(--r-md); font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; }
+.ao-diff.is-ok { background: var(--tint-green); border-color: var(--line-green); color: var(--green-soft); }
+.ao-diff.is-short { background: var(--tint-accent); border-color: var(--line-accent); color: var(--red-soft); }
 
-/* ── Control Bar ───────────────────────────────────────────────────
-   Navigasi tanggal + pencarian dipisah dari header jadi satu "toolbar"
-   sendiri — pola yang sama dipakai di dashboard, biar konsisten
-   sebagai satu sistem desain di seluruh app. */
-.control-bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  padding: 1rem 1.25rem;
-  background: #0f0f0f;
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 14px;
+.ao-reasons { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+.ao-choice {
+  min-height: 44px; padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border-strong); border-radius: var(--r-md);
+  background: transparent; color: var(--text-dim);
+  font-family: var(--font-body); font-size: 0.8125rem; font-weight: 600;
+  cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
+.ao-choice:hover { background: var(--surface-hover); color: var(--text); }
+.ao-choice[aria-pressed='true'] { background: var(--tint-accent); border-color: var(--accent); color: var(--text); }
 
-/* Date navigator */
-.date-nav {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  background: rgba(255,255,255,0.02);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 10px;
-  overflow: hidden;
-}
-.date-nav-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.55rem 0.85rem;
-  background: transparent;
-  border: none;
-  color: rgba(255,255,255,0.45);
-  font-family: 'Oswald', sans-serif;
-  font-size: 0.65rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.date-nav-btn:hover { background: rgba(255,255,255,0.04); color: #fff; }
-.date-nav-current {
-  padding: 0.55rem 1rem;
-  font-family: monospace;
-  font-size: 0.8rem;
-  color: #fff;
-  border-left: 1px solid rgba(255,255,255,0.06);
-  border-right: 1px solid rgba(255,255,255,0.06);
-}
-
-.date-nav-input {
-  background: transparent;
-  outline: none;
-  color-scheme: dark;
-  cursor: pointer;
-}
-
-/* Search */
-.search-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-  margin-left: auto;
-}
-.search-icon {
-  position: absolute;
-  left: 0.75rem;
-  color: rgba(255,255,255,0.25);
-  pointer-events: none;
-}
-.search-input {
-  background: rgba(255,255,255,0.02);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 10px;
-  padding: 0.55rem 0.85rem 0.55rem 2.25rem;
-  color: #fff;
-  font-size: 0.82rem;
-  font-family: 'Inter', sans-serif;
-  outline: none;
-  width: 220px;
-  transition: border-color 0.15s;
-}
-.search-input::placeholder { color: rgba(255,255,255,0.2); }
-.search-input:focus { border-color: rgba(220,38,38,0.5); }
-
-/* ── Table Card ───────────────────────────────────────────────────── */
-.ao-table-card {
-  background: #0f0f0f;
-  border: 1px solid rgba(255,255,255,0.05);
-  border-radius: 16px;
-  overflow: hidden;
-}
-
-/* Summary chips — angka jadi fokus utama, bukan titik kecil */
-.ao-summary {
-  display: flex;
-  align-items: stretch;
-  gap: 0;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-}
-.summary-chip {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  padding: 1rem 1.5rem;
-  border-right: 1px solid rgba(255,255,255,0.05);
-  min-width: 140px;
-}
-.summary-chip-value {
-  font-family: 'Inter', monospace;
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: #fff;
-  line-height: 1.1;
-}
-.summary-chip-label {
-  font-family: 'Oswald', sans-serif;
-  font-size: 0.6rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.3);
-}
-.chip-pending .summary-chip-value { color: #fbbf24; }
-.chip-paid .summary-chip-value    { color: #4ade80; }
-
-/* Table */
-.table-scroll { overflow-x: auto; }
-.ao-table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 720px;
-}
-.ao-table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  padding: 0.75rem 1.5rem;
-  font-family: 'Oswald', sans-serif;
-  font-size: 0.6rem;
-  font-weight: 400;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.25);
-  text-align: left;
-  background: #101010;
-  white-space: nowrap;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-}
-.th-center { text-align: center; }
-.th-right  { text-align: right; }
-
-.ao-row {
-  border-top: 1px solid rgba(255,255,255,0.04);
-  cursor: pointer;
-  transition: background 0.12s;
-}
-.ao-row:hover { background: rgba(255,255,255,0.025); }
-.ao-table td {
-  padding: 1rem 1.5rem;
-  font-size: 0.85rem;
-  vertical-align: middle;
-}
-
-.td-id { font-family: monospace; font-weight: 700; color: #dc2626; font-size: 0.82rem; }
-
-.td-customer { display: flex; align-items: center; gap: 0.5rem; }
-.customer-phone { font-family: monospace; font-size: 0.82rem; color: rgba(255,255,255,0.8); }
-.guest-badge {
-  font-size: 0.55rem; padding: 0.1rem 0.4rem;
-  border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.25);
-  font-family: 'Oswald', sans-serif; letter-spacing: 0.08em; text-transform: uppercase;
-}
-
-.td-right { text-align: right; }
-.td-price { font-family: monospace; font-weight: 700; color: #fbbf24; }
-
-.td-center { text-align: center; }
-
-/* Status order + pembayaran digabung jadi satu kolom (tumpuk), biar
-   tabel gak kepanjangan dan dua info yang saling terkait kebaca
-   bareng, bukan dipisah jauh di kolom berbeda. */
-.status-stack {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.3rem;
-}
-.status-pill {
-  display: inline-block;
-  padding: 0.22rem 0.65rem;
-  border-radius: 100px;
-  font-size: 0.62rem;
-  font-family: 'Oswald', sans-serif;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  font-weight: 500;
-}
-.status-pill.pill-sub { opacity: 0.75; font-size: 0.58rem; padding: 0.18rem 0.55rem; }
-.pill-green  { background: rgba(34,197,94,0.1);  color: #4ade80; border: 1px solid rgba(34,197,94,0.2); }
-.pill-amber  { background: rgba(245,158,11,0.1); color: #fbbf24; border: 1px solid rgba(245,158,11,0.2); }
-.pill-yellow { background: rgba(234,179,8,0.08); color: #facc15; border: 1px solid rgba(234,179,8,0.18); }
-.pill-red    { background: rgba(220,38,38,0.1);  color: #f87171; border: 1px solid rgba(220,38,38,0.2); }
-.pill-gray   { background: rgba(255,255,255,0.05); color: #a1a1aa; border: 1px solid rgba(255,255,255,0.1); }
-
-.td-method { font-size: 0.8rem; color: rgba(255,255,255,0.55); text-transform: capitalize; }
-.method-icon { margin-right: 0.2rem; }
-
-.td-time { font-family: monospace; font-size: 0.78rem; color: rgba(255,255,255,0.3); }
-.late-tag {
-  display: block; margin-top: 2px;
-  font-family: 'Inter', sans-serif; font-size: 0.55rem; font-weight: 600;
-  letter-spacing: 0.04em; text-transform: uppercase; color: #fbbf24;
-}
-.td-dash { color: rgba(255,255,255,0.15); font-size: 0.8rem; }
-
-.lunasi-btn {
-  padding: 0.4rem 1rem;
-  background: #dc2626;
-  border: none;
-  border-radius: 8px;
-  color: #fff;
-  font-family: 'Oswald', sans-serif;
-  font-size: 0.65rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.lunasi-btn:hover { background: #b91c1c; }
-
-.td-actions { display: flex; align-items: center; justify-content: center; gap: 0.5rem; flex-wrap: wrap; }
-
-.batalkan-btn {
-  padding: 0.4rem 0.85rem;
-  background: transparent;
-  border: 1px solid rgba(220,38,38,0.35);
-  border-radius: 8px;
-  color: #f87171;
-  font-family: 'Oswald', sans-serif;
-  font-size: 0.65rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
-}
-.batalkan-btn:hover { background: rgba(220,38,38,0.1); border-color: rgba(220,38,38,0.6); }
-
-/* Tombol hapus permanen — dibedain visualnya dari "Batalkan" biar
-   kasir/owner sadar ini aksi yang levelnya beda (destruktif, bukan
-   sekadar ubah status). */
-.hapus-btn {
-  padding: 0.4rem 0.85rem;
-  background: rgba(0,0,0,0.4);
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 8px;
-  color: rgba(255,255,255,0.5);
-  font-family: 'Oswald', sans-serif;
-  font-size: 0.65rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.hapus-btn:hover { background: #dc2626; border-color: #dc2626; color: #fff; }
-
-.cancel-confirm-btn { background: #dc2626; }
-.cancel-confirm-btn:hover:not(:disabled) { background: #b91c1c; }
-
-/* Empty state */
-.ao-empty {
-  padding: 4rem 2rem !important;
-  text-align: center;
-}
-.empty-icon { font-size: 2rem; margin-bottom: 0.75rem; }
-.empty-text { color: rgba(255,255,255,0.3); font-size: 0.875rem; margin: 0 0 0.3rem; }
-.empty-hint { color: rgba(255,255,255,0.15); font-size: 0.7rem; margin: 0; }
-
-/* ── Modal overlay ───────────────────────────────────────────────── */
-.modal-overlay {
-  position: fixed; inset: 0; z-index: 50;
-  background: rgba(0,0,0,0.75);
-  backdrop-filter: blur(4px);
-  display: flex; align-items: center; justify-content: center;
-  padding: 1rem;
-}
-
-/* ── Receipt Modal ───────────────────────────────────────────────── */
-.modal-box {
-  background: #0f0f0f;
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 20px;
-  width: 100%; max-width: 420px;
-  max-height: 90vh;
-  display: flex; flex-direction: column;
-  overflow: hidden;
-}
-.modal-header {
-  display: flex; align-items: flex-start;
-  justify-content: space-between;
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-}
-.modal-eyebrow {
-  font-family: 'Oswald', sans-serif;
-  font-size: 0.58rem; letter-spacing: 0.18em;
-  text-transform: uppercase; color: #dc2626; margin: 0 0 0.25rem;
-}
-.delete-eyebrow { color: #f87171; }
-.modal-title { font-family: monospace; font-size: 1rem; font-weight: 700; margin: 0; }
-.modal-close {
-  width: 30px; height: 30px; border-radius: 8px;
-  background: rgba(255,255,255,0.05); border: none;
-  color: rgba(255,255,255,0.4); cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: all 0.15s; flex-shrink: 0;
-}
-.modal-close:hover { background: rgba(255,255,255,0.1); color: #fff; }
-
-.receipt-body {
-  padding: 1.25rem 1.5rem;
-  overflow-y: auto; flex: 1;
-  font-family: 'Courier New', monospace; font-size: 0.78rem;
-  color: rgba(255,255,255,0.7);
-}
-.receipt-logo-area { text-align: center; margin-bottom: 1rem; }
-.receipt-logo { height: 50px; margin: 0 auto 0.5rem; display: block; object-fit: contain; }
-.receipt-address { font-size: 0.65rem; color: rgba(255,255,255,0.25); }
-.receipt-divider { text-align: center; color: rgba(255,255,255,0.1); margin: 0.75rem 0; font-size: 0.7rem; letter-spacing: 0.1em; }
-
-.receipt-meta { display: flex; flex-direction: column; gap: 0.25rem; }
-.meta-row { display: flex; justify-content: space-between; font-size: 0.72rem; }
-.cancel-info-box {
-  margin-top: 0.75rem;
-  padding: 0.7rem 0.85rem;
-  background: rgba(220,38,38,0.08);
-  border: 1px solid rgba(220,38,38,0.2);
-  border-radius: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-.cancel-info-title { margin: 0 0 0.25rem; font-size: 0.72rem; font-weight: 700; color: #f87171; }
-.meta-val { color: #fff; font-weight: 600; }
-
-.receipt-items { margin-bottom: 0.5rem; }
-.items-heading { font-size: 0.65rem; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.12em; margin: 0 0 0.6rem; }
-.item-row { margin-bottom: 0.5rem; }
-.item-main { display: flex; gap: 0.4rem; }
-.item-qty { color: rgba(255,255,255,0.35); min-width: 1.8rem; }
-.item-name { flex: 1; color: #fff; }
-.item-subtotal { color: rgba(255,255,255,0.7); font-weight: 600; }
-.item-note { font-size: 0.65rem; color: #fbbf24; padding-left: 2.2rem; font-style: italic; margin-top: 0.15rem; }
-
-.receipt-totals { display: flex; flex-direction: column; gap: 0.3rem; }
-.total-row { display: flex; justify-content: space-between; font-size: 0.75rem; }
-.total-discount { color: #f87171; }
-.total-final { font-size: 0.9rem; font-weight: 900; color: #fff; padding-top: 0.4rem; border-top: 1px dashed rgba(255,255,255,0.1); margin-top: 0.25rem; }
-.total-final span:last-child { color: #ef4444; }
-.total-paid { color: rgba(255,255,255,0.5); }
-.total-change span:last-child { color: #34d399; font-weight: 700; }
-
-.receipt-info-card {
-  margin-top: 1rem;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 10px;
-  padding: 0.75rem 1rem;
-  display: flex; flex-direction: column; gap: 0.25rem;
-}
-.info-row { display: flex; justify-content: space-between; font-size: 0.7rem; }
-.info-val { color: #fff; font-weight: 700; text-transform: uppercase; }
-.info-paid   { color: #34d399; font-weight: 700; }
-.info-pending{ color: #fbbf24; font-weight: 700; }
-.info-void   { color: #a1a1aa; font-weight: 700; }
-
-.modal-footer {
-  padding: 1rem 1.25rem;
-  border-top: 1px solid rgba(255,255,255,0.06);
-  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.6rem;
-}
-.btn-share {
-  display: flex; align-items: center; justify-content: center; gap: 0.4rem;
-  padding: 0.7rem; background: #16a34a; border: none;
-  border-radius: 10px; color: #fff;
-  font-family: 'Oswald', sans-serif; font-size: 0.7rem;
-  letter-spacing: 0.1em; text-transform: uppercase;
-  cursor: pointer; transition: background 0.15s;
-}
-.btn-share:hover:not(:disabled) { background: #15803d; }
-.btn-share:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn-print {
-  display: flex; align-items: center; justify-content: center; gap: 0.4rem;
-  padding: 0.7rem; background: #2563eb; border: none;
-  border-radius: 10px; color: #fff;
-  font-family: 'Oswald', sans-serif; font-size: 0.7rem;
-  letter-spacing: 0.1em; text-transform: uppercase;
-  cursor: pointer; transition: background 0.15s;
-}
-.btn-print:hover { background: #1d4ed8; }
-.btn-close-modal {
-  padding: 0.7rem; background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08); border-radius: 10px;
-  color: rgba(255,255,255,0.5);
-  font-family: 'Oswald', sans-serif; font-size: 0.7rem;
-  letter-spacing: 0.1em; text-transform: uppercase;
-  cursor: pointer; transition: all 0.15s;
-}
-.btn-close-modal:hover { background: rgba(255,255,255,0.08); color: #fff; }
-
-.print-size-row {
-  display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-  padding: 0 1.25rem 1rem;
-}
-.print-size-label {
-  font-size: 0.62rem; color: rgba(255,255,255,0.3);
-  font-family: 'Oswald', sans-serif; letter-spacing: 0.1em; text-transform: uppercase;
-}
-.print-size-btn {
-  padding: 0.3rem 0.7rem; border-radius: 100px;
-  border: 1px solid rgba(255,255,255,0.1); background: transparent;
-  color: rgba(255,255,255,0.4); font-family: monospace; font-size: 0.68rem;
-  cursor: pointer; transition: all 0.15s;
-}
-.print-size-btn:hover { border-color: rgba(255,255,255,0.3); color: #fff; }
-.print-size-btn.active { background: rgba(37,99,235,0.15); border-color: #2563eb; color: #93c5fd; }
-
-/* ── Pay Modal ───────────────────────────────────────────────────── */
-.pay-modal-box {
-  background: #0f0f0f;
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 20px;
-  width: 100%; max-width: 400px;
-  overflow: hidden;
-}
-.pay-body { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1.1rem; }
-
-.pay-customer {
-  padding: 0.85rem 1rem;
-  background: rgba(255,255,255,0.02);
-  border: 1px solid rgba(255,255,255,0.05);
-  border-radius: 10px;
-}
-.pay-name { font-weight: 600; font-size: 0.9rem; margin: 0 0 0.2rem; }
-.pay-phone { font-family: monospace; font-size: 0.75rem; color: rgba(255,255,255,0.35); margin: 0; }
-
-.pay-total-strip {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 0.85rem 1rem;
-  background: rgba(220,38,38,0.06);
-  border: 1px solid rgba(220,38,38,0.15);
-  border-radius: 10px;
-}
-.pay-total-label { font-size: 0.72rem; color: rgba(255,255,255,0.4); font-family: 'Oswald', sans-serif; letter-spacing: 0.1em; text-transform: uppercase; }
-.pay-total-val { font-family: monospace; font-size: 1.15rem; font-weight: 800; color: #ef4444; }
-
-.pay-section { display: flex; flex-direction: column; gap: 0.5rem; }
-.pay-section-label { font-size: 0.6rem; font-family: 'Oswald', sans-serif; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(255,255,255,0.3); }
-
-.pay-method-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
-.pay-method-btn {
-  display: flex; align-items: center; justify-content: center; gap: 0.4rem;
-  padding: 0.7rem; border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.02);
-  color: rgba(255,255,255,0.4);
-  font-family: 'Oswald', sans-serif; font-size: 0.75rem;
-  letter-spacing: 0.08em; text-transform: uppercase;
-  cursor: pointer; transition: all 0.15s;
-}
-.pay-method-btn:hover { border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.7); }
-.pay-method-btn.active { background: rgba(220,38,38,0.12); border-color: #dc2626; color: #fff; }
-.method-btn-icon { font-size: 1rem; }
-
-.pay-amount-input {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 10px;
-  padding: 0.75rem 1rem;
-  color: #fff;
-  font-family: monospace; font-size: 1rem;
-  outline: none; width: 100%;
-  transition: border-color 0.15s;
-}
-.pay-amount-input::placeholder { color: rgba(255,255,255,0.15); }
-.pay-amount-input:focus { border-color: rgba(220,38,38,0.4); }
-
-.pay-split-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.3rem; }
-.pay-add-row-btn {
-  background: transparent; border: 1px dashed rgba(255,255,255,0.2); border-radius: 8px;
-  color: rgba(255,255,255,0.5); font-family: 'Oswald', sans-serif; font-size: 0.62rem;
-  letter-spacing: 0.08em; text-transform: uppercase; padding: 0.3rem 0.6rem; cursor: pointer;
-  transition: all 0.15s;
-}
-.pay-add-row-btn:hover { border-color: rgba(220,38,38,0.5); color: #fff; }
-
-.pay-split-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
-.pay-method-grid-compact { grid-template-columns: 1fr 1fr; flex-shrink: 0; width: 140px; }
-.pay-method-btn-sm { padding: 0.55rem 0.4rem; font-size: 0.62rem; }
-.pay-split-input { flex: 1; padding: 0.55rem 0.75rem; font-size: 0.85rem; }
-.pay-remove-row-btn {
-  background: transparent; border: none; color: rgba(255,255,255,0.3);
-  cursor: pointer; font-size: 0.9rem; flex-shrink: 0; padding: 0.2rem 0.4rem;
-  transition: color 0.15s;
-}
-.pay-remove-row-btn:hover { color: #f87171; }
-
-.pay-split-fill-btn {
-  background: transparent; border: none; color: rgba(220,38,38,0.7);
-  font-family: 'Oswald', sans-serif; font-size: 0.62rem; letter-spacing: 0.06em;
-  text-decoration: underline; cursor: pointer; padding: 0.2rem 0; text-align: left;
-}
-.pay-split-fill-btn:hover { color: #dc2626; }
-
-.change-box {
-  display: flex; justify-content: space-between;
-  padding: 0.6rem 0.85rem;
-  border-radius: 8px; font-family: monospace; font-size: 0.8rem; font-weight: 700;
-}
-.change-ok  { background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2); color: #4ade80; }
-.change-err { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); color: #f87171; }
-
-.pay-confirm-btn {
-  width: 100%; padding: 0.85rem;
-  background: #dc2626; border: none; border-radius: 12px;
-  color: #fff; font-family: 'Oswald', sans-serif;
-  font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase;
-  cursor: pointer; transition: background 0.15s; font-weight: 500;
-}
-.pay-confirm-btn:hover:not(:disabled) { background: #b91c1c; }
-.pay-confirm-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-
-/* Modal hapus permanen — visual peringatan lebih tegas */
-.delete-warning-box {
-  padding: 0.85rem 1rem;
-  background: rgba(220,38,38,0.08);
-  border: 1px solid rgba(220,38,38,0.25);
-  border-radius: 10px;
-  font-size: 0.75rem;
-  line-height: 1.55;
-  color: rgba(255,255,255,0.75);
-}
-.delete-warning-box strong { color: #f87171; }
-.delete-order-code {
-  font-family: monospace;
-  font-weight: 700;
-  color: #fff;
-  background: rgba(255,255,255,0.08);
-  padding: 0.05rem 0.4rem;
-  border-radius: 4px;
-}
-.delete-confirm-input { font-family: monospace; }
-.delete-confirm-btn { background: #991b1b; }
-.delete-confirm-btn:hover:not(:disabled) { background: #7f1d1d; }
+.ao-code { padding: 0.05rem 0.4rem; border-radius: 4px; background: rgb(var(--ink) / 0.08); color: var(--text); font-family: var(--font-mono); font-weight: 700; }
 
 /* ── Struk print (thermal) — disembunyikan di layar biasa ─────────── */
 .print-receipt { display: none; }
-
-/* ── Responsive ─────────────────────────────────────────────────── */
-@media (max-width: 768px) {
-  .ao-root { padding: 1.5rem 1rem; }
-  .ao-title { font-size: 1.4rem; }
-  .ao-header { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
-  .control-bar { flex-direction: column; align-items: stretch; }
-  .search-wrap { margin-left: 0; }
-  .search-input { width: 100%; }
-  .date-nav { width: 100%; justify-content: space-between; }
-  .ao-summary { flex-wrap: wrap; }
-  .summary-chip { flex: 1; min-width: 110px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-}
-@media (max-width: 480px) {
-  .ao-live { display: none; }
-}
-
-/* Hide number spinners */
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-input[type="number"] { -moz-appearance: textfield; }
 </style>
 
 <!-- ── STYLE PRINT (global, tidak di-scope) ─────────────────────────
      Harus di luar <style scoped> karena selector "body *" butuh akses
-     ke seluruh halaman, bukan cuma elemen di dalam komponen ini. -->
+     ke seluruh halaman, bukan cuma elemen di dalam komponen ini.
+     Struk cetak selalu putih-hitam (kertas), tidak ikut tema. -->
 <style>
 @media print {
   body * { visibility: hidden; }
