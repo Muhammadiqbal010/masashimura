@@ -227,7 +227,7 @@ import {
 import apiClient from '@/api/client'
 import { useStoreSettings } from '@/composables/useStoreSettings'
 import { useAdminConfirm } from '@/composables/useAdminConfirm'
-import AdminConfirm from '@/components/admin/AdminConfirm.vue'
+import AdminConfirm from '@/components/ui/admin/Adminconfirm.vue'
 
 const { isStoreOpen, refetchSettings } = useStoreSettings()
 const { state: confirmState, ask, accept: acceptConfirm, cancel: cancelConfirm } = useAdminConfirm()

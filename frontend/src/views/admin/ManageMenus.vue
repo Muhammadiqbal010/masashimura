@@ -281,7 +281,7 @@ import {
 } from 'lucide-vue-next'
 import apiClient from '@/api/client'
 import ImageCropper from '@/components/ui/ImageCropper.vue'
-import AdminModal from '@/components/admin/AdminModal.vue'
+import AdminModal from '@/components/ui/admin/Adminmodal.vue'
 
 const router = useRouter()
 

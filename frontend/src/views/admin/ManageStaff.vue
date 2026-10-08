@@ -114,7 +114,7 @@ import { ref, computed, onMounted } from 'vue'
 import { toast } from 'vue-sonner'
 import { RefreshCw, Search, Users, KeyRound, AlertTriangle } from 'lucide-vue-next'
 import apiClient from '@/api/client'
-import AdminModal from '@/components/admin/AdminModal.vue'
+import AdminModal from '@/components/ui/admin/Adminmodal.vue'
 
 const staffList = ref([])
 const loading = ref(true)

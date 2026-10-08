@@ -233,8 +233,8 @@ import { ref, computed, onMounted } from 'vue'
 import { Plus, Pencil, Trash2, Tag, CheckCircle2, Ticket, Search, AlertTriangle } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import apiClient from '@/api/client'
-import AdminModal from '@/components/admin/AdminModal.vue'
-import AdminConfirm from '@/components/admin/AdminConfirm.vue'
+import AdminModal from '@/components/ui/admin/Adminmodal.vue'
+import AdminConfirm from '@/components/ui/admin/Adminconfirm.vue'
 import { useAdminConfirm } from '@/composables/useAdminConfirm'
 
 const { state: confirmState, ask, accept: acceptConfirm, cancel: cancelConfirm } = useAdminConfirm()

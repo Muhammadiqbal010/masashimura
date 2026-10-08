@@ -319,9 +319,9 @@ import { toast } from 'vue-sonner'
 import axios from 'axios'
 import apiClient from '@/api/client'
 import ImageCropper from '@/components/ui/ImageCropper.vue'
-import AdminModal from '@/components/admin/AdminModal.vue'
-import AdminConfirm from '@/components/admin/AdminConfirm.vue'
-import AdminImageField from '@/components/admin/AdminImageField.vue'
+import AdminModal from '@/components/ui/admin/Adminmodal.vue'
+import AdminConfirm from '@/components/ui/admin/Adminconfirm.vue'
+import AdminImageField from '@/components/ui/admin/Adminimagefield.vue'
 import { useAdminConfirm } from '@/composables/useAdminConfirm'
 import {
   Coffee, Wifi, Zap, Utensils, DollarSign, Moon, Shield, Tv,
