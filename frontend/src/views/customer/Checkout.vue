@@ -45,6 +45,21 @@
             <span class="font-mono text-[10px] uppercase tracking-widest text-zinc-600">Total</span>
             <span class="font-mono text-[14px] font-bold text-amber-400">{{ formatPrice(payment.total) }}</span>
           </div>
+
+          <!-- Ringkasan pesanan (disimpan bersama status pembayaran, jadi tetap tampil setelah refresh) -->
+          <div
+            v-if="payment.items?.length"
+            class="pt-2 mt-1 border-t border-white/[0.06] space-y-1"
+          >
+            <div
+              v-for="(it, i) in payment.items"
+              :key="i"
+              class="flex justify-between gap-3"
+            >
+              <span class="font-mono text-[11px] text-zinc-500 truncate">{{ it.quantity }}x {{ it.name }}</span>
+              <span class="font-mono text-[11px] text-zinc-600 flex-shrink-0">{{ formatPrice(it.price * it.quantity) }}</span>
+            </div>
+          </div>
         </div>
 
         <div class="space-y-2">
@@ -332,18 +347,32 @@ import PromoCodeBox from "@/components/ui/PromoCodeBox.vue"
 import PointRedeemBox from "@/components/ui/PointRedeemBox.vue"
 import { unlockPaymentAudio, playPaymentSuccess } from "@/utils/paymentSuccessSound.js"
 
-const cartStore     = useCartStore()
-const router        = useRouter()
+const cartStore = useCartStore()
+const router    = useRouter()
+const { adminWhatsapp, isStoreOpen, fetchSettings } = useStoreSettings()
 
+// ══════════════════════════════════════════════════════════════════════════════
+// FORM
+// ══════════════════════════════════════════════════════════════════════════════
 const name            = ref("")
 const phone           = ref("")
 const paymentMethod   = ref("cash")   // "cash" | "gateway" (Midtrans)
 const isProcessing    = ref(false)
 const checkingLoyalty = ref(false)
 
-// ── Promo code ──────────────────────────────────────────────────────────────
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+const formatPrice = (p) =>
+  new Intl.NumberFormat("id-ID", {
+    style: "currency", currency: "IDR", minimumFractionDigits: 0,
+  }).format(p || 0)
+
+// ── Promo code ───────────────────────────────────────────────────────────────
 const promoBoxRef  = ref(null)
 const appliedPromo = ref(null)
+
+const onPromoApplied = (promo) => { appliedPromo.value = promo }
+const onPromoRemoved = () => { appliedPromo.value = null }
 
 // ── Tukar poin loyalty ───────────────────────────────────────────────────────
 const pointsBalance     = ref(0)
@@ -363,16 +392,16 @@ const fetchPointRewards = async (phoneNumber) => {
     lockedRewards.value     = data.locked ?? []
   } catch (err) {
     console.error(err)
-    pointsBalance.value = 0
+    pointsBalance.value     = 0
     affordableRewards.value = []
-    lockedRewards.value = []
+    lockedRewards.value     = []
   }
 }
 
 const resetPointRewards = () => {
-  pointsBalance.value = 0
+  pointsBalance.value     = 0
   affordableRewards.value = []
-  lockedRewards.value = []
+  lockedRewards.value     = []
   selectedRewardIds.value = []
 }
 
@@ -383,48 +412,177 @@ const finalTotal = computed(() => {
   return Math.max(cartStore.totalPrice - promoDiscount, 0)
 })
 
-const onPromoApplied = (promo) => { appliedPromo.value = promo }
-const onPromoRemoved  = () => { appliedPromo.value = null }
-
-// ── Admin WhatsApp (dinamis dari API / localStorage) ──────────────────────────
-const { adminWhatsapp, isStoreOpen, fetchSettings } = useStoreSettings()
-onMounted(() => fetchSettings())
-
-const formatPrice = (p) =>
-  new Intl.NumberFormat("id-ID", {
-    style: "currency", currency: "IDR", minimumFractionDigits: 0,
-  }).format(p || 0)
-
-// ── Loyalty ───────────────────────────────────────────────────────────────────
+// ── Cek status member saat nomor HP diisi ────────────────────────────────────
 let debounceTimer = null
 watch(phone, (newPhone) => {
   clearTimeout(debounceTimer)
 
   if (!newPhone || newPhone.length < 9) {
-    cartStore.isMember = false
-    cartStore.points = 0
+    cartStore.resetLoyalty()
     resetPointRewards()
+    checkingLoyalty.value = false   // timer yang dibatalkan tadi tidak akan mematikan indikator ini
     return
   }
 
   checkingLoyalty.value = true
   debounceTimer = setTimeout(async () => {
-    await Promise.all([
-      cartStore.checkLoyalty(newPhone),
-      fetchPointRewards(newPhone),
-    ])
-    checkingLoyalty.value = false
+    try {
+      await Promise.all([
+        cartStore.checkLoyalty(newPhone),
+        fetchPointRewards(newPhone),
+      ])
+    } finally {
+      checkingLoyalty.value = false
+    }
   }, 600)
 })
 
-onBeforeUnmount(() => {
-  clearTimeout(debounceTimer)
-  stopPolling()
-})
+// ── Metode pembayaran ────────────────────────────────────────────────────────
+// Order Rp0 (semua item tukar poin) ditolak endpoint pembayaran, jadi QRIS dimatikan.
+const gatewayUnavailable = computed(() => finalTotal.value <= 0)
+
+const selectPayment = (method) => {
+  if (method === "gateway" && gatewayUnavailable.value) return
+  paymentMethod.value = method
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
-// MIDTRANS SNAP
+// PEMBAYARAN ONLINE (MIDTRANS SNAP)
 // ══════════════════════════════════════════════════════════════════════════════
+
+// ── Status pembayaran ────────────────────────────────────────────────────────
+// payment = null → form checkout biasa
+// payment = { orderNumber, total, waMessage, items, createdAt, message, phase }
+//   phase: "starting" | "waiting" | "paid" | "failed" | "pending"
+const payment = ref(null)
+
+// Watch ini ditaruh setelah `payment` dideklarasikan karena membacanya.
+watch(gatewayUnavailable, (unavailable) => {
+  if (unavailable && paymentMethod.value === "gateway") {
+    paymentMethod.value = "cash"
+    if (!cartStore.isEmpty && !payment.value) {
+      toast.info("Total Rp0, pembayaran dialihkan ke Cash.")
+    }
+  }
+})
+
+// ── Simpan status pembayaran supaya selamat dari refresh ─────────────────────
+// Keranjang sengaja dikosongkan begitu order dibuat (order sudah ada di backend).
+// Yang harus bertahan saat halaman di-refresh adalah status pembayarannya.
+const PENDING_PAYMENT_KEY    = "masashimura:pendingPayment"
+const PENDING_PAYMENT_TTL_MS = 3 * 60 * 60 * 1000   // 3 jam (Midtrans kedaluwarsa 30 menit)
+
+const persistPayment = (p) => {
+  try {
+    localStorage.setItem(PENDING_PAYMENT_KEY, JSON.stringify({
+      orderNumber: p.orderNumber,
+      total:       p.total,
+      waMessage:   p.waMessage,
+      items:       p.items,
+      createdAt:   p.createdAt,
+    }))
+  } catch { /* storage penuh / mode private: abaikan, hanya kehilangan fitur restore */ }
+}
+
+const clearSavedPayment = () => {
+  try { localStorage.removeItem(PENDING_PAYMENT_KEY) } catch { /* abaikan */ }
+}
+
+const loadSavedPayment = () => {
+  try {
+    const raw = localStorage.getItem(PENDING_PAYMENT_KEY)
+    if (!raw) return null
+    const saved = JSON.parse(raw)
+    const fresh = saved?.orderNumber && Date.now() - Number(saved.createdAt) < PENDING_PAYMENT_TTL_MS
+    if (!fresh) {
+      clearSavedPayment()
+      return null
+    }
+    return saved
+  } catch {
+    clearSavedPayment()
+    return null
+  }
+}
+
+// ── Polling status ───────────────────────────────────────────────────────────
+const POLL_INTERVAL_MS  = 2000
+const POLL_MAX_ATTEMPTS = 30   // ≈ 60 detik
+
+let pollRun = 0
+const stopPolling = () => { pollRun++ }
+
+const dropPayment = () => {
+  stopPolling()
+  payment.value = null
+  clearSavedPayment()
+}
+
+const DEFAULT_PENDING_MESSAGE =
+  "Pembayaran belum terkonfirmasi. Kalau kamu sudah membayar, tunggu beberapa detik lalu klik Cek Status."
+
+// Sumber kebenaran = status di backend (diubah webhook Midtrans), BUKAN callback Snap.
+// Callback Snap di browser bisa terlewat (tab ditutup, internet putus).
+//   attempts       : berapa kali cek sebelum menyerah (jadi "pending")
+//   silent         : true = tanpa suara dan toast (dipakai saat restore setelah refresh)
+//   pendingMessage : teks kalau sampai akhir belum lunas
+const pollStatus = async ({
+  attempts = POLL_MAX_ATTEMPTS,
+  silent = false,
+  pendingMessage = DEFAULT_PENDING_MESSAGE,
+} = {}) => {
+  const p = payment.value
+  if (!p) return
+
+  stopPolling()
+  const run = pollRun
+  p.phase   = "waiting"
+  p.message = ""
+
+  for (let i = 0; i < attempts; i++) {
+    if (run !== pollRun) return
+    try {
+      const { data } = await paymentAPI.getStatus(p.orderNumber)
+      if (run !== pollRun) return
+
+      if (data.payment_status === "paid") {
+        p.phase = "paid"
+        // Suara hanya dibunyikan setelah backend mengonfirmasi lunas,
+        // supaya customer tidak pernah dapat "sukses" palsu.
+        if (!silent) {
+          playPaymentSuccess({ total: p.total })
+          toast.success("Pembayaran berhasil!")
+        }
+        return
+      }
+      if (data.payment_status === "void" || data.status === "cancelled") {
+        p.phase = "failed"
+        return
+      }
+    } catch (err) {
+      // Order tidak ada lagi di backend (mis. data dibersihkan): buang status tersimpan.
+      if (err.response?.status === 404) {
+        dropPayment()
+        return
+      }
+      // selain itu koneksi putus sebentar, lanjut coba lagi
+    }
+    if (i < attempts - 1) await sleep(POLL_INTERVAL_MS)
+  }
+
+  if (run === pollRun) {
+    p.phase   = "pending"
+    p.message = pendingMessage
+  }
+}
+
+// Tombol "Cek Status" = tap user, jadi sekalian buka kunci audio.
+const onCheckStatusClick = () => {
+  unlockPaymentAudio()
+  pollStatus({ attempts: 5 })
+}
+
+// ── Snap ─────────────────────────────────────────────────────────────────────
 const MIDTRANS_CLIENT_KEY = import.meta.env.VITE_MIDTRANS_CLIENT_KEY || ""
 
 // Format client key Midtrans bervariasi (ada "SB-Mid-client-...", ada yang langsung
@@ -463,86 +621,6 @@ watch(paymentMethod, (method) => {
   if (method === "gateway") loadSnap().catch(() => {})
 })
 
-// ── Metode pembayaran ─────────────────────────────────────────────────────────
-// Order Rp0 (semua item tukar poin) ditolak endpoint pembayaran, jadi QRIS dimatikan.
-const gatewayUnavailable = computed(() => finalTotal.value <= 0)
-
-const selectPayment = (method) => {
-  if (method === "gateway" && gatewayUnavailable.value) return
-  paymentMethod.value = method
-}
-
-watch(gatewayUnavailable, (unavailable) => {
-  if (unavailable && paymentMethod.value === "gateway") {
-    paymentMethod.value = "cash"
-    if (!cartStore.isEmpty && !payment.value) {
-      toast.info("Total Rp0, pembayaran dialihkan ke Cash.")
-    }
-  }
-})
-
-// ── Status pembayaran online ──────────────────────────────────────────────────
-// payment = null          → form checkout biasa
-// payment = { orderNumber, total, waMessage, message, phase }
-//   phase: "starting" | "waiting" | "paid" | "failed" | "pending"
-const payment = ref(null)
-
-const POLL_INTERVAL_MS   = 2000
-const POLL_MAX_ATTEMPTS  = 30   // ≈ 60 detik
-
-let pollRun = 0
-const stopPolling = () => { pollRun++ }
-
-// Sumber kebenaran = status di backend (diubah webhook Midtrans), BUKAN callback Snap.
-// Callback Snap di browser bisa terlewat (tab ditutup, internet putus).
-const pollStatus = async (maxAttempts = POLL_MAX_ATTEMPTS) => {
-  const p = payment.value
-  if (!p) return
-
-  stopPolling()
-  const run = pollRun
-  p.phase = "waiting"
-  p.message = ""
-
-  for (let i = 0; i < maxAttempts; i++) {
-    if (run !== pollRun) return
-    try {
-      const { data } = await paymentAPI.getStatus(p.orderNumber)
-      if (run !== pollRun) return
-
-      if (data.payment_status === "paid") {
-        p.phase = "paid"
-        // Suara hanya dibunyikan setelah backend mengonfirmasi lunas,
-        // supaya customer tidak pernah dapat "sukses" palsu.
-        playPaymentSuccess()
-        toast.success("Pembayaran berhasil!")
-        return
-      }
-      if (data.payment_status === "void" || data.status === "cancelled") {
-        p.phase = "failed"
-        return
-      }
-    } catch {
-      // koneksi putus sebentar, lanjut coba lagi
-    }
-    if (i < maxAttempts - 1) {
-      await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS))
-    }
-  }
-
-  if (run === pollRun) {
-    p.phase = "pending"
-    p.message =
-      "Pembayaran belum terkonfirmasi. Kalau kamu sudah membayar, tunggu beberapa detik lalu klik Cek Status."
-  }
-}
-
-// Tombol "Cek Status" = tap user, jadi sekalian buka kunci audio.
-const onCheckStatusClick = () => {
-  unlockPaymentAudio()
-  pollStatus(5)
-}
-
 // Minta token (token yang sama dipakai ulang backend) lalu buka popup Snap.
 // Fungsi ini tidak pernah throw; error ditampilkan lewat panel.
 const openSnap = async () => {
@@ -553,7 +631,7 @@ const openSnap = async () => {
   unlockPaymentAudio()
 
   stopPolling()
-  p.phase = "starting"
+  p.phase   = "starting"
   p.message = ""
 
   try {
@@ -566,9 +644,9 @@ const openSnap = async () => {
     window.snap.pay(data.token, {
       onSuccess: () => { handled = true; pollStatus() },
       onPending: () => { handled = true; pollStatus() },
-      onError:   () => { handled = true; pollStatus(3) },
+      onError:   () => { handled = true; pollStatus({ attempts: 3 }) },
       // Popup ditutup tanpa menyelesaikan: cek sebentar, bisa jadi sudah bayar lalu menutup.
-      onClose:   () => { if (!handled) pollStatus(2) },
+      onClose:   () => { if (!handled) pollStatus({ attempts: 2 }) },
     })
   } catch (err) {
     p.phase = "pending"
@@ -578,18 +656,33 @@ const openSnap = async () => {
   }
 }
 
+// ── Pulihkan status pembayaran setelah halaman di-refresh ────────────────────
+const restorePendingPayment = () => {
+  const saved = loadSavedPayment()
+  if (!saved) return
+
+  payment.value = { ...saved, message: "", phase: "waiting" }
+  // Cek sekali ke backend: lunas / gagal / masih menunggu. Tanpa suara dan toast.
+  pollStatus({
+    attempts: 1,
+    silent: true,
+    pendingMessage:
+      "Pembayaran belum selesai. Klik Lanjutkan Bayar, atau Cek Status kalau kamu sudah membayar.",
+  })
+}
+
+// ── Tombol di panel ──────────────────────────────────────────────────────────
 const finishPayment = () => {
-  stopPolling()
-  payment.value = null
+  dropPayment()
   router.push("/")
 }
 
 const backToMenu = () => {
-  stopPolling()
-  payment.value = null
+  dropPayment()
   router.push("/menu")
 }
 
+// ── Teks & warna panel ───────────────────────────────────────────────────────
 const phaseTitle = computed(() => ({
   starting: "Menyiapkan Pembayaran",
   waiting:  "Menunggu Pembayaran",
@@ -616,7 +709,9 @@ const phaseIconClass = computed(() => ({
   pending: "bg-amber-500/10 border-amber-500/30",
 }[payment.value?.phase] || "bg-white/[0.04] border-white/[0.08]"))
 
-// ── Checkout disabled ─────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// CHECKOUT
+// ══════════════════════════════════════════════════════════════════════════════
 const isCheckoutDisabled = computed(() => {
   if (!isStoreOpen.value) return true
   if (cartStore.isEmpty || !phone.value || !name.value || isProcessing.value) return true
@@ -629,7 +724,7 @@ const ctaLabel = computed(() => {
   return paymentMethod.value === "gateway" ? "Bayar Sekarang" : "Buat Pesanan"
 })
 
-// ── WhatsApp ──────────────────────────────────────────────────────────────────
+// ── WhatsApp ─────────────────────────────────────────────────────────────────
 // Pesan dibangun SEBELUM keranjang dikosongkan, lalu dikirim sekarang (cash)
 // atau lewat tombol setelah pembayaran terkonfirmasi (online).
 const buildWaMessage = (orderNumber, paymentLabel) => {
@@ -683,7 +778,15 @@ const openWhatsApp = (message) => {
   return true
 }
 
-// ── Reset form setelah order berhasil dibuat ──────────────────────────────────
+// Ringkasan item untuk panel pembayaran (diambil SEBELUM keranjang dikosongkan).
+const snapshotItems = () =>
+  Object.values(cartStore.cart).map((item) => ({
+    name:     item.name,
+    quantity: item.quantity,
+    price:    Number(item.price_web) || 0,
+  }))
+
+// ── Reset form setelah order berhasil dibuat ─────────────────────────────────
 const resetForm = () => {
   cartStore.clearCart()
   name.value  = ""
@@ -692,7 +795,6 @@ const resetForm = () => {
   resetPointRewards()
 }
 
-// ── Checkout ──────────────────────────────────────────────────────────────────
 const checkout = async () => {
   // HARUS paling awal dan sebelum `await` apa pun: browser (terutama iOS Safari)
   // hanya mengizinkan audio dibuka di dalam gesture tap. Kalau ditaruh setelah
@@ -734,8 +836,8 @@ const checkout = async () => {
       source:         "web",
       customer:       { phone: phone.value, name: name.value },
       payment_method: paymentMethod.value,
-      promo_id:               appliedPromo.value?.promo_id || null,
-      redeem_reward_ids:      selectedRewardIds.value,
+      promo_id:          appliedPromo.value?.promo_id || null,
+      redeem_reward_ids: selectedRewardIds.value,
       // Harga tidak dikirim: backend selalu pakai harga dari database.
       items: Object.values(cartStore.cart).map((item) => ({
         menu_id:  item.id,
@@ -747,20 +849,23 @@ const checkout = async () => {
     const res         = await orderAPI.create(orderData)
     const orderNumber = res.data?.order_number ?? res.data?.id
 
+    // ── QRIS Online ──
     if (isGateway) {
       if (!res.data?.order_number) {
         toast.error("Order dibuat, tapi nomor order tidak diterima. Hubungi admin.")
         return
       }
 
-      const waMessage = buildWaMessage(orderNumber, "QRIS Online (sudah dibayar)")
       payment.value = {
         orderNumber,
-        total: Number(res.data?.total_price ?? finalTotal.value),
-        waMessage,
-        message: "",
-        phase: "starting",
+        total:     Number(res.data?.total_price ?? finalTotal.value),
+        waMessage: buildWaMessage(orderNumber, "QRIS Online (sudah dibayar)"),
+        items:     snapshotItems(),
+        createdAt: Date.now(),
+        message:   "",
+        phase:     "starting",
       }
+      persistPayment(payment.value)   // supaya refresh tidak menghilangkan status pembayaran
       resetForm()
       await openSnap()
       return
@@ -780,4 +885,15 @@ const checkout = async () => {
     isProcessing.value = false
   }
 }
+
+// ── Lifecycle ────────────────────────────────────────────────────────────────
+onMounted(() => {
+  fetchSettings()
+  restorePendingPayment()
+})
+
+onBeforeUnmount(() => {
+  clearTimeout(debounceTimer)
+  stopPolling()
+})
 </script>
