@@ -39,6 +39,18 @@ class Menu(models.Model):
     is_active    = models.BooleanField(default=True)
     image        = CloudinaryField('image', folder='menus/', null=True, blank=True)
 
+    # Badge jempol di halaman Menu. Diatur manual owner (beda dari "Terlaris" yang otomatis).
+    is_recommended = models.BooleanField(default=False)
+
+    # Secret menu: hanya muncul di POS (New Order), TIDAK dikirim ke publik
+    # dan TIDAK bisa dipesan lewat web. Filternya di views + create_order.
+    is_secret = models.BooleanField(default=False)
+
+    # Opsi pilihan per menu (pedas, suhu, add-on, dll). Struktur & validasi: menu/options.py
+    # [{"name": "Level Pedas", "required": true, "multiple": false,
+    #   "choices": [{"label": "Sedeng", "price": 0}, ...]}]
+    options = models.JSONField(default=list, blank=True)
+
     def save(self, *args, **kwargs):
         self.price_web = math.ceil((float(self.price) * 1.01) / 500) * 500
         super().save(*args, **kwargs)

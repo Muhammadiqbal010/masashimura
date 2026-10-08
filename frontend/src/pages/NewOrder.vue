@@ -127,6 +127,10 @@
             <span class="habis-badge">Habis</span>
           </div>
           <span v-if="addTarget && addedCounts[menu.id]" class="menu-added-badge">+{{ addedCounts[menu.id] }}</span>
+          <div v-if="menu.is_secret || menu.options?.length" class="menu-tags">
+            <span v-if="menu.is_secret" class="menu-tag menu-tag-secret" title="Secret menu: tidak tampil di web">SECRET</span>
+            <span v-if="menu.options?.length" class="menu-tag menu-tag-opt" title="Punya opsi pilihan">OPSI</span>
+          </div>
           <div class="menu-card-body">
             <h3 class="menu-name">{{ menu.name }}</h3>
             <p class="menu-price">{{ formatPrice(menu.price) }}</p>
@@ -205,6 +209,9 @@
               <div class="cart-item-info">
                 <p class="cart-item-name">{{ item.name }}</p>
                 <p class="cart-item-price">{{ formatPrice(item.price) }}</p>
+                <p v-if="item.optionDetails?.length" class="cart-item-opts">
+                  {{ item.optionDetails.map((o) => o.label).join(' · ') }}
+                </p>
               </div>
               <div class="qty-control">
                 <button @click="updateQty(index, -1)" class="qty-btn" aria-label="Kurangi">
@@ -220,7 +227,7 @@
               type="text"
               v-model="item.notes"
               @change="handleNotesChange(index)"
-              placeholder="Catatan koki: Level 5, Tanpa Bawang..."
+              placeholder="Catatan koki: Tanpa Bawang..."
               class="cart-notes-input"
             />
           </div>
@@ -491,6 +498,71 @@
     </div>
   </transition>
 
+  <!-- ── MODAL PILIH OPSI MENU ─────────────────────────────────────── -->
+  <transition
+    enter-active-class="modal-enter-active" enter-from-class="modal-enter-from"
+    leave-active-class="modal-leave-active" leave-to-class="modal-leave-to"
+  >
+    <div v-if="pickerMenu" class="modal-overlay" @click.self="closePicker">
+      <div class="modal-box" role="dialog" aria-modal="true" :aria-label="`Pilih opsi ${pickerMenu.name}`">
+        <div class="modal-head">
+          <div>
+            <p class="pos-eyebrow">Pilih Opsi</p>
+            <h2 class="modal-title">{{ pickerMenu.name }}</h2>
+            <p class="modal-ordnum">{{ formatPrice(pickerMenu.price) }}</p>
+          </div>
+          <button class="modal-close-btn" @click="closePicker" aria-label="Tutup">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <div class="modal-section opt-groups">
+          <div v-for="group in pickerMenu.options" :key="group.name" class="opt-group">
+            <label class="field-label">
+              {{ group.name }}
+              <span class="opt-group-hint">
+                {{ group.required ? 'wajib' : 'opsional' }} · {{ group.multiple ? 'boleh banyak' : 'pilih satu' }}
+              </span>
+            </label>
+            <div class="opt-choices">
+              <button
+                v-for="choice in group.choices"
+                :key="choice.label"
+                type="button"
+                class="toggle-btn opt-choice"
+                :class="isPicked(group, choice) ? 'toggle-active-red' : 'toggle-inactive'"
+                :role="group.multiple ? 'checkbox' : 'radio'"
+                :aria-checked="isPicked(group, choice)"
+                @click="togglePick(group, choice)"
+              >
+                <span>{{ choice.label }}</span>
+                <span v-if="Number(choice.price) > 0" class="opt-choice-price">+{{ formatPrice(choice.price) }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-section opt-footer">
+          <p v-if="pickerMissing" class="opt-missing">Pilih "{{ pickerMissing }}" dulu.</p>
+          <div class="opt-footer-row">
+            <div class="qty-control">
+              <button class="qty-btn" :disabled="pickerQty <= 1" @click="pickerQty--" aria-label="Kurangi">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+              <span class="qty-val">{{ pickerQty }}</span>
+              <button class="qty-btn" :disabled="pickerQty >= 99" @click="pickerQty++" aria-label="Tambah">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+            </div>
+            <button class="toggle-btn toggle-active-red opt-confirm" :disabled="!!pickerMissing || isBusy" @click="confirmPicker">
+              {{ addTarget ? 'Tambah ke Tagihan' : 'Tambah' }} · {{ formatPrice(pickerTotal) }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </transition>
+
   <!-- ── MODAL KONFIRMASI PEMBAYARAN ─────────────────────────────── -->
   <transition
     enter-active-class="modal-enter-active" enter-from-class="modal-enter-from"
@@ -653,6 +725,11 @@ const menuLoadError  = ref(false);
 const searchQuery    = ref("");
 const orderItems     = ref([]);
 const showMobileCart = ref(false);
+
+// ── State: picker opsi menu (pedas, add-on, dll) ─────────────────────
+const pickerMenu      = ref(null);
+const pickerSelection = ref({});   // { "Level Pedas": ["Pedas"], "Tambahan": ["Extra keju"] }
+const pickerQty       = ref(1);
 
 // ── State: pelanggan & loyalty ───────────────────────────────────────
 const customerPhone      = ref("");
@@ -940,11 +1017,98 @@ const fetchPointRewards = async (phone) => {
 };
 
 // ── Keranjang ────────────────────────────────────────────────────────
-const addToOrder = (menu) => {
+// Pilihan opsi: buang grup kosong + urutkan, supaya pilihan yang sama = tanda yang sama.
+// Perhitungan harga di sini hanya tampilan; server memvalidasi ulang & menghitung sendiri.
+const normalizeSelection = (selection) => {
+  const out = {};
+  for (const key of Object.keys(selection || {}).sort()) {
+    const picks = (Array.isArray(selection[key]) ? selection[key] : []).filter(Boolean);
+    if (picks.length) out[key] = [...picks].sort();
+  }
+  return out;
+};
+
+const describeSelection = (menu, selection) => {
+  const details = [];
+  for (const group of menu.options || []) {
+    for (const label of selection[group.name] || []) {
+      const choice = (group.choices || []).find((c) => c.label === label);
+      if (choice) details.push({ group: group.name, label: choice.label, price: Number(choice.price) || 0 });
+    }
+  }
+  return details;
+};
+
+const addToOrder = (menu, selection = {}, quantity = 1) => {
   if (!menu.is_available) { toast.error("Menu ini sedang habis!"); return; }
-  const existing = orderItems.value.find((i) => i.id === menu.id && i.notes === "");
-  if (existing) existing.quantity++;
-  else orderItems.value.push({ ...menu, quantity: 1, notes: "" });
+  const chosen    = normalizeSelection(selection);
+  const signature = JSON.stringify(chosen);
+
+  // Menu sama + pilihan sama + catatan masih kosong → jumlahnya ditambah
+  const existing = orderItems.value.find(
+    (i) => i.id === menu.id && (i.optionSignature ?? "{}") === signature && i.notes === ""
+  );
+  if (existing) { existing.quantity += quantity; return; }
+
+  const optionDetails = describeSelection(menu, chosen);
+  const extra = optionDetails.reduce((sum, d) => sum + d.price, 0);
+  orderItems.value.push({
+    ...menu,
+    quantity,
+    notes: "",
+    options: chosen,
+    optionSignature: signature,
+    optionDetails,
+    price: Number(menu.price) + extra,   // harga satuan termasuk add-on
+  });
+};
+
+// ── Picker opsi ──────────────────────────────────────────────────────
+const openPicker = (menu) => {
+  pickerMenu.value = menu;
+  pickerSelection.value = {};
+  pickerQty.value = 1;
+};
+const closePicker = () => { pickerMenu.value = null; };
+
+const isPicked = (group, choice) => (pickerSelection.value[group.name] || []).includes(choice.label);
+
+const togglePick = (group, choice) => {
+  const current = pickerSelection.value[group.name] || [];
+  let next;
+  if (group.multiple) {
+    next = current.includes(choice.label) ? current.filter((l) => l !== choice.label) : [...current, choice.label];
+  } else if (current[0] === choice.label) {
+    next = group.required ? current : [];   // opsi wajib tetap terpilih
+  } else {
+    next = [choice.label];
+  }
+  pickerSelection.value = { ...pickerSelection.value, [group.name]: next };
+};
+
+const pickerMissing = computed(
+  () => (pickerMenu.value?.options || []).find((g) => g.required && !(pickerSelection.value[g.name] || []).length)?.name || null
+);
+
+const pickerTotal = computed(() => {
+  const menu = pickerMenu.value;
+  if (!menu) return 0;
+  const extra = describeSelection(menu, pickerSelection.value).reduce((sum, d) => sum + d.price, 0);
+  return (Number(menu.price) + extra) * pickerQty.value;
+});
+
+const confirmPicker = async () => {
+  const menu = pickerMenu.value;
+  if (!menu || pickerMissing.value) return;
+  const selection = normalizeSelection(pickerSelection.value);
+
+  if (addTarget.value) {
+    // Mode "tambah ke tagihan": kirim langsung ke order yang sedang dibuka
+    if (await addMenuToTargetOrder(menu, selection, pickerQty.value)) closePicker();
+    return;
+  }
+  addToOrder(menu, selection, pickerQty.value);
+  closePicker();
 };
 
 // Dipanggil saat input catatan selesai diedit (@change), bukan tiap ketikan,
@@ -954,7 +1118,11 @@ const handleNotesChange = (index) => {
   if (!cur) return;
   const norm = (s) => (s || "").trim().toLowerCase();
   const dup = orderItems.value.findIndex(
-    (item, idx) => idx !== index && item.id === cur.id && norm(item.notes) === norm(cur.notes)
+    (item, idx) =>
+      idx !== index &&
+      item.id === cur.id &&
+      (item.optionSignature ?? "{}") === (cur.optionSignature ?? "{}") &&
+      norm(item.notes) === norm(cur.notes)
   );
   if (dup > -1) {
     orderItems.value[dup].quantity += cur.quantity;
@@ -1017,6 +1185,7 @@ const submitOrder = async () => {
       menu_id: item.id,
       quantity: item.quantity,
       notes: item.notes,
+      options: item.options || {},   // server memvalidasi & menghitung harga add-on sendiri
     })),
   };
 
@@ -1182,28 +1351,44 @@ const finishAddToOrder = () => {
 };
 
 const onMenuClick = async (menu) => {
+  // Menu beropsi: kasir pilih opsi dulu (berlaku untuk keranjang baru maupun tambah ke tagihan)
+  if (menu.options?.length) return openPicker(menu);
+
   // Bukan mode tambah ke tagihan → perilaku lama (masuk keranjang)
   if (!addTarget.value) return addToOrder(menu);
 
+  await addMenuToTargetOrder(menu, {}, 1);
+};
+
+// Tambah menu ke tagihan yang sedang dibuka. Return true kalau berhasil.
+const addMenuToTargetOrder = async (menu, selection, quantity) => {
   // Guard: abaikan tap selagi request sebelumnya masih jalan (cegah double-add & angka banner loncat)
-  if (isBusy.value) return;
+  if (isBusy.value) return false;
   isBusy.value = true;
 
   try {
     const { data } = await apiClient.post(`/orders/${addTarget.value.id}/items/`, {
       menu_id: menu.id,
-      quantity: 1,
+      quantity,
+      options: selection,
     });
     addTarget.value = data;
     replaceUnpaid(data);
     addedCounts.value = {
       ...addedCounts.value,
-      [menu.id]: (addedCounts.value[menu.id] || 0) + 1,
+      [menu.id]: (addedCounts.value[menu.id] || 0) + quantity,
     };
+    return true;
   } catch (e) {
     apiError(e, "Gagal menambah item");
-    // Tagihan sudah keburu lunas/dibatalkan → keluar dari mode ini (drawer fetch ulang sendiri)
-    if (e.response?.status === 400) finishAddToOrder();
+    // Tagihan sudah keburu lunas/dibatalkan → keluar dari mode ini (drawer fetch ulang sendiri).
+    // Kesalahan pilihan opsi tidak ikut: kasir tetap di mode ini dan bisa memperbaiki pilihannya.
+    const msg = e.response?.data?.detail || e.response?.data?.error || "";
+    if (e.response?.status === 400 && !/opsi|pilih|dobel/i.test(msg)) {
+      closePicker();
+      finishAddToOrder();
+    }
+    return false;
   } finally {
     isBusy.value = false;
   }
@@ -1452,6 +1637,16 @@ onBeforeUnmount(() => clearTimeout(debounceTimeout));
   color: var(--red-soft); border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
   padding: 0.2rem 0.65rem; border-radius: 100px;
 }
+.menu-tags {
+  position: absolute; top: 0.5rem; left: 0.5rem; z-index: 2;
+  display: flex; gap: 0.25rem;
+}
+.menu-tag {
+  font-family: monospace; font-size: 0.56rem; font-weight: 700; letter-spacing: 0.1em;
+  padding: 0.1rem 0.35rem; border-radius: 4px;
+}
+.menu-tag-secret { background: #7c3aed; color: #fff; }
+.menu-tag-opt { background: rgb(var(--ink) / 0.1); color: var(--text-2); }
 .menu-card-body { flex: 1; }
 .menu-name { font-weight: 600; font-size: 0.82rem; color: var(--text-2); margin: 0 0 0.35rem; line-height: 1.3; }
 .menu-price { font-family: monospace; font-size: 0.78rem; font-weight: 700; color: var(--accent-text); margin: 0; }
@@ -1566,6 +1761,19 @@ onBeforeUnmount(() => clearTimeout(debounceTimeout));
 }
 .qty-btn:hover { background: rgb(var(--ink) / 0.1); color: var(--text); }
 .qty-val { font-family: monospace; font-size: 0.78rem; font-weight: 700; min-width: 18px; text-align: center; }
+
+.cart-item-opts { font-size: 0.68rem; color: var(--amber-soft); margin: 0.15rem 0 0; }
+
+/* ── Picker opsi menu ───────────────────────────────────────────── */
+.opt-groups { display: flex; flex-direction: column; gap: 1.1rem; }
+.opt-group-hint { margin-left: 0.4rem; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text-faint); }
+.opt-choices { display: flex; flex-direction: column; gap: 0.4rem; }
+.opt-choice { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; text-align: left; width: 100%; }
+.opt-choice-price { font-family: monospace; font-size: 0.72rem; color: var(--amber-soft); }
+.opt-missing { font-size: 0.72rem; color: var(--text-faint); margin: 0 0 0.5rem; }
+.opt-footer-row { display: flex; align-items: center; gap: 0.75rem; }
+.opt-confirm { flex: 1; justify-content: center; }
+.opt-confirm:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .cart-notes-input {
   background: rgb(var(--ink) / 0.06); border: 1px solid rgb(var(--ink) / 0.05);

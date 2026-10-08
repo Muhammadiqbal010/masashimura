@@ -17,6 +17,45 @@ const loadCart = () => {
   }
 }
 
+// ── Opsi pilihan menu (pedas, suhu, add-on) ─────────────────────────────────
+// Format pilihan: { "Level Pedas": ["Pedas"], "Tambahan": ["Extra keju"] }
+// Perhitungan di sini hanya untuk TAMPILAN. Server memvalidasi ulang pilihan
+// terhadap data menu dan menghitung sendiri harga add-on.
+
+// Buang grup kosong + urutkan, supaya pilihan yang sama selalu menghasilkan tanda yang sama.
+const normalizeSelection = (selection) => {
+  const out = {}
+  for (const key of Object.keys(selection || {}).sort()) {
+    const raw = selection[key]
+    const picks = (Array.isArray(raw) ? raw : raw ? [raw] : []).filter(Boolean)
+    if (picks.length) out[key] = [...picks].sort()
+  }
+  return out
+}
+
+const selectionSignature = (selection) => JSON.stringify(normalizeSelection(selection))
+
+// Rincian pilihan sesuai urutan grup di menu: [{ group, label, price }]
+const describeSelection = (menu, selection) => {
+  const details = []
+  for (const group of menu.options || []) {
+    const picks = selection?.[group.name] || []
+    for (const label of picks) {
+      const choice = (group.choices || []).find((c) => c.label === label)
+      if (choice) details.push({ group: group.name, label: choice.label, price: Number(choice.price) || 0 })
+    }
+  }
+  return details
+}
+
+// Grup wajib yang belum dipilih (nama grup pertama), atau null kalau lengkap.
+const missingRequiredGroup = (menu, selection) => {
+  for (const group of menu.options || []) {
+    if (group.required && !(selection?.[group.name] || []).length) return group.name
+  }
+  return null
+}
+
 export const useCartStore = defineStore("cart", () => {
   // ── State ───────────────────────────────────────────────────────────────────
   const cart = ref(loadCart())
@@ -62,24 +101,65 @@ export const useCartStore = defineStore("cart", () => {
   const isEmpty = computed(() => cartItems.value.length === 0)
 
   // ── Actions: keranjang ──────────────────────────────────────────────────────
-  const addToCart = (menu) => {
+  // Tambah menu ke keranjang. `selection` = pilihan opsi (lihat format di atas).
+  // Return { ok: true } atau { ok: false, error } kalau ada opsi wajib yang belum dipilih.
+  //
+  // Aturan baris: menu + pilihan yang sama + catatan masih kosong → jumlahnya ditambah
+  // (bukan baris baru). Kalau baris itu sudah diberi catatan, dibuat baris baru supaya
+  // catatannya tidak ikut berlaku ke porsi tambahan.
+  const addToCart = (menu, selection = {}, quantity = 1) => {
+    const missing = missingRequiredGroup(menu, selection)
+    if (missing) return { ok: false, error: `Pilih "${missing}" dulu.` }
+
+    const chosen = normalizeSelection(selection)
+    const signature = selectionSignature(chosen)
+    const qty = Math.max(1, Math.floor(Number(quantity) || 1))
+
+    const existing = cartItems.value.find(
+      (item) =>
+        item.id === menu.id &&
+        (item.optionSignature ?? "{}") === signature &&
+        !(item.notes || "").trim()
+    )
+    if (existing) {
+      existing.quantity += qty
+      return { ok: true, merged: true }
+    }
+
     // price_web sudah dihitung di backend saat menu disimpan. Kalau belum ada
     // (menu lama), pakai harga biasa supaya tampilan dan total tetap sama.
     const priceWeb = Number(menu.price_web ?? menu.price) || 0
+    const optionDetails = describeSelection(menu, chosen)
+    const extraPrice = optionDetails.reduce((sum, d) => sum + d.price, 0)
 
-    // Tiap klik = baris baru (catatan per item). Suffix acak mencegah bentrok
-    // kalau dua item ditambah di milidetik yang sama.
+    // Suffix acak mencegah bentrok kalau dua baris dibuat di milidetik yang sama.
     const cartKey = `${menu.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
 
     cart.value[cartKey] = {
       ...menu,
       cartKey,
-      quantity: 1,
+      quantity: qty,
       notes: "",
-      price: priceWeb,       // dipakai untuk subtotal
+      options: chosen,                 // dikirim ke server saat checkout
+      optionSignature: signature,
+      optionDetails,                   // tampilan: [{ group, label, price }]
+      extra_price: extraPrice,
+      price: priceWeb + extraPrice,    // harga SATUAN termasuk add-on (dipakai untuk subtotal)
       price_pos: menu.price,
-      price_web: priceWeb,   // dipakai untuk tampilan di Checkout
+      price_web: priceWeb,             // harga dasar menu tanpa add-on
     }
+    return { ok: true, merged: false }
+  }
+
+  // Jumlah total satu menu di keranjang (semua variasi opsi), untuk badge/stepper di kartu menu.
+  const quantityOfMenu = (menuId) =>
+    cartItems.value.reduce((sum, item) => (item.id === menuId ? sum + item.quantity : sum), 0)
+
+  // Kurangi satu porsi menu dari baris terakhir yang ada (dipakai tombol − di kartu menu).
+  const decrementMenu = (menuId) => {
+    const lines = cartItems.value.filter((item) => item.id === menuId)
+    const last = lines[lines.length - 1]
+    if (last) updateQuantity(last.cartKey, -1)
   }
 
   const updateQuantity = (cartKey, delta) => {
@@ -147,6 +227,8 @@ export const useCartStore = defineStore("cart", () => {
     isEmpty,
 
     addToCart,
+    quantityOfMenu,
+    decrementMenu,
     updateQuantity,
     removeFromCart,
     clearCart,

@@ -81,6 +81,8 @@
                   : 'text-zinc-400 bg-[#0d0d0d] border-white/10 hover:text-white hover:border-white/30'
               ]"
             >
+              <ThumbsUp v-if="cat.value === FILTER_RECOMMENDED" :size="11" class="inline -mt-0.5 mr-1" />
+              <Heart v-else-if="cat.value === FILTER_FAVORITE" :size="11" class="inline -mt-0.5 mr-1" />
               {{ cat.label }}
               <span class="ml-1.5 font-mono text-[9px] opacity-60">{{ getCategoryCount(cat.value) }}</span>
             </button>
@@ -106,7 +108,7 @@
       <!-- Info hasil + reset filter -->
       <div v-if="!loading && menus.length > 0" class="flex items-center justify-between gap-4 mb-5">
         <span class="font-mono text-[10px] text-zinc-500 tracking-[0.25em] uppercase">
-          {{ filteredMenus.length }} menu<template v-if="selectedCategory !== 'all'"> · {{ selectedCategory }}</template>
+          {{ filteredMenus.length }} menu<template v-if="selectedCategory !== 'all'"> · {{ activeFilterLabel }}</template>
         </span>
         <button
           v-if="hasActiveFilters"
@@ -204,13 +206,42 @@
             <!-- Overlay gradient bawah foto (hanya desktop/tablet) -->
             <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none hidden sm:block"></div>
 
-            <!-- Badge HABIS -->
-            <div
-              v-if="!menu.is_available"
-              class="absolute top-1.5 left-1.5 sm:top-3 sm:left-3 z-10 bg-black/75 backdrop-blur-md border border-white/10 px-2 py-1"
-            >
-              <span class="font-mono text-[9px] font-bold tracking-[0.2em] text-zinc-300 uppercase">Habis</span>
+            <!-- Badge: Habis, Rekomendasi (jempol, diatur owner), Terlaris (otomatis) -->
+            <div class="absolute top-1.5 left-1.5 sm:top-3 sm:left-3 z-10 flex flex-col items-start gap-1">
+              <div
+                v-if="!menu.is_available"
+                class="bg-black/75 backdrop-blur-md border border-white/10 px-2 py-1"
+              >
+                <span class="font-mono text-[9px] font-bold tracking-[0.2em] text-zinc-300 uppercase">Habis</span>
+              </div>
+              <div
+                v-if="menu.is_recommended"
+                class="flex items-center gap-1 bg-[#DC2626] text-white px-1.5 py-1"
+                title="Rekomendasi"
+              >
+                <ThumbsUp :size="11" />
+                <span class="hidden sm:inline font-mono text-[9px] font-bold tracking-[0.15em] uppercase">Rekomendasi</span>
+              </div>
+              <div
+                v-if="bestSellerIds.has(menu.id)"
+                class="flex items-center gap-1 bg-amber-400 text-black px-1.5 py-1"
+                title="Terlaris"
+              >
+                <Flame :size="11" />
+                <span class="hidden sm:inline font-mono text-[9px] font-bold tracking-[0.15em] uppercase">Terlaris</span>
+              </div>
             </div>
+          </button>
+
+          <!-- Favorit (disimpan di perangkat ini) -->
+          <button
+            type="button"
+            :aria-pressed="isFavorite(menu.id)"
+            :aria-label="(isFavorite(menu.id) ? 'Hapus dari favorit: ' : 'Simpan ke favorit: ') + menu.name"
+            class="absolute z-20 top-1.5 left-[4.9rem] sm:left-auto sm:right-3 sm:top-3 w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-md border border-white/10 hover:bg-black/80 transition-colors"
+            @click.stop="toggleFavorite(menu.id)"
+          >
+            <Heart :size="14" :class="isFavorite(menu.id) ? 'fill-[#DC2626] text-[#DC2626]' : 'text-white/80'" />
           </button>
 
           <!-- Info -->
@@ -219,9 +250,10 @@
             :class="{ 'opacity-60': !menu.is_available }"
           >
             <!-- Kategori + nama + deskripsi (klik → detail) -->
+            <div class="flex items-start gap-2">
             <button
               type="button"
-              class="flex-1 space-y-1.5 text-left"
+              class="flex-1 min-w-0 space-y-1.5 text-left"
               @click="openDetail(menu)"
             >
               <span class="block font-mono text-[9px] tracking-[0.2em] uppercase text-zinc-500">
@@ -234,6 +266,15 @@
                 {{ menu.description || "Menu andalan spesial Masashimura." }}
               </p>
             </button>
+            <button
+              type="button"
+              :aria-label="'Bagikan ' + menu.name + ' lewat WhatsApp'"
+              class="shrink-0 -mt-1 -mr-1 w-8 h-8 flex items-center justify-center text-zinc-500 hover:text-white transition-colors"
+              @click="shareMenu(menu)"
+            >
+              <Share2 :size="15" />
+            </button>
+            </div>
 
             <!-- Harga + tombol -->
             <div class="flex items-center justify-between gap-3 pt-3 sm:pt-4 border-t border-white/[0.07]">
@@ -241,9 +282,37 @@
                 {{ formatPrice(menu.price_web) }}
               </span>
 
+              <!-- Stepper: muncul kalau menu sudah ada di keranjang -->
+              <div
+                v-if="cartStore.quantityOfMenu(menu.id) > 0"
+                class="flex items-center border border-white/10"
+              >
+                <button
+                  type="button"
+                  :aria-label="'Kurangi ' + menu.name"
+                  class="w-9 h-11 sm:h-10 flex items-center justify-center text-zinc-300 hover:text-white hover:bg-white/5 transition-colors"
+                  @click="cartStore.decrementMenu(menu.id)"
+                >
+                  <Minus :size="14" />
+                </button>
+                <span class="min-w-[1.75rem] text-center font-mono text-[13px] font-bold text-white">
+                  {{ cartStore.quantityOfMenu(menu.id) }}
+                </span>
+                <button
+                  type="button"
+                  :aria-label="'Tambah ' + menu.name"
+                  :disabled="!menu.is_available || !isStoreOpen"
+                  class="w-9 h-11 sm:h-10 flex items-center justify-center bg-[#DC2626] hover:bg-red-700 text-white disabled:opacity-40 transition-colors"
+                  @click="requestAdd(menu)"
+                >
+                  <Plus :size="14" />
+                </button>
+              </div>
+
               <button
+                v-else
                 type="button"
-                @click="addToCart(menu)"
+                @click="requestAdd(menu)"
                 :disabled="!menu.is_available || !isStoreOpen"
                 :aria-label="'Tambah ' + menu.name + ' ke keranjang'"
                 :class="[
@@ -298,23 +367,44 @@
       :menu="selectedMenu"
       :format-price="formatPrice"
       :is-store-open="isStoreOpen"
+      :is-best-seller="bestSellerIds.has(selectedMenu.id)"
+      :is-favorite="isFavorite(selectedMenu.id)"
       @close="closeDetail"
-      @add-to-cart="addToCart"
+      @add-to-cart="requestAdd"
+      @share="shareMenu"
+      @toggle-favorite="toggleFavorite"
+    />
+
+    <!-- ── PICKER OPSI (pedas, add-on, dll) ───────────────────────────────────── -->
+    <MenuOptionPicker
+      v-if="pickerMenu"
+      :menu="pickerMenu"
+      :format-price="formatPrice"
+      @close="pickerMenu = null"
+      @confirm="confirmPicker"
     />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from "vue"
+import { useRoute, useRouter } from "vue-router"
 import { useCartStore } from "@/stores/cart"
 import { useAuthStore } from "@/stores/auth"
 import { menuAPI, getMediaUrl } from "@/api"
 import { toast } from "vue-sonner"
-import { ShoppingCart, Plus, Search, X, ChevronDown, Lock } from "lucide-vue-next"
+import {
+  ShoppingCart, Plus, Minus, Search, X, ChevronDown, Lock,
+  ThumbsUp, Flame, Heart, Share2,
+} from "lucide-vue-next"
 import Cart from "@/components/ui/Cart.vue"
 import MenuDetailModal from "@/components/ui/MenuDetailModal.vue"
+import MenuOptionPicker from "@/components/ui/MenuOptionPicker.vue"
 import { useStoreSettings } from "@/composables/useStoreSettings"
-import router from "@/router"
+import { shareMenuToWhatsApp } from "@/composables/useShareMenu"
+
+const route  = useRoute()
+const router = useRouter()
 
 const cartStore = useCartStore()
 const authStore = useAuthStore()
@@ -322,55 +412,121 @@ const menus      = ref([])
 const loading    = ref(true)
 const isCartOpen = ref(false)
 
+// Filter spesial di deretan chip kategori
+const FILTER_RECOMMENDED = "__recommended"
+const FILTER_FAVORITE    = "__favorite"
+
 const selectedCategory = ref("all")
 const searchQuery      = ref("")
 const sortBy           = ref("default") // 'default' | 'price_asc' | 'price_desc'
 const selectedMenu     = ref(null)       // menu yang lagi dibuka di detail modal
+const pickerMenu       = ref(null)       // menu beropsi yang lagi dipilih opsinya
+
+// ── Favorit (disimpan di perangkat ini, hilang kalau ganti HP / hapus data) ──
+const FAV_KEY = "masashimura:favoriteMenus"
+const loadFavorites = () => {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(FAV_KEY) || "[]")
+    return Array.isArray(parsed) ? parsed.filter(Number.isInteger) : []
+  } catch {
+    return []
+  }
+}
+const favoriteIds = ref(loadFavorites())
+watch(favoriteIds, (value) => {
+  try { localStorage.setItem(FAV_KEY, JSON.stringify(value)) } catch { /* storage penuh / mode private */ }
+}, { deep: true })
+
+const isFavorite = (id) => favoriteIds.value.includes(id)
+const toggleFavorite = (id) => {
+  if (isFavorite(id)) {
+    favoriteIds.value = favoriteIds.value.filter((x) => x !== id)
+  } else {
+    favoriteIds.value = [...favoriteIds.value, id]
+    toast.success("Disimpan ke favorit ❤️")
+  }
+}
+
+// ── Terlaris (otomatis dari endpoint best seller) ───────────────────────────
+const bestSellerIds = ref(new Set())
+const fetchBestSellers = async () => {
+  try {
+    const { data } = await menuAPI.getBestSellers()
+    bestSellerIds.value = new Set((data || []).map((m) => m.id))
+  } catch {
+    /* badge Terlaris hanya pemanis: kalau gagal, halaman tetap jalan tanpa badge */
+  }
+}
+
+const activeMenus = computed(() => menus.value.filter((m) => m.category_name))
 
 const categories = computed(() => {
-  const uniqueCats = [...new Set(menus.value.map(m => m.category_name).filter(Boolean))];
-  return [
-    { label: "Semua", value: "all" },
-    ...uniqueCats.map(name => ({ label: name, value: name })),
-  ];
-});
+  const uniqueCats = [...new Set(activeMenus.value.map((m) => m.category_name))]
+  const list = [{ label: "Semua", value: "all" }]
+  if (activeMenus.value.some((m) => m.is_recommended)) {
+    list.push({ label: "Rekomendasi", value: FILTER_RECOMMENDED })
+  }
+  if (activeMenus.value.some((m) => isFavorite(m.id))) {
+    list.push({ label: "Favorit", value: FILTER_FAVORITE })
+  }
+  return [...list, ...uniqueCats.map((name) => ({ label: name, value: name }))]
+})
+
+const activeFilterLabel = computed(
+  () => categories.value.find((c) => c.value === selectedCategory.value)?.label ?? selectedCategory.value
+)
+
+// Chip yang lagi aktif bisa hilang (mis. favorit terakhir dihapus) → balik ke "Semua"
+watch(categories, (list) => {
+  if (!list.some((c) => c.value === selectedCategory.value)) selectedCategory.value = "all"
+})
 
 const { isStoreOpen, closedMessage, fetchSettings } = useStoreSettings()
 onMounted(() => {
   fetchMenus()
+  fetchBestSellers()
   fetchSettings()
 })
 
 const selectCategory = (val) => { selectedCategory.value = val }
 
 const getCategoryCount = (val) => {
-  if (val === "all") return menus.value.filter(m => m.category_name).length
-  return menus.value.filter(m => m.category_name === val).length
+  if (val === "all") return activeMenus.value.length
+  if (val === FILTER_RECOMMENDED) return activeMenus.value.filter((m) => m.is_recommended).length
+  if (val === FILTER_FAVORITE) return activeMenus.value.filter((m) => isFavorite(m.id)).length
+  return activeMenus.value.filter((m) => m.category_name === val).length
 }
 
 const fetchMenus = async () => {
   try {
     loading.value = true
     const { data } = await menuAPI.getAll()
-    menus.value = data || []
+    // Server sudah menyaring untuk customer. Filter ini untuk staff yang login: mereka
+    // menerima semua menu, tapi halaman customer tidak boleh menampilkan secret/nonaktif.
+    menus.value = (data || []).filter((m) => m.is_active !== false && !m.is_secret)
   } catch {
     toast.error("Gagal memuat daftar menu.")
   } finally {
     loading.value = false
+    syncDetailFromRoute()
   }
 }
 
 const filteredMenus = computed(() => {
   // Menu tanpa kategori (category_name null) selalu disembunyikan dari customer
-  let list = menus.value.filter(m => m.category_name)
+  let list = activeMenus.value
 
-  if (selectedCategory.value !== "all") {
-    list = list.filter(m => m.category_name === selectedCategory.value)
+  if (selectedCategory.value === FILTER_RECOMMENDED) {
+    list = list.filter((m) => m.is_recommended)
+  } else if (selectedCategory.value === FILTER_FAVORITE) {
+    list = list.filter((m) => isFavorite(m.id))
+  } else if (selectedCategory.value !== "all") {
+    list = list.filter((m) => m.category_name === selectedCategory.value)
   }
 
   const q = searchQuery.value.trim().toLowerCase()
   if (q) {
-    list = list.filter(m =>
+    list = list.filter((m) =>
       m.name?.toLowerCase().includes(q) ||
       m.description?.toLowerCase().includes(q)
     )
@@ -394,15 +550,82 @@ const hasActiveFilters = computed(() =>
   sortBy.value !== "default"
 )
 
-const addToCart = (menu) => {
+// ── Tambah ke keranjang ─────────────────────────────────────────────────────
+// Pintu masuk dari kartu & detail modal: menu beropsi dibuka picker dulu.
+const requestAdd = (menu) => {
   if (!isStoreOpen.value) return toast.error(closedMessage.value)
   if (!menu.is_available) return toast.error("Menu ini sedang habis!")
-  cartStore.addToCart(menu)
-  toast.success(`${menu.name} ditambahkan! 🛒`)
+  if (menu.options?.length) {
+    pickerMenu.value = menu
+    return
+  }
+  addToCart(menu)
 }
 
-const openDetail = (menu) => { selectedMenu.value = menu }
-const closeDetail = () => { selectedMenu.value = null }
+const addToCart = (menu, selection = {}, quantity = 1) => {
+  const result = cartStore.addToCart(menu, selection, quantity)
+  if (!result.ok) {
+    toast.error(result.error)
+    return false
+  }
+  toast.success(`${menu.name} ditambahkan! 🛒`)
+  return true
+}
+
+const confirmPicker = ({ selection, quantity }) => {
+  const menu = pickerMenu.value
+  if (!menu) return
+  if (addToCart(menu, selection, quantity)) {
+    pickerMenu.value = null
+    if (selectedMenu.value) closeDetail()
+  }
+}
+
+// ── Detail modal + deep link (/menu?item=ID) ────────────────────────────────
+const setItemQuery = (id) => {
+  const query = { ...route.query }
+  if (id == null) delete query.item
+  else query.item = String(id)
+  router.replace({ query }).catch(() => {})
+}
+
+// Samakan modal dengan URL: link yang dibagikan ke WhatsApp langsung membuka detail menu.
+const syncDetailFromRoute = () => {
+  if (loading.value) return                       // tunggu daftar menu selesai dimuat
+  const raw = route.query.item
+  if (raw == null || raw === "") {
+    selectedMenu.value = null
+    return
+  }
+  const found = menus.value.find((m) => String(m.id) === String(raw))
+  if (found) {
+    selectedMenu.value = found
+  } else {
+    selectedMenu.value = null
+    toast.info("Menu itu sudah tidak tersedia.")
+    setItemQuery(null)
+  }
+}
+watch(() => route.query.item, syncDetailFromRoute)
+
+const openDetail = (menu) => {
+  selectedMenu.value = menu
+  setItemQuery(menu.id)
+}
+const closeDetail = () => {
+  selectedMenu.value = null
+  setItemQuery(null)
+}
+
+// ── Share ke WhatsApp ───────────────────────────────────────────────────────
+const shareMenu = async (menu) => {
+  try {
+    const mode = await shareMenuToWhatsApp(menu, { formatPrice, getMediaUrl })
+    if (mode === "link") toast.info("Membuka WhatsApp…")
+  } catch {
+    toast.error("Gagal membagikan menu")
+  }
+}
 
 const formatPrice = (p) =>
   new Intl.NumberFormat("id-ID", {

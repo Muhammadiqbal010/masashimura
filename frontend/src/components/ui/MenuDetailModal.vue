@@ -35,18 +35,51 @@
 
               <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none"></div>
 
-              <button
-                @click="$emit('close')"
-                class="absolute top-3 right-3 z-10 bg-black/60 backdrop-blur-md border border-white/10 rounded-full w-8 h-8 flex items-center justify-center text-white hover:bg-black/80 transition-colors"
-              >
-                <X :size="15" />
-              </button>
+              <!-- Aksi kanan atas: favorit, bagikan, tutup -->
+              <div class="absolute top-3 right-3 z-10 flex items-center gap-2">
+                <button
+                  type="button"
+                  :aria-pressed="isFavorite"
+                  :aria-label="isFavorite ? 'Hapus dari favorit' : 'Simpan ke favorit'"
+                  class="bg-black/60 backdrop-blur-md border border-white/10 rounded-full w-8 h-8 flex items-center justify-center hover:bg-black/80 transition-colors"
+                  @click="$emit('toggle-favorite', menu.id)"
+                >
+                  <Heart :size="15" :class="isFavorite ? 'fill-[#DC2626] text-[#DC2626]' : 'text-white'" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Bagikan lewat WhatsApp"
+                  class="bg-black/60 backdrop-blur-md border border-white/10 rounded-full w-8 h-8 flex items-center justify-center text-white hover:bg-black/80 transition-colors"
+                  @click="$emit('share', menu)"
+                >
+                  <Share2 :size="15" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Tutup"
+                  class="bg-black/60 backdrop-blur-md border border-white/10 rounded-full w-8 h-8 flex items-center justify-center text-white hover:bg-black/80 transition-colors"
+                  @click="$emit('close')"
+                >
+                  <X :size="15" />
+                </button>
+              </div>
 
-              <div
-                v-if="!menu.is_available"
-                class="absolute top-3 left-3 z-10 bg-black/70 backdrop-blur-md border border-white/10 px-2.5 py-1 rounded-lg"
-              >
-                <span class="font-mono text-[9px] font-bold tracking-[0.2em] text-zinc-400 uppercase">Habis</span>
+              <!-- Badge kiri atas -->
+              <div class="absolute top-3 left-3 z-10 flex flex-col items-start gap-1.5">
+                <div
+                  v-if="!menu.is_available"
+                  class="bg-black/70 backdrop-blur-md border border-white/10 px-2.5 py-1 rounded-lg"
+                >
+                  <span class="font-mono text-[9px] font-bold tracking-[0.2em] text-zinc-400 uppercase">Habis</span>
+                </div>
+                <div v-if="menu.is_recommended" class="flex items-center gap-1.5 bg-[#DC2626] text-white px-2.5 py-1 rounded-lg">
+                  <ThumbsUp :size="11" />
+                  <span class="font-mono text-[9px] font-bold tracking-[0.15em] uppercase">Rekomendasi</span>
+                </div>
+                <div v-if="isBestSeller" class="flex items-center gap-1.5 bg-amber-400 text-black px-2.5 py-1 rounded-lg">
+                  <Flame :size="11" />
+                  <span class="font-mono text-[9px] font-bold tracking-[0.15em] uppercase">Terlaris</span>
+                </div>
               </div>
 
               <div class="absolute bottom-3 left-4">
@@ -67,12 +100,25 @@
                 </p>
               </div>
 
+              <!-- Ringkasan opsi yang bisa dipilih -->
+              <div v-if="menu.options?.length" class="flex flex-wrap items-center gap-1.5">
+                <span class="font-mono text-[9px] tracking-[0.2em] uppercase text-zinc-600">Pilihan</span>
+                <span
+                  v-for="group in menu.options"
+                  :key="group.name"
+                  class="font-mono text-[10px] text-zinc-400 bg-white/[0.04] border border-white/[0.06] rounded-md px-2 py-0.5"
+                >
+                  {{ group.name }}<span v-if="group.required" class="text-[#DC2626]"> *</span>
+                </span>
+              </div>
+
               <div class="flex items-center justify-between gap-3 pt-4 border-t border-white/[0.05]">
                 <span class="font-mono text-xl font-bold text-amber-400 tracking-tight leading-none">
                   {{ formatPrice(menu.price_web) }}
                 </span>
 
                 <button
+                  type="button"
                   @click="handleAdd"
                   :disabled="!menu.is_available || !isStoreOpen"
                   :class="[
@@ -83,7 +129,7 @@
                   ]"
                 >
                   <Plus :size="13" />
-                  Tambah
+                  {{ menu.options?.length ? "Pilih & Tambah" : "Tambah" }}
                 </button>
               </div>
             </div>
@@ -95,17 +141,20 @@
 </template>
 
 <script setup>
-import { Plus, X } from "lucide-vue-next"
+import { Plus, X, ThumbsUp, Flame, Heart, Share2 } from "lucide-vue-next"
 import { getMediaUrl } from "@/api"
 
 const props = defineProps({
   menu: { type: Object, required: true },
   formatPrice: { type: Function, required: true },
   isStoreOpen: { type: Boolean, default: true },
+  isBestSeller: { type: Boolean, default: false },
+  isFavorite: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(["close", "add-to-cart"])
+const emit = defineEmits(["close", "add-to-cart", "share", "toggle-favorite"])
 
+// Menu beropsi: Menu.vue yang membuka picker; di sini cukup meneruskan menunya.
 const handleAdd = () => {
   emit("add-to-cart", props.menu)
 }

@@ -56,7 +56,9 @@
               :key="i"
               class="flex justify-between gap-3"
             >
-              <span class="font-mono text-[11px] text-zinc-500 truncate">{{ it.quantity }}x {{ it.name }}</span>
+              <span class="font-mono text-[11px] text-zinc-500 truncate">
+                {{ it.quantity }}x {{ it.name }}<template v-if="it.optionText"> ({{ it.optionText }})</template>
+              </span>
               <span class="font-mono text-[11px] text-zinc-600 flex-shrink-0">{{ formatPrice(it.price * it.quantity) }}</span>
             </div>
           </div>
@@ -174,7 +176,17 @@
                 <span class="font-mono text-[11px] text-zinc-600">{{ item.quantity }}x</span>
                 <span class="font-mono text-[11px] text-zinc-700">·</span>
                 <span class="font-mono text-[11px] text-zinc-600">
-                  {{ formatPrice(item.price_web) }}
+                  {{ formatPrice(item.price) }}
+                </span>
+              </div>
+
+              <div v-if="item.optionDetails?.length" class="mt-1.5 flex flex-wrap gap-1">
+                <span
+                  v-for="opt in item.optionDetails"
+                  :key="opt.group + opt.label"
+                  class="font-mono text-[10px] text-zinc-400 bg-white/[0.04] border border-white/[0.06] rounded-md px-1.5 py-0.5"
+                >
+                  {{ opt.label }}<template v-if="opt.price"> +{{ formatPrice(opt.price) }}</template>
                 </span>
               </div>
 
@@ -186,7 +198,7 @@
             <!-- Subtotal -->
             <div class="flex-shrink-0 text-right">
               <span class="font-mono text-[13px] font-bold text-amber-400">
-                {{ formatPrice(item.price_web * item.quantity) }}
+                {{ formatPrice(item.price * item.quantity) }}
               </span>
             </div>
           </div>
@@ -727,11 +739,15 @@ const ctaLabel = computed(() => {
 // ── WhatsApp ─────────────────────────────────────────────────────────────────
 // Pesan dibangun SEBELUM keranjang dikosongkan, lalu dikirim sekarang (cash)
 // atau lewat tombol setelah pembayaran terkonfirmasi (online).
+// "Pedas · Extra keju" dari pilihan opsi item keranjang ("" kalau tidak ada).
+const optionTextOf = (item) => (item.optionDetails || []).map((d) => d.label).join(" · ")
+
 const buildWaMessage = (orderNumber, paymentLabel) => {
   const itemsText = Object.values(cartStore.cart)
     .map((item) => {
-      const line = `   • ${item.name} x${item.quantity} — Rp ${(Number(item.price_web) * item.quantity).toLocaleString("id-ID")}`
-      return item.notes ? `${line}\n     📋 ${item.notes}` : line
+      const line = `   • ${item.name} x${item.quantity} — Rp ${(Number(item.price) * item.quantity).toLocaleString("id-ID")}`
+      const optionText = optionTextOf(item)
+      return line + (optionText ? `\n     🔸 ${optionText}` : "") + (item.notes ? `\n     📋 ${item.notes}` : "")
     })
     .join("\n")
 
@@ -781,9 +797,10 @@ const openWhatsApp = (message) => {
 // Ringkasan item untuk panel pembayaran (diambil SEBELUM keranjang dikosongkan).
 const snapshotItems = () =>
   Object.values(cartStore.cart).map((item) => ({
-    name:     item.name,
-    quantity: item.quantity,
-    price:    Number(item.price_web) || 0,
+    name:       item.name,
+    quantity:   item.quantity,
+    price:      Number(item.price) || 0,   // harga satuan termasuk add-on
+    optionText: optionTextOf(item),
   }))
 
 // ── Reset form setelah order berhasil dibuat ─────────────────────────────────
@@ -843,6 +860,7 @@ const checkout = async () => {
         menu_id:  item.id,
         quantity: item.quantity,
         notes:    item.notes || "",
+        options:  item.options || {},   // server memvalidasi & menghitung harga add-on sendiri
       })),
     }
 
@@ -877,9 +895,17 @@ const checkout = async () => {
     resetForm()
     router.push("/")
   } catch (error) {
+    const message = error.response?.data?.detail || error.response?.data?.error || "Koneksi terputus"
+
+    // Keranjang tersimpan di localStorage, jadi bisa berisi menu yang belakangan jadi
+    // secret/nonaktif/habis atau opsinya sudah diubah admin. Server menolak dengan 400 —
+    // tawarkan kosongkan keranjang supaya customer tidak buntu.
+    const cartProblem = error.response?.status === 400 && /keranjang|opsi|pilih|habis/i.test(message)
     toast.error(
-      "Gagal memproses pesanan: " +
-      (error.response?.data?.detail || error.response?.data?.error || "Koneksi terputus")
+      "Gagal memproses pesanan: " + message,
+      cartProblem
+        ? { action: { label: "Kosongkan keranjang", onClick: () => { cartStore.clearCart(); router.push("/menu") } } }
+        : undefined
     )
   } finally {
     isProcessing.value = false

@@ -7,6 +7,10 @@ export const menuAPI = {
   // Kalau nanti backend sudah mendukung filter server-side, tinggal tambahkan:
   //   getAll: (category) => apiClient.get("/menus/", { params: { category } })
   getAll: () => apiClient.get("/menus/"),
+
+  // Top 3 menu terlaris (publik) untuk badge "Terlaris" di Menu.vue.
+  // CATATAN: sesuaikan path dengan urls.py (route TopBestSellersMenuView).
+  getBestSellers: () => apiClient.get("/menus/best-sellers/"),
   create: (formData) =>
     apiClient.post("/menus/", formData, {
       headers: { "Content-Type": "multipart/form-data" },

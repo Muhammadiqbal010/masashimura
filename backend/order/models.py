@@ -192,8 +192,16 @@ class OrderItem(models.Model):
     menu = models.ForeignKey(Menu, on_delete=models.SET_NULL, null=True, blank=True)
     quantity = models.PositiveIntegerField(default=1)
 
+    # Harga SATUAN, sudah termasuk add-on berbayar (kalau ada).
     price = models.DecimalField(max_digits=10, decimal_places=0)
+
+    # Teks yang tampil di struk/drawer: gabungan pilihan opsi + catatan bebas,
+    # contoh "Pedas · Extra keju · tanpa sayur". Dirakit server.
     notes = models.CharField(max_length=255, blank=True, default='')
+
+    # Pilihan terstruktur (snapshot saat order dibuat, tidak ikut berubah kalau opsi menu diedit):
+    # [{"group": "Level Pedas", "choices": [{"label": "Pedas", "price": 0}]}]
+    selected_options = models.JSONField(default=list, blank=True)
 
     # True kalau item ini didapat dari tukar poin loyalty (harga selalu 0),
     # dipakai buat nampilin badge "Reward" di struk/admin, bukan cuma nebak dari price=0.

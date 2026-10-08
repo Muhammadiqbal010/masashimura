@@ -49,6 +49,8 @@
           <option value="">Semua status</option>
           <option value="available">Tersedia</option>
           <option value="soldout">Habis</option>
+          <option value="recommended">Rekomendasi</option>
+          <option value="secret">Secret menu</option>
         </select>
         <select v-model="filterCategory" class="adm-input" aria-label="Filter kategori">
           <option value="">Semua kategori</option>
@@ -108,6 +110,9 @@
               <div class="mm-info">
                 <p class="mm-name">
                   <span class="adm-truncate">{{ menu.name }}</span>
+                  <ThumbsUp v-if="menu.is_recommended" :size="13" class="mm-flag mm-flag--rec" title="Rekomendasi (badge jempol di halaman Menu)" />
+                  <EyeOff v-if="menu.is_secret" :size="13" class="mm-flag mm-flag--secret" title="Secret menu: hanya muncul di New Order" />
+                  <ListChecks v-if="menu.options?.length" :size="13" class="mm-flag mm-flag--opt" :title="`${menu.options.length} grup opsi`" />
                   <AlertTriangle
                     v-if="!menu.category_name" :size="13" class="mm-warn"
                     title="Kategori menu ini sudah dihapus. Klik Edit untuk memilih kategori baru."
@@ -213,6 +218,91 @@
           <label class="adm-label" for="menu-desc">Deskripsi <span class="adm-opt">(opsional)</span></label>
           <textarea id="menu-desc" v-model="form.description" class="adm-input" rows="3" placeholder="Deskripsi singkat menu"></textarea>
         </div>
+
+        <div class="adm-grid-2">
+          <div class="adm-field">
+            <span id="menu-rec-label" class="adm-label">Rekomendasi</span>
+            <div class="mm-toggle-row">
+              <button
+                type="button" class="adm-switch" role="switch" aria-labelledby="menu-rec-label"
+                :aria-checked="form.is_recommended" @click="form.is_recommended = !form.is_recommended"
+              ></button>
+              <span class="mm-toggle-text">{{ form.is_recommended ? 'Tampil badge jempol' : 'Tanpa badge' }}</span>
+            </div>
+          </div>
+          <div class="adm-field">
+            <span id="menu-secret-label" class="adm-label">Secret menu</span>
+            <div class="mm-toggle-row">
+              <button
+                type="button" class="adm-switch" role="switch" aria-labelledby="menu-secret-label"
+                :aria-checked="form.is_secret" @click="form.is_secret = !form.is_secret"
+              ></button>
+              <span class="mm-toggle-text">{{ form.is_secret ? 'Hanya di New Order' : 'Tampil di halaman Menu' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Opsi pilihan (pedas, suhu, ukuran, add-on) -->
+        <div class="adm-field">
+          <span class="adm-label">Opsi pilihan <span class="adm-opt">(opsional)</span></span>
+          <p class="mm-opt-hint">
+            Contoh: Level Pedas (pilih satu) atau Tambahan (boleh banyak, berbayar). Kosongkan harga kalau gratis.
+          </p>
+
+          <div v-for="(group, gi) in form.options" :key="gi" class="mm-opt-group">
+            <div class="mm-opt-head">
+              <input
+                v-model="group.name" type="text" class="adm-input" maxlength="50"
+                placeholder="Nama grup, mis. Level Pedas" :aria-label="`Nama grup opsi ${gi + 1}`"
+              />
+              <button type="button" class="adm-icon-btn adm-icon-btn--danger" :aria-label="`Hapus grup ${group.name || gi + 1}`" @click="removeGroup(gi)">
+                <Trash2 :size="15" />
+              </button>
+            </div>
+
+            <div class="mm-opt-flags">
+              <label class="mm-opt-check"><input v-model="group.required" type="checkbox" /> Wajib dipilih</label>
+              <label class="mm-opt-check"><input v-model="group.multiple" type="checkbox" /> Boleh pilih banyak</label>
+            </div>
+
+            <div v-for="(choice, ci) in group.choices" :key="ci" class="mm-opt-choice">
+              <input
+                v-model="choice.label" type="text" class="adm-input" maxlength="50"
+                placeholder="Nama pilihan" :aria-label="`Pilihan ${ci + 1} di ${group.name || 'grup'}`"
+              />
+              <div class="adm-affix mm-opt-price">
+                <span class="adm-affix-pre" aria-hidden="true">+Rp</span>
+                <input
+                  v-model="choice.price" type="number" inputmode="numeric" min="0" step="500"
+                  class="adm-input adm-input--mono has-pre" placeholder="0" aria-label="Harga tambahan"
+                />
+              </div>
+              <button
+                type="button" class="adm-icon-btn" :disabled="group.choices.length <= 1"
+                :aria-label="`Hapus pilihan ${choice.label || ci + 1}`" @click="removeChoice(group, ci)"
+              >
+                <X :size="14" />
+              </button>
+            </div>
+
+            <button
+              type="button" class="adm-btn adm-btn--ghost mm-opt-add"
+              :disabled="group.choices.length >= MAX_CHOICES" @click="addChoice(group)"
+            >
+              <Plus :size="14" /> Tambah pilihan
+            </button>
+          </div>
+
+          <div class="mm-opt-actions">
+            <button type="button" class="adm-btn adm-btn--soft" :disabled="form.options.length >= MAX_GROUPS" @click="addGroup()">
+              <Plus :size="14" /> Grup opsi
+            </button>
+            <button type="button" class="adm-btn adm-btn--ghost" :disabled="form.options.length >= MAX_GROUPS" @click="addSpicyPreset">
+              Preset Level Pedas
+            </button>
+          </div>
+          <p v-if="errors.options" class="adm-error">{{ errors.options }}</p>
+        </div>
       </form>
 
       <template #footer>
@@ -277,7 +367,7 @@ import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import {
   Plus, Search, X, Pencil, Trash2, Save, ImagePlus, Salad, AlertTriangle,
-  UtensilsCrossed, CheckCircle2, XCircle, Tag,
+  UtensilsCrossed, CheckCircle2, XCircle, Tag, ThumbsUp, EyeOff, ListChecks,
 } from 'lucide-vue-next'
 import apiClient from '@/api/client'
 import ImageCropper from '@/components/ui/ImageCropper.vue'
@@ -306,8 +396,17 @@ const categoryError     = ref('')
 const newCategory       = reactive({ name: '', group: 'makanan' })
 const categoryList      = ref([]) // [{id, name, group}]
 
-const form   = reactive({ name: '', category: '', price: '', description: '', is_available: true })
-const errors = reactive({ name: '', category: '', price: '' })
+const blankForm = () => ({
+  name: '', category: '', price: '', description: '',
+  is_available: true, is_recommended: false, is_secret: false,
+  options: [],
+})
+const form   = reactive(blankForm())
+const errors = reactive({ name: '', category: '', price: '', options: '' })
+
+// Batas ini sama dengan menu/options.py (server tetap validasi ulang)
+const MAX_GROUPS  = 6
+const MAX_CHOICES = 15
 
 const showCropper = ref(false)
 const rawImageForCropper = ref(null)
@@ -333,7 +432,9 @@ const filteredMenus = computed(() => {
     const okStatus =
       filterStatus.value === '' ||
       (filterStatus.value === 'available' && m.is_available) ||
-      (filterStatus.value === 'soldout' && !m.is_available)
+      (filterStatus.value === 'soldout' && !m.is_available) ||
+      (filterStatus.value === 'recommended' && m.is_recommended) ||
+      (filterStatus.value === 'secret' && m.is_secret)
     const okCat = filterCategory.value === '' || (m.category_name || 'Lainnya') === filterCategory.value
     return m.name.toLowerCase().includes(q) && okStatus && okCat
   })
@@ -356,13 +457,55 @@ const formatPrice = (p) =>
 const isOrphan = (catName) => catName === '__orphan__'
 const displayGroupName = (catName) => (isOrphan(catName) ? 'Tanpa Kategori' : catName)
 
-const clearErrors = () => { errors.name = errors.category = errors.price = '' }
+const clearErrors = () => { errors.name = errors.category = errors.price = errors.options = '' }
+
+// ── Editor opsi ─────────────────────────────────────────────────────
+const addGroup = (name = '', required = false, labels = ['']) => {
+  if (form.options.length >= MAX_GROUPS) return
+  form.options.push({
+    name, required, multiple: false,
+    choices: labels.map((label) => ({ label, price: '' })),
+  })
+}
+const addSpicyPreset = () => addGroup('Level Pedas', true, ['Nggak pedas', 'Sedeng', 'Pedas'])
+const removeGroup = (gi) => { form.options.splice(gi, 1) }
+const addChoice = (group) => { if (group.choices.length < MAX_CHOICES) group.choices.push({ label: '', price: '' }) }
+const removeChoice = (group, ci) => { if (group.choices.length > 1) group.choices.splice(ci, 1) }
+
+// Bersihkan + cek opsi sebelum dikirim. Return { list } atau { error }.
+const buildOptions = () => {
+  const list = []
+  const seenGroups = new Set()
+  for (const g of form.options) {
+    const name = (g.name || '').trim()
+    if (!name) return { error: 'Nama grup opsi wajib diisi (atau hapus grupnya).' }
+    if (seenGroups.has(name.toLowerCase())) return { error: `Grup "${name}" dobel.` }
+    seenGroups.add(name.toLowerCase())
+
+    const seenLabels = new Set()
+    const choices = []
+    for (const c of g.choices) {
+      const label = (c.label || '').trim()
+      if (!label) return { error: `Ada pilihan kosong di grup "${name}".` }
+      if (seenLabels.has(label.toLowerCase())) return { error: `Pilihan "${label}" dobel di grup "${name}".` }
+      seenLabels.add(label.toLowerCase())
+      const price = c.price === '' || c.price == null ? 0 : Number(c.price)
+      if (!Number.isInteger(price) || price < 0) return { error: `Harga "${label}" harus bilangan bulat, tidak negatif.` }
+      choices.push({ label, price })
+    }
+    if (!choices.length) return { error: `Grup "${name}" minimal punya 1 pilihan.` }
+    list.push({ name, required: !!g.required, multiple: !!g.multiple, choices })
+  }
+  return { list }
+}
 const validate = () => {
   clearErrors()
   let ok = true
   if (!form.name.trim())               { errors.name = 'Nama menu wajib diisi.'; ok = false }
   if (!form.category)                  { errors.category = 'Kategori wajib diisi.'; ok = false }
   if (!form.price || +form.price <= 0) { errors.price = 'Harga harus lebih dari 0.'; ok = false }
+  const opt = buildOptions()
+  if (opt.error) { errors.options = opt.error; ok = false }
   return ok
 }
 
@@ -458,7 +601,7 @@ const resetPhoto = () => {
 
 const openAddModal = () => {
   editingMenu.value = null
-  Object.assign(form, { name: '', category: '', price: '', description: '', is_available: true })
+  Object.assign(form, blankForm())
   clearErrors()
   resetPhoto()
   isDialogOpen.value = true
@@ -472,6 +615,15 @@ const editMenu = (menu) => {
     price: menu.price,
     description: menu.description || '',
     is_available: menu.is_available,
+    is_recommended: !!menu.is_recommended,
+    is_secret: !!menu.is_secret,
+    // Salin dalam supaya mengetik di editor tidak mengubah daftar menu sebelum disimpan
+    options: (menu.options || []).map((g) => ({
+      name: g.name,
+      required: !!g.required,
+      multiple: !!g.multiple,
+      choices: (g.choices || []).map((c) => ({ label: c.label, price: c.price || '' })),
+    })),
   })
   clearErrors()
   resetPhoto()
@@ -494,6 +646,9 @@ const saveMenu = async () => {
     payload.append('price', form.price)
     payload.append('description', form.description)
     payload.append('is_available', form.is_available)
+    payload.append('is_recommended', form.is_recommended)
+    payload.append('is_secret', form.is_secret)
+    payload.append('options', JSON.stringify(buildOptions().list))
     if (photoFile.value) payload.append('image', photoFile.value)
 
     if (editingMenu.value) {
@@ -505,8 +660,12 @@ const saveMenu = async () => {
     }
     await fetchMenus({ silent: true })
     closeModal()
-  } catch {
-    toast.error('Gagal menyimpan menu')
+  } catch (err) {
+    // Pesan validasi dari server (mis. opsi tidak valid) ditampilkan di tempatnya
+    const data = err.response?.data
+    const optMsg = Array.isArray(data?.options) ? data.options[0] : data?.options
+    if (optMsg) errors.options = String(optMsg)
+    toast.error(optMsg ? 'Opsi menu belum valid' : 'Gagal menyimpan menu')
   } finally {
     saving.value = false
   }
@@ -625,6 +784,30 @@ onMounted(async () => {
 .mm-cat-add { flex-shrink: 0; width: 42px; padding: 0; }
 .mm-toggle-row { display: flex; align-items: center; gap: 0.7rem; min-height: 42px; }
 .mm-toggle-text { font-size: 0.8125rem; color: var(--text-2); }
+
+/* Penanda di baris menu */
+.mm-flag { flex-shrink: 0; }
+.mm-flag--rec { color: var(--accent-text); }
+.mm-flag--secret { color: var(--red-soft); }
+.mm-flag--opt { color: var(--text-faint); }
+
+/* Editor opsi */
+.mm-opt-hint { margin: 0 0 0.6rem; font-size: 0.75rem; color: var(--text-faint); }
+.mm-opt-group {
+  display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 0.75rem; padding: 0.8rem;
+  border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-2);
+}
+.mm-opt-head { display: flex; gap: 0.5rem; align-items: center; }
+.mm-opt-head .adm-input { flex: 1; min-width: 0; }
+.mm-opt-flags { display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; }
+.mm-opt-check { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; color: var(--text-2); cursor: pointer; }
+.mm-opt-choice { display: grid; grid-template-columns: minmax(0, 1fr) 8.5rem auto; gap: 0.5rem; align-items: center; }
+.mm-opt-price { min-width: 0; }
+.mm-opt-add { align-self: flex-start; }
+.mm-opt-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+@media (max-width: 640px) {
+  .mm-opt-choice { grid-template-columns: minmax(0, 1fr) 7rem auto; }
+}
 
 /* Dropzone foto */
 .mm-drop {

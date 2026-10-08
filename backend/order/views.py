@@ -19,6 +19,7 @@ from rest_framework.views import APIView
 
 from finance.models import Expense
 from menu.models import Menu
+from menu.options import resolve_selection, OptionError
 from promotions.models import Promo  # validasi & kunci kuota server-side saat create_order
 from payments.services import cancel_midtrans_transaction
 from .pricing import web_price
@@ -93,6 +94,26 @@ def _calc_promo_discount(promo, subtotal):
         discount = discount_value
 
     return min(discount, subtotal)
+
+def _orderable_problem(menu, source):
+    """
+    Pesan error kalau menu TIDAK boleh dipesan dari source ini, atau None kalau aman.
+    - Web: secret & nonaktif ditolak (pesan generik, nama secret menu tidak dibocorkan),
+      menu habis juga ditolak (sebelumnya cuma dicek di tampilan, bisa dibypass lewat POST langsung).
+    - POS (staff): tidak dibatasi, kasir yang menentukan.
+    """
+    if source == "web":
+        if menu.is_secret or not menu.is_active:
+            return "Ada menu di keranjang yang sudah tidak tersedia. Kosongkan keranjang lalu pilih ulang."
+        if not menu.is_available:
+            return f"Menu {menu.name} sedang habis."
+    return None
+
+
+def _join_notes(option_text, free_text):
+    """Gabung teks pilihan opsi + catatan bebas jadi satu string (maks 255 karakter)."""
+    parts = [p for p in ((option_text or "").strip(), (free_text or "").strip()) if p]
+    return " · ".join(parts)[:255]
 
 
 # ─────────────────────────────────────────────
@@ -265,12 +286,27 @@ def create_order(request):
             transaction.set_rollback(True)
             return Response({"error": "Data item tidak valid (menu_id/quantity)"}, status=400)
 
-        menu  = get_object_or_404(Menu, pk=menu_id)
-        price = _price_for(source, menu)
+        menu = get_object_or_404(Menu, pk=menu_id)
+
+        problem = _orderable_problem(menu, source)
+        if problem:
+            transaction.set_rollback(True)
+            return Response({"error": problem}, status=400)
+
+        # Pilihan opsi divalidasi terhadap data menu di database; harga add-on dihitung di sini,
+        # bukan dipercaya dari client. Add-on tidak kena markup web.
+        try:
+            chosen, extra_price, option_text = resolve_selection(menu, item.get('options'))
+        except OptionError as e:
+            transaction.set_rollback(True)
+            return Response({"error": str(e)}, status=400)
+
+        price = _price_for(source, menu) + extra_price
 
         OrderItem.objects.create(
             order=order, menu=menu, quantity=quantity,
-            price=price, notes=item_notes,
+            price=price, notes=_join_notes(option_text, item_notes),
+            selected_options=chosen,
         )
         subtotal += price * quantity
 
@@ -299,6 +335,11 @@ def create_order(request):
                 transaction.set_rollback(True)
                 return Response({"error": "Salah satu reward tidak valid/tidak aktif"}, status=400)
 
+            if reward.menu and _orderable_problem(reward.menu, source):
+                transaction.set_rollback(True)
+                return Response({"error": "Salah satu reward tidak tersedia saat ini"}, status=400)
+
+            # Reward = 1 porsi gratis tanpa opsi (menu beropsi wajib tetap boleh ditukar; pilihan default kosong).
             OrderItem.objects.create(
                 order=order, menu=reward.menu, quantity=1,
                 price=Decimal('0'), is_point_redemption=True,
@@ -612,6 +653,12 @@ def available_point_rewards(request):
         points = loyalty.points if loyalty else 0
 
     rewards = PointReward.objects.filter(is_active=True).select_related('menu')
+
+    # Endpoint ini publik: reward dari secret menu / menu nonaktif tidak boleh bocor.
+    # Kasir (staff) tetap lihat semuanya.
+    user = getattr(request, "user", None)
+    if not (user and user.is_authenticated and user.is_staff):
+        rewards = rewards.filter(menu__is_secret=False, menu__is_active=True)
 
     affordable, locked = [], []
     for reward in rewards:
@@ -1567,8 +1614,8 @@ def _refresh_totals(order):
 def add_order_item(request, pk):
     """
     Tambah menu ke order yang belum lunas.
-    Body: { "menu_id": 5, "quantity": 1, "notes": "" }
-    Menu + catatan yang sama sudah ada di nota → quantity-nya yang ditambah.
+    Body: { "menu_id": 5, "quantity": 1, "notes": "", "options": {"Level Pedas": ["Pedas"]} }
+    Baris yang sama persis (menu, pilihan opsi, catatan, harga) → quantity-nya yang ditambah.
     """
     order = get_object_or_404(Order.objects.select_for_update(), pk=pk)
     err = _check_editable(order)
@@ -1583,22 +1630,33 @@ def add_order_item(request, pk):
     if quantity <= 0:
         return Response({"detail": "Quantity harus lebih dari 0."}, status=400)
 
-    notes = (request.data.get("notes") or "").strip()
+    try:
+        chosen, extra_price, option_text = resolve_selection(menu, request.data.get("options"))
+    except OptionError as e:
+        return Response({"detail": str(e)}, status=400)
 
-    existing = order.items.filter(menu=menu, notes=notes, is_point_redemption=False).first()
+    notes      = _join_notes(option_text, request.data.get("notes"))
+    unit_price = _price_for(order.source, menu) + extra_price
+
+    existing = next(
+        (
+            i for i in order.items.filter(menu=menu, notes=notes, is_point_redemption=False)
+            if i.selected_options == chosen and i.price == unit_price
+        ),
+        None,
+    )
     if existing:
         existing.quantity += quantity
         existing.save(update_fields=["quantity"])
     else:
         OrderItem.objects.create(
             order=order, menu=menu, quantity=quantity,
-            price=_price_for(order.source, menu), notes=notes,
+            price=unit_price, notes=notes, selected_options=chosen,
         )
 
     _refresh_totals(order)
     order.refresh_from_db()
     return Response(OrderSerializer(order).data)
-
 
 @api_view(["PATCH", "DELETE"])
 @permission_classes([IsAdminUser])
@@ -1722,6 +1780,7 @@ def split_order(request, pk):
             OrderItem.objects.create(
                 order=new_order, menu=item.menu, quantity=qty,
                 price=item.price, notes=item.notes,
+                selected_options=item.selected_options,
             )
 
     _refresh_totals(order)      # promo (kalau ada) tetap menempel di nota asal

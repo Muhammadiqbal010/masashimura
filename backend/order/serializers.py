@@ -48,7 +48,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OrderItem
-        fields = ["id", "menu_name", "quantity", "price", "notes", "is_point_redemption"]
+        fields = ["id", "menu_name", "quantity", "price", "notes", "selected_options", "is_point_redemption"]
 
 
 class OrderPaymentSerializer(serializers.ModelSerializer):

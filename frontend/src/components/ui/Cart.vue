@@ -88,14 +88,25 @@
 
             <!-- Harga per item × qty -->
             <span class="font-mono text-[12px] font-bold text-amber-400 leading-none">
-              {{ formatPrice(item.price_web * item.quantity) }}
+              {{ formatPrice(item.price * item.quantity) }}
             </span>
+
+            <!-- Pilihan opsi (pedas, add-on, dll) -->
+            <div v-if="item.optionDetails?.length" class="flex flex-wrap gap-1">
+              <span
+                v-for="opt in item.optionDetails"
+                :key="opt.group + opt.label"
+                class="font-mono text-[10px] text-zinc-400 bg-white/[0.04] border border-white/[0.06] rounded-md px-1.5 py-0.5"
+              >
+                {{ opt.label }}<template v-if="opt.price"> +{{ formatPrice(opt.price) }}</template>
+              </span>
+            </div>
 
             <!-- Catatan -->
             <input
               v-model="item.notes"
               type="text"
-              placeholder="Catatan (contoh: pedas sedang)"
+              placeholder="Catatan (contoh: tanpa sayur)"
               class="w-full bg-white/[0.03] border border-white/[0.06] hover:border-white/10 focus:border-[#DC2626]/50 rounded-lg py-1.5 px-3 text-[11px] font-mono text-zinc-400 placeholder:text-zinc-700 outline-none transition-colors duration-150"
             />
 
