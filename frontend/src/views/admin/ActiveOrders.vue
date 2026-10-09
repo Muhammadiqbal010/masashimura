@@ -12,7 +12,30 @@
         </p>
       </div>
 
-      <div class="adm-header-actions">
+      <div class="adm-header-actions ao-head-actions">
+        <button
+          type="button"
+          class="adm-icon-btn adm-icon-btn--bordered"
+          :class="{ 'is-on': soundOn }"
+          :title="soundOn ? 'Bunyi order baru: nyala (klik untuk matikan)' : 'Bunyi order baru: mati (klik untuk nyalakan)'"
+          :aria-label="soundOn ? 'Matikan bunyi order baru' : 'Nyalakan bunyi order baru'"
+          :aria-pressed="soundOn"
+          @click="toggleSound"
+        >
+          <component :is="soundOn ? Bell : BellOff" :size="15" />
+        </button>
+
+        <button
+          type="button"
+          class="adm-icon-btn adm-icon-btn--bordered"
+          title="Muat ulang sekarang"
+          aria-label="Muat ulang sekarang"
+          :disabled="isRefreshing"
+          @click="manualRefresh"
+        >
+          <RefreshCw :size="14" :class="{ 'ao-spin': isRefreshing }" />
+        </button>
+
         <span class="adm-badge" :class="loadError ? 'adm-badge--red' : 'adm-badge--green'" role="status">
           <span class="adm-dot" :class="{ 'ao-pulse': !loadError }"></span>
           {{ loadError ? 'Gagal memuat · mencoba lagi' : 'Live · tiap 5 detik' }}
@@ -42,11 +65,14 @@
       <div class="adm-search">
         <Search :size="14" class="adm-search-icon" aria-hidden="true" />
         <input
+          ref="searchInput"
           v-model="searchQuery"
           type="search"
           class="adm-input"
-          placeholder="Cari no. HP, nama, atau no. order…"
+          placeholder="Cari no. HP, nama, menu, atau no. order…"
           aria-label="Cari pesanan"
+          aria-keyshortcuts="/"
+          title="Tekan / untuk langsung mencari"
         />
         <button v-if="searchQuery" type="button" class="adm-search-clear" aria-label="Hapus pencarian" @click="searchQuery = ''">
           <X :size="14" />
@@ -54,19 +80,37 @@
       </div>
     </div>
 
-    <!-- ── FILTER STATUS (sekaligus ringkasan angka) ───────────────── -->
-    <div class="adm-seg" role="group" aria-label="Filter status pesanan">
-      <button
-        v-for="tab in statusTabs"
-        :key="tab.value"
-        type="button"
-        class="adm-seg-btn"
-        :aria-pressed="statusFilter === tab.value"
-        @click="statusFilter = tab.value"
-      >
-        {{ tab.label }}
-        <span class="ao-count">{{ counts[tab.value] }}</span>
-      </button>
+    <!-- ── FILTER STATUS + RINGKASAN + URUTAN ──────────────────────── -->
+    <div class="ao-filterbar">
+      <div class="adm-seg" role="group" aria-label="Filter status pesanan">
+        <button
+          v-for="tab in statusTabs"
+          :key="tab.value"
+          type="button"
+          class="adm-seg-btn"
+          :aria-pressed="statusFilter === tab.value"
+          @click="statusFilter = tab.value"
+        >
+          {{ tab.label }}
+          <span class="ao-count" :class="{ 'is-alert': tab.value === 'unpaid' && counts.unpaid > 0 }">{{ counts[tab.value] }}</span>
+        </button>
+      </div>
+
+      <div class="ao-filterbar-right">
+        <div v-if="orders.length" class="ao-summary">
+          <span v-if="summary.pending > 0" class="ao-summary-item is-pending">
+            Belum dibayar <b>{{ formatPrice(summary.pending) }}</b>
+          </span>
+          <span v-if="isOwner" class="ao-summary-item">
+            Terkumpul <b>{{ formatPrice(summary.paid) }}</b>
+          </span>
+        </div>
+
+        <div class="adm-seg ao-sort" role="group" aria-label="Urutan daftar">
+          <button type="button" class="adm-seg-btn" :aria-pressed="sortMode === 'newest'" @click="setSort('newest')">Terbaru</button>
+          <button type="button" class="adm-seg-btn" :aria-pressed="sortMode === 'unpaid'" @click="setSort('unpaid')">Belum lunas dulu</button>
+        </div>
+      </div>
     </div>
 
     <!-- ── ERROR MEMUAT DATA ───────────────────────────────────────── -->
@@ -116,48 +160,74 @@
             <tr>
               <th>Order</th>
               <th>Customer</th>
+              <th>Menu</th>
               <th class="adm-th-r">Tagihan</th>
               <th class="adm-th-c">Status</th>
-              <th>Metode</th>
               <th class="adm-th-c">Waktu</th>
-              <th class="adm-th-c">Aksi</th>
+              <th class="adm-th-r">Aksi</th>
             </tr>
           </thead>
           <tbody>
             <tr
-              v-for="order in filteredOrders"
+              v-for="order in visibleOrders"
               :key="order.id"
               class="ao-row"
+              :class="{
+                'ao-row--unpaid': isUnpaid(order),
+                'ao-row--cancelled': order.status === 'cancelled',
+                'ao-row--new': newIds.has(order.id),
+              }"
               tabindex="0"
               :aria-label="`Buka struk order ${order.order_number || order.id}`"
               @click="openOrderModal(order)"
               @keydown.enter.self="openOrderModal(order)"
             >
-              <td class="adm-td-first ao-id">#{{ order.id }}</td>
+              <td class="adm-td-first ao-id">
+                #{{ order.id }}
+                <span v-if="newIds.has(order.id)" class="ao-new-tag">Baru</span>
+              </td>
 
               <td data-label="Customer">
-                <span class="ao-phone">{{ order.customer_phone || '—' }}</span>
-                <span v-if="!order.customer_phone" class="adm-badge ao-guest">Guest</span>
+                <template v-if="order.customer_name || order.customer_phone">
+                  <span class="ao-cust-name">{{ order.customer_name || order.customer_phone }}</span>
+                  <span v-if="order.customer_name && order.customer_phone" class="ao-cust-phone">{{ order.customer_phone }}</span>
+                </template>
+                <span v-else class="adm-badge ao-guest">Guest</span>
               </td>
 
-              <td class="adm-td-r ao-price" data-label="Tagihan">{{ formatPrice(order.total_price) }}</td>
-
-              <td class="adm-td-c" data-label="Status">
-                <div class="ao-status">
-                  <span class="adm-badge" :class="orderBadge(order).cls">{{ orderBadge(order).label }}</span>
-                  <span class="adm-badge" :class="payBadge(order).cls">{{ payBadge(order).label }}</span>
-                </div>
+              <td class="ao-menu-cell" data-label="Menu" :title="itemsTitle(order)">
+                <ul v-if="order.items?.length" class="ao-items">
+                  <li v-for="(item, i) in itemsPreview(order)" :key="i">
+                    <span class="ao-items-qty">{{ item.quantity }}×</span>
+                    <span class="ao-items-name">{{ item.menu_name }}</span>
+                  </li>
+                </ul>
+                <span v-else class="ao-items-empty">—</span>
+                <span v-if="itemsMore(order)" class="ao-items-more">+{{ itemsMore(order) }} menu lainnya</span>
               </td>
 
-              <td data-label="Metode">
+              <td class="adm-td-r" data-label="Tagihan">
+                <span class="ao-price">{{ formatPrice(order.total_price) }}</span>
                 <span class="ao-method">
-                  <component :is="methodIcon(order.payment_method)" :size="14" aria-hidden="true" />
+                  <component :is="methodIcon(order.payment_method)" :size="13" aria-hidden="true" />
                   {{ methodLabel(order.payment_method) }}
                 </span>
               </td>
 
+              <td class="adm-td-c" data-label="Status">
+                <div class="ao-status">
+                  <span class="adm-badge" :class="orderBadge(order).cls">{{ orderBadge(order).label }}</span>
+                  <span v-if="order.status !== 'cancelled'" class="adm-badge" :class="payBadge(order).cls">{{ payBadge(order).label }}</span>
+                </div>
+              </td>
+
               <td class="adm-td-c ao-time" data-label="Waktu">
                 {{ formatTime(order.created_at) }}
+                <span
+                  v-if="isUnpaid(order) && isToday && ageLabel(order)"
+                  class="ao-age"
+                  :class="{ 'is-old': isStale(order) }"
+                >{{ ageLabel(order) }}</span>
                 <span
                   v-if="order.entered_at"
                   class="ao-late"
@@ -165,32 +235,44 @@
                 >Input susulan</span>
               </td>
 
-              <td class="adm-td-c ao-actions" data-label="" @click.stop>
-                <button
-                  v-if="canPay(order)"
-                  type="button"
-                  class="adm-btn adm-btn--primary adm-btn--sm"
-                  @click="openPayModal(order)"
-                >Lunasi</button>
-                <span v-else-if="order.status !== 'cancelled'" class="ao-done" title="Sudah lunas">✓ Lunas</span>
+              <!-- td tetap table-cell; flex-nya ada di div di dalamnya -->
+              <td class="adm-td-r ao-actions-cell" data-label="" @click.stop>
+                <div class="ao-actions">
+                  <button
+                    v-if="canPay(order)"
+                    type="button"
+                    class="adm-btn adm-btn--primary adm-btn--sm"
+                    @click="openPayModal(order)"
+                  >Lunasi</button>
 
-                <button
-                  v-if="order.status !== 'completed' && order.status !== 'cancelled'"
-                  type="button"
-                  class="adm-btn adm-btn--soft adm-btn--sm"
-                  @click="openCancelModal(order)"
-                >Batalkan</button>
+                  <button
+                    v-if="order.status !== 'completed' && order.status !== 'cancelled'"
+                    type="button"
+                    class="adm-btn adm-btn--soft adm-btn--sm"
+                    @click="openCancelModal(order)"
+                  >Batalkan</button>
 
-                <button
-                  v-if="isOwner"
-                  type="button"
-                  class="adm-icon-btn adm-icon-btn--danger adm-icon-btn--bordered"
-                  title="Hapus permanen (khusus owner)"
-                  aria-label="Hapus permanen"
-                  @click="openDeleteModal(order)"
-                >
-                  <Trash2 :size="14" />
-                </button>
+                  <button
+                    type="button"
+                    class="adm-icon-btn adm-icon-btn--bordered"
+                    title="Lihat struk"
+                    aria-label="Lihat struk"
+                    @click="openOrderModal(order)"
+                  >
+                    <Receipt :size="14" />
+                  </button>
+
+                  <button
+                    v-if="isOwner"
+                    type="button"
+                    class="adm-icon-btn adm-icon-btn--danger adm-icon-btn--bordered"
+                    title="Hapus permanen (khusus owner)"
+                    aria-label="Hapus permanen"
+                    @click="openDeleteModal(order)"
+                  >
+                    <Trash2 :size="14" />
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -386,6 +468,15 @@
           <p class="ao-person-phone">{{ selectedPayOrder.customer_phone || 'Tanpa nomor' }}</p>
         </div>
 
+        <!-- Menu yang dipesan: kasir bisa cek ulang sebelum menerima uang -->
+        <ul v-if="selectedPayOrder.items?.length" class="ao-order-items" aria-label="Menu yang dipesan">
+          <li v-for="(item, i) in selectedPayOrder.items" :key="i">
+            <span class="ao-items-qty">{{ item.quantity }}×</span>
+            <span class="ao-oi-name">{{ item.menu_name }}</span>
+            <span class="ao-oi-price">{{ formatPrice(item.price * item.quantity) }}</span>
+          </li>
+        </ul>
+
         <div class="ao-total">
           <span>Total tagihan</span>
           <strong>{{ formatPrice(selectedPayOrder.total_price) }}</strong>
@@ -417,6 +508,7 @@
               class="adm-input adm-input--mono ao-payrow-input"
               :aria-label="`Nominal baris ${idx + 1}`"
               :data-autofocus="idx === 0 ? '' : null"
+              @keydown.enter="canConfirmPay && confirmPay()"
             />
             <button
               v-if="payRows.length > 1"
@@ -427,7 +519,18 @@
             ><X :size="14" /></button>
           </div>
 
-          <button v-if="paySplitRemaining > 0" type="button" class="ao-link" @click="fillRemainingToLastRow">
+          <!-- Nominal cepat: berlaku untuk baris terakhir -->
+          <div v-if="quickAmounts.length" class="ao-quick" role="group" aria-label="Nominal cepat">
+            <button
+              v-for="q in quickAmounts"
+              :key="q.value"
+              type="button"
+              class="ao-chip"
+              @click="applyQuick(q.value)"
+            >{{ q.label }}</button>
+          </div>
+
+          <button v-if="payRows.length > 1 && paySplitRemaining > 0" type="button" class="ao-link" @click="fillRemainingToLastRow">
             Isi sisa {{ formatPrice(paySplitRemaining) }} ke baris terakhir
           </button>
         </div>
@@ -454,6 +557,14 @@
           <p class="ao-person-name">{{ selectedCancelOrder.customer_name || 'Walk In' }}</p>
           <p class="ao-person-phone">{{ selectedCancelOrder.customer_phone || 'Tanpa nomor' }}</p>
         </div>
+
+        <ul v-if="selectedCancelOrder.items?.length" class="ao-order-items" aria-label="Menu yang dipesan">
+          <li v-for="(item, i) in selectedCancelOrder.items" :key="i">
+            <span class="ao-items-qty">{{ item.quantity }}×</span>
+            <span class="ao-oi-name">{{ item.menu_name }}</span>
+            <span class="ao-oi-price">{{ formatPrice(item.price * item.quantity) }}</span>
+          </li>
+        </ul>
 
         <div class="ao-total">
           <span>Total tagihan</span>
@@ -541,10 +652,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import {
   Search, X, ChevronLeft, ChevronRight, Printer, Send, Plus, Trash2,
-  Banknote, QrCode, Shuffle, RefreshCw, AlertTriangle, Receipt,
+  Banknote, QrCode, Shuffle, RefreshCw, AlertTriangle, Receipt, Bell, BellOff,
 } from 'lucide-vue-next'
 import { orderAPI, apiClient } from '@/api'
 import { toast } from 'vue-sonner'
@@ -557,21 +668,35 @@ import logoUrl from '@/assets/masashimura-logo.png'
 const authStore = useAuthStore()
 const kasirName = computed(() => authStore.user?.name || authStore.user?.username || 'Staff')
 
-// Role owner — cuma role ini yang boleh hapus order permanen.
+// Role owner — cuma role ini yang boleh hapus order permanen & lihat nominal "Terkumpul".
 // NOTE: ini cuma nyembunyiin tombol di UI. Endpoint DELETE di backend
 // WAJIB juga dikasih permission check role owner: request langsung ke API
 // bisa bypass tombol ini.
 const isOwner = computed(() => (authStore.user?.role || '').toLowerCase() === 'owner')
 
+// ── Preferensi kecil yang diingat di browser ────────────────────────
+const readPref = (key, fallback) => {
+  try {
+    const v = localStorage.getItem(key)
+    return v === null ? fallback : v
+  } catch { return fallback }
+}
+const writePref = (key, value) => {
+  try { localStorage.setItem(key, String(value)) } catch { /* abaikan */ }
+}
+
 // ── State utama ─────────────────────────────────────────────────────
 const POLL_MS = 5000
 const currentDate = ref(new Date())
 const isLoading = ref(true)       // true sampai jawaban pertama (sukses/gagal) untuk tanggal yang dipilih
+const isRefreshing = ref(false)
 const loadError = ref('')         // pesan kegagalan memuat; kosong = baik-baik saja
 const lastUpdated = ref('')
 const orders = ref([])
 const searchQuery = ref('')
 const statusFilter = ref('all')
+const searchInput = ref(null)
+const now = ref(Date.now())
 
 const num = (v) => parseFloat(v) || 0
 
@@ -594,6 +719,10 @@ const resetForNewDate = () => {
   orders.value = []
   loadError.value = ''
   isLoading.value = true
+  // Hari baru = mulai dari nol: jangan bunyikan alarm "order baru" untuk isi hari itu.
+  knownIds = new Set()
+  hasBaseline = false
+  newIds.value = new Set()
 }
 const changeDate = (days) => {
   const d = new Date(currentDate.value)
@@ -613,6 +742,57 @@ const goToday = () => {
   currentDate.value = new Date()
   resetForNewDate()
   fetchActiveOrders({ force: true })
+}
+
+// ── Notifikasi order baru (bunyi + sorotan) ─────────────────────────
+const SOUND_KEY = 'masashimura-ao-sound'
+const soundOn = ref(readPref(SOUND_KEY, '1') === '1')
+const newIds = ref(new Set())
+let knownIds = new Set()
+let hasBaseline = false
+let flashTimer = null
+let audioCtx = null
+
+const playBeep = () => {
+  if (!soundOn.value) return
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)()
+    if (audioCtx.state === 'suspended') audioCtx.resume()
+    const t0 = audioCtx.currentTime
+    ;[880, 1175].forEach((freq, i) => {
+      const t = t0 + i * 0.16
+      const osc = audioCtx.createOscillator()
+      const gain = audioCtx.createGain()
+      osc.type = 'sine'
+      osc.frequency.value = freq
+      gain.gain.setValueAtTime(0.0001, t)
+      gain.gain.exponentialRampToValueAtTime(0.25, t + 0.02)
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.15)
+      osc.connect(gain)
+      gain.connect(audioCtx.destination)
+      osc.start(t)
+      osc.stop(t + 0.16)
+    })
+  } catch { /* browser menolak audio — abaikan, sorotan visual tetap jalan */ }
+}
+const toggleSound = () => {
+  soundOn.value = !soundOn.value
+  writePref(SOUND_KEY, soundOn.value ? '1' : '0')
+  if (soundOn.value) playBeep()   // sekaligus contoh bunyinya, dan "membuka" audio browser
+}
+
+// Bandingkan daftar baru dengan yang sudah dikenal. Jawaban pertama untuk
+// suatu tanggal hanya jadi patokan (baseline), bukan "order baru".
+const detectNewOrders = (list) => {
+  const fresh = hasBaseline && isToday.value ? list.filter((o) => !knownIds.has(o.id)) : []
+  knownIds = new Set(list.map((o) => o.id))
+  hasBaseline = true
+  if (!fresh.length) return
+  newIds.value = new Set([...newIds.value, ...fresh.map((o) => o.id)])
+  clearTimeout(flashTimer)
+  flashTimer = setTimeout(() => { newIds.value = new Set() }, 8000)
+  playBeep()
+  toast.info(fresh.length === 1 ? `Order baru #${fresh[0].id} masuk` : `${fresh.length} order baru masuk`)
 }
 
 // ── Fetch + polling ─────────────────────────────────────────────────
@@ -635,8 +815,11 @@ const fetchActiveOrders = async ({ force = false } = {}) => {
   try {
     const res = await orderAPI.getActiveOrders(targetDateString.value)
     if (seq !== reqSeq) return             // jawaban usang (user keburu ganti hari) dibuang
-    orders.value = Array.isArray(res.data) ? res.data : []
+    const list = Array.isArray(res.data) ? res.data : []
+    detectNewOrders(list)
+    orders.value = list
     loadError.value = ''
+    now.value = Date.now()
     lastUpdated.value = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
   } catch (err) {
     if (seq !== reqSeq) return
@@ -647,6 +830,21 @@ const fetchActiveOrders = async ({ force = false } = {}) => {
   }
 }
 const retryFetch = () => { isLoading.value = true; fetchActiveOrders({ force: true }) }
+const manualRefresh = async () => {
+  isRefreshing.value = true
+  try { await fetchActiveOrders({ force: true }) } finally { isRefreshing.value = false }
+}
+
+// Pintasan: tekan "/" untuk langsung mengetik di kolom cari (seperti di GitHub / Gmail).
+const onKeydown = (e) => {
+  if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return
+  const t = e.target
+  const tag = t?.tagName
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || t?.isContentEditable) return
+  if (isModalOpen.value || isPayModalOpen.value || isCancelModalOpen.value || isDeleteModalOpen.value) return
+  e.preventDefault()
+  searchInput.value?.focus()
+}
 
 let pollingTimer = null
 const onVisibility = () => { if (!document.hidden) fetchActiveOrders() }
@@ -655,19 +853,25 @@ onMounted(() => {
   // Tab yang lagi tidak dilihat tidak perlu menembak server tiap 5 detik.
   pollingTimer = setInterval(() => { if (!document.hidden) fetchActiveOrders() }, POLL_MS)
   document.addEventListener('visibilitychange', onVisibility)
+  window.addEventListener('keydown', onKeydown)
 })
 onUnmounted(() => {
   if (pollingTimer) clearInterval(pollingTimer)
+  clearTimeout(flashTimer)
   document.removeEventListener('visibilitychange', onVisibility)
+  window.removeEventListener('keydown', onKeydown)
+  document.title = baseTitle
+  try { audioCtx?.close() } catch { /* abaikan */ }
 })
 
-// ── Pencarian + filter status ───────────────────────────────────────
+// ── Pencarian + filter status + urutan ──────────────────────────────
 const isUnpaid = (o) => o.status !== 'cancelled' && o.payment_status !== 'paid' && o.payment_status !== 'void'
 const searchedOrders = computed(() => {
   const q = searchQuery.value.trim().toLowerCase()
   if (!q) return orders.value
   return orders.value.filter((o) =>
-    [o.customer_phone, o.customer_name, o.order_number, o.id].some((v) => String(v ?? '').toLowerCase().includes(q))
+    [o.customer_phone, o.customer_name, o.order_number, o.id, ...(o.items || []).map((i) => i.menu_name)]
+      .some((v) => String(v ?? '').toLowerCase().includes(q))
   )
 })
 const counts = computed(() => {
@@ -694,7 +898,54 @@ const filteredOrders = computed(() => {
     default: return list
   }
 })
+
+const SORT_KEY = 'masashimura-ao-sort'
+const sortMode = ref(readPref(SORT_KEY, 'newest') === 'unpaid' ? 'unpaid' : 'newest')
+const setSort = (mode) => { sortMode.value = mode; writePref(SORT_KEY, mode) }
+// "Terbaru" = urutan dari server apa adanya. "Belum lunas dulu" memindahkan yang
+// belum dibayar ke atas; sort bersifat stabil jadi urutan di dalam grup tetap.
+const visibleOrders = computed(() => {
+  if (sortMode.value !== 'unpaid') return filteredOrders.value
+  return [...filteredOrders.value].sort((a, b) => Number(isUnpaid(b)) - Number(isUnpaid(a)))
+})
 const resetFilters = () => { searchQuery.value = ''; statusFilter.value = 'all' }
+
+// ── Ringkasan nominal ───────────────────────────────────────────────
+const summary = computed(() => {
+  let paid = 0
+  let pending = 0
+  for (const o of orders.value) {
+    if (o.status === 'cancelled') continue
+    if (o.payment_status === 'paid') paid += num(o.total_price)
+    else if (o.payment_status !== 'void') pending += num(o.total_price)
+  }
+  return { paid, pending }
+})
+
+// Jumlah order belum lunas di judul tab browser — kelihatan walau admin sedang buka tab lain.
+let baseTitle = typeof document !== 'undefined' ? document.title : ''
+const unpaidTotal = computed(() => orders.value.filter(isUnpaid).length)
+watch([unpaidTotal, isToday], ([n, today]) => {
+  document.title = n > 0 && today ? `(${n}) ${baseTitle}` : baseTitle
+})
+
+// ── Ringkasan menu di tabel ─────────────────────────────────────────
+const ITEMS_PREVIEW = 2
+const itemsPreview = (o) => (o.items || []).slice(0, ITEMS_PREVIEW)
+const itemsMore = (o) => Math.max((o.items?.length || 0) - ITEMS_PREVIEW, 0)
+const itemsTitle = (o) => (o.items || []).map((i) => `${i.quantity}× ${i.menu_name}`).join('\n')
+
+// ── Umur order (untuk yang belum lunas) ─────────────────────────────
+const ageMinutes = (o) => Math.floor((now.value - new Date(o.created_at).getTime()) / 60000)
+const ageLabel = (o) => {
+  const m = ageMinutes(o)
+  if (isNaN(m) || m < 0) return ''
+  if (m < 1) return 'baru saja'
+  if (m < 60) return `${m} mnt lalu`
+  const h = Math.floor(m / 60)
+  return h < 24 ? `${h} jam lalu` : ''
+}
+const isStale = (o) => ageMinutes(o) >= 30
 
 // ── Badge & label ───────────────────────────────────────────────────
 const orderBadge = (o) =>
@@ -757,7 +1008,7 @@ const printPaperWidth = ref(readPaper())
 // Memilih ukuran kertas TIDAK lagi langsung mencetak; ukuran diingat untuk cetak berikutnya.
 const setPaper = (w) => {
   printPaperWidth.value = w
-  try { localStorage.setItem(PAPER_KEY, String(w)) } catch { /* abaikan */ }
+  writePref(PAPER_KEY, w)
 }
 const printReceipt = () => {
   if (!selectedOrder.value) return
@@ -832,6 +1083,33 @@ const paySplitRemaining = computed(() =>
 const canConfirmPay = computed(() =>
   !isPaying.value && paySplitRemaining.value <= 0 && payRows.value.every((r) => Number(r.amount) > 0)
 )
+
+// Nominal cepat untuk baris terakhir: "Uang pas" + pembulatan ke atas (5rb, 10rb, 20rb, 50rb, 100rb).
+// Kalau baris terakhir QRIS, cuma "Uang pas" yang masuk akal.
+const quickAmounts = computed(() => {
+  const total = num(selectedPayOrder.value?.total_price)
+  if (!total) return []
+  const out = [{ value: total, label: 'Uang pas' }]
+  const last = payRows.value[payRows.value.length - 1]
+  if (last?.method !== 'cash') return out
+  const seen = new Set([total])
+  for (const step of [5000, 10000, 20000, 50000, 100000]) {
+    const v = Math.ceil(total / step) * step
+    if (!seen.has(v)) {
+      seen.add(v)
+      out.push({ value: v, label: formatPrice(v) })
+    }
+    if (out.length >= 4) break
+  }
+  return out
+})
+// `value` = total uang yang diterima dari semua baris; baris terakhir menutup selisihnya.
+const applyQuick = (value) => {
+  const last = payRows.value[payRows.value.length - 1]
+  if (!last) return
+  const others = paySplitTotalEntered.value - (Number(last.amount) || 0)
+  last.amount = Math.max(value - others, 0)
+}
 
 const openPayModal = (order) => {
   selectedPayOrder.value = order
@@ -952,8 +1230,12 @@ const confirmDelete = async () => {
 .ao-page { max-width: 87.5rem; }
 
 /* ── Header ──────────────────────────────────────────────────────── */
+.ao-head-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+.ao-head-actions .adm-icon-btn.is-on { color: var(--accent-text); border-color: var(--line-accent); background: var(--tint-accent); }
 .ao-pulse { animation: ao-pulse 2s ease-in-out infinite; }
 @keyframes ao-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+.ao-spin { animation: ao-spin 0.8s linear infinite; }
+@keyframes ao-spin { to { transform: rotate(360deg); } }
 
 /* ── Toolbar ─────────────────────────────────────────────────────── */
 .ao-toolbar { justify-content: space-between; }
@@ -968,6 +1250,13 @@ const confirmDelete = async () => {
 }
 @media (max-width: 480px) { .ao-hide-xs { display: none; } }
 
+/* ── Filter + ringkasan + urutan ─────────────────────────────────── */
+.ao-filterbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; }
+.ao-filterbar-right { display: flex; align-items: center; flex-wrap: wrap; gap: 0.6rem 1rem; }
+.ao-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 0.25rem 1rem; font-size: 0.75rem; color: var(--text-dim); }
+.ao-summary b { margin-left: 0.3rem; font-family: var(--font-mono); font-weight: 700; color: var(--text); }
+.ao-summary-item.is-pending b { color: var(--red-soft); }
+
 /* Hitungan di tab filter */
 .ao-count {
   min-width: 1.25rem; padding: 0 0.35rem; border-radius: 99px;
@@ -975,6 +1264,9 @@ const confirmDelete = async () => {
   font-family: var(--font-mono); font-size: 0.68rem; line-height: 1.35rem; text-align: center;
 }
 .adm-seg-btn[aria-pressed='true'] .ao-count { background: rgb(255 255 255 / 0.22); }
+/* Ada yang belum lunas → angkanya merah supaya tidak terlewat */
+.ao-count.is-alert,
+.adm-seg-btn[aria-pressed='true'] .ao-count.is-alert { background: var(--accent); color: #fff; }
 
 /* ── Error ───────────────────────────────────────────────────────── */
 .ao-error { align-items: center; flex-wrap: wrap; }
@@ -990,26 +1282,66 @@ const confirmDelete = async () => {
 .ao-row { cursor: pointer; }
 .ao-row:focus-visible { outline-offset: -2px; }
 .ao-row:focus-visible td { background: var(--surface-hover); }
-.adm-table td { padding-block: 0.9rem; }
+.adm-table td { padding-block: 0.9rem; vertical-align: middle; }
 
-.ao-id { font-family: var(--font-mono); font-weight: 700; color: var(--accent-text); }
-.ao-phone { font-family: var(--font-mono); color: var(--text); }
-.ao-guest { margin-left: 0.4rem; padding-block: 0.1rem; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em; }
-.ao-price { font-family: var(--font-mono); font-weight: 700; color: var(--amber-soft); white-space: nowrap; }
+.ao-id { font-family: var(--font-mono); font-weight: 700; color: var(--accent-text); white-space: nowrap; }
+.ao-new-tag { display: inline-block; margin-left: 0.4rem; padding: 0.05rem 0.4rem; border-radius: 99px; background: var(--green); color: #fff; font-family: var(--font-body); font-size: 0.6rem; font-weight: 700; letter-spacing: 0.04em; vertical-align: middle; }
+
+/* Belum lunas: disorot supaya kasir tidak lupa menagih */
+.ao-row--unpaid td { background: var(--tint-accent); }
+.ao-row--unpaid td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+.ao-row--unpaid:hover td { background: var(--surface-hover); }
+
+/* Dibatalkan: diredupkan, tombol aksi tetap jelas */
+.ao-row--cancelled td:not(.ao-actions-cell) { opacity: 0.6; }
+.ao-row--cancelled .ao-price { text-decoration: line-through; }
+
+/* Order baru masuk: berkedip sekali dari hijau ke warna asli */
+.ao-row--new td { animation: ao-flash 2.4s ease-out 1; }
+@keyframes ao-flash { 0% { background-color: var(--tint-green); } }
+
+/* Customer */
+.ao-cust-name { display: block; font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
+.ao-cust-phone { display: block; font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-faint); }
+.ao-guest { padding-block: 0.1rem; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* Menu */
+.ao-menu-cell { min-width: 11rem; max-width: 18rem; }
+.ao-items { display: flex; flex-direction: column; gap: 0.15rem; margin: 0; padding: 0; list-style: none; }
+.ao-items li { display: flex; gap: 0.4rem; font-size: 0.8rem; line-height: 1.35; }
+.ao-items-qty { flex-shrink: 0; font-family: var(--font-mono); font-weight: 700; color: var(--accent-text); }
+.ao-items-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+.ao-items-more { display: inline-block; margin-top: 0.25rem; padding: 0.05rem 0.5rem; border-radius: 99px; background: rgb(var(--ink) / 0.08); font-size: 0.66rem; font-weight: 600; color: var(--text-dim); }
+.ao-items-empty { color: var(--text-faint); }
+
+/* Tagihan + metode */
+.ao-price { display: block; font-family: var(--font-mono); font-weight: 700; color: var(--amber-soft); white-space: nowrap; }
+.ao-method { display: flex; align-items: center; justify-content: flex-end; gap: 0.3rem; margin-top: 0.15rem; font-size: 0.72rem; text-transform: capitalize; color: var(--text-dim); }
+
+/* Status */
 .ao-status { display: inline-flex; flex-direction: column; align-items: center; gap: 0.3rem; }
-.ao-method { display: inline-flex; align-items: center; gap: 0.4rem; text-transform: capitalize; color: var(--text-dim); }
+
+/* Waktu */
 .ao-time { font-family: var(--font-mono); color: var(--text-dim); white-space: nowrap; }
+.ao-age { display: block; margin-top: 2px; font-family: var(--font-body); font-size: 0.65rem; color: var(--text-dim); }
+.ao-age.is-old { font-weight: 700; color: var(--red-soft); }
 .ao-late { display: block; margin-top: 2px; font-family: var(--font-body); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--amber-soft); }
-.ao-done { font-size: 0.75rem; font-weight: 600; color: var(--green-soft); }
-.ao-actions { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 0.4rem; }
+
+/* Aksi — flex ada di div, BUKAN di td (td ber-display:flex keluar dari grid tabel) */
+.ao-actions-cell { white-space: nowrap; }
+.ao-actions { display: flex; align-items: center; justify-content: flex-end; gap: 0.4rem; }
 
 @media (max-width: 720px) {
   .ao-row { margin: 0.6rem; padding: 0.4rem 0 !important; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-2); }
   .adm-table--stack tbody tr.ao-row:last-child { border-bottom: 1px solid var(--border); }
+  .ao-row--unpaid { border-color: var(--line-accent); }
   .ao-status { flex-direction: row; }
-  .ao-actions { justify-content: stretch !important; padding-top: 0.6rem !important; }
+  .ao-menu-cell { max-width: none; }
+  .ao-items-name { white-space: normal; }
+  .ao-method { justify-content: flex-start; }
+  .ao-actions-cell { padding-top: 0.6rem !important; }
+  .ao-actions { justify-content: stretch; }
   .ao-actions .adm-btn { flex: 1; min-height: 44px; }
-  .ao-actions .ao-done { flex: 1; text-align: center; }
 }
 
 /* ── Footer modal struk ──────────────────────────────────────────── */
@@ -1062,6 +1394,12 @@ const confirmDelete = async () => {
 .ao-person-name { margin: 0 0 0.15rem; font-size: 0.9rem; font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
 .ao-person-phone { margin: 0; font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-dim); }
 
+/* Daftar menu di dalam modal (maks ±5 baris, sisanya di-scroll) */
+.ao-order-items { display: flex; flex-direction: column; gap: 0.3rem; max-height: 9.5rem; margin: 0; padding: 0.7rem 1rem; overflow-y: auto; list-style: none; border: 1px solid var(--border); border-radius: var(--r-md); }
+.ao-order-items li { display: flex; align-items: baseline; gap: 0.5rem; font-size: 0.8rem; }
+.ao-oi-name { flex: 1; min-width: 0; overflow-wrap: anywhere; color: var(--text); }
+.ao-oi-price { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-dim); white-space: nowrap; }
+
 .ao-total { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.8rem 1rem; border: 1px solid var(--line-accent); border-radius: var(--r-md); background: var(--tint-accent); }
 .ao-total span { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); }
 .ao-total strong { font-family: var(--font-mono); font-size: 1.2rem; font-weight: 800; color: var(--accent-text); }
@@ -1074,6 +1412,18 @@ const confirmDelete = async () => {
   .ao-payrow .adm-seg { width: 100%; }
   .ao-payrow .adm-seg-btn { flex: 1; }
 }
+
+/* Nominal cepat */
+.ao-quick { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.ao-chip {
+  min-height: 36px; padding: 0.3rem 0.8rem;
+  border: 1px solid var(--border-strong); border-radius: 99px;
+  background: transparent; color: var(--text-dim);
+  font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700;
+  cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.ao-chip:hover { background: var(--surface-hover); color: var(--text); }
+.ao-chip:first-child { border-color: var(--line-accent); color: var(--accent-text); font-family: var(--font-body); }
 
 .ao-link { align-self: flex-start; padding: 0.25rem 0; border: 0; background: none; color: var(--accent-text); font-family: inherit; font-size: 0.75rem; font-weight: 600; text-decoration: underline; cursor: pointer; }
 .ao-link:hover { color: var(--text); }
@@ -1097,6 +1447,11 @@ const confirmDelete = async () => {
 
 /* ── Struk print (thermal) — disembunyikan di layar biasa ─────────── */
 .print-receipt { display: none; }
+
+/* Hormati pengaturan "kurangi gerakan" di perangkat */
+@media (prefers-reduced-motion: reduce) {
+  .ao-pulse, .ao-spin, .ao-row--new td { animation: none; }
+}
 </style>
 
 <!-- ── STYLE PRINT (global, tidak di-scope) ─────────────────────────

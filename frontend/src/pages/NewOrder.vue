@@ -12,8 +12,7 @@
         </div>
         <div class="header-actions">
 
-          <!-- Waktu order: default "Sekarang"; "Atur Manual" buat input susulan hari/jam lain.
-               Pilihan & tanggal tersimpan di browser sampai admin memilih "Sekarang" lagi. -->
+          <!-- Waktu order: default "Sekarang"; "Atur Manual" buat input susulan hari/jam lain. -->
           <div class="time-chip-wrap">
             <button
               type="button"
@@ -126,12 +125,16 @@
           <div v-if="!menu.is_available" class="menu-habis-overlay">
             <span class="habis-badge">Habis</span>
           </div>
-          <span v-if="addTarget && addedCounts[menu.id]" class="menu-added-badge">+{{ addedCounts[menu.id] }}</span>
-          <div v-if="menu.is_secret || menu.options?.length" class="menu-tags">
-            <span v-if="menu.is_secret" class="menu-tag menu-tag-secret" title="Secret menu: tidak tampil di web">SECRET</span>
-            <span v-if="menu.options?.length" class="menu-tag menu-tag-opt" title="Punya opsi pilihan">OPSI</span>
-          </div>
+
+          <!-- Badge jumlah: hijau = baru ditambah ke tagihan, merah = ada di keranjang -->
+          <span v-if="addTarget && addedCounts[menu.id]" class="menu-count-badge menu-count-added">+{{ addedCounts[menu.id] }}</span>
+          <span v-else-if="!addTarget && cartCounts[menu.id]" class="menu-count-badge">×{{ cartCounts[menu.id] }}</span>
+
           <div class="menu-card-body">
+            <div v-if="menu.is_secret || menu.options?.length" class="menu-tags">
+              <span v-if="menu.is_secret" class="menu-tag menu-tag-secret" title="Secret menu: tidak tampil di web">SECRET</span>
+              <span v-if="menu.options?.length" class="menu-tag menu-tag-opt" title="Punya opsi pilihan">OPSI</span>
+            </div>
             <h3 class="menu-name">{{ menu.name }}</h3>
             <p class="menu-price">{{ formatPrice(menu.price) }}</p>
           </div>
@@ -147,213 +150,242 @@
       <div class="order-panel-head">
         <div>
           <p class="pos-eyebrow">Transaksi Aktif</p>
-          <h2 class="order-panel-title">Ringkasan Pesanan</h2>
+          <h2 class="order-panel-title">
+            Ringkasan Pesanan
+            <span v-if="cartItemCount" class="order-panel-count">{{ cartItemCount }}</span>
+          </h2>
         </div>
         <button class="order-panel-close" @click="showMobileCart = false" aria-label="Tutup keranjang">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
         </button>
       </div>
 
-      <!-- Customer info -->
-      <div class="order-section">
-        <div class="field">
-          <label class="field-label">Nomor HP Pelanggan</label>
-          <div class="phone-input-row">
-            <div class="phone-avatar">{{ customerInitial }}</div>
-            <input
-              v-model="customerPhone"
-              @input="debounceTrackLoyalty"
-              inputmode="tel"
-              placeholder="081234567xxx"
-              class="pos-input flex-1"
-            />
+      <!-- Area scroll: semua isi form. Total + tombol submit ada di footer yang selalu kelihatan. -->
+      <div class="order-panel-body">
+
+        <!-- Cart -->
+        <div class="order-section">
+          <div v-if="orderItems.length === 0" class="cart-empty">
+            <div class="cart-empty-icon">🛒</div>
+            <p>Keranjang masih kosong</p>
+            <p class="cart-empty-hint">Tap menu di kiri untuk menambah item</p>
           </div>
-        </div>
 
-        <div class="field">
-          <label class="field-label">Nama Pelanggan <span class="field-optional">(Opsional)</span></label>
-          <input v-model="customerName" type="text" placeholder="Nama pembeli..." class="pos-input" />
-        </div>
-
-        <div
-          v-if="customerPhone.length >= 9"
-          class="loyalty-status"
-          :class="isTrackingLoyalty ? 'ls-loading' : isMember ? 'ls-loyal' : 'ls-regular'"
-        >
-          <template v-if="isTrackingLoyalty">
-            <div class="ls-spinner"></div>
-            <span>Memeriksa status member...</span>
-          </template>
-          <template v-else-if="isMember">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-            <span>Member — <strong>{{ memberPoints }} poin</strong>{{ pointsExpiringNote ? ` · ${pointsExpiringNote}` : '' }}</span>
-          </template>
           <template v-else>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            <span>Belum pernah order — belum ada poin</span>
-          </template>
-        </div>
-      </div>
-
-      <!-- Cart -->
-      <div class="order-section">
-        <div v-if="orderItems.length === 0" class="cart-empty">
-          <div class="cart-empty-icon">🛒</div>
-          <p>Keranjang masih kosong</p>
-          <p class="cart-empty-hint">Tap menu di kiri untuk menambah item</p>
-        </div>
-
-        <div v-else class="cart-list">
-          <div v-for="(item, index) in orderItems" :key="index" class="cart-item">
-            <div class="cart-item-top">
-              <div class="cart-item-info">
-                <p class="cart-item-name">{{ item.name }}</p>
-                <p class="cart-item-price">{{ formatPrice(item.price) }}</p>
-                <p v-if="item.optionDetails?.length" class="cart-item-opts">
-                  {{ item.optionDetails.map((o) => o.label).join(' · ') }}
-                </p>
-              </div>
-              <div class="qty-control">
-                <button @click="updateQty(index, -1)" class="qty-btn" aria-label="Kurangi">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                </button>
-                <span class="qty-val">{{ item.quantity }}</span>
-                <button @click="updateQty(index, 1)" class="qty-btn" aria-label="Tambah">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                </button>
+            <div class="cart-head">
+              <span class="field-label">Item Pesanan</span>
+              <button type="button" class="cart-clear" @click="clearCart">Kosongkan</button>
+            </div>
+            <div class="cart-list">
+              <div v-for="(item, index) in orderItems" :key="index" class="cart-item">
+                <div class="cart-item-top">
+                  <div class="cart-item-info">
+                    <p class="cart-item-name">{{ item.name }}</p>
+                    <p class="cart-item-price">{{ formatPrice(item.price) }} <span class="cart-item-sub">· {{ formatPrice(Number(item.price) * item.quantity) }}</span></p>
+                    <p v-if="item.optionDetails?.length" class="cart-item-opts">
+                      {{ item.optionDetails.map((o) => o.label).join(' · ') }}
+                    </p>
+                  </div>
+                  <div class="qty-control">
+                    <button @click="updateQty(index, -1)" class="qty-btn" aria-label="Kurangi">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    </button>
+                    <span class="qty-val">{{ item.quantity }}</span>
+                    <button @click="updateQty(index, 1)" class="qty-btn" aria-label="Tambah">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <input
+                  type="text"
+                  v-model="item.notes"
+                  @change="handleNotesChange(index)"
+                  placeholder="Catatan koki: Tanpa Bawang..."
+                  class="cart-notes-input"
+                />
               </div>
             </div>
-            <input
-              type="text"
-              v-model="item.notes"
-              @change="handleNotesChange(index)"
-              placeholder="Catatan koki: Tanpa Bawang..."
-              class="cart-notes-input"
-            />
+          </template>
+        </div>
+
+        <!-- Customer info -->
+        <div class="order-section">
+          <div class="field">
+            <label class="field-label">Nomor HP Pelanggan <span class="field-optional">(Opsional)</span></label>
+            <div class="phone-input-row">
+              <div class="phone-avatar">{{ customerInitial }}</div>
+              <input
+                v-model="customerPhone"
+                @input="debounceTrackLoyalty"
+                inputmode="tel"
+                placeholder="081234567xxx"
+                class="pos-input flex-1"
+              />
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Nama Pelanggan <span class="field-optional">(Opsional)</span></label>
+            <input v-model="customerName" type="text" placeholder="Nama pembeli..." class="pos-input" />
+          </div>
+
+          <div
+            v-if="customerPhone.length >= 9"
+            class="loyalty-status"
+            :class="isTrackingLoyalty ? 'ls-loading' : isMember ? 'ls-loyal' : 'ls-regular'"
+          >
+            <template v-if="isTrackingLoyalty">
+              <div class="ls-spinner"></div>
+              <span>Memeriksa status member...</span>
+            </template>
+            <template v-else-if="isMember">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Member — <strong>{{ memberPoints }} poin</strong>{{ pointsExpiringNote ? ` · ${pointsExpiringNote}` : '' }}</span>
+            </template>
+            <template v-else>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <span>Belum pernah order — belum ada poin</span>
+            </template>
           </div>
         </div>
-      </div>
 
-      <!-- Order type -->
-      <div class="order-section">
-        <label class="field-label">Alur Konsumsi</label>
-        <div class="toggle-grid">
-          <button
-            @click="orderType = 'dine_in_now'"
-            class="toggle-btn"
-            :class="orderType === 'dine_in_now' ? 'toggle-active-red' : 'toggle-inactive'"
+        <!-- Order type -->
+        <div class="order-section">
+          <label class="field-label">Alur Konsumsi</label>
+          <div class="toggle-grid">
+            <button
+              @click="orderType = 'dine_in_now'"
+              class="toggle-btn"
+              :class="orderType === 'dine_in_now' ? 'toggle-active-red' : 'toggle-inactive'"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              Bayar Sekarang
+            </button>
+            <button
+              @click="orderType = 'dine_in_later'"
+              :disabled="paymentMethod === 'qris_manual'"
+              class="toggle-btn"
+              :class="orderType === 'dine_in_later'
+                ? 'toggle-active-amber'
+                : paymentMethod === 'qris_manual' ? 'toggle-disabled' : 'toggle-inactive'"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              Makan Dulu
+            </button>
+          </div>
+          <p v-if="paymentMethod === 'qris_manual'" class="field-hint">QRIS Manual hanya untuk bayar sekarang.</p>
+        </div>
+
+        <!-- Payment method -->
+        <div class="order-section">
+          <label class="field-label">Metode Pembayaran</label>
+          <div class="toggle-grid">
+            <button
+              @click="selectPaymentMethod('cash')"
+              class="toggle-btn"
+              :class="paymentMethod === 'cash' ? 'toggle-active-white' : 'toggle-inactive'"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12h.01"/></svg>
+              Tunai (Cash)
+            </button>
+            <button
+              @click="selectPaymentMethod('qris_manual')"
+              class="toggle-btn"
+              :class="paymentMethod === 'qris_manual' ? 'toggle-active-white' : 'toggle-inactive'"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+              QRIS Manual
+            </button>
+          </div>
+        </div>
+
+        <!-- Cash input -->
+        <div v-if="isCashNow" class="order-section">
+          <label class="field-label">Uang Diterima</label>
+          <input v-model.number="amountPaid" type="number" min="0" placeholder="0" class="pos-input font-mono" />
+          <div v-if="quickCash.length" class="quick-cash">
+            <button
+              v-for="v in quickCash"
+              :key="v"
+              type="button"
+              class="quick-cash-btn"
+              :class="{ 'is-active': amountPaid === v }"
+              @click="amountPaid = v"
+            >{{ v === totalPrice ? 'Uang Pas' : formatPrice(v) }}</button>
+          </div>
+          <div v-if="amountPaid > 0 && amountPaid >= totalPrice" class="change-box change-ok">
+            <span>Kembalian</span>
+            <span>{{ formatPrice(changeDue) }}</span>
+          </div>
+          <div v-else-if="amountPaid > 0 && amountPaid < totalPrice" class="change-box change-err">
+            <span>Kurang</span>
+            <span>{{ formatPrice(totalPrice - amountPaid) }}</span>
+          </div>
+        </div>
+
+        <!-- Promo + poin -->
+        <div class="order-section">
+          <div class="price-row">
+            <span>Subtotal</span>
+            <span>{{ formatPrice(subtotal) }}</span>
+          </div>
+
+          <!-- Tema kotak promo dipaksa lewat :deep() di bawah -->
+          <div class="promo-slot">
+            <PromoCodeBox
+              ref="promoBoxRef"
+              :subtotal="subtotal"
+              @applied="onPromoApplied"
+              @removed="onPromoRemoved"
+            />
+          </div>
+
+          <div v-if="appliedPromo" class="price-row price-discount">
+            <span>Diskon Promo ({{ appliedPromo.code }})</span>
+            <span>−{{ formatPrice(appliedPromo.discount_amount) }}</span>
+          </div>
+
+          <PointRedeemBox
+            v-if="isMember"
+            :points="memberPoints"
+            :affordable="affordableRewards"
+            :locked="lockedRewards"
+            v-model:selected-ids="selectedRewardIds"
+          />
+
+          <div
+            v-for="reward in selectedRewards"
+            :key="`reward-${reward.id}`"
+            class="price-row price-discount"
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            Bayar Sekarang
-          </button>
-          <button
-            @click="orderType = 'dine_in_later'"
-            :disabled="paymentMethod === 'qris_manual'"
-            class="toggle-btn"
-            :class="orderType === 'dine_in_later'
-              ? 'toggle-active-amber'
-              : paymentMethod === 'qris_manual' ? 'toggle-disabled' : 'toggle-inactive'"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            Makan Dulu
-          </button>
+            <span>🎁 {{ reward.menu_name }} (gratis)</span>
+            <span>−{{ reward.point_cost }} poin</span>
+          </div>
+        </div>
+
+        <!-- Kasir -->
+        <div class="kasir-strip">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Kasir: <span class="kasir-name">{{ kasirName }}</span>
         </div>
       </div>
 
-      <!-- Payment method -->
-      <div class="order-section">
-        <label class="field-label">Metode Pembayaran</label>
-        <div class="toggle-grid">
-          <button
-            @click="selectPaymentMethod('cash')"
-            class="toggle-btn"
-            :class="paymentMethod === 'cash' ? 'toggle-active-white' : 'toggle-inactive'"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12h.01"/></svg>
-            Tunai (Cash)
-          </button>
-          <button
-            @click="selectPaymentMethod('qris_manual')"
-            class="toggle-btn"
-            :class="paymentMethod === 'qris_manual' ? 'toggle-active-white' : 'toggle-inactive'"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            QRIS Manual
-          </button>
-        </div>
-      </div>
-
-      <!-- Cash input -->
-      <div v-if="isCashNow" class="order-section">
-        <label class="field-label">Uang Diterima</label>
-        <input v-model.number="amountPaid" type="number" min="0" placeholder="0" class="pos-input font-mono" />
-        <div v-if="amountPaid > 0 && amountPaid >= totalPrice" class="change-box change-ok">
-          <span>Kembalian</span>
-          <span>{{ formatPrice(changeDue) }}</span>
-        </div>
-        <div v-else-if="amountPaid > 0 && amountPaid < totalPrice" class="change-box change-err">
-          <span>Kurang</span>
-          <span>{{ formatPrice(totalPrice - amountPaid) }}</span>
-        </div>
-      </div>
-
-      <!-- Kasir -->
-      <div class="kasir-strip">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        Kasir: <span class="kasir-name">{{ kasirName }}</span>
-      </div>
-
-      <!-- Price summary -->
-      <div class="price-summary">
-        <div class="price-row">
-          <span>Subtotal</span>
-          <span>{{ formatPrice(subtotal) }}</span>
-        </div>
-
-        <PromoCodeBox
-          ref="promoBoxRef"
-          :subtotal="subtotal"
-          @applied="onPromoApplied"
-          @removed="onPromoRemoved"
-        />
-
-        <div v-if="appliedPromo" class="price-row price-discount">
-          <span>Diskon Promo ({{ appliedPromo.code }})</span>
-          <span>−{{ formatPrice(appliedPromo.discount_amount) }}</span>
-        </div>
-
-        <PointRedeemBox
-          v-if="isMember"
-          :points="memberPoints"
-          :affordable="affordableRewards"
-          :locked="lockedRewards"
-          v-model:selected-ids="selectedRewardIds"
-        />
-
-        <div
-          v-for="reward in selectedRewards"
-          :key="`reward-${reward.id}`"
-          class="price-row price-discount"
-        >
-          <span>🎁 {{ reward.menu_name }} (gratis)</span>
-          <span>−{{ reward.point_cost }} poin</span>
-        </div>
-
+      <!-- Footer tetap: total + submit selalu kelihatan tanpa scroll -->
+      <div class="order-panel-foot">
         <div class="price-total">
           <span>Total Akhir</span>
           <span class="total-val">{{ formatPrice(totalPrice) }}</span>
         </div>
+        <button
+          @click="submitOrder"
+          :disabled="isSubmitting || orderItems.length === 0 || cashShort"
+          class="submit-btn"
+        >
+          <span v-if="isSubmitting" class="btn-spinner"></span>
+          <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          {{ submitLabel }}
+        </button>
       </div>
-
-      <button
-        @click="submitOrder"
-        :disabled="isSubmitting || orderItems.length === 0"
-        class="submit-btn"
-      >
-        <span v-if="isSubmitting" class="btn-spinner"></span>
-        <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-        {{ isSubmitting ? 'Memproses...' : (useCustomTime ? 'Simpan Pesanan Susulan' : 'Eksekusi Pesanan') }}
-      </button>
     </div>
   </div>
 
@@ -634,6 +666,16 @@
         <div v-if="selectedPaymentMethod === 'cash'" class="modal-section">
           <label class="field-label">Uang Diterima</label>
           <input v-model.number="amountPaidModal" type="number" min="0" placeholder="0" class="pos-input font-mono" />
+          <div v-if="quickCashModal.length" class="quick-cash">
+            <button
+              v-for="v in quickCashModal"
+              :key="v"
+              type="button"
+              class="quick-cash-btn"
+              :class="{ 'is-active': amountPaidModal === v }"
+              @click="amountPaidModal = v"
+            >{{ v === modalTotal ? 'Uang Pas' : formatPrice(v) }}</button>
+          </div>
           <div v-if="amountPaidModal > 0 && amountPaidModal >= modalTotal" class="change-box change-ok">
             <span>Kembalian</span>
             <span>{{ formatPrice(amountPaidModal - modalTotal) }}</span>
@@ -656,59 +698,10 @@
       </div>
     </div>
   </transition>
-
-  <!-- ── STRUK TERSEMBUNYI (dirender dari data server: lastOrder) ──── -->
-  <div
-    ref="receiptRef"
-    style="position:fixed;left:-9999px;top:0;width:380px;background:#fff;color:#000;padding:24px;font-family:'Courier New',monospace;font-size:12px;line-height:1.6;"
-  >
-    <div style="text-align:center;margin-bottom:12px;">
-      <p style="font-size:15px;font-weight:900;text-transform:uppercase;letter-spacing:0.1em;">MASASHIMURA</p>
-      <p style="font-size:10px;color:#666;">Jl. Pintu air no 48 Depan Pengadilan Bekasi</p>
-      <p style="font-size:10px;color:#999;">{{ receiptDate }}</p>
-      <p style="color:#ccc;">========================================</p>
-    </div>
-
-    <template v-if="lastOrder">
-      <div style="font-size:11px;margin-bottom:10px;">
-        <div style="display:flex;justify-content:space-between;"><span>No. Nota</span><span style="font-weight:700;">{{ lastOrder.order_number }}</span></div>
-        <div style="display:flex;justify-content:space-between;"><span>Kasir</span><span>{{ lastOrder.kasir_name || kasirName }}</span></div>
-        <div style="display:flex;justify-content:space-between;"><span>Pelanggan</span><span>{{ lastOrder.customer_name || lastOrder.customer_phone || 'Walk In' }}</span></div>
-      </div>
-      <p style="color:#ccc;margin-bottom:10px;">----------------------------------------</p>
-
-      <div style="margin-bottom:10px;">
-        <div v-for="item in lastOrder.items" :key="item.id" style="margin-bottom:6px;">
-          <div style="display:flex;justify-content:space-between;font-weight:600;">
-            <span>{{ item.quantity }}x {{ item.menu_name }}</span>
-            <span>{{ item.is_point_redemption ? 'GRATIS' : formatPrice(Number(item.price) * item.quantity) }}</span>
-          </div>
-          <div v-if="item.is_point_redemption" style="color:#16a34a;font-size:10px;padding-left:10px;">🎁 Reward poin</div>
-          <div v-else-if="item.notes" style="color:#b45309;font-size:10px;padding-left:10px;font-style:italic;">📋 {{ item.notes }}</div>
-        </div>
-      </div>
-      <p style="color:#ccc;margin-bottom:10px;">----------------------------------------</p>
-
-      <div style="font-size:11px;margin-bottom:10px;">
-        <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span>Subtotal</span><span>{{ formatPrice(lastOrder.subtotal || lastOrder.total_price) }}</span></div>
-        <div v-if="Number(lastOrder.promo_discount_amount) > 0" style="display:flex;justify-content:space-between;color:#16a34a;margin-bottom:3px;"><span>Diskon Promo</span><span>-{{ formatPrice(lastOrder.promo_discount_amount) }}</span></div>
-        <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:900;border-top:1px solid #eee;padding-top:4px;margin-bottom:4px;"><span>TOTAL</span><span>{{ formatPrice(lastOrder.total_price) }}</span></div>
-        <div v-if="Number(lastOrder.amount_paid) > 0" style="display:flex;justify-content:space-between;"><span>Bayar</span><span>{{ formatPrice(lastOrder.amount_paid) }}</span></div>
-        <div v-if="Number(lastOrder.change_amount) > 0" style="display:flex;justify-content:space-between;color:#16a34a;font-weight:700;"><span>Kembalian</span><span>{{ formatPrice(lastOrder.change_amount) }}</span></div>
-      </div>
-      <p style="color:#ccc;margin-bottom:10px;">========================================</p>
-
-      <div style="text-align:center;font-size:10px;color:#888;">
-        <p v-if="lastOrder.payment_status !== 'paid'" style="font-weight:700;color:#b45309;">BELUM LUNAS</p>
-        <p>Metode: {{ receiptMethod }}</p>
-        <p style="font-weight:700;margin-top:4px;">Terima kasih sudah makan di Masashimura! 🙏</p>
-      </div>
-    </template>
-  </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
+import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import { menuAPI, orderAPI, apiClient } from "@/api";
 import { toast } from "vue-sonner";
 import { useAuthStore } from "@/stores/auth";
@@ -857,10 +850,6 @@ const splitName = ref("");
 const addTarget   = ref(null);   // order tujuan (objek order terbaru dari server)
 const addedCounts = ref({});     // { [menuId]: jumlah yang ditambah di sesi ini }
 
-// ── State: struk ─────────────────────────────────────────────────────
-const receiptRef = ref(null);
-const lastOrder  = ref(null);
-
 // ── Computed ─────────────────────────────────────────────────────────
 const liveFormattedDate = computed(() =>
   new Date().toLocaleDateString("id-ID", { weekday: "long", year: "numeric", month: "long", day: "numeric" })
@@ -873,6 +862,13 @@ const customerInitial = computed(() =>
 const cartItemCount = computed(() =>
   orderItems.value.reduce((acc, i) => acc + i.quantity, 0)
 );
+
+// Jumlah per menu di keranjang (untuk badge di kartu menu)
+const cartCounts = computed(() => {
+  const out = {};
+  for (const i of orderItems.value) out[i.id] = (out[i.id] || 0) + i.quantity;
+  return out;
+});
 
 const filteredMenus = computed(() => {
   const q = searchQuery.value.trim().toLowerCase();
@@ -893,6 +889,25 @@ const isCashNow = computed(() => paymentMethod.value === "cash" && orderType.val
 const changeDue = computed(() =>
   isCashNow.value && amountPaid.value >= totalPrice.value ? amountPaid.value - totalPrice.value : 0
 );
+const cashShort = computed(() =>
+  isCashNow.value && amountPaid.value > 0 && amountPaid.value < totalPrice.value
+);
+
+// Tombol nominal cepat: uang pas + pembulatan ke atas (5rb, 10rb, 20rb, 50rb, 100rb)
+const buildQuickCash = (total) => {
+  if (!total || total <= 0) return [];
+  const opts = new Set([total]);
+  for (const step of [5000, 10000, 20000, 50000, 100000]) opts.add(Math.ceil(total / step) * step);
+  return [...opts].filter((v) => v >= total).sort((a, b) => a - b).slice(0, 4);
+};
+const quickCash = computed(() => buildQuickCash(totalPrice.value));
+
+const submitLabel = computed(() => {
+  if (isSubmitting.value) return "Memproses...";
+  if (useCustomTime.value) return "Simpan Pesanan Susulan";
+  if (orderType.value === "dine_in_later") return "Simpan ke Tagihan";
+  return "Eksekusi Pesanan";
+});
 
 const selectedRewards = computed(() =>
   affordableRewards.value.filter((r) => selectedRewardIds.value.includes(r.id))
@@ -913,18 +928,10 @@ const unpaidGrandTotal = computed(() =>
 );
 
 const modalTotal = computed(() => Number(selectedUnpaidOrder.value?.total_price || 0));
+const quickCashModal = computed(() => buildQuickCash(modalTotal.value));
 const modalUnderpaid = computed(() =>
   selectedPaymentMethod.value === "cash" && amountPaidModal.value > 0 && amountPaidModal.value < modalTotal.value
 );
-
-const receiptDate = computed(() =>
-  new Date(lastOrder.value?.created_at || Date.now()).toLocaleString("id-ID")
-);
-const RECEIPT_METHOD_LABEL = { cash: "CASH", qris: "QRIS", qris_manual: "QRIS", gateway: "GATEWAY", mixed: "CAMPURAN" };
-const receiptMethod = computed(() => {
-  const m = lastOrder.value?.payment_method;
-  return RECEIPT_METHOD_LABEL[m] || (m ? m.toUpperCase() : "CASH");
-});
 
 // ── Helpers ──────────────────────────────────────────────────────────
 const formatPrice = (p) =>
@@ -1063,6 +1070,15 @@ const addToOrder = (menu, selection = {}, quantity = 1) => {
   });
 };
 
+const clearCart = () => {
+  if (!orderItems.value.length) return;
+  if (!confirm("Kosongkan semua item di keranjang?")) return;
+  orderItems.value = [];
+  selectedRewardIds.value = [];
+  amountPaid.value = 0;
+  promoBoxRef.value?.removePromo?.();
+};
+
 // ── Picker opsi ──────────────────────────────────────────────────────
 const openPicker = (menu) => {
   pickerMenu.value = menu;
@@ -1151,7 +1167,7 @@ const resetForm = () => {
   paymentMethod.value = "cash";
   orderType.value = "dine_in_now";
   amountPaid.value = 0;
-  promoBoxRef.value?.removePromo();
+  promoBoxRef.value?.removePromo?.();
   showMobileCart.value = false;
 };
 
@@ -1191,77 +1207,23 @@ const submitOrder = async () => {
 
   try {
     const res = await apiClient.post("/orders/", payload);
-    lastOrder.value = res.data;
+    const no = res.data?.order_number;
     toast.success(
       useCustomTime.value
-        ? `Pesanan dicatat untuk ${customTimeLabel.value}`
-        : "Pesanan berhasil masuk ke sistem!"
+        ? `Pesanan${no ? ` ${no}` : ""} dicatat untuk ${customTimeLabel.value}`
+        : `Pesanan${no ? ` ${no}` : ""} berhasil masuk ke sistem!`
     );
     // Input susulan sering beruntun di hari yang sama: tanggal dipertahankan,
     // tapi jam dikosongkan supaya order berikutnya tidak ikut jam lama tanpa sengaja.
     if (useCustomTime.value) orderTime.value = "";
     resetForm();
     fetchUnpaidOrders();
-    await shareReceiptAsImage(res.data);
+    // Struk dibagikan dari halaman Active Orders (tidak ada unduhan otomatis di sini).
   } catch (e) {
     console.error(e);
     apiError(e, "Gagal menyimpan transaksi ke server.");
   } finally {
     isSubmitting.value = false;
-  }
-};
-
-// ── Struk ────────────────────────────────────────────────────────────
-const canvasToBlob = (canvas) => new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
-
-const downloadBlob = (blob, filename) => {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-};
-
-const toWaNumber = (raw) => {
-  const digits = (raw || "").replace(/\D/g, "");
-  return digits.startsWith("0") ? `62${digits.slice(1)}` : digits;
-};
-
-const shareReceiptAsImage = async (orderData) => {
-  await nextTick();                                   // tunggu struk ter-render dengan lastOrder
-  await new Promise((r) => setTimeout(r, 150));
-
-  try {
-    const { default: html2canvas } = await import("html2canvas"); // lazy-load, bundle awal lebih ringan
-    const canvas = await html2canvas(receiptRef.value, { backgroundColor: "#ffffff", scale: 2, useCORS: true });
-    const blob = await canvasToBlob(canvas);
-    if (!blob) throw new Error("Blob struk kosong");
-
-    const filename = `struk-${orderData.order_number}.png`;
-    const file = new File([blob], filename, { type: "image/png" });
-
-    if (navigator.canShare?.({ files: [file] })) {
-      try {
-        await navigator.share({ files: [file], text: "Bukti Pembelian di Masashimura 🙏" });
-        return;
-      } catch (err) {
-        if (err?.name === "AbortError") return;       // kasir menutup dialog share
-        // gagal share (mis. izin gesture kedaluwarsa) → lanjut ke unduh manual
-      }
-    }
-
-    downloadBlob(blob, filename);
-    const caption = encodeURIComponent("Bukti Pembelian di Masashimura 🙏");
-    const phone = toWaNumber(orderData.customer_phone); // dari data order, bukan form (form sudah di-reset)
-    setTimeout(
-      () => window.open(phone ? `https://wa.me/${phone}?text=${caption}` : `https://wa.me/?text=${caption}`, "_blank"),
-      500
-    );
-    toast.info("Gambar diunduh. Lampirkan ke WhatsApp secara manual.");
-  } catch (err) {
-    console.error(err);
-    toast.error("Gagal membuat screenshot struk");
   }
 };
 
@@ -1434,6 +1396,9 @@ const submitSplit = async (order) => {
 // Refresh tiap drawer dibuka, supaya order web yang baru masuk ikut muncul.
 watch(showUnpaidDrawer, (open) => { if (open) fetchUnpaidOrders(); });
 
+// Metode/alur berubah → nominal uang diterima lama tidak relevan lagi
+watch(isCashNow, (v) => { if (!v) amountPaid.value = 0; });
+
 onMounted(() => { fetchMenus(); fetchUnpaidOrders(); });
 onBeforeUnmount(() => clearTimeout(debounceTimeout));
 </script>
@@ -1451,6 +1416,8 @@ onBeforeUnmount(() => clearTimeout(debounceTimeout));
   align-items: flex-start;
 }
 @media (max-width: 1024px) { .pos-root { flex-direction: column; padding: 1rem; padding-bottom: 6.5rem; } }
+
+button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 60%, transparent); outline-offset: 2px; }
 
 /* ── Shared tokens ───────────────────────────────────────────────── */
 .pos-eyebrow {
@@ -1474,6 +1441,7 @@ onBeforeUnmount(() => clearTimeout(debounceTimeout));
 .pos-title {
   font-family: 'Oswald', sans-serif; font-size: 1.6rem; font-weight: 600;
   text-transform: uppercase; letter-spacing: 0.04em; margin: 0 0 0.2rem;
+  color: var(--text);
 }
 .pos-date { font-size: 0.68rem; color: var(--text-faint); margin: 0; }
 
@@ -1536,8 +1504,8 @@ onBeforeUnmount(() => clearTimeout(debounceTimeout));
 .add-banner {
   position: sticky; top: 0; z-index: 5;
   display: flex; align-items: center; justify-content: space-between; gap: 1rem;
-  margin-bottom: 0.75rem; padding: 0.75rem 1rem;
-  background: color-mix(in srgb, var(--green) 12%, transparent); border: 1px solid color-mix(in srgb, var(--green) 40%, transparent);
+  padding: 0.75rem 1rem;
+  background: color-mix(in srgb, var(--green) 12%, var(--bg)); border: 1px solid color-mix(in srgb, var(--green) 40%, transparent);
   border-radius: 12px; backdrop-filter: blur(6px);
 }
 .add-banner-eyebrow { margin: 0 0 0.15rem; font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--green-soft); }
@@ -1608,23 +1576,25 @@ onBeforeUnmount(() => clearTimeout(debounceTimeout));
 .menu-card {
   position: relative; background: var(--surface);
   border: 1px solid rgb(var(--ink) / 0.05);
-  border-radius: 12px; padding: 1rem;
+  border-radius: 12px; padding: 0.9rem 1rem;
   display: flex; flex-direction: column; justify-content: space-between;
-  min-height: 110px; cursor: pointer; text-align: left;
-  transition: border-color 0.15s, background 0.15s;
+  min-height: 118px; cursor: pointer; text-align: left;
+  transition: border-color 0.15s, background 0.15s, transform 0.08s;
   overflow: hidden;
 }
-.menu-card-avail:hover { border-color: color-mix(in srgb, var(--accent) 50%, transparent); background: color-mix(in srgb, var(--accent) 4%, transparent); }
+.menu-card-avail:hover { border-color: color-mix(in srgb, var(--accent) 50%, transparent); background: color-mix(in srgb, var(--accent) 4%, var(--surface)); }
 .menu-card-avail:hover .menu-add-indicator { opacity: 1; }
+.menu-card-avail:active { transform: scale(0.98); }
 .menu-card-unavail { opacity: 0.45; cursor: not-allowed; filter: grayscale(0.7); }
 
-/* Badge jumlah yang baru ditambah di kartu menu (mode tambah ke tagihan) */
-.menu-added-badge {
+/* Badge jumlah di kartu menu */
+.menu-count-badge {
   position: absolute; top: 0.5rem; right: 0.5rem; z-index: 2;
   min-width: 1.6rem; padding: 0.1rem 0.4rem; text-align: center;
-  background: #16a34a; color: #fff; border-radius: 999px;
+  background: #dc2626; color: #fff; border-radius: 999px;
   font-family: monospace; font-size: 0.72rem; font-weight: 700;
 }
+.menu-count-added { background: #16a34a; }
 
 .menu-habis-overlay {
   position: absolute; inset: 0; z-index: 10;
@@ -1637,13 +1607,11 @@ onBeforeUnmount(() => clearTimeout(debounceTimeout));
   color: var(--red-soft); border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
   padding: 0.2rem 0.65rem; border-radius: 100px;
 }
-.menu-tags {
-  position: absolute; top: 0.5rem; left: 0.5rem; z-index: 2;
-  display: flex; gap: 0.25rem;
-}
+/* Tag sekarang di dalam alur kartu (bukan absolute) supaya tidak menimpa nama menu */
+.menu-tags { display: flex; gap: 0.25rem; margin-bottom: 0.4rem; }
 .menu-tag {
   font-family: monospace; font-size: 0.56rem; font-weight: 700; letter-spacing: 0.1em;
-  padding: 0.1rem 0.35rem; border-radius: 4px;
+  padding: 0.1rem 0.35rem; border-radius: 4px; line-height: 1.3;
 }
 .menu-tag-secret { background: #7c3aed; color: #fff; }
 .menu-tag-opt { background: rgb(var(--ink) / 0.1); color: var(--text-2); }
@@ -1657,6 +1625,7 @@ onBeforeUnmount(() => clearTimeout(debounceTimeout));
   color: var(--red-soft); margin-top: 0.5rem; align-self: flex-end;
   opacity: 0; transition: opacity 0.15s;
 }
+@media (hover: none) { .menu-card-avail .menu-add-indicator { opacity: 0.8; } }
 
 /* ── Order panel ─────────────────────────────────────────────────── */
 .order-panel {
@@ -1665,19 +1634,46 @@ onBeforeUnmount(() => clearTimeout(debounceTimeout));
   border-radius: 16px; overflow: hidden;
   position: sticky; top: 1.5rem;
   display: flex; flex-direction: column;
-  max-height: calc(100vh - 3rem); max-height: calc(100dvh - 3rem); overflow-y: auto;
+  max-height: calc(100vh - 3rem); max-height: calc(100dvh - 3rem);
 }
 
 .order-panel-head {
-  padding: 1.25rem 1.4rem 1rem;
+  flex-shrink: 0;
+  padding: 1.1rem 1.4rem 0.9rem;
   border-bottom: 1px solid rgb(var(--ink) / 0.05);
   display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem;
 }
 .order-panel-title {
+  display: flex; align-items: center; gap: 0.5rem;
   font-family: 'Oswald', sans-serif; font-size: 1rem; font-weight: 500;
   text-transform: uppercase; letter-spacing: 0.08em; margin: 0;
+  color: var(--text);
+}
+.order-panel-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 20px; height: 20px; padding: 0 0.35rem; border-radius: 999px;
+  background: #dc2626; color: #fff; font-family: monospace; font-size: 0.65rem; font-weight: 700;
+  letter-spacing: 0;
 }
 .order-panel-close { display: none; }
+
+/* Isi form yang bisa di-scroll; footer di bawahnya tetap */
+.order-panel-body {
+  flex: 1 1 auto; min-height: 0;
+  overflow-y: auto; overscroll-behavior: contain;
+  scrollbar-width: thin; scrollbar-color: rgb(var(--ink) / 0.15) transparent;
+}
+.order-panel-body::-webkit-scrollbar { width: 5px; }
+.order-panel-body::-webkit-scrollbar-thumb { background: rgb(var(--ink) / 0.15); border-radius: 999px; }
+
+.order-panel-foot {
+  flex-shrink: 0;
+  padding: 0.85rem 1.4rem calc(1rem + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid rgb(var(--ink) / 0.08);
+  background: var(--surface);
+  display: flex; flex-direction: column; gap: 0.7rem;
+  box-shadow: 0 -8px 20px -12px rgb(var(--ink) / 0.18);
+}
 
 .order-section {
   padding: 1rem 1.4rem;
@@ -1691,6 +1687,7 @@ onBeforeUnmount(() => clearTimeout(debounceTimeout));
   letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-faint);
 }
 .field-optional { font-size: 0.5rem; color: var(--text-faint); }
+.field-hint { margin: 0; font-size: 0.65rem; color: var(--text-faint); }
 
 .phone-input-row { display: flex; align-items: center; gap: 0.6rem; }
 .phone-avatar {
@@ -1727,17 +1724,22 @@ onBeforeUnmount(() => clearTimeout(debounceTimeout));
 
 /* Cart */
 .cart-empty {
-  padding: 2rem 0; text-align: center;
+  padding: 1.5rem 0; text-align: center;
   color: var(--text-faint); font-size: 0.78rem;
   display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
 }
+.cart-empty p { margin: 0; }
 .cart-empty-icon { font-size: 1.75rem; margin-bottom: 0.25rem; }
 .cart-empty-hint { font-size: 0.65rem; color: var(--text-faint); }
 
-.cart-list { display: flex; flex-direction: column; gap: 0.6rem; max-height: 300px; overflow-y: auto; padding-right: 2px; }
-.cart-list::-webkit-scrollbar { width: 3px; }
-.cart-list::-webkit-scrollbar-track { background: transparent; }
-.cart-list::-webkit-scrollbar-thumb { background: rgb(var(--ink) / 0.1); border-radius: 10px; }
+.cart-head { display: flex; align-items: center; justify-content: space-between; }
+.cart-clear {
+  background: none; border: none; padding: 0.2rem 0.1rem; cursor: pointer;
+  font-size: 0.65rem; color: var(--text-faint); text-decoration: underline; text-underline-offset: 2px;
+}
+.cart-clear:hover { color: var(--red-soft); }
+
+.cart-list { display: flex; flex-direction: column; gap: 0.6rem; }
 
 .cart-item {
   background: rgb(var(--ink) / 0.03); border: 1px solid rgb(var(--ink) / 0.06);
@@ -1747,19 +1749,21 @@ onBeforeUnmount(() => clearTimeout(debounceTimeout));
 .cart-item-info { flex: 1; min-width: 0; }
 .cart-item-name { font-size: 0.8rem; font-weight: 600; color: var(--text-2); margin: 0 0 0.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cart-item-price { font-family: monospace; font-size: 0.7rem; color: var(--text-faint); margin: 0; }
+.cart-item-sub { color: var(--text-dim); font-weight: 700; }
 
 .qty-control {
   display: flex; align-items: center; gap: 0.4rem;
   background: rgb(var(--ink) / 0.06); border: 1px solid rgb(var(--ink) / 0.08);
-  border-radius: 8px; padding: 3px; flex-shrink: 0;
+  border-radius: 8px; padding: 3px; flex-shrink: 0; color: var(--text);
 }
 .qty-btn {
-  width: 22px; height: 22px; border-radius: 5px; border: none;
+  width: 26px; height: 26px; border-radius: 5px; border: none;
   background: transparent; color: var(--text-dim);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; transition: all 0.12s;
 }
-.qty-btn:hover { background: rgb(var(--ink) / 0.1); color: var(--text); }
+.qty-btn:hover:not(:disabled) { background: rgb(var(--ink) / 0.1); color: var(--text); }
+.qty-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .qty-val { font-family: monospace; font-size: 0.78rem; font-weight: 700; min-width: 18px; text-align: center; }
 
 .cart-item-opts { font-size: 0.68rem; color: var(--amber-soft); margin: 0.15rem 0 0; }
@@ -1788,7 +1792,7 @@ onBeforeUnmount(() => clearTimeout(debounceTimeout));
 .toggle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
 .toggle-btn {
   display: flex; align-items: center; justify-content: center; gap: 0.35rem;
-  padding: 0.6rem; border-radius: 9px; border: 1px solid;
+  padding: 0.65rem 0.6rem; border-radius: 9px; border: 1px solid;
   font-family: 'Oswald', sans-serif; font-size: 0.65rem;
   letter-spacing: 0.08em; text-transform: uppercase;
   cursor: pointer; transition: all 0.15s;
@@ -1798,7 +1802,21 @@ onBeforeUnmount(() => clearTimeout(debounceTimeout));
 .toggle-active-red   { background: color-mix(in srgb, var(--accent) 12%, transparent); border-color: #dc2626; color: var(--text); }
 .toggle-active-amber { background: color-mix(in srgb, var(--amber) 12%, transparent); border-color: #d97706; color: var(--amber-soft); }
 .toggle-active-white { background: rgb(var(--ink) / 0.08); border-color: rgb(var(--ink) / 0.2); color: var(--text); }
-.toggle-disabled { background: transparent; border-color: rgb(var(--ink) / 0.04); color: var(--text-faint); cursor: not-allowed; }
+.toggle-disabled { background: transparent; border-color: rgb(var(--ink) / 0.04); color: var(--text-faint); cursor: not-allowed; opacity: 0.6; }
+
+/* Nominal cepat */
+.quick-cash { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.quick-cash-btn {
+  padding: 0.4rem 0.7rem; border-radius: 8px; cursor: pointer;
+  background: rgb(var(--ink) / 0.04); border: 1px solid rgb(var(--ink) / 0.1);
+  color: var(--text-2); font-family: monospace; font-size: 0.7rem; font-weight: 700;
+  transition: all 0.12s;
+}
+.quick-cash-btn:hover { border-color: rgb(var(--ink) / 0.25); color: var(--text); }
+.quick-cash-btn.is-active {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-color: #dc2626; color: var(--text);
+}
 
 /* Change box */
 .change-box {
@@ -1809,7 +1827,6 @@ onBeforeUnmount(() => clearTimeout(debounceTimeout));
 .change-ok  { background: color-mix(in srgb, var(--green) 7%, transparent);  border-color: color-mix(in srgb, var(--green) 20%, transparent);  color: var(--green-soft); }
 .change-err { background: color-mix(in srgb, var(--accent) 7%, transparent);  border-color: color-mix(in srgb, var(--accent) 20%, transparent);  color: var(--red-soft); }
 
-/* Kasir strip */
 /* ── Waktu order manual (input susulan) ───────────────────────────── */
 .time-box {
   margin-top: 0.6rem; padding: 0.7rem; border-radius: 10px;
@@ -1826,34 +1843,63 @@ onBeforeUnmount(() => clearTimeout(debounceTimeout));
   padding: 0.7rem 1.4rem;
   display: flex; align-items: center; gap: 0.4rem;
   font-size: 0.7rem; color: var(--text-faint);
-  border-bottom: 1px solid rgb(var(--ink) / 0.04);
 }
 .kasir-name { color: var(--text-dim); font-weight: 600; }
 
-/* Price summary */
-.price-summary {
-  padding: 1rem 1.4rem;
-  display: flex; flex-direction: column; gap: 0.6rem;
-  border-bottom: 1px solid rgb(var(--ink) / 0.05);
+/* ── Promo box: PAKSA ikut tema ──────────────────────────────────────
+   PromoCodeBox.vue punya style scoped sendiri dengan warna gelap hardcode.
+   :deep() + !important menimpanya dari sini. Kalau nanti PromoCodeBox.vue
+   sudah dirapikan, blok ini boleh dihapus. */
+.promo-slot { width: 100%; }
+.promo-slot :deep(input) {
+  background: rgb(var(--ink) / 0.04) !important;
+  border: 1px solid rgb(var(--ink) / 0.08) !important;
+  color: var(--text) !important;
+  border-radius: 10px !important;
+  padding: 0.65rem 0.85rem !important;
+  font-size: 0.82rem !important;
+  font-family: 'Inter', sans-serif !important;
+  outline: none;
+  box-shadow: none !important;
 }
+.promo-slot :deep(input::placeholder) { color: var(--text-faint) !important; opacity: 1; }
+.promo-slot :deep(input:focus) { border-color: color-mix(in srgb, var(--accent) 45%, transparent) !important; }
+.promo-slot :deep(button) {
+  background: #dc2626 !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 10px !important;
+  font-family: 'Oswald', sans-serif !important;
+  font-size: 0.68rem !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  cursor: pointer;
+  opacity: 1 !important;
+}
+.promo-slot :deep(button:hover:not(:disabled)) { background: #b91c1c !important; }
+.promo-slot :deep(button:disabled) {
+  background: rgb(var(--ink) / 0.06) !important;
+  color: var(--text-faint) !important;
+  cursor: not-allowed;
+}
+
+/* Price rows */
 .price-row {
   display: flex; justify-content: space-between;
   font-size: 0.78rem; font-family: monospace; color: var(--text-dim);
 }
 .price-discount { color: var(--green-soft); }
 .price-total {
-  display: flex; justify-content: space-between;
-  padding-top: 0.5rem; border-top: 1px solid rgb(var(--ink) / 0.08);
+  display: flex; justify-content: space-between; align-items: baseline;
   font-family: 'Oswald', sans-serif; font-size: 0.8rem;
   letter-spacing: 0.08em; text-transform: uppercase;
   color: var(--text-2); font-weight: 500;
 }
-.total-val { font-family: monospace; font-size: 1.15rem; font-weight: 800; color: var(--accent-text); }
+.total-val { font-family: monospace; font-size: 1.3rem; font-weight: 800; color: var(--accent-text); letter-spacing: 0; }
 
 /* Submit */
 .submit-btn {
   display: flex; align-items: center; justify-content: center; gap: 0.45rem;
-  margin: 1rem 1.4rem 1.25rem;
   padding: 0.85rem; border-radius: 12px; border: none;
   background: #dc2626; color: #fff;
   font-family: 'Oswald', sans-serif; font-size: 0.8rem;
@@ -1898,6 +1944,7 @@ onBeforeUnmount(() => clearTimeout(debounceTimeout));
 .drawer-title {
   font-family: 'Oswald', sans-serif; font-size: 1.05rem; font-weight: 500;
   text-transform: uppercase; letter-spacing: 0.06em; margin: 0;
+  color: var(--text);
 }
 .drawer-close {
   width: 30px; height: 30px; border-radius: 8px;
@@ -1968,7 +2015,7 @@ onBeforeUnmount(() => clearTimeout(debounceTimeout));
 .drawer-item-qty { color: var(--text-dim); font-family: monospace; }
 .drawer-item-price { font-family: monospace; color: var(--text-2); min-width: 4.5rem; text-align: right; }
 
-.qty-stepper { display: flex; align-items: center; gap: 0.4rem; font-family: monospace; font-size: 0.75rem; }
+.qty-stepper { display: flex; align-items: center; gap: 0.4rem; font-family: monospace; font-size: 0.75rem; color: var(--text); }
 .qty-stepper button {
   width: 1.9rem; height: 1.9rem; font-size: 0.95rem;   /* target sentuh lebih besar */
   border-radius: 0.4rem; border: 1px solid rgb(var(--ink) / 0.15);
@@ -1990,7 +2037,7 @@ onBeforeUnmount(() => clearTimeout(debounceTimeout));
   display: flex; flex-direction: column; gap: 0.5rem;
 }
 .drawer-hint { font-size: 0.68rem; color: var(--text-dim); margin: 0; }
-.drawer-split-total { display: flex; justify-content: space-between; font-size: 0.8rem; font-family: monospace; }
+.drawer-split-total { display: flex; justify-content: space-between; font-size: 0.8rem; font-family: monospace; color: var(--text); }
 
 /* Baris aksi: [Ubah] [Pisah] [Bayar ........] */
 .drawer-actions { display: flex; gap: 0.5rem; align-items: stretch; }
@@ -2032,6 +2079,7 @@ onBeforeUnmount(() => clearTimeout(debounceTimeout));
   border-radius: 18px; width: 100%; max-width: 460px;
   max-height: 90vh; max-height: 90dvh; overflow-y: auto;
   display: flex; flex-direction: column; gap: 0;
+  color: var(--text);
 }
 .modal-head {
   display: flex; align-items: flex-start; justify-content: space-between;
@@ -2040,6 +2088,7 @@ onBeforeUnmount(() => clearTimeout(debounceTimeout));
 .modal-title {
   font-family: 'Oswald', sans-serif; font-size: 1.05rem; font-weight: 500;
   text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 0.2rem;
+  color: var(--text);
 }
 .modal-ordnum { font-family: monospace; font-size: 0.78rem; color: var(--text-faint); margin: 0; }
 .modal-close-btn {
@@ -2093,7 +2142,7 @@ input[type="number"] { -moz-appearance: textfield; }
     position: fixed;
     left: 0; right: 0; bottom: 0; top: auto;
     width: 100%;
-    max-height: 88vh;
+    max-height: 88vh; max-height: 88dvh;
     border-radius: 20px 20px 0 0;
     transform: translateY(105%);
     transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
@@ -2124,7 +2173,7 @@ input[type="number"] { -moz-appearance: textfield; }
   }
   .mcf-count {
     width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
-    background: rgb(var(--ink) / 0.2); display: flex; align-items: center;
+    background: rgba(255,255,255,0.22); display: flex; align-items: center;
     justify-content: center; font-size: 0.7rem; font-weight: 800;
   }
   .mcf-label {

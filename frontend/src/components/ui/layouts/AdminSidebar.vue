@@ -244,24 +244,23 @@ const handleNavClick = (path) => {
 
 // ── Definisi menu ───────────────────────────────────────────────────
 const operationalLinks = [
-  { to: '/admin/pos',    icon: ShoppingCart, label: 'New Order (POS)', roles: ['owner', 'admin', 'kasir'] },
-  { to: '/admin/orders', icon: Clock,        label: 'Active Orders',   roles: ['owner', 'admin', 'kasir'] },
+  { to: '/admin/pos',    icon: ShoppingCart, label: 'Pesanan Baru (POS)', roles: ['owner', 'admin', 'kasir'] },
+  { to: '/admin/orders', icon: Clock,        label: 'Riwayat Pesanan',    roles: ['owner', 'admin', 'kasir'] },
 ]
 const dataManagementLinks = [
-  { to: '/admin/menus',         icon: ChefHat,   label: 'Manage Menus' },
+  { to: '/admin/menus',         icon: ChefHat,   label: 'Kelola Menu' },
   { to: '/admin/promos',        icon: Tag,       label: 'Kelola Promo' },
   { to: '/admin/point-rewards', icon: Gift,      label: 'Kelola Reward Poin' },
-  { to: '/admin/reports',       icon: BarChart3, label: 'Menu Reports' },
-  { to: '/admin/edit-homepage', icon: Edit3,     label: 'Edit Homepage' },
-  { to: '/admin/customers',     icon: Users,     label: 'Loyal Customers' },
+  { to: '/admin/reports',       icon: BarChart3, label: 'Laporan Menu' },
+  { to: '/admin/edit-homepage', icon: Edit3,     label: 'Ubah Beranda' },
+  { to: '/admin/customers',     icon: Users,     label: 'Pelanggan Setia' },
 ]
 const internalLinks = [
   { to: '/admin/finance',          icon: Wallet,   label: 'Buku Kas & Keuangan' },
-  { to: '/admin/registerinternal', icon: UserPlus, label: 'Register Staff Baru' },
-  { to: '/admin/staff',            icon: KeyRound, label: 'Kelola PIN Staff' },
-  { to: '/admin/settings',         icon: Settings, label: 'System Settings' },
+  { to: '/admin/registerinternal', icon: UserPlus, label: 'Daftarkan Staf Baru' },
+  { to: '/admin/staff',            icon: KeyRound, label: 'Kelola PIN Staf' },
+  { to: '/admin/settings',         icon: Settings, label: 'Pengaturan Sistem' },
 ]
-
 const groups = [
   { key: 'operational',    label: 'Operasional', icon: Zap,         tone: 'amber', roles: ['owner', 'admin', 'kasir'], links: operationalLinks },
   { key: 'dataManagement', label: 'Data & CMS',  icon: FolderOpen,  tone: 'sky',   roles: ['owner', 'admin'],          links: dataManagementLinks },
