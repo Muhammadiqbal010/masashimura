@@ -4,8 +4,7 @@
     <!-- ── HEADER ──────────────────────────────────────────────────── -->
     <header class="adm-header">
       <div>
-        <p class="adm-eyebrow">Masashimura · Operasional</p>
-        <h1 class="adm-title">Active Orders</h1>
+        <h1 class="adm-title">Riwayat Pesanan</h1>
         <p class="adm-sub">
           {{ formattedCurrentDate }}
           <template v-if="lastUpdated"> · diperbarui {{ lastUpdated }}</template>
@@ -80,7 +79,7 @@
       </div>
     </div>
 
-    <!-- ── FILTER STATUS + RINGKASAN + URUTAN ──────────────────────── -->
+    <!-- ── FILTER STATUS + URUTAN ──────────────────────────────────── -->
     <div class="ao-filterbar">
       <div class="adm-seg" role="group" aria-label="Filter status pesanan">
         <button
@@ -96,21 +95,32 @@
         </button>
       </div>
 
-      <div class="ao-filterbar-right">
-        <div v-if="orders.length" class="ao-summary">
-          <span v-if="summary.pending > 0" class="ao-summary-item is-pending">
-            Belum dibayar <b>{{ formatPrice(summary.pending) }}</b>
-          </span>
-          <span v-if="isOwner" class="ao-summary-item">
-            Terkumpul <b>{{ formatPrice(summary.paid) }}</b>
-          </span>
-        </div>
-
-        <div class="adm-seg ao-sort" role="group" aria-label="Urutan daftar">
-          <button type="button" class="adm-seg-btn" :aria-pressed="sortMode === 'newest'" @click="setSort('newest')">Terbaru</button>
-          <button type="button" class="adm-seg-btn" :aria-pressed="sortMode === 'unpaid'" @click="setSort('unpaid')">Belum lunas dulu</button>
-        </div>
+      <div class="adm-seg ao-sort" role="group" aria-label="Urutan daftar">
+        <button type="button" class="adm-seg-btn" :aria-pressed="sortMode === 'newest'" @click="setSort('newest')">Terbaru</button>
+        <button type="button" class="adm-seg-btn" :aria-pressed="sortMode === 'unpaid'" @click="setSort('unpaid')">Belum lunas dulu</button>
       </div>
+    </div>
+
+    <!-- ── RINGKASAN NOMINAL ───────────────────────────────────────── -->
+    <div v-if="orders.length" class="ao-stats" aria-label="Ringkasan nominal">
+      <div class="ao-stat" :class="{ 'is-pending': summary.pending > 0 }">
+        <span class="ao-stat-label">Belum dibayar</span>
+        <b>{{ formatPrice(summary.pending) }}</b>
+      </div>
+      <template v-if="isOwner">
+        <div class="ao-stat">
+          <span class="ao-stat-label">Terkumpul</span>
+          <b>{{ formatPrice(summary.paid) }}</b>
+        </div>
+        <div class="ao-stat">
+          <span class="ao-stat-label">Cash</span>
+          <b>{{ formatPrice(summary.cash) }}</b>
+        </div>
+        <div class="ao-stat">
+          <span class="ao-stat-label">QRIS</span>
+          <b>{{ formatPrice(summary.qris) }}</b>
+        </div>
+      </template>
     </div>
 
     <!-- ── ERROR MEMUAT DATA ───────────────────────────────────────── -->
@@ -162,7 +172,7 @@
               <th>Customer</th>
               <th>Menu</th>
               <th class="adm-th-r">Tagihan</th>
-              <th class="adm-th-c">Status</th>
+              <th>Status</th>
               <th class="adm-th-c">Waktu</th>
               <th class="adm-th-r">Aksi</th>
             </tr>
@@ -177,14 +187,15 @@
                 'ao-row--cancelled': order.status === 'cancelled',
                 'ao-row--new': newIds.has(order.id),
               }"
-              tabindex="0"
-              :aria-label="`Buka struk order ${order.order_number || order.id}`"
-              @click="openOrderModal(order)"
-              @keydown.enter.self="openOrderModal(order)"
             >
               <td class="adm-td-first ao-id">
-                #{{ order.id }}
-                <span v-if="newIds.has(order.id)" class="ao-new-tag">Baru</span>
+                <span>#{{ order.id }}</span>
+                <span v-if="newIds.has(order.id)" class="ao-tag ao-tag--new">Baru</span>
+                <span
+                  v-if="order.entered_at"
+                  class="ao-tag ao-tag--late"
+                  :title="`Diinput ${formatFullDateTime(order.entered_at)}`"
+                >Susulan</span>
               </td>
 
               <td data-label="Customer">
@@ -192,7 +203,7 @@
                   <span class="ao-cust-name">{{ order.customer_name || order.customer_phone }}</span>
                   <span v-if="order.customer_name && order.customer_phone" class="ao-cust-phone">{{ order.customer_phone }}</span>
                 </template>
-                <span v-else class="adm-badge ao-guest">Guest</span>
+                <span v-else class="ao-guest">Tamu</span>
               </td>
 
               <td class="ao-menu-cell" data-label="Menu" :title="itemsTitle(order)">
@@ -203,7 +214,10 @@
                   </li>
                 </ul>
                 <span v-else class="ao-items-empty">—</span>
-                <span v-if="itemsMore(order)" class="ao-items-more">+{{ itemsMore(order) }} menu lainnya</span>
+                <div v-if="itemsMore(order) || hasNotes(order)" class="ao-meta">
+                  <span v-if="itemsMore(order)" class="ao-items-more">+{{ itemsMore(order) }} menu lainnya</span>
+                  <span v-if="hasNotes(order)" class="ao-items-note"><StickyNote :size="11" aria-hidden="true" /> Ada catatan</span>
+                </div>
               </td>
 
               <td class="adm-td-r" data-label="Tagihan">
@@ -214,11 +228,11 @@
                 </span>
               </td>
 
-              <td class="adm-td-c" data-label="Status">
-                <div class="ao-status">
-                  <span class="adm-badge" :class="orderBadge(order).cls">{{ orderBadge(order).label }}</span>
-                  <span v-if="order.status !== 'cancelled'" class="adm-badge" :class="payBadge(order).cls">{{ payBadge(order).label }}</span>
-                </div>
+              <!-- Satu pill saja: status bayar jadi yang utama, status dapur ikut di labelnya -->
+              <td data-label="Status">
+                <span class="adm-badge ao-pill" :class="statusInfo(order).cls">
+                  <span class="adm-dot"></span>{{ statusInfo(order).label }}
+                </span>
               </td>
 
               <td class="adm-td-c ao-time" data-label="Waktu">
@@ -228,15 +242,10 @@
                   class="ao-age"
                   :class="{ 'is-old': isStale(order) }"
                 >{{ ageLabel(order) }}</span>
-                <span
-                  v-if="order.entered_at"
-                  class="ao-late"
-                  :title="`Diinput ${formatFullDateTime(order.entered_at)}`"
-                >Input susulan</span>
               </td>
 
               <!-- td tetap table-cell; flex-nya ada di div di dalamnya -->
-              <td class="adm-td-r ao-actions-cell" data-label="" @click.stop>
+              <td class="adm-td-r ao-actions-cell" data-label="">
                 <div class="ao-actions">
                   <button
                     v-if="canPay(order)"
@@ -280,78 +289,68 @@
       </div>
     </section>
 
-    <!-- ── MODAL STRUK ─────────────────────────────────────────────── -->
+    <!-- ── MODAL STRUK ─────────────────────────────────────────────────
+         Lembar putih di bawah ini = persis yang dikirim ke WA & dicetak. -->
     <AdminModal v-model="isModalOpen" :title="`Struk ${selectedOrder?.order_number || ''}`" size="sm">
-      <div v-if="selectedOrder" class="rcpt">
-        <div class="rcpt-head">
-          <img :src="logoUrl" alt="Masashimura" class="rcpt-logo" />
-          <p class="rcpt-address">Jl. Pintu air no 48 Depan Pengadilan bekasi, Bekasi, Jawa Barat</p>
+      <template v-if="selectedOrder">
+        <div v-if="selectedOrder.status === 'cancelled'" class="ao-cancelinfo">
+          <p class="ao-cancelinfo-title"><AlertTriangle :size="13" /> Order dibatalkan</p>
+          <div><span>Alasan</span><b>{{ selectedOrder.cancel_reason_display || '—' }}</b></div>
+          <div v-if="selectedOrder.cancel_note"><span>Catatan</span><b>{{ selectedOrder.cancel_note }}</b></div>
+          <div><span>Oleh</span><b>{{ selectedOrder.cancelled_by || '—' }}</b></div>
+          <div><span>Waktu</span><b>{{ formatFullDateTime(selectedOrder.cancelled_at) }}</b></div>
         </div>
 
-        <hr class="rcpt-div" />
-
-        <div class="rcpt-rows">
-          <div class="rcpt-row"><span>No. Nota</span><b>{{ selectedOrder.order_number }}</b></div>
-          <div class="rcpt-row"><span>Kasir</span><b>{{ selectedOrder.kasir_name || kasirName }}</b></div>
-          <div class="rcpt-row"><span>Waktu</span><b>{{ formatFullDateTime(selectedOrder.created_at) }}</b></div>
-          <div class="rcpt-row"><span>Pelanggan</span><b>{{ selectedOrder.customer_name || selectedOrder.customer_phone || 'Guest' }}</b></div>
-        </div>
-
-        <div v-if="selectedOrder.status === 'cancelled'" class="rcpt-cancel">
-          <p class="rcpt-cancel-title"><AlertTriangle :size="13" /> Order Dibatalkan</p>
-          <div class="rcpt-row"><span>Alasan</span><b>{{ selectedOrder.cancel_reason_display || '—' }}</b></div>
-          <div v-if="selectedOrder.cancel_note" class="rcpt-row"><span>Catatan</span><b>{{ selectedOrder.cancel_note }}</b></div>
-          <div class="rcpt-row"><span>Oleh</span><b>{{ selectedOrder.cancelled_by || '—' }}</b></div>
-          <div class="rcpt-row"><span>Waktu</span><b>{{ formatFullDateTime(selectedOrder.cancelled_at) }}</b></div>
-        </div>
-
-        <hr class="rcpt-div" />
-
-        <p class="rcpt-heading">Detail Pesanan</p>
-        <div v-for="(item, idx) in selectedOrder.items" :key="idx" class="rcpt-item">
-          <div class="rcpt-item-main">
-            <span class="rcpt-qty">{{ item.quantity }}×</span>
-            <span class="rcpt-name">{{ item.menu_name }}</span>
-            <span class="rcpt-sub">{{ formatPrice(item.price * item.quantity) }}</span>
+        <div ref="receiptRef" class="pr-sheet">
+          <div class="pr-center">
+            <div class="pr-brand">MASASHIMURA</div>
+            <div class="pr-addr">Jl. Pintu Air No. 48, depan Pengadilan Bekasi, Bekasi, Jawa Barat</div>
           </div>
-          <div v-if="item.notes" class="rcpt-note">{{ item.notes }}</div>
-        </div>
+          <div class="pr-divider pr-divider-strong"></div>
 
-        <hr class="rcpt-div" />
+          <div class="pr-row"><span>No. Nota</span><span class="pr-b">{{ selectedOrder.order_number }}</span></div>
+          <div class="pr-row"><span>Kasir</span><span>{{ selectedOrder.kasir_name || kasirName }}</span></div>
+          <div class="pr-row"><span>Waktu</span><span>{{ formatFullDateTime(selectedOrder.created_at) }}</span></div>
+          <div class="pr-row"><span>Pelanggan</span><span>{{ selectedOrder.customer_name || selectedOrder.customer_phone || 'Tamu' }}</span></div>
 
-        <div class="rcpt-rows">
-          <div class="rcpt-row"><span>Subtotal</span><span>{{ formatPrice(computedSubtotal) }}</span></div>
-          <div v-if="num(selectedOrder.promo_discount_amount) > 0" class="rcpt-row rcpt-discount">
-            <span>Diskon Promo</span><span>-{{ formatPrice(selectedOrder.promo_discount_amount) }}</span>
+          <div class="pr-divider"></div>
+          <div class="pr-heading">Detail pesanan</div>
+          <div v-for="(item, idx) in selectedOrder.items" :key="idx" class="pr-item">
+            <div class="pr-row">
+              <span>{{ item.quantity }}x {{ item.menu_name }}</span>
+              <span>{{ formatPrice(item.price * item.quantity) }}</span>
+            </div>
+            <div v-if="item.notes" class="pr-note">"{{ item.notes }}"</div>
           </div>
-          <div class="rcpt-row rcpt-final"><span>Total</span><span>{{ formatPrice(selectedOrder.total_price) }}</span></div>
-          <div v-if="num(selectedOrder.amount_paid) > 0" class="rcpt-row rcpt-muted">
-            <span>Dibayar</span><span>{{ formatPrice(selectedOrder.amount_paid) }}</span>
-          </div>
-          <div v-if="num(selectedOrder.change_amount) > 0" class="rcpt-row rcpt-change">
-            <span>Kembalian</span><span>{{ formatPrice(selectedOrder.change_amount) }}</span>
-          </div>
-        </div>
 
-        <div class="rcpt-card">
-          <div class="rcpt-row"><span>Metode</span><b>{{ methodLabel(selectedOrder.payment_method, true) }}</b></div>
+          <div class="pr-divider"></div>
+          <!-- Subtotal cuma muncul kalau ada diskon; kalau tidak, sama persis dengan Total -->
+          <template v-if="num(selectedOrder.promo_discount_amount) > 0">
+            <div class="pr-row"><span>Subtotal</span><span>{{ formatPrice(computedSubtotal) }}</span></div>
+            <div class="pr-row"><span>Diskon promo</span><span>-{{ formatPrice(selectedOrder.promo_discount_amount) }}</span></div>
+          </template>
+          <div class="pr-row pr-total"><span>TOTAL</span><span>{{ formatPrice(selectedOrder.total_price) }}</span></div>
+          <div v-if="num(selectedOrder.amount_paid) > 0" class="pr-row pr-sub"><span>Bayar</span><span>{{ formatPrice(selectedOrder.amount_paid) }}</span></div>
+          <div v-if="num(selectedOrder.change_amount) > 0" class="pr-row pr-sub"><span>Kembalian</span><span>{{ formatPrice(selectedOrder.change_amount) }}</span></div>
+
+          <div class="pr-divider pr-divider-strong"></div>
+          <div class="pr-row"><span>Metode</span><span class="pr-b pr-upper">{{ methodLabel(selectedOrder.payment_method, true) }}</span></div>
           <template v-if="selectedOrder.payment_method === 'mixed' && selectedOrder.payments?.length">
-            <div v-for="p in selectedOrder.payments" :key="p.id" class="rcpt-row rcpt-split">
-              <span>— {{ p.method_display }}</span><b>{{ formatPrice(p.amount) }}</b>
+            <div v-for="p in selectedOrder.payments" :key="p.id" class="pr-row pr-sub">
+              <span>- {{ p.method_display }}</span><span>{{ formatPrice(p.amount) }}</span>
             </div>
           </template>
-          <div class="rcpt-row"><span>Kasir</span><b>{{ selectedOrder.kasir_name || kasirName }}</b></div>
-          <div class="rcpt-row">
-            <span>Status</span>
-            <b :class="['rcpt-status', `is-${selectedOrder.payment_status || 'pending'}`]">{{ payStatusText(selectedOrder) }}</b>
-          </div>
+          <div class="pr-row"><span>Status</span><span class="pr-b pr-upper">{{ payStatusText(selectedOrder) }}</span></div>
+
+          <div class="pr-divider pr-divider-strong"></div>
+          <div class="pr-footer">Terima kasih sudah makan di Masashimura!</div>
         </div>
-      </div>
+      </template>
 
       <template #footer>
         <div class="ao-foot">
           <div class="ao-paper" role="group" aria-label="Ukuran kertas cetak">
-            <span class="ao-paper-label">Kertas</span>
+            <span class="ao-paper-label">Kertas cetak</span>
             <div class="adm-seg">
               <button type="button" class="adm-seg-btn" :aria-pressed="printPaperWidth === 58" @click="setPaper(58)">58 mm</button>
               <button type="button" class="adm-seg-btn" :aria-pressed="printPaperWidth === 80" @click="setPaper(80)">80 mm</button>
@@ -369,96 +368,6 @@
         </div>
       </template>
     </AdminModal>
-
-    <!-- ── STRUK TERSEMBUNYI (untuk screenshot / WA) ────────────────────
-         Sengaja gelap & fixed — gambar yang dikirim ke customer harus sama
-         apa pun tema admin yang sedang dipakai kasir. -->
-    <div
-      ref="receiptRef"
-      aria-hidden="true"
-      style="
-        position: fixed; left: -9999px; top: 0;
-        width: 400px; background-color: #0f0f0f;
-        color: #d4d4d8; padding: 24px;
-        font-family: 'Courier New', monospace;
-        font-size: 12px; line-height: 1.6;
-      "
-    >
-      <div style="text-align:center; margin-bottom:16px;">
-        <img :src="logoUrl" alt="Logo" style="height:60px; margin:0 auto 8px; object-fit:contain; display:block;" />
-        <div style="font-size:10px; color:#71717a;">Jl. Pintu air no 48 Depan Pengadilan bekasi, Bekasi, Jawa Barat</div>
-        <div style="color:#3f3f46; margin-top:8px;">========================================</div>
-      </div>
-      <div style="font-size:11px; margin-bottom:12px;">
-        <div style="display:flex; justify-content:space-between; margin-bottom:2px;"><span>No. Nota :</span><span style="color:#ffffff; font-weight:700;">{{ selectedOrder?.order_number }}</span></div>
-        <div style="display:flex; justify-content:space-between; margin-bottom:2px;"><span>Kasir :</span><span style="color:#ffffff;">{{ selectedOrder?.kasir_name || kasirName }}</span></div>
-        <div style="display:flex; justify-content:space-between; margin-bottom:2px;"><span>Waktu :</span><span>{{ formatFullDateTime(selectedOrder?.created_at) }}</span></div>
-        <div style="display:flex; justify-content:space-between;"><span>Pelanggan :</span><span style="color:#ffffff;">{{ selectedOrder?.customer_name || selectedOrder?.customer_phone || 'Guest' }}</span></div>
-      </div>
-      <div style="color:#3f3f46; margin-bottom:12px;">----------------------------------------</div>
-      <div style="margin-bottom:12px;">
-        <div style="font-weight:700; color:#ffffff; font-size:11px; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;">Detail Pesanan:</div>
-        <div v-for="(item, idx) in selectedOrder?.items" :key="idx" style="margin-bottom:6px;">
-          <div style="display:flex; justify-content:space-between; color:#ffffff;"><span>{{ item.quantity }}x {{ item.menu_name }}</span><span>{{ formatPrice(item.price * item.quantity) }}</span></div>
-          <div v-if="item.notes" style="color:#f59e0b; font-size:10px; padding-left:12px; font-style:italic;">📋 "{{ item.notes }}"</div>
-        </div>
-      </div>
-      <div style="color:#3f3f46; margin-bottom:12px;">----------------------------------------</div>
-      <div style="font-size:11px; margin-bottom:12px;">
-        <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>Subtotal</span><span>{{ formatPrice(computedSubtotal) }}</span></div>
-        <div v-if="num(selectedOrder?.promo_discount_amount) > 0" style="display:flex; justify-content:space-between; color:#f87171; margin-bottom:4px;"><span>Diskon Promo</span><span>-{{ formatPrice(selectedOrder?.promo_discount_amount) }}</span></div>
-        <div style="color:#3f3f46; margin:6px 0;">----------------------------------------</div>
-        <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:900; color:#ffffff; margin-bottom:6px;"><span>TOTAL AKHIR</span><span style="color:#ef4444;">{{ formatPrice(selectedOrder?.total_price) }}</span></div>
-        <div v-if="num(selectedOrder?.amount_paid) > 0" style="display:flex; justify-content:space-between; margin-bottom:2px; color:#a1a1aa;"><span>Bayar</span><span style="color:#ffffff; font-weight:600;">{{ formatPrice(selectedOrder?.amount_paid) }}</span></div>
-        <div v-if="num(selectedOrder?.change_amount) > 0" style="display:flex; justify-content:space-between;"><span>Kembalian</span><span style="color:#34d399; font-weight:700;">{{ formatPrice(selectedOrder?.change_amount) }}</span></div>
-      </div>
-      <div style="color:#3f3f46; margin-bottom:12px;">========================================</div>
-      <div style="background-color:#1a1a1a; padding:12px; border-radius:12px; border:1px solid #2a2a2a; font-size:10px; line-height:2; margin-bottom:12px;">
-        <div>• Metode Bayar : <span style="color:#ffffff; font-weight:700; text-transform:uppercase;">{{ methodLabel(selectedOrder?.payment_method, true) }}</span></div>
-        <div>• Kasir : <span style="color:#ffffff; font-weight:700;">{{ selectedOrder?.kasir_name || kasirName }}</span></div>
-        <div>• Status : <span :style="selectedOrder?.payment_status === 'paid' ? 'color:#34d399; font-weight:700;' : (selectedOrder?.payment_status === 'void' ? 'color:#a1a1aa; font-weight:700;' : 'color:#fbbf24; font-weight:700;')">{{ payStatusText(selectedOrder) }}</span></div>
-      </div>
-      <div style="text-align:center; font-size:10px; color:#a1a1aa; padding-top:4px; font-weight:700;">Terima kasih sudah makan di Masashimura! 🙏</div>
-    </div>
-
-    <!-- ── STRUK PRINT (thermal 58mm/80mm) — hanya tampil saat print ── -->
-    <div ref="printRef" class="print-receipt" :style="{ width: printPaperWidth + 'mm' }">
-      <div class="pr-center">
-        <div class="pr-brand">MASASHIMURA</div>
-        <div class="pr-addr">Jl. Pintu air no 48 Depan Pengadilan Bekasi, Bekasi, Jawa Barat</div>
-      </div>
-      <div class="pr-divider pr-divider-strong"></div>
-      <div class="pr-row"><span>No. Nota</span><span>{{ selectedOrder?.order_number }}</span></div>
-      <div class="pr-row"><span>Kasir</span><span>{{ selectedOrder?.kasir_name || kasirName }}</span></div>
-      <div class="pr-row"><span>Waktu</span><span>{{ formatFullDateTime(selectedOrder?.created_at) }}</span></div>
-      <div class="pr-row"><span>Pelanggan</span><span>{{ selectedOrder?.customer_name || selectedOrder?.customer_phone || 'Guest' }}</span></div>
-      <div class="pr-divider"></div>
-      <div class="pr-heading">Detail Pesanan</div>
-      <div v-for="(item, idx) in selectedOrder?.items" :key="'pr' + idx" class="pr-item">
-        <div class="pr-item-row">
-          <span>{{ item.quantity }}x {{ item.menu_name }}</span>
-          <span>{{ formatPrice(item.price * item.quantity) }}</span>
-        </div>
-        <div v-if="item.notes" class="pr-note">"{{ item.notes }}"</div>
-      </div>
-      <div class="pr-divider"></div>
-      <div class="pr-row"><span>Subtotal</span><span>{{ formatPrice(computedSubtotal) }}</span></div>
-      <div v-if="num(selectedOrder?.promo_discount_amount) > 0" class="pr-row">
-        <span>Diskon Promo</span><span>-{{ formatPrice(selectedOrder?.promo_discount_amount) }}</span>
-      </div>
-      <div class="pr-row pr-total"><span>TOTAL</span><span>{{ formatPrice(selectedOrder?.total_price) }}</span></div>
-      <div v-if="num(selectedOrder?.amount_paid) > 0" class="pr-row pr-sub">
-        <span>Bayar</span><span>{{ formatPrice(selectedOrder?.amount_paid) }}</span>
-      </div>
-      <div v-if="num(selectedOrder?.change_amount) > 0" class="pr-row pr-sub">
-        <span>Kembalian</span><span>{{ formatPrice(selectedOrder?.change_amount) }}</span>
-      </div>
-      <div class="pr-divider pr-divider-strong"></div>
-      <div class="pr-row"><span>Metode</span><span class="pr-upper">{{ methodLabel(selectedOrder?.payment_method, true) }}</span></div>
-      <div class="pr-row"><span>Status</span><span class="pr-upper">{{ payStatusText(selectedOrder) }}</span></div>
-      <div class="pr-divider pr-divider-strong"></div>
-      <div class="pr-footer">Terima kasih sudah makan di Masashimura!</div>
-    </div>
 
     <!-- ── MODAL LUNASI ────────────────────────────────────────────── -->
     <AdminModal v-model="isPayModalOpen" :title="`Lunasi ${selectedPayOrder?.order_number || ''}`" size="md" :persistent="isPaying">
@@ -492,10 +401,10 @@
 
           <div v-for="(row, idx) in payRows" :key="idx" class="ao-payrow">
             <div class="adm-seg" role="group" :aria-label="`Metode baris ${idx + 1}`">
-              <button type="button" class="adm-seg-btn" :aria-pressed="row.method === 'cash'" @click="row.method = 'cash'">
+              <button type="button" class="adm-seg-btn" :aria-pressed="row.method === 'cash'" @click="setRowMethod(row, 'cash')">
                 <Banknote :size="13" /> Cash
               </button>
-              <button type="button" class="adm-seg-btn" :aria-pressed="row.method === 'qris_manual'" @click="row.method = 'qris_manual'">
+              <button type="button" class="adm-seg-btn" :aria-pressed="row.method === 'qris_manual'" @click="setRowMethod(row, 'qris_manual')">
                 <QrCode :size="13" /> QRIS
               </button>
             </div>
@@ -655,15 +564,13 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import {
   Search, X, ChevronLeft, ChevronRight, Printer, Send, Plus, Trash2,
-  Banknote, QrCode, Shuffle, RefreshCw, AlertTriangle, Receipt, Bell, BellOff,
+  Banknote, QrCode, Shuffle, RefreshCw, AlertTriangle, Receipt, Bell, BellOff, StickyNote,
 } from 'lucide-vue-next'
 import { orderAPI, apiClient } from '@/api'
 import { toast } from 'vue-sonner'
 import { useAuthStore } from '@/stores/auth'
 import html2canvas from 'html2canvas'
 import AdminModal from '@/components/ui/admin/Adminmodal.vue'
-// Di-import (bukan "/src/assets/…") supaya path-nya ikut di-hash & tetap jalan di build production.
-import logoUrl from '@/assets/masashimura-logo.png'
 
 const authStore = useAuthStore()
 const kasirName = computed(() => authStore.user?.name || authStore.user?.username || 'Staff')
@@ -849,6 +756,7 @@ const onKeydown = (e) => {
 let pollingTimer = null
 const onVisibility = () => { if (!document.hidden) fetchActiveOrders() }
 onMounted(() => {
+  ensurePaperStyle()
   fetchActiveOrders()
   // Tab yang lagi tidak dilihat tidak perlu menembak server tiap 5 detik.
   pollingTimer = setInterval(() => { if (!document.hidden) fetchActiveOrders() }, POLL_MS)
@@ -910,16 +818,25 @@ const visibleOrders = computed(() => {
 })
 const resetFilters = () => { searchQuery.value = ''; statusFilter.value = 'all' }
 
-// ── Ringkasan nominal ───────────────────────────────────────────────
+// ── Ringkasan nominal (+ pecahan cash / QRIS untuk tutup kas) ───────
+const isQrisMethod = (m) => ['gateway', 'qris_manual', 'qris'].includes(m)
 const summary = computed(() => {
-  let paid = 0
-  let pending = 0
+  let paid = 0, pending = 0, cash = 0, qris = 0
   for (const o of orders.value) {
     if (o.status === 'cancelled') continue
-    if (o.payment_status === 'paid') paid += num(o.total_price)
-    else if (o.payment_status !== 'void') pending += num(o.total_price)
+    const total = num(o.total_price)
+    if (o.payment_status === 'paid') {
+      paid += total
+      if (o.payments?.length > 1) {
+        // Split bayar: porsi QRIS dari tiap baris, sisanya cash (kembalian sudah terpotong di total)
+        const q = Math.min(o.payments.filter((p) => isQrisMethod(p.method)).reduce((s, p) => s + num(p.amount), 0), total)
+        qris += q
+        cash += total - q
+      } else if (isQrisMethod(o.payment_method)) qris += total
+      else cash += total
+    } else if (o.payment_status !== 'void') pending += total
   }
-  return { paid, pending }
+  return { paid, pending, cash, qris }
 })
 
 // Jumlah order belum lunas di judul tab browser — kelihatan walau admin sedang buka tab lain.
@@ -934,6 +851,8 @@ const ITEMS_PREVIEW = 2
 const itemsPreview = (o) => (o.items || []).slice(0, ITEMS_PREVIEW)
 const itemsMore = (o) => Math.max((o.items?.length || 0) - ITEMS_PREVIEW, 0)
 const itemsTitle = (o) => (o.items || []).map((i) => `${i.quantity}× ${i.menu_name}`).join('\n')
+// Catatan per menu (tanpa pedas, dll.) sering tidak kelihatan di tabel — kasih penanda.
+const hasNotes = (o) => (o.items || []).some((i) => i.notes)
 
 // ── Umur order (untuk yang belum lunas) ─────────────────────────────
 const ageMinutes = (o) => Math.floor((now.value - new Date(o.created_at).getTime()) / 60000)
@@ -947,23 +866,27 @@ const ageLabel = (o) => {
 }
 const isStale = (o) => ageMinutes(o) >= 30
 
-// ── Badge & label ───────────────────────────────────────────────────
-const orderBadge = (o) =>
-  o.status === 'completed' ? { cls: 'adm-badge--green', label: 'Selesai' }
-  : o.status === 'cancelled' ? { cls: 'adm-badge--red', label: 'Dibatalkan' }
-  : { cls: 'adm-badge--amber', label: 'Proses' }
-const payBadge = (o) =>
-  o.payment_status === 'paid' ? { cls: 'adm-badge--green', label: 'Lunas' }
-  : o.payment_status === 'void' ? { cls: '', label: 'Batal' }
-  : { cls: 'adm-badge--amber', label: 'Pending' }
+// ── Status: SATU pill per order ─────────────────────────────────────
+// Yang paling penting buat kasir = sudah dibayar atau belum. Status dapur
+// (masih diproses) cukup ikut di label, tidak perlu badge kedua.
+const statusInfo = (o) => {
+  if (o.status === 'cancelled') return { cls: 'adm-badge--red', label: 'Dibatalkan' }
+  if (o.payment_status === 'void') return { cls: '', label: 'Batal bayar' }
+  if (o.payment_status === 'paid') {
+    return o.status === 'completed'
+      ? { cls: 'adm-badge--green', label: 'Lunas' }
+      : { cls: 'adm-badge--green', label: 'Lunas · Diproses' }
+  }
+  return { cls: 'adm-badge--amber', label: 'Belum lunas' }
+}
 const payStatusText = (o) =>
   o?.payment_status === 'paid' ? 'LUNAS' : (o?.payment_status === 'void' ? 'BATAL' : 'PENDING')
 
 const canPay = (o) => o.payment_status !== 'paid' && o.status !== 'cancelled' && o.payment_method !== 'gateway'
 
-const methodIcon = (m) => (['gateway', 'qris_manual', 'qris'].includes(m) ? QrCode : (m === 'mixed' ? Shuffle : Banknote))
+const methodIcon = (m) => (isQrisMethod(m) ? QrCode : (m === 'mixed' ? Shuffle : Banknote))
 const methodLabel = (m, full = false) => {
-  if (['gateway', 'qris_manual', 'qris'].includes(m)) return 'QRIS'
+  if (isQrisMethod(m)) return 'QRIS'
   if (m === 'mixed') return full ? 'Split Bayar' : 'Split'
   return m || 'Cash'
 }
@@ -998,36 +921,75 @@ const computedSubtotal = computed(() => {
   return num(selectedOrder.value?.subtotal || selectedOrder.value?.total_price)
 })
 
+// ── Lembar struk (satu sumber untuk preview, gambar WA, dan cetak) ──
+// Selalu putih-hitam seperti kertas, tidak ikut tema admin. Style-nya
+// disuntik ke <head> (bukan scoped) supaya bisa dipakai ulang di iframe cetak.
+const PAPER_CSS = `
+.pr-sheet{box-sizing:border-box;width:100%;max-width:21rem;margin:0 auto;padding:20px 18px 22px;background:#fff;color:#111;
+  font-family:'Courier New',Courier,monospace;font-size:12px;line-height:1.55;
+  border:1px solid rgb(0 0 0/.12);border-radius:6px;box-shadow:0 2px 12px rgb(0 0 0/.14)}
+.pr-center{text-align:center;margin-bottom:4px}
+.pr-brand{font-size:18px;font-weight:900;letter-spacing:.08em}
+.pr-addr{font-size:10px;margin-top:3px;line-height:1.4;color:#444}
+.pr-divider{border-top:1px dashed #000;margin:9px 0;height:0}
+.pr-divider-strong{border-top:2px solid #000}
+.pr-row{display:flex;justify-content:space-between;gap:12px;margin-bottom:3px}
+.pr-row>:last-child{text-align:right}
+.pr-b{font-weight:700}
+.pr-upper{text-transform:uppercase}
+.pr-sub{color:#444}
+.pr-heading{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;color:#333}
+.pr-item{margin-bottom:5px}
+.pr-note{font-size:10px;font-style:italic;padding-left:14px;color:#444}
+.pr-total{font-size:14px;font-weight:900;padding:5px 0;margin:2px 0 4px;border-top:1px dashed #000;border-bottom:1px dashed #000}
+.pr-footer{text-align:center;font-size:11px;font-weight:700;margin-top:4px}
+`
+const ensurePaperStyle = () => {
+  if (document.getElementById('masashimura-paper-style')) return
+  const tag = document.createElement('style')
+  tag.id = 'masashimura-paper-style'
+  tag.textContent = PAPER_CSS
+  document.head.appendChild(tag)
+}
+
 // ── Cetak thermal ───────────────────────────────────────────────────
-const printRef = ref(null)
+const receiptRef = ref(null)
 const PAPER_KEY = 'masashimura-print-width'
 const readPaper = () => {
   try { return Number(localStorage.getItem(PAPER_KEY)) === 58 ? 58 : 80 } catch { return 80 }
 }
 const printPaperWidth = ref(readPaper())
-// Memilih ukuran kertas TIDAK lagi langsung mencetak; ukuran diingat untuk cetak berikutnya.
+// Memilih ukuran kertas TIDAK langsung mencetak; ukuran diingat untuk cetak berikutnya.
 const setPaper = (w) => {
   printPaperWidth.value = w
   writePref(PAPER_KEY, w)
 }
+// Cetak lewat iframe berisi salinan lembar struk: halaman utama tidak disentuh,
+// jadi tidak perlu trik "body * { visibility: hidden }" dan tidak ada markup ganda.
 const printReceipt = () => {
-  if (!selectedOrder.value) return
-  // @page tidak bisa pakai CSS variable → set ukuran halaman cetak secara dinamis
-  let tag = document.getElementById('thermal-page-style')
-  if (!tag) {
-    tag = document.createElement('style')
-    tag.id = 'thermal-page-style'
-    document.head.appendChild(tag)
-  }
-  tag.textContent = `@page { size: ${printPaperWidth.value}mm auto; margin: 0; }`
-  // Jeda singkat biar lebar & isi struk sempat re-render sebelum dialog print muncul
-  setTimeout(() => window.print(), 80)
+  const sheet = receiptRef.value
+  if (!sheet || !selectedOrder.value) return
+  const w = printPaperWidth.value
+  const iframe = document.createElement('iframe')
+  iframe.setAttribute('aria-hidden', 'true')
+  iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;'
+  document.body.appendChild(iframe)
+  const cleanup = () => iframe.remove()
+  const doc = iframe.contentDocument
+  doc.open()
+  doc.write(`<!doctype html><html><head><meta charset="utf-8"><title>Struk</title><style>
+    @page{size:${w}mm auto;margin:0}
+    html,body{margin:0;background:#fff}
+    ${PAPER_CSS}
+    .pr-sheet{width:${w}mm;max-width:none;margin:0;padding:4mm 4.5mm;border:0;border-radius:0;box-shadow:none}
+  </style></head><body>${sheet.outerHTML}</body></html>`)
+  doc.close()
+  iframe.contentWindow.addEventListener('afterprint', cleanup)
+  setTimeout(() => { iframe.contentWindow.focus(); iframe.contentWindow.print() }, 150)
+  setTimeout(cleanup, 120000)   // jaga-jaga kalau afterprint tidak terpanggil
 }
 
 // ── Kirim struk via WA ──────────────────────────────────────────────
-// Capture cuma dari #receiptRef — bukti pembayaran memang tidak pernah
-// dirender di node itu, jadi otomatis tidak ikut ke gambar untuk customer.
-const receiptRef = ref(null)
 const isCapturing = ref(false)
 const canvasToBlob = (canvas) => new Promise((resolve) => canvas.toBlob(resolve, 'image/png'))
 
@@ -1035,8 +997,17 @@ const shareReceiptAsImage = async () => {
   if (!receiptRef.value || !selectedOrder.value) return
   isCapturing.value = true
   try {
-    await new Promise((r) => setTimeout(r, 200))
-    const canvas = await html2canvas(receiptRef.value, { backgroundColor: '#0f0f0f', scale: 2, useCORS: true })
+    const canvas = await html2canvas(receiptRef.value, {
+      backgroundColor: '#ffffff',
+      scale: 3,
+      useCORS: true,
+      // Ukuran gambar tetap (tidak tergantung lebar modal) dan tanpa bayangan/bingkai.
+      onclone: (clonedDoc) => {
+        const el = clonedDoc.querySelector('.pr-sheet')
+        if (!el) return
+        Object.assign(el.style, { width: '380px', maxWidth: '380px', margin: '0', boxShadow: 'none', border: '0', borderRadius: '0' })
+      },
+    })
     const blob = await canvasToBlob(canvas)
     if (!blob) throw new Error('Gagal membuat blob gambar')
 
@@ -1110,6 +1081,13 @@ const applyQuick = (value) => {
   const others = paySplitTotalEntered.value - (Number(last.amount) || 0)
   last.amount = Math.max(value - others, 0)
 }
+// QRIS selalu pas: kalau cuma satu baris dan masih kosong, langsung isi sebesar tagihan.
+const setRowMethod = (row, method) => {
+  row.method = method
+  if (method === 'qris_manual' && payRows.value.length === 1 && !Number(row.amount)) {
+    row.amount = num(selectedPayOrder.value?.total_price)
+  }
+}
 
 const openPayModal = (order) => {
   selectedPayOrder.value = order
@@ -1128,12 +1106,16 @@ const fillRemainingToLastRow = () => {
 const confirmPay = async () => {
   if (!selectedPayOrder.value || !canConfirmPay.value) return
   isPaying.value = true
+  const paidOrder = selectedPayOrder.value
   try {
-    await apiClient.patch(`/orders/${selectedPayOrder.value.id}/pay/`, {
+    await apiClient.patch(`/orders/${paidOrder.id}/pay/`, {
       payments: payRows.value.map((r) => ({ method: r.method, amount: Number(r.amount) || 0 })),
       kasir_name: kasirName.value,
     })
-    toast.success(`Order ${selectedPayOrder.value.order_number} berhasil dilunasi`)
+    // Setelah lunas, kasir hampir selalu lanjut cetak / kirim struk — kasih jalan pintas.
+    toast.success(`Order ${paidOrder.order_number} berhasil dilunasi`, {
+      action: { label: 'Lihat struk', onClick: () => openOrderModal(paidOrder) },
+    })
     isPayModalOpen.value = false
     selectedPayOrder.value = null
     payRows.value = [{ method: 'cash', amount: 0 }]
@@ -1250,12 +1232,8 @@ const confirmDelete = async () => {
 }
 @media (max-width: 480px) { .ao-hide-xs { display: none; } }
 
-/* ── Filter + ringkasan + urutan ─────────────────────────────────── */
+/* ── Filter + urutan ─────────────────────────────────────────────── */
 .ao-filterbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; }
-.ao-filterbar-right { display: flex; align-items: center; flex-wrap: wrap; gap: 0.6rem 1rem; }
-.ao-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 0.25rem 1rem; font-size: 0.75rem; color: var(--text-dim); }
-.ao-summary b { margin-left: 0.3rem; font-family: var(--font-mono); font-weight: 700; color: var(--text); }
-.ao-summary-item.is-pending b { color: var(--red-soft); }
 
 /* Hitungan di tab filter */
 .ao-count {
@@ -1268,6 +1246,18 @@ const confirmDelete = async () => {
 .ao-count.is-alert,
 .adm-seg-btn[aria-pressed='true'] .ao-count.is-alert { background: var(--accent); color: #fff; }
 
+/* ── Ringkasan nominal ───────────────────────────────────────────── */
+.ao-stats { display: flex; flex-wrap: wrap; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-2); }
+.ao-stat { flex: 1 1 9rem; display: flex; flex-direction: column; gap: 0.1rem; padding: 0.6rem 1rem; min-width: 0; }
+.ao-stat + .ao-stat { border-left: 1px solid var(--border); }
+.ao-stat-label { font-size: 0.72rem; color: var(--text-dim); }
+.ao-stat b { font-family: var(--font-mono); font-size: 0.95rem; font-weight: 700; color: var(--text); white-space: nowrap; }
+.ao-stat.is-pending b { color: var(--red-soft); }
+@media (max-width: 480px) {
+  .ao-stat { flex-basis: 45%; }
+  .ao-stat + .ao-stat { border-left: 0; }
+}
+
 /* ── Error ───────────────────────────────────────────────────────── */
 .ao-error { align-items: center; flex-wrap: wrap; }
 .ao-error-icon { flex-shrink: 0; margin-top: 2px; }
@@ -1279,13 +1269,12 @@ const confirmDelete = async () => {
 .ao-skel-row { height: 3.25rem; border-radius: var(--r-md); }
 
 /* ── Tabel ───────────────────────────────────────────────────────── */
-.ao-row { cursor: pointer; }
-.ao-row:focus-visible { outline-offset: -2px; }
-.ao-row:focus-visible td { background: var(--surface-hover); }
 .adm-table td { padding-block: 0.9rem; vertical-align: middle; }
 
 .ao-id { font-family: var(--font-mono); font-weight: 700; color: var(--accent-text); white-space: nowrap; }
-.ao-new-tag { display: inline-block; margin-left: 0.4rem; padding: 0.05rem 0.4rem; border-radius: 99px; background: var(--green); color: #fff; font-family: var(--font-body); font-size: 0.6rem; font-weight: 700; letter-spacing: 0.04em; vertical-align: middle; }
+.ao-tag { display: inline-block; margin-left: 0.4rem; padding: 0.05rem 0.45rem; border-radius: 99px; font-family: var(--font-body); font-size: 0.65rem; font-weight: 700; vertical-align: middle; }
+.ao-tag--new { background: var(--green); color: #fff; }
+.ao-tag--late { background: rgb(var(--ink) / 0.08); color: var(--amber-soft); }
 
 /* Belum lunas: disorot supaya kasir tidak lupa menagih */
 .ao-row--unpaid td { background: var(--tint-accent); }
@@ -1303,7 +1292,7 @@ const confirmDelete = async () => {
 /* Customer */
 .ao-cust-name { display: block; font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
 .ao-cust-phone { display: block; font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-faint); }
-.ao-guest { padding-block: 0.1rem; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.ao-guest { font-size: 0.8rem; color: var(--text-faint); }
 
 /* Menu */
 .ao-menu-cell { min-width: 11rem; max-width: 18rem; }
@@ -1311,21 +1300,22 @@ const confirmDelete = async () => {
 .ao-items li { display: flex; gap: 0.4rem; font-size: 0.8rem; line-height: 1.35; }
 .ao-items-qty { flex-shrink: 0; font-family: var(--font-mono); font-weight: 700; color: var(--accent-text); }
 .ao-items-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
-.ao-items-more { display: inline-block; margin-top: 0.25rem; padding: 0.05rem 0.5rem; border-radius: 99px; background: rgb(var(--ink) / 0.08); font-size: 0.66rem; font-weight: 600; color: var(--text-dim); }
 .ao-items-empty { color: var(--text-faint); }
+.ao-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.4rem; margin-top: 0.3rem; }
+.ao-items-more { padding: 0.05rem 0.5rem; border-radius: 99px; background: rgb(var(--ink) / 0.08); font-size: 0.66rem; font-weight: 600; color: var(--text-dim); }
+.ao-items-note { display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.68rem; font-weight: 600; color: var(--amber-soft); }
 
 /* Tagihan + metode */
 .ao-price { display: block; font-family: var(--font-mono); font-weight: 700; color: var(--amber-soft); white-space: nowrap; }
 .ao-method { display: flex; align-items: center; justify-content: flex-end; gap: 0.3rem; margin-top: 0.15rem; font-size: 0.72rem; text-transform: capitalize; color: var(--text-dim); }
 
-/* Status */
-.ao-status { display: inline-flex; flex-direction: column; align-items: center; gap: 0.3rem; }
+/* Status: satu pill, satu baris */
+.ao-pill { display: inline-flex; align-items: center; gap: 0.4rem; white-space: nowrap; }
 
 /* Waktu */
 .ao-time { font-family: var(--font-mono); color: var(--text-dim); white-space: nowrap; }
 .ao-age { display: block; margin-top: 2px; font-family: var(--font-body); font-size: 0.65rem; color: var(--text-dim); }
 .ao-age.is-old { font-weight: 700; color: var(--red-soft); }
-.ao-late { display: block; margin-top: 2px; font-family: var(--font-body); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--amber-soft); }
 
 /* Aksi — flex ada di div, BUKAN di td (td ber-display:flex keluar dari grid tabel) */
 .ao-actions-cell { white-space: nowrap; }
@@ -1335,7 +1325,6 @@ const confirmDelete = async () => {
   .ao-row { margin: 0.6rem; padding: 0.4rem 0 !important; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-2); }
   .adm-table--stack tbody tr.ao-row:last-child { border-bottom: 1px solid var(--border); }
   .ao-row--unpaid { border-color: var(--line-accent); }
-  .ao-status { flex-direction: row; }
   .ao-menu-cell { max-width: none; }
   .ao-items-name { white-space: normal; }
   .ao-method { justify-content: flex-start; }
@@ -1344,10 +1333,10 @@ const confirmDelete = async () => {
   .ao-actions .adm-btn { flex: 1; min-height: 44px; }
 }
 
-/* ── Footer modal struk ──────────────────────────────────────────── */
+/* ── Modal struk ─────────────────────────────────────────────────── */
 .ao-foot { display: flex; align-items: center; flex-wrap: wrap; gap: 0.6rem; width: 100%; }
 .ao-paper { display: flex; align-items: center; gap: 0.5rem; }
-.ao-paper-label { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); }
+.ao-paper-label { font-size: 0.75rem; font-weight: 600; color: var(--text-faint); }
 .ao-foot-actions { display: flex; gap: 0.5rem; margin-left: auto; }
 @media (max-width: 560px) {
   .ao-paper { width: 100%; justify-content: space-between; }
@@ -1357,37 +1346,11 @@ const confirmDelete = async () => {
 .ao-btn-wa { background: var(--green); border-color: var(--green); color: #fff; }
 .ao-btn-wa:hover:not(:disabled) { filter: brightness(0.92); }
 
-/* ── Struk di dalam modal (ikut tema) ────────────────────────────── */
-.rcpt { font-family: var(--font-mono); font-size: 0.78rem; line-height: 1.5; color: var(--text-2); }
-.rcpt-head { text-align: center; }
-.rcpt-logo { display: block; height: 50px; margin: 0 auto 0.5rem; object-fit: contain; }
-:global(html[data-admin-theme='light']) .rcpt-logo { filter: drop-shadow(0 0 1px rgb(24 24 27 / 0.55)) drop-shadow(0 1px 1px rgb(24 24 27 / 0.2)); }
-.rcpt-address { margin: 0; font-size: 0.66rem; color: var(--text-faint); }
-.rcpt-div { margin: 0.85rem 0; border: 0; border-top: 1px dashed var(--border-strong); }
-.rcpt-rows { display: flex; flex-direction: column; gap: 0.25rem; }
-.rcpt-row { display: flex; justify-content: space-between; gap: 1rem; }
-.rcpt-row > :last-child { text-align: right; }
-.rcpt-row b { color: var(--text); font-weight: 600; }
-.rcpt-heading { margin: 0 0 0.6rem; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); }
-.rcpt-item { margin-bottom: 0.5rem; }
-.rcpt-item-main { display: flex; gap: 0.4rem; }
-.rcpt-qty { min-width: 1.8rem; color: var(--text-faint); }
-.rcpt-name { flex: 1; color: var(--text); }
-.rcpt-sub { font-weight: 600; }
-.rcpt-note { padding-left: 2.2rem; font-size: 0.68rem; font-style: italic; color: var(--amber-soft); }
-.rcpt-discount { color: var(--red-soft); }
-.rcpt-final { margin-top: 0.25rem; padding-top: 0.45rem; border-top: 1px dashed var(--border-strong); font-size: 0.95rem; font-weight: 800; color: var(--text); }
-.rcpt-final > :last-child { color: var(--accent-text); }
-.rcpt-muted { color: var(--text-dim); }
-.rcpt-change > :last-child { color: var(--green-soft); font-weight: 700; }
-.rcpt-card { display: flex; flex-direction: column; gap: 0.25rem; margin-top: 1rem; padding: 0.75rem 1rem; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-2); }
-.rcpt-card b { text-transform: uppercase; }
-.rcpt-split { padding-left: 0.75rem; }
-.rcpt-status.is-paid { color: var(--green-soft); }
-.rcpt-status.is-void { color: var(--text-dim); }
-.rcpt-status.is-pending { color: var(--amber-soft); }
-.rcpt-cancel { display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.75rem; padding: 0.7rem 0.85rem; border: 1px solid var(--line-accent); border-radius: var(--r-md); background: var(--tint-accent); }
-.rcpt-cancel-title { display: flex; align-items: center; gap: 0.35rem; margin: 0 0 0.25rem; font-weight: 700; color: var(--red-soft); }
+/* Info pembatalan (di luar lembar struk, tidak ikut terkirim ke customer) */
+.ao-cancelinfo { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.9rem; padding: 0.7rem 0.85rem; border: 1px solid var(--line-accent); border-radius: var(--r-md); background: var(--tint-accent); font-size: 0.78rem; color: var(--text-dim); }
+.ao-cancelinfo > div { display: flex; justify-content: space-between; gap: 1rem; }
+.ao-cancelinfo b { color: var(--text); font-weight: 600; text-align: right; }
+.ao-cancelinfo-title { display: flex; align-items: center; gap: 0.35rem; margin: 0 0 0.2rem; font-weight: 700; color: var(--red-soft); }
 
 /* ── Modal lunasi / batalkan / hapus ─────────────────────────────── */
 .ao-person { padding: 0.8rem 1rem; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-2); }
@@ -1401,7 +1364,7 @@ const confirmDelete = async () => {
 .ao-oi-price { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-dim); white-space: nowrap; }
 
 .ao-total { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.8rem 1rem; border: 1px solid var(--line-accent); border-radius: var(--r-md); background: var(--tint-accent); }
-.ao-total span { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); }
+.ao-total span { font-size: 0.78rem; font-weight: 600; color: var(--text-dim); }
 .ao-total strong { font-family: var(--font-mono); font-size: 1.2rem; font-weight: 800; color: var(--accent-text); }
 
 .ao-payrow { display: flex; align-items: center; gap: 0.5rem; }
@@ -1445,74 +1408,8 @@ const confirmDelete = async () => {
 
 .ao-code { padding: 0.05rem 0.4rem; border-radius: 4px; background: rgb(var(--ink) / 0.08); color: var(--text); font-family: var(--font-mono); font-weight: 700; }
 
-/* ── Struk print (thermal) — disembunyikan di layar biasa ─────────── */
-.print-receipt { display: none; }
-
 /* Hormati pengaturan "kurangi gerakan" di perangkat */
 @media (prefers-reduced-motion: reduce) {
   .ao-pulse, .ao-spin, .ao-row--new td { animation: none; }
-}
-</style>
-
-<!-- ── STYLE PRINT (global, tidak di-scope) ─────────────────────────
-     Harus di luar <style scoped> karena selector "body *" butuh akses
-     ke seluruh halaman, bukan cuma elemen di dalam komponen ini.
-     Struk cetak selalu putih-hitam (kertas), tidak ikut tema. -->
-<style>
-@media print {
-  body * { visibility: hidden; }
-  .print-receipt, .print-receipt * { visibility: visible; }
-  .print-receipt {
-    display: block !important;
-    position: absolute;
-    left: 0;
-    top: 0;
-    background: #ffffff;
-    color: #000000;
-    padding: 4mm 4.5mm;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 11.5px;
-    line-height: 1.55;
-  }
-}
-
-.pr-center { text-align: center; margin-bottom: 4px; }
-.pr-brand { font-size: 18px; font-weight: 900; letter-spacing: 0.08em; }
-.pr-addr { font-size: 9.5px; margin-top: 3px; line-height: 1.4; color: #333; }
-
-.pr-divider { border-top: 1px dashed #000; margin: 8px 0; height: 0; }
-.pr-divider-strong { border-top: 2px solid #000; margin: 8px 0; height: 0; }
-
-.pr-row { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 3px; font-size: 11.5px; }
-.pr-sub { color: #444; }
-.pr-upper { text-transform: uppercase; font-weight: 700; }
-
-.pr-total {
-  font-weight: 900;
-  font-size: 14px;
-  padding: 5px 0;
-  margin-top: 2px;
-  border-top: 1px dashed #000;
-  border-bottom: 1px dashed #000;
-}
-
-.pr-heading {
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 6px;
-  font-size: 10.5px;
-  color: #333;
-}
-.pr-item { margin-bottom: 5px; }
-.pr-item-row { display: flex; justify-content: space-between; gap: 10px; font-size: 11.5px; }
-.pr-note { font-size: 9.5px; font-style: italic; padding-left: 12px; color: #444; margin-top: 1px; }
-
-.pr-footer {
-  text-align: center;
-  font-size: 10.5px;
-  font-weight: 700;
-  margin-top: 4px;
-  letter-spacing: 0.02em;
 }
 </style>
