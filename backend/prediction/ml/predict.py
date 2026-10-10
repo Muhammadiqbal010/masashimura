@@ -1,21 +1,20 @@
 """
-Load model revenue yang sudah ditrain, lalu generate forecast N hari ke depan.
+Generate forecast revenue harian N hari ke depan.
 
-CATATAN PENTING soal fitur lag:
-Fitur lag_1, lag_7, dan rolling_avg_7 di sini DIBEKUKAN dari histori asli
-(nilai pada hari terakhir yang benar-benar ada datanya di database), lalu
-dipakai SAMA untuk semua hari forecast -- BUKAN direkursifkan memakai hasil
-prediksi hari sebelumnya. Ini pilihan yang lebih simpel & aman (gak numpuk
-error dari prediksi ke prediksi), tapi konsekuensinya akurasi forecast
-makin menurun kalau n_days-nya panjang, karena efek lag jadi statis dan
-gak "mengikuti" tren hari-hari sebelumnya dalam horizon forecast itu sendiri.
+Metode default: BASELINE (median berbobot per hari-dalam-seminggu, lihat
+baseline.py). Model Random Forest hanya dipakai kalau train.py sudah
+membuktikan lewat backtest bahwa dia lebih akurat (best_model di
+metadata.json == 'random_forest') dan file modelnya berhasil di-load.
+Selain itu otomatis jatuh ke baseline, jadi endpoint ini TIDAK lagi error
+409 cuma karena model belum pernah dilatih.
 
-Fitur tambahan di versi ini:
-- Confidence interval per hari (berbasis RMSE dari evaluasi model saat training)
-- Breakdown mingguan (total & rata-rata per minggu forecast)
-- Indikator tren: forecast dibanding rata-rata histori (naik/turun/stabil)
-- Nama hari & format Rupiah biar langsung enak dipakai di frontend
-- Validasi input & logging biar gampang di-debug kalau ada masalah
+Setiap hari forecast punya status keyakinan (rendah/sedang/tinggi), dan
+response punya satu status keyakinan keseluruhan + pesan peringatan buat
+ditampilkan di dashboard. Keyakinan 'rendah' = datanya belum cukup, jangan
+dipakai buat keputusan besar.
+
+Tidak ada fitur lag di sini, jadi tidak ada lagi masalah "lag dibekukan"
+atau error yang menumpuk antar hari forecast.
 """
 import json
 import logging
@@ -26,13 +25,15 @@ import joblib
 import numpy as np
 import pandas as pd
 
-from .data import (
-    FEATURE_COLUMNS,
-    SCALE_FACTOR,
-    add_features,
-    get_daily_revenue_df,
-    get_regular_closed_weekdays,
+from .baseline import (
+    build_calendar_features,
+    confidence_for_samples,
+    fit_baseline,
+    lowest_confidence,
+    ml_upper_bound,
+    predict_baseline,
 )
+from .data import SCALE_FACTOR, get_daily_revenue_df, get_regular_closed_weekdays
 
 logger = logging.getLogger(__name__)
 
@@ -45,15 +46,27 @@ MAX_N_DAYS = 90
 MIN_HISTORY_DAYS = 1
 MAX_HISTORY_DAYS = 180
 
-# Batas confidence interval gak boleh bikin lower_bound minus (revenue gak mungkin negatif)
 CI_FLOOR = 0.0
+UNCERTAIN_BAND_RATIO = 0.5   # lebar interval = 50% prediksi kalau sampelnya < 3
+ML_HIGH_CONFIDENCE_DAYS = 180
 
-HARI_INDONESIA = ['Senin', 'Selasa', 'Rabu', 'Kamis', "Jumat", 'Sabtu', 'Minggu']
+HARI_INDONESIA = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu']
+
+CONFIDENCE_MESSAGES = {
+    'rendah': (
+        'Data historis masih sedikit, jadi angka ini cuma gambaran kasar. '
+        'Jangan dijadikan dasar keputusan besar (stok bahan, jadwal karyawan) dulu.'
+    ),
+    'sedang': (
+        'Data historis mulai cukup tapi masih terbatas. '
+        'Pakai sebagai acuan dan tetap cek kondisi lapangan.'
+    ),
+    'tinggi': 'Data historis sudah cukup untuk pola mingguan yang stabil.',
+}
 
 
 class ModelNotTrainedError(Exception):
-    """Dilempar kalau model belum pernah ditrain (file .joblib/metadata.json belum ada),
-    atau kalau data historis yang tersedia gak cukup buat bikin forecast."""
+    """Dilempar kalau belum ada data revenue historis sama sekali untuk dasar forecast."""
     pass
 
 
@@ -69,67 +82,26 @@ def _validate_inputs(n_days: int, history_days: int) -> tuple[int, int]:
     return n_days, history_days
 
 
-def _load_model_and_metadata():
-    if not MODEL_PATH.exists() or not METADATA_PATH.exists():
-        logger.warning('Forecast diminta tapi model belum ditrain (%s / %s belum ada).',
-                        MODEL_PATH, METADATA_PATH)
-        raise ModelNotTrainedError(
-            'Model prediksi revenue belum pernah dilatih. Jalankan training '
-            'terlebih dahulu (POST /api/prediction/revenue/train/).'
-        )
-
-    model = joblib.load(MODEL_PATH)
-    with open(METADATA_PATH) as f:
-        metadata = json.load(f)
-
-    return model, metadata
+def _load_metadata() -> dict:
+    if not METADATA_PATH.exists():
+        return {}
+    try:
+        with open(METADATA_PATH) as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        logger.warning('metadata.json gagal dibaca, forecast pakai baseline.', exc_info=True)
+        return {}
 
 
-def _get_rmse_for_ci(metadata: dict) -> float:
-    """
-    Ambil RMSE (dalam Rupiah) dari model terbaik yang tersimpan di metadata,
-    dipakai sebagai lebar confidence interval. Fallback ke 0 kalau gak ketemu
-    (CI jadi sama dengan titik prediksi -- lebih baik daripada error).
-    """
-    best_model_name = metadata.get('best_model')
-    metrics = metadata.get('metrics', {})
-    model_metrics = metrics.get(best_model_name, {})
-    return float(model_metrics.get('rmse', 0.0))
-
-
-def _freeze_lag_features(featured: pd.DataFrame) -> dict:
-    """
-    Bekukan nilai lag_1, lag_7, rolling_avg_7 dari histori asli
-    (lihat catatan lengkap di docstring modul ini).
-    """
-    last_row = featured.iloc[-1]
-
-    lag_1 = float(last_row['revenue_scaled'])
-    lag_7 = (
-        float(featured['revenue_scaled'].iloc[-7])
-        if len(featured) >= 7 else lag_1
-    )
-    rolling_avg_7 = float(featured['revenue_scaled'].tail(7).mean())
-
-    return {'lag_1': lag_1, 'lag_7': lag_7, 'rolling_avg_7': rolling_avg_7}
-
-
-def _build_future_rows(future_dates: list, frozen_lags: dict, closed_weekdays: set) -> pd.DataFrame:
-    rows = []
-    for d in future_dates:
-        dow = d.dayofweek
-        day_of_month = d.day
-        rows.append({
-            'day_of_week': dow,
-            'is_weekend': 1 if dow >= 5 else 0,
-            'day_of_month': day_of_month,
-            'is_payday_period': 1 if (day_of_month >= 25 or day_of_month <= 5) else 0,
-            'is_regular_closed_day': 1 if dow in closed_weekdays else 0,
-            'lag_1': frozen_lags['lag_1'],
-            'lag_7': frozen_lags['lag_7'],
-            'rolling_avg_7': frozen_lags['rolling_avg_7'],
-        })
-    return pd.DataFrame(rows)[FEATURE_COLUMNS]
+def _load_ml_model(metadata: dict):
+    """Return model ML kalau memang terpilih & bisa di-load, selain itu None (-> baseline)."""
+    if metadata.get('best_model') != 'random_forest' or not MODEL_PATH.exists():
+        return None
+    try:
+        return joblib.load(MODEL_PATH)
+    except Exception:
+        logger.exception('Model ML gagal di-load, forecast pakai baseline.')
+        return None
 
 
 def _summarize_weekly(forecast_list: list) -> list:
@@ -149,25 +121,6 @@ def _summarize_weekly(forecast_list: list) -> list:
     return weekly
 
 
-def _sane_bounds(featured: pd.DataFrame) -> tuple[float, float]:
-    """
-    Hitung batas atas/bawah yang MASUK AKAL (dalam Rupiah) berdasarkan
-    histori 14 hari terakhir (atau semua histori kalau kurang dari itu).
-    Dipakai buat "mengerem" prediksi model — soalnya model regresi
-    (terutama yang linear) bisa saja ekstrapolasi jauh dari histori kalau
-    data training-nya sedikit/berisik. Rentangnya dibuat longgar (0.2x -
-    3x rata-rata) supaya lonjakan/tren wajar tetap kebaca, tapi angka yang
-    jelas-jelas tidak realistis (misal 10x lipat histori) tetap dipotong.
-    """
-    recent = featured['revenue_scaled'].tail(14)
-    recent = recent[recent > 0]
-    if recent.empty:
-        return 0.0, float('inf')
-
-    avg = float(recent.mean()) * SCALE_FACTOR
-    return avg * 0.2, avg * 3.0
-
-
 def _compute_trend(forecast_avg: float, history_avg: float) -> dict:
     if history_avg <= 0:
         return {'direction': 'tidak_diketahui', 'change_pct': 0.0}
@@ -185,107 +138,111 @@ def _compute_trend(forecast_avg: float, history_avg: float) -> dict:
 
 def forecast(n_days: int = 30, history_days: int = 30) -> dict:
     """
-    Forecast revenue harian untuk n_days ke depan, mulai dari sehari
-    setelah data historis terakhir.
+    Forecast revenue harian untuk n_days ke depan, mulai besok (hari ini
+    yang sebenarnya, bukan tanggal order terakhir).
 
-    Args:
-        n_days: jumlah hari ke depan yang mau diforecast (1-90).
-        history_days: jumlah hari histori aktual yang mau disertakan
-            dalam response, untuk keperluan chart pembanding di dashboard (1-180).
-
-    Returns dict:
-        - model_trained, best_model, trained_at, metrics   -> info model
-        - generated_at                                     -> kapan forecast ini dibuat
-        - data_range                                        -> rentang tanggal data historis yang dipakai
-        - forecast          -> list per hari: date, day_name, is_weekend,
-                                predicted_revenue, lower_bound, upper_bound
-        - weekly_summary    -> breakdown per minggu (total & rata-rata)
-        - trend             -> perbandingan rata-rata forecast vs rata-rata histori
-        - total_estimated_revenue, average_daily_revenue
-        - history           -> list {date, revenue} histori aktual, sepanjang history_days terakhir
+    Returns dict (key lama tetap ada, supaya frontend tidak patah):
+        - model_trained (selalu True), best_model ('baseline' / 'random_forest'),
+          method, selection_reason, trained_at, metrics
+        - confidence   -> {level, message, history_days}   (BARU)
+        - forecast     -> per hari: date, day_name, is_weekend, is_regular_closed_day,
+                          predicted_revenue, lower_bound, upper_bound,
+                          confidence, n_samples                (confidence & n_samples BARU)
+        - weekly_summary, trend, total_estimated_revenue, average_daily_revenue, history
 
     Raises:
-        ModelNotTrainedError: kalau model belum ditrain atau data historis kosong.
+        ModelNotTrainedError: kalau belum ada data revenue historis sama sekali.
     """
     n_days, history_days = _validate_inputs(n_days, history_days)
-
-    model, metadata = _load_model_and_metadata()
 
     daily = get_daily_revenue_df()
     if daily.empty:
         raise ModelNotTrainedError('Belum ada data revenue historis untuk dasar forecast.')
 
-    featured = add_features(daily)
-    last_date = daily['date'].max()
+    closed = get_regular_closed_weekdays()
+    metadata = _load_metadata()
+    ml_model = _load_ml_model(metadata)
+    method = 'random_forest' if ml_model is not None else 'baseline'
 
-    # PENTING: horizon forecast di-anchor ke HARI INI (waktu nyata), bukan
-    # ke tanggal terakhir di data historis. Kalau nggak ada order baru
-    # beberapa hari, last_date bisa jauh di belakang "hari ini" -- kalau
-    # dipakai sebagai basis, forecast-nya nyasar ke tanggal yang udah
-    # lewat. Fitur lag/rolling tetap dihitung dari histori (yang berhenti
-    # di kemarin), tapi TANGGAL forecast-nya harus selalu mulai besok
-    # dari hari ini yang sebenarnya.
+    # Horizon di-anchor ke HARI INI (waktu nyata), bukan ke tanggal terakhir
+    # di data. daily sudah dipotong sampai kemarin, jadi forecast mulai besok.
+    last_date = daily['date'].max()
     today = pd.Timestamp.now(tz='Asia/Jakarta').tz_localize(None).normalize()
     anchor_date = max(last_date, today)
     future_dates = [anchor_date + timedelta(days=i) for i in range(1, n_days + 1)]
 
-    closed_weekdays = get_regular_closed_weekdays()
+    baseline = fit_baseline(daily, closed)
 
-    frozen_lags = _freeze_lag_features(featured)
-    X_future = _build_future_rows(future_dates, frozen_lags, closed_weekdays)
-    preds_scaled = np.clip(model.predict(X_future), a_min=0, a_max=None)
-    preds_rupiah = preds_scaled * SCALE_FACTOR
-
-    # PENGAMAN: kalau model (khususnya yang linear) berhasil lolos seleksi
-    # tapi ekstrapolasinya kebablasan karena data historis sedikit/berisik,
-    # klem hasilnya ke rentang yang masuk akal dibanding histori terkini.
-    # Tanpa ini, forecast bisa tampil "ratusan juta" padahal histori
-    # aslinya cuma belasan juta per hari.
-    lower_sane, upper_sane = _sane_bounds(featured)
-    preds_rupiah = np.clip(preds_rupiah, lower_sane, upper_sane)
-
-    # Hari yang JADWALNYA libur rutin (dari StoreSettings.operating_hours)
-    # kita udah TAHU pasti tutup -- gak perlu ditebak model sama sekali.
-    # Override jadi Rp0 langsung, sekalian lolos dari klem sanity di atas
-    # (soalnya Rp0 di hari libur itu benar, bukan anomali yang perlu di-clip).
-    for i, d in enumerate(future_dates):
-        if d.dayofweek in closed_weekdays:
-            preds_rupiah[i] = 0.0
-
-    rmse = _get_rmse_for_ci(metadata)
+    ml_preds = None
+    ml_rmse = None
+    if ml_model is not None:
+        X_future = build_calendar_features(future_dates, closed)
+        ml_preds = np.clip(ml_model.predict(X_future), a_min=0, a_max=None) * SCALE_FACTOR
+        ml_preds = np.clip(ml_preds, 0, ml_upper_bound(daily))
+        ml_rmse = (metadata.get('metrics') or {}).get('random_forest', {}).get('rmse')
+        ml_confidence = 'tinggi' if len(daily) >= ML_HIGH_CONFIDENCE_DAYS else 'sedang'
 
     forecast_list = []
-    for d, pred in zip(future_dates, preds_rupiah):
+    preds_rupiah = []
+    open_day_confidences = []
+
+    for i, d in enumerate(future_dates):
+        is_closed = d.dayofweek in closed
+
+        if is_closed:
+            # Jadwal libur rutin sudah PASTI, tidak perlu ditebak.
+            pred, lower, upper = 0.0, 0.0, 0.0
+            confidence, n_samples = 'tinggi', None
+        elif method == 'baseline':
+            pred, n_samples, spread = predict_baseline(baseline, d)
+            half_width = spread if spread is not None else pred * UNCERTAIN_BAND_RATIO
+            lower = max(CI_FLOOR, pred - half_width)
+            upper = pred + half_width
+            confidence = confidence_for_samples(n_samples)
+            open_day_confidences.append(confidence)
+        else:
+            pred = float(ml_preds[i])
+            n_samples = None
+            half_width = float(ml_rmse) if ml_rmse else pred * UNCERTAIN_BAND_RATIO
+            lower = max(CI_FLOOR, pred - half_width)
+            upper = pred + half_width
+            confidence = ml_confidence
+            open_day_confidences.append(confidence)
+
         pred = float(pred)
-        is_closed = d.dayofweek in closed_weekdays
+        preds_rupiah.append(pred)
         forecast_list.append({
             'date': d.strftime('%Y-%m-%d'),
             'day_name': HARI_INDONESIA[d.dayofweek],
             'is_weekend': bool(d.dayofweek >= 5),
             'is_regular_closed_day': is_closed,
             'predicted_revenue': pred,
-            'lower_bound': 0.0 if is_closed else float(max(CI_FLOOR, pred - rmse)),
-            'upper_bound': 0.0 if is_closed else float(pred + rmse),
+            'lower_bound': float(lower),
+            'upper_bound': float(upper),
+            'confidence': confidence,
+            'n_samples': n_samples,
         })
 
-    logger.info('Forecast berhasil dibuat: %s hari, mulai %s, model=%s',
-                n_days, future_dates[0].strftime('%Y-%m-%d'), metadata.get('best_model'))
+    logger.info('Forecast dibuat: %s hari, mulai %s, metode=%s',
+                n_days, future_dates[0].strftime('%Y-%m-%d'), method)
 
-    # --- Ringkasan mingguan ---
+    overall_level = lowest_confidence(open_day_confidences)
+    confidence_info = {
+        'level': overall_level,
+        'message': CONFIDENCE_MESSAGES[overall_level],
+        'history_days': int(len(daily)),
+    }
+
     weekly_summary = _summarize_weekly(forecast_list)
 
-    # --- Tren: rata-rata forecast vs rata-rata histori (pakai history_days terakhir) ---
-    # PENTING: rata-rata dihitung dari HARI BUKA saja (buang hari libur
-    # rutin). Kalau ikut dihitung, window histori/forecast yang kebetulan
-    # punya jumlah hari libur berbeda bisa bikin tren kelihatan "turun"
-    # padahal itu cuma efek lebih banyak/sedikit hari tutup, bukan demand
-    # yang beneran berubah.
+    # Tren dihitung dari HARI BUKA saja, supaya jumlah hari libur yang beda
+    # antar window tidak bikin tren kelihatan naik/turun palsu.
     history_slice = daily.tail(history_days)
-    history_open = history_slice[~history_slice['date'].dt.dayofweek.isin(closed_weekdays)]
+    history_open = history_slice[~history_slice['date'].dt.dayofweek.isin(closed)]
     history_avg = float(history_open['revenue'].mean()) if not history_open.empty else 0.0
 
     open_day_preds = [
-        p for p, d in zip(preds_rupiah, future_dates) if d.dayofweek not in closed_weekdays
+        p for p, d in zip(preds_rupiah, future_dates) if d.dayofweek not in closed
     ]
     forecast_avg = float(np.mean(open_day_preds)) if open_day_preds else 0.0
     trend = _compute_trend(forecast_avg, history_avg)
@@ -297,15 +254,18 @@ def forecast(n_days: int = 30, history_days: int = 30) -> dict:
 
     return {
         'model_trained': True,
-        'best_model': metadata.get('best_model'),
+        'best_model': method,
+        'method': method,
+        'selection_reason': metadata.get('selection_reason'),
         'trained_at': metadata.get('trained_at'),
-        'metrics': metadata.get('metrics'),
+        'metrics': metadata.get('metrics') or {},
         'generated_at': pd.Timestamp.now().isoformat(),
         'data_range': {
             'start': daily['date'].min().strftime('%Y-%m-%d'),
             'end': daily['date'].max().strftime('%Y-%m-%d'),
             'n_days_used_for_training': metadata.get('n_training_days'),
         },
+        'confidence': confidence_info,
         'n_days': n_days,
         'forecast': forecast_list,
         'weekly_summary': weekly_summary,

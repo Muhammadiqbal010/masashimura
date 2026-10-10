@@ -1,12 +1,20 @@
 """
-Latih dan bandingkan 2 model buat prediksi revenue harian:
-- Linear Regression  → baseline sederhana
-- Random Forest      → nangkep pola non-linear (efek weekend, gajian, dll)
+Evaluasi & pemilihan metode forecast revenue harian.
 
-Karena data historis masih pendek (hitungan minggu), evaluasi TIDAK pakai
-random train-test split — itu bakal bocor informasi masa depan ke masa
-lalu. Yang benar buat time series: split berurutan (train = hari-hari
-awal, test = hari-hari terakhir).
+Dua kandidat:
+- baseline : median berbobot per hari-dalam-seminggu (lihat baseline.py)
+- random_forest : ML dengan fitur kalender saja (tanpa lag)
+
+Aturan pemilihan (sengaja konservatif):
+1. Data < MIN_DAYS_FOR_BACKTEST hari -> baseline, belum bisa dievaluasi.
+2. Data < MIN_DAYS_FOR_ML hari -> baseline, ML belum dicoba (menghafal doang).
+3. Selain itu keduanya di-backtest pada hari-hari terakhir, dan ML HANYA
+   dipakai kalau MAE-nya minimal 10% lebih kecil dari baseline.
+
+Backtest-nya walk-forward tanpa kebocoran data: baseline di-fit ulang untuk
+tiap hari uji memakai histori SEBELUM hari itu saja, ML dilatih hanya dari
+data sebelum split. Evaluasi hanya di HARI BUKA (hari libur rutin pasti Rp0,
+kalau ikut dihitung malah bikin metrik kelihatan bagus palsu).
 """
 import json
 from datetime import datetime
@@ -14,12 +22,16 @@ from pathlib import Path
 
 import joblib
 import numpy as np
-from django.conf import settings
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model import Ridge
-from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error, mean_squared_error
 
-from .data import FEATURE_COLUMNS, MIN_DAYS_REQUIRED, SCALE_FACTOR, get_training_data
+from .baseline import (
+    CALENDAR_FEATURES,
+    build_calendar_features,
+    fit_baseline,
+    ml_upper_bound,
+    predict_baseline,
+)
+from .data import SCALE_FACTOR, get_daily_revenue_df, get_regular_closed_weekdays
 
 MODEL_DIR = Path(__file__).resolve().parent.parent / 'saved_models'
 MODEL_DIR.mkdir(exist_ok=True)
@@ -27,110 +39,140 @@ MODEL_DIR.mkdir(exist_ok=True)
 MODEL_PATH = MODEL_DIR / 'revenue_model.joblib'
 METADATA_PATH = MODEL_DIR / 'metadata.json'
 
-TEST_SIZE_DAYS = 7  # sisihkan 7 hari terakhir buat evaluasi out-of-sample
+TEST_SIZE_DAYS = 14        # jumlah hari terakhir untuk backtest (dikecilkan otomatis kalau data pendek)
+MIN_DAYS_FOR_BACKTEST = 14
+MIN_DAYS_FOR_ML = 56       # 8 minggu
+ML_WIN_MARGIN = 0.9        # ML harus MAE <= 90% MAE baseline
 
 
-def _evaluate(y_true, y_pred):
-    """
-    y_true & y_pred di sini masih dalam satuan revenue_scaled (jutaan Rupiah,
-    lihat SCALE_FACTOR di data.py) -- karena get_training_data() mengembalikan
-    target yang sudah di-scale biar regresi lebih stabil secara numerik.
-    MAE & RMSE WAJIB dikaliin balik SCALE_FACTOR di sini supaya metrik yang
-    disimpan ke metadata.json & ditampilkan ke user dalam satuan Rupiah asli
-    -- kalau lupa, hasilnya bakal keliatan absurd kecil (mis. "MAE=Rp1"
-    padahal aslinya sekitar Rp1.000.000).
-    """
-    mae = mean_absolute_error(y_true, y_pred) * SCALE_FACTOR
-    rmse = np.sqrt(mean_squared_error(y_true, y_pred)) * SCALE_FACTOR
-
+def _metrics(y_true, y_pred) -> dict:
+    """Semua dalam Rupiah asli. MAPE hanya dihitung di hari dengan omzet > 0."""
+    y_true = np.asarray(y_true, dtype=float)
+    y_pred = np.asarray(y_pred, dtype=float)
+    nonzero = y_true > 0
+    mape = (
+        float(np.mean(np.abs(y_true[nonzero] - y_pred[nonzero]) / y_true[nonzero]) * 100)
+        if nonzero.any() else None
+    )
     return {
-        'mae': float(mae),
-        'rmse': float(rmse),
-        # MAPE dihitung manual dengan pengaman div-by-zero (hari revenue=0 bikin
-        # mean_absolute_percentage_error bawaan sklearn meledak ke inf).
-        # MAPE itu rasio (%), jadi skalanya gak kepengaruh SCALE_FACTOR -- aman dihitung
-        # langsung dari y_true/y_pred yang masih di-scale.
-        'mape': float(
-            np.mean([
-                abs(t - p) / t if t != 0 else 0.0
-                for t, p in zip(y_true, y_pred)
-            ]) * 100
-        ),
+        'mae': float(np.mean(np.abs(y_true - y_pred))),
+        'rmse': float(np.sqrt(np.mean((y_true - y_pred) ** 2))),
+        'mape': mape,
+        'n_test_days': int(len(y_true)),
     }
+
+
+def _new_rf() -> RandomForestRegressor:
+    return RandomForestRegressor(
+        n_estimators=200,
+        max_depth=4,
+        min_samples_leaf=3,
+        random_state=42,
+    )
+
+
+def _fit_rf(daily, closed, end_idx: int) -> RandomForestRegressor:
+    """Latih RF dari baris [0, end_idx) -- hanya hari buka."""
+    head = daily.iloc[:end_idx]
+    open_mask = ~head['date'].dt.dayofweek.isin(closed).to_numpy()
+    X = build_calendar_features(head['date'], closed)[open_mask]
+    y = (head['revenue'] / SCALE_FACTOR).to_numpy()[open_mask]
+    model = _new_rf()
+    model.fit(X, y)
+    return model
+
+
+def _backtest_baseline(daily, closed, split_idx: int):
+    actual, preds = [], []
+    for i in range(split_idx, len(daily)):
+        date = daily['date'].iloc[i]
+        if date.dayofweek in closed:
+            continue
+        baseline = fit_baseline(daily.iloc[:i], closed)
+        preds.append(predict_baseline(baseline, date)[0])
+        actual.append(float(daily['revenue'].iloc[i]))
+    return actual, preds
+
+
+def _backtest_ml(daily, closed, split_idx: int):
+    model = _fit_rf(daily, closed, split_idx)
+    test = daily.iloc[split_idx:]
+    open_mask = ~test['date'].dt.dayofweek.isin(closed).to_numpy()
+    if not open_mask.any():
+        return [], []
+    X_test = build_calendar_features(test['date'], closed)[open_mask]
+    preds = np.clip(model.predict(X_test), a_min=0, a_max=None) * SCALE_FACTOR
+    preds = np.clip(preds, 0, ml_upper_bound(daily.iloc[:split_idx]))
+    actual = test['revenue'].to_numpy(dtype=float)[open_mask]
+    return list(actual), list(preds)
 
 
 def train_and_select_best():
     """
-    Latih kedua model, evaluasi di 7 hari terakhir, pilih yang MAE-nya
-    lebih kecil, lalu retrain model terpilih pakai SEMUA data (biar model
-    final yang disimpan memanfaatkan histori penuh, bukan cuma data train).
-
-    Return dict berisi status & metrik — dilempar apa adanya ke caller
-    (management command / view) buat ditampilkan.
+    Backtest baseline vs ML, pilih metode, simpan metadata (dan model ML
+    kalau ML yang menang). Return dict yang dilempar apa adanya ke view.
     """
-    X, y, _ = get_training_data()
-
-    if X is None or len(X) < MIN_DAYS_REQUIRED:
+    daily = get_daily_revenue_df()
+    if daily.empty:
         return {
             'success': False,
-            'reason': f'Data historis kurang dari {MIN_DAYS_REQUIRED} hari '
-                      f'(ada {0 if X is None else len(X)} hari). Butuh lebih banyak transaksi completed.',
+            'reason': 'Belum ada transaksi completed sama sekali, belum ada yang bisa dipakai untuk forecast.',
         }
 
-    if len(X) <= TEST_SIZE_DAYS + 5:
-        # Data terlalu pendek buat disisihkan 7 hari penuh sbg test set.
-        # PENTING: jangan sampai test set-nya cuma 1-3 hari — dengan sampel
-        # segitu sedikit, "MAE lebih kecil" nyaris random dan gampang bikin
-        # kita salah pilih model (lihat catatan di bawah soal Ridge vs LR).
-        # Sisihkan proporsi tetap (~25%) dari data yang ada, minimal 3 hari,
-        # dan selalu sisakan minimal 5 hari buat training.
-        test_size = max(3, len(X) // 4)
-        split_idx = max(1, len(X) - test_size)
+    closed = get_regular_closed_weekdays()
+    n_days = int(len(daily))
+    metrics = {}
+    best_name = 'baseline'
+
+    if n_days < MIN_DAYS_FOR_BACKTEST:
+        reason = (
+            f'Data baru {n_days} hari (minimal {MIN_DAYS_FOR_BACKTEST} hari untuk evaluasi). '
+            'Memakai baseline median per hari-dalam-seminggu, belum bisa diuji akurasinya.'
+        )
     else:
-        split_idx = len(X) - TEST_SIZE_DAYS
+        test_size = min(TEST_SIZE_DAYS, n_days // 4)
+        split_idx = n_days - test_size
 
-    X_train, X_test = X.iloc[:split_idx], X.iloc[split_idx:]
-    y_train, y_test = y.iloc[:split_idx], y.iloc[split_idx:]
+        actual, preds = _backtest_baseline(daily, closed, split_idx)
+        if actual:
+            metrics['baseline'] = _metrics(actual, preds)
 
-    candidates = {
-        # Dulu pakai LinearRegression() polos. Masalahnya: dengan 7 fitur
-        # dan histori yang kadang cuma belasan hari, matriks fiturnya
-        # hampir singular -> koefisien bisa "meledak" jadi nilai ekstrem,
-        # dan kalau kebetulan menang di test split yang kecil, forecast-nya
-        # bisa jauh melampaui histori (ratusan juta padahal histori cuma
-        # belasan juta/hari). Ridge menambah regularisasi L2 supaya
-        # koefisien tetap terkendali walau data sedikit/berisik, tanpa
-        # menghilangkan kemampuan menangkap tren linear.
-        'ridge_regression': Ridge(alpha=1.0),
-        'random_forest': RandomForestRegressor(
-            n_estimators=200,
-            max_depth=5,          # dibatasi — data dikit, gampang overfit kalau dalem
-            min_samples_leaf=2,
-            random_state=42,
-        ),
-    }
+        if n_days < MIN_DAYS_FOR_ML:
+            reason = (
+                f'Data baru {n_days} hari (ML baru dicoba mulai {MIN_DAYS_FOR_ML} hari, '
+                'di bawah itu ML cuma menghafal). Memakai baseline.'
+            )
+        else:
+            ml_actual, ml_preds = _backtest_ml(daily, closed, split_idx)
+            if ml_actual:
+                metrics['random_forest'] = _metrics(ml_actual, ml_preds)
 
-    results = {}
-    for name, model in candidates.items():
-        model.fit(X_train, y_train)
-        preds = model.predict(X_test)
-        preds = np.clip(preds, a_min=0, a_max=None)  # revenue gak mungkin negatif
-        results[name] = _evaluate(y_test.values, preds)
+            base, ml = metrics.get('baseline'), metrics.get('random_forest')
+            if base and ml and ml['mae'] <= base['mae'] * ML_WIN_MARGIN:
+                best_name = 'random_forest'
+                reason = (
+                    f"Random Forest lebih akurat di backtest (MAE Rp{ml['mae']:,.0f} "
+                    f"vs baseline Rp{base['mae']:,.0f})."
+                )
+            else:
+                reason = (
+                    'Random Forest tidak cukup lebih akurat dari baseline di backtest '
+                    f'(butuh MAE minimal {round((1 - ML_WIN_MARGIN) * 100)}% lebih kecil). Memakai baseline.'
+                )
 
-    best_name = min(results, key=lambda k: results[k]['mae'])
-    best_model = candidates[best_name]
-
-    # Retrain model terpilih pakai seluruh data (train+test) buat produksi
-    best_model.fit(X, y)
-
-    joblib.dump(best_model, MODEL_PATH)
+    if best_name == 'random_forest':
+        final_model = _fit_rf(daily, closed, n_days)  # retrain pakai SEMUA data
+        joblib.dump(final_model, MODEL_PATH)
+    else:
+        MODEL_PATH.unlink(missing_ok=True)  # buang model lama biar tidak basi
 
     metadata = {
         'trained_at': datetime.now().isoformat(),
         'best_model': best_name,
-        'n_training_days': int(len(X)),
-        'feature_columns': FEATURE_COLUMNS,
-        'metrics': results,
+        'selection_reason': reason,
+        'n_training_days': n_days,
+        'feature_columns': CALENDAR_FEATURES if best_name == 'random_forest' else [],
+        'metrics': metrics,
     }
     with open(METADATA_PATH, 'w') as f:
         json.dump(metadata, f, indent=2)
