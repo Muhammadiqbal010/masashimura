@@ -548,7 +548,7 @@ const exportYear  = ref(new Date().getFullYear());
 
 const paymentMethods = [{ key: "cash", label: "Tunai" }, { key: "qris", label: "QRIS" }];
 const methodLabel    = (m) => (m === "qris" ? "QRIS" : "Tunai");
-const quickDescs     = ["Bahan baku", "Pasar", "Frozen Food", "Gas", "Kemasan", "Listrik / air", "Gaji","Ayam", "Lainnya"];
+const quickDescs     = ["Bahan baku", "Gas", "Kemasan", "Listrik / air", "Gaji", "Lainnya"];
 
 // ── Tanggal ─────────────────────────────────────────────────────────
 const toDateString = (d) =>
@@ -929,7 +929,6 @@ onMounted(async () => {
 .fr-main  { display: flex; flex-direction: column; gap: 1.25rem; min-width: 0; }
 .fr-aside {
   display: flex; flex-direction: column; gap: 1.25rem; min-width: 0;
-  position: sticky; top: 1rem;               /* cuma form (pendek) yang menempel → tidak ada yang terpotong */
 }
 .fr-aside > * { flex-shrink: 0; }
 .fr-export { grid-column: 1 / -1; }
