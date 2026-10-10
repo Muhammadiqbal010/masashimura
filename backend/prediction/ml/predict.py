@@ -26,6 +26,7 @@ import numpy as np
 import pandas as pd
 
 from .baseline import (
+    CALENDAR_FEATURES,
     build_calendar_features,
     confidence_for_samples,
     fit_baseline,
@@ -96,6 +97,13 @@ def _load_metadata() -> dict:
 def _load_ml_model(metadata: dict):
     """Return model ML kalau memang terpilih & bisa di-load, selain itu None (-> baseline)."""
     if metadata.get('best_model') != 'random_forest' or not MODEL_PATH.exists():
+        return None
+    # Model lama (sebelum versi baseline) dilatih dengan 8 fitur termasuk lag.
+    # Kalau fiturnya tidak sama dengan fitur kalender sekarang, JANGAN dipakai
+    # (bisa error / hasil ngawur) -- jatuh ke baseline sampai "Latih Ulang".
+    if metadata.get('feature_columns') != CALENDAR_FEATURES:
+        logger.warning('Model tersimpan memakai fitur lama, forecast pakai baseline. '
+                       'Latih ulang model untuk memperbarui.')
         return None
     try:
         return joblib.load(MODEL_PATH)
