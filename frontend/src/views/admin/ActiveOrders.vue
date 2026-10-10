@@ -98,12 +98,20 @@
 
       <div class="ao-filterbar-right">
         <div v-if="orders.length" class="ao-summary">
-          <span v-if="summary.pending > 0" class="ao-summary-item is-pending">
+          <span class="ao-summary-item" :class="{ 'is-pending': summary.pending > 0 }">
             Belum dibayar <b>{{ formatPrice(summary.pending) }}</b>
           </span>
-          <span v-if="isOwner" class="ao-summary-item">
-            Terkumpul <b>{{ formatPrice(summary.paid) }}</b>
-          </span>
+          <template v-if="isOwner">
+            <span class="ao-summary-item ao-summary-item--cash">
+              <i class="ao-summary-dot" aria-hidden="true"></i>Cash <b>{{ formatPrice(summary.cash) }}</b>
+            </span>
+            <span class="ao-summary-item ao-summary-item--qris">
+              <i class="ao-summary-dot" aria-hidden="true"></i>QRIS <b>{{ formatPrice(summary.qris) }}</b>
+            </span>
+            <span class="ao-summary-item ao-summary-item--total">
+              Terkumpul <b>{{ formatPrice(summary.paid) }}</b>
+            </span>
+          </template>
         </div>
 
         <div class="adm-seg ao-sort" role="group" aria-label="Urutan daftar">
@@ -927,15 +935,36 @@ const visibleOrders = computed(() => {
 const resetFilters = () => { searchQuery.value = ''; statusFilter.value = 'all' }
 
 // ── Ringkasan nominal ───────────────────────────────────────────────
+const isQrisMethod = (m) => ['gateway', 'qris_manual', 'qris'].includes(m)
+// Pecah satu order lunas jadi bagian QRIS & Cash. Untuk split bayar, QRIS dijumlah dari
+// baris pembayarannya, sisanya dianggap cash (supaya uang kembalian tidak dihitung dua kali).
+const splitPaid = (o) => {
+  const total = num(o.total_price)
+  if (o.payment_method === 'mixed' && o.payments?.length) {
+    const qris = o.payments.reduce((sum, p) => {
+      const m = p.method || p.payment_method || ''
+      return sum + (isQrisMethod(m) || /qris/i.test(p.method_display || '') ? num(p.amount) : 0)
+    }, 0)
+    const q = Math.min(qris, total)
+    return { qris: q, cash: total - q }
+  }
+  return isQrisMethod(o.payment_method) ? { qris: total, cash: 0 } : { qris: 0, cash: total }
+}
 const summary = computed(() => {
   let paid = 0
   let pending = 0
+  let cash = 0
+  let qris = 0
   for (const o of orders.value) {
     if (o.status === 'cancelled') continue
-    if (o.payment_status === 'paid') paid += num(o.total_price)
-    else if (o.payment_status !== 'void') pending += num(o.total_price)
+    if (o.payment_status === 'paid') {
+      paid += num(o.total_price)
+      const part = splitPaid(o)
+      cash += part.cash
+      qris += part.qris
+    } else if (o.payment_status !== 'void') pending += num(o.total_price)
   }
-  return { paid, pending }
+  return { paid, pending, cash, qris }
 })
 
 // Jumlah order belum lunas di judul tab browser — kelihatan walau admin sedang buka tab lain.
@@ -1327,6 +1356,10 @@ const confirmDelete = async () => {
 .ao-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 0.25rem 1rem; font-size: 0.75rem; color: var(--text-dim); }
 .ao-summary b { margin-left: 0.3rem; font-family: var(--font-mono); font-weight: 700; color: var(--text); }
 .ao-summary-item.is-pending b { color: var(--red-soft); }
+.ao-summary-dot { display: inline-block; width: 0.5rem; height: 0.5rem; margin-right: 0.35rem; border-radius: 99px; }
+.ao-summary-item--cash .ao-summary-dot { background: #eab308; }
+.ao-summary-item--qris .ao-summary-dot { background: #3b82f6; }
+.ao-summary-item--total { padding-left: 1rem; border-left: 1px solid var(--border-strong); }
 
 /* Hitungan di tab filter */
 .ao-count {
