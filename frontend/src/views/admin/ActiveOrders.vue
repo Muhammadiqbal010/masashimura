@@ -208,7 +208,8 @@
 
               <td class="adm-td-r" data-label="Tagihan">
                 <span class="ao-price">{{ formatPrice(order.total_price) }}</span>
-                <span class="ao-method">
+                <!-- Chip metode bayar: cash = kuning, QRIS = biru, split = netral -->
+                <span class="ao-method" :class="`ao-method--${methodTone(order.payment_method)}`">
                   <component :is="methodIcon(order.payment_method)" :size="13" aria-hidden="true" />
                   {{ methodLabel(order.payment_method) }}
                 </span>
@@ -334,7 +335,10 @@
         </div>
 
         <div class="rcpt-card">
-          <div class="rcpt-row"><span>Metode</span><b>{{ methodLabel(selectedOrder.payment_method, true) }}</b></div>
+          <div class="rcpt-row">
+            <span>Metode</span>
+            <b class="rcpt-method" :class="`rcpt-method--${methodTone(selectedOrder.payment_method)}`">{{ methodLabel(selectedOrder.payment_method, true) }}</b>
+          </div>
           <template v-if="selectedOrder.payment_method === 'mixed' && selectedOrder.payments?.length">
             <div v-for="p in selectedOrder.payments" :key="p.id" class="rcpt-row rcpt-split">
               <span>— {{ p.method_display }}</span><b>{{ formatPrice(p.amount) }}</b>
@@ -502,10 +506,10 @@
 
           <div v-for="(row, idx) in payRows" :key="idx" class="ao-payrow">
             <div class="adm-seg" role="group" :aria-label="`Metode baris ${idx + 1}`">
-              <button type="button" class="adm-seg-btn" :aria-pressed="row.method === 'cash'" @click="row.method = 'cash'">
+              <button type="button" class="adm-seg-btn ao-pm-cash" :aria-pressed="row.method === 'cash'" @click="row.method = 'cash'">
                 <Banknote :size="13" /> Cash
               </button>
-              <button type="button" class="adm-seg-btn" :aria-pressed="row.method === 'qris_manual'" @click="row.method = 'qris_manual'">
+              <button type="button" class="adm-seg-btn ao-pm-qris" :aria-pressed="row.method === 'qris_manual'" @click="row.method = 'qris_manual'">
                 <QrCode :size="13" /> QRIS
               </button>
             </div>
@@ -979,6 +983,12 @@ const methodLabel = (m, full = false) => {
   if (m === 'mixed') return full ? 'Split Bayar' : 'Split'
   return m || 'Cash'
 }
+// Warna pembeda metode bayar: cash = kuning, QRIS = biru, split = netral
+const methodTone = (m) => {
+  if (['gateway', 'qris_manual', 'qris'].includes(m)) return 'qris'
+  if (m === 'mixed') return 'mixed'
+  return 'cash'
+}
 
 const formatPrice = (p) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(p || 0)
 const formatTime = (s) => {
@@ -1375,9 +1385,24 @@ const confirmDelete = async () => {
 .ao-items-more { display: inline-block; margin-top: 0.25rem; padding: 0.05rem 0.5rem; border-radius: 99px; background: rgb(var(--ink) / 0.08); font-size: 0.66rem; font-weight: 600; color: var(--text-dim); }
 .ao-items-empty { color: var(--text-faint); }
 
-/* Tagihan + metode */
+/* Tagihan */
 .ao-price { display: block; font-family: var(--font-mono); font-weight: 700; color: var(--amber-soft); white-space: nowrap; }
-.ao-method { display: flex; align-items: center; justify-content: flex-end; gap: 0.3rem; margin-top: 0.15rem; font-size: 0.72rem; text-transform: capitalize; color: var(--text-dim); }
+
+/* Metode bayar: chip berwarna (kuning = cash, biru = QRIS, netral = split) */
+.ao-method {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  margin-top: 0.3rem; padding: 0.12rem 0.55rem;
+  border: 1px solid transparent; border-radius: 99px;
+  font-size: 0.7rem; font-weight: 700; text-transform: capitalize;
+  color: var(--text-dim);
+}
+.ao-method--cash  { color: #facc15; background: rgb(234 179 8 / 0.14);  border-color: rgb(234 179 8 / 0.45); }
+.ao-method--qris  { color: #60a5fa; background: rgb(59 130 246 / 0.14); border-color: rgb(59 130 246 / 0.45); }
+.ao-method--mixed { color: var(--text-dim); background: rgb(var(--ink) / 0.08); border-color: var(--border-strong); }
+
+/* Tema terang: teks dibuat lebih gelap supaya kuning tetap terbaca */
+:global(html[data-admin-theme='light']) .ao-method--cash { color: #a16207; background: rgb(234 179 8 / 0.18); }
+:global(html[data-admin-theme='light']) .ao-method--qris { color: #1d4ed8; background: rgb(59 130 246 / 0.12); }
 
 /* Status */
 .ao-status { display: inline-flex; flex-direction: column; align-items: center; gap: 0.3rem; }
@@ -1399,7 +1424,6 @@ const confirmDelete = async () => {
   .ao-status { flex-direction: row; }
   .ao-menu-cell { max-width: none; }
   .ao-items-name { white-space: normal; }
-  .ao-method { justify-content: flex-start; }
   .ao-actions-cell { padding-top: 0.6rem !important; }
   .ao-actions { justify-content: stretch; }
   .ao-actions .adm-btn { flex: 1; min-height: 44px; }
@@ -1447,6 +1471,11 @@ const confirmDelete = async () => {
 .rcpt-status.is-paid { color: var(--green-soft); }
 .rcpt-status.is-void { color: var(--text-dim); }
 .rcpt-status.is-pending { color: var(--amber-soft); }
+/* Metode bayar di struk modal (selector digandakan agar menang dari ".rcpt-row b") */
+.rcpt-row b.rcpt-method--cash { color: #facc15; }
+.rcpt-row b.rcpt-method--qris { color: #60a5fa; }
+:global(html[data-admin-theme='light']) .rcpt-row b.rcpt-method--cash { color: #a16207; }
+:global(html[data-admin-theme='light']) .rcpt-row b.rcpt-method--qris { color: #1d4ed8; }
 .rcpt-cancel { display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.75rem; padding: 0.7rem 0.85rem; border: 1px solid var(--line-accent); border-radius: var(--r-md); background: var(--tint-accent); }
 .rcpt-cancel-title { display: flex; align-items: center; gap: 0.35rem; margin: 0 0 0.25rem; font-weight: 700; color: var(--red-soft); }
 
@@ -1473,6 +1502,10 @@ const confirmDelete = async () => {
   .ao-payrow .adm-seg { width: 100%; }
   .ao-payrow .adm-seg-btn { flex: 1; }
 }
+
+/* Tombol Cash / QRIS: warna pembeda saat dipilih (kuning = cash, biru = QRIS) */
+.adm-seg-btn.ao-pm-cash[aria-pressed='true'] { background: #eab308; color: #1c1917; }
+.adm-seg-btn.ao-pm-qris[aria-pressed='true'] { background: #2563eb; color: #fff; }
 
 /* Nominal cepat */
 .ao-quick { display: flex; flex-wrap: wrap; gap: 0.4rem; }
