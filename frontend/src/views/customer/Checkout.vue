@@ -118,8 +118,75 @@
         </div>
       </div>
 
+      <!-- ══ PANEL PESANAN CASH BERHASIL ══
+           WhatsApp TIDAK dibuka otomatis: browser HP (terutama iOS Safari) sering memblokir
+           popup yang dibuka setelah proses async. Jadi customer menekan tombolnya sendiri. -->
+      <div
+        v-else-if="cashDone"
+        class="max-w-md mx-auto bg-[#0d0d0d] border border-white/[0.06] rounded-2xl p-6 sm:p-8 text-center space-y-5"
+      >
+        <div class="mx-auto w-14 h-14 rounded-2xl border bg-emerald-500/10 border-emerald-500/30 flex items-center justify-center">
+          <Check :size="24" class="text-emerald-400" />
+        </div>
+
+        <div class="space-y-1.5">
+          <h2 class="font-sora text-lg font-extrabold uppercase tracking-tight text-white">Pesanan Dibuat</h2>
+          <p class="font-mono text-[11px] text-zinc-500 leading-relaxed">
+            Bayar langsung di toko, kasir yang mengonfirmasi pembayaranmu. Kabari admin lewat WhatsApp supaya pesananmu cepat diproses.
+          </p>
+        </div>
+
+        <div class="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 space-y-2 text-left">
+          <div class="flex justify-between items-center">
+            <span class="font-mono text-[10px] uppercase tracking-widest text-zinc-600">No. Order</span>
+            <span class="font-mono text-[12px] text-white">#{{ cashDone.orderNumber }}</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="font-mono text-[10px] uppercase tracking-widest text-zinc-600">Total</span>
+            <span class="font-mono text-[14px] font-bold text-amber-400">{{ formatPrice(cashDone.total) }}</span>
+          </div>
+
+          <div
+            v-if="cashDone.items?.length"
+            class="pt-2 mt-1 border-t border-white/[0.06] space-y-1"
+          >
+            <div
+              v-for="(it, i) in cashDone.items"
+              :key="i"
+              class="flex justify-between gap-3"
+            >
+              <span class="font-mono text-[11px] text-zinc-500 truncate">
+                {{ it.quantity }}x {{ it.name }}<template v-if="it.optionText"> ({{ it.optionText }})</template>
+              </span>
+              <span class="font-mono text-[11px] text-zinc-600 flex-shrink-0">{{ formatPrice(it.price * it.quantity) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <button
+            type="button"
+            class="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-sora text-[11px] font-bold uppercase tracking-widest transition-all duration-200 active:scale-[0.98]"
+            @click="openWhatsApp(cashDone.waMessage)"
+          >
+            Kabari Admin via WhatsApp
+          </button>
+          <button
+            type="button"
+            class="w-full py-3.5 rounded-xl border border-white/[0.1] text-zinc-400 hover:text-white hover:border-white/20 font-sora text-[11px] font-bold uppercase tracking-widest transition-all duration-200"
+            @click="finishCash"
+          >
+            Selesai
+          </button>
+        </div>
+      </div>
+
       <!-- ══ FORM CHECKOUT NORMAL ══ -->
-      <div v-else class="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 lg:gap-8 items-start">
+      <div v-else>
+      <!-- Toko tutup: jelaskan kenapa tombol pesan tidak bisa dipakai -->
+      <StoreBanner />
+
+      <div class="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 lg:gap-8 items-start">
 
         <!-- ── KIRI: List Item ──────────────────────────────────── -->
         <div class="space-y-3">
@@ -151,7 +218,7 @@
             <div class="w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-xl overflow-hidden bg-[#111] border border-white/[0.06] flex-shrink-0">
               <img
                 v-if="item.image_url"
-                :src="getMediaUrl(item.image_url)"
+                :src="getMediaUrl(item.image_url, 160)"
                 class="w-full h-full object-cover pointer-events-none"
                 :alt="item.name"
               />
@@ -343,6 +410,7 @@
           </button>
         </div>
       </div>
+      </div>
     </div>
   </div>
 </template>
@@ -357,6 +425,7 @@ import { X, Check, Clock, ShoppingCart, ArrowRight } from "lucide-vue-next"
 import { useStoreSettings } from "@/composables/useStoreSettings"
 import PromoCodeBox from "@/components/ui/PromoCodeBox.vue"
 import PointRedeemBox from "@/components/ui/PointRedeemBox.vue"
+import StoreBanner from "@/components/ui/StoreBanner.vue"
 import { unlockPaymentAudio, playPaymentSuccess } from "@/utils/paymentSuccessSound.js"
 
 const cartStore = useCartStore()
@@ -467,6 +536,12 @@ const selectPayment = (method) => {
 // payment = { orderNumber, total, waMessage, items, createdAt, message, phase }
 //   phase: "starting" | "waiting" | "paid" | "failed" | "pending"
 const payment = ref(null)
+
+// ── Pesanan Cash yang baru dibuat ────────────────────────────────────────────
+// cashDone = null → form biasa
+// cashDone = { orderNumber, total, waMessage, items }
+// Tidak perlu disimpan ke localStorage: order sudah ada di backend, ini hanya layar konfirmasi.
+const cashDone = ref(null)
 
 // Watch ini ditaruh setelah `payment` dideklarasikan karena membacanya.
 watch(gatewayUnavailable, (unavailable) => {
@@ -689,6 +764,11 @@ const finishPayment = () => {
   router.push("/")
 }
 
+const finishCash = () => {
+  cashDone.value = null
+  router.push("/")
+}
+
 const backToMenu = () => {
   dropPayment()
   router.push("/menu")
@@ -737,8 +817,8 @@ const ctaLabel = computed(() => {
 })
 
 // ── WhatsApp ─────────────────────────────────────────────────────────────────
-// Pesan dibangun SEBELUM keranjang dikosongkan, lalu dikirim sekarang (cash)
-// atau lewat tombol setelah pembayaran terkonfirmasi (online).
+// Pesan dibangun SEBELUM keranjang dikosongkan, lalu dikirim lewat tombol di panel:
+// setelah pembayaran terkonfirmasi (online) atau setelah pesanan Cash dibuat.
 // "Pedas · Extra keju" dari pilihan opsi item keranjang ("" kalau tidak ada).
 const optionTextOf = (item) => (item.optionDetails || []).map((d) => d.label).join(" · ")
 
@@ -826,7 +906,7 @@ const checkout = async () => {
     return toast.error("Total Rp0, pakai metode Cash.")
   }
 
-  // Guard nomor admin hanya untuk Cash (WA langsung dikirim).
+  // Guard nomor admin hanya untuk Cash (tombol WhatsApp di panel butuh nomor ini).
   // Untuk online, WA cuma tombol opsional setelah bayar, jadi tidak memblokir.
   if (!isGateway && !adminWhatsapp.value) {
     await fetchSettings()
@@ -890,10 +970,16 @@ const checkout = async () => {
     }
 
     // ── Cash ──
-    toast.success("Pesanan berhasil dibuat!")
-    openWhatsApp(buildWaMessage(orderNumber, "Cash (bayar di toko)"))
+    // Semua data panel diambil SEBELUM resetForm() (keranjang, promo, dan poin dikosongkan di sana).
+    cashDone.value = {
+      orderNumber,
+      total:     Number(res.data?.total_price ?? finalTotal.value),
+      waMessage: buildWaMessage(orderNumber, "Cash (bayar di toko)"),
+      items:     snapshotItems(),
+    }
     resetForm()
-    router.push("/")
+    toast.success("Pesanan berhasil dibuat!")
+    window.scrollTo({ top: 0, behavior: "smooth" })
   } catch (error) {
     const message = error.response?.data?.detail || error.response?.data?.error || "Koneksi terputus"
 

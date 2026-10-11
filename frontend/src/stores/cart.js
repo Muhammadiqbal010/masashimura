@@ -56,6 +56,21 @@ const missingRequiredGroup = (menu, selection) => {
   return null
 }
 
+// Apakah pilihan yang tersimpan di keranjang masih cocok dengan opsi menu TERBARU?
+// (admin bisa menghapus/mengganti nama pilihan, atau mengubah grup jadi tidak boleh banyak.)
+const selectionStillValid = (menu, selection) => {
+  const groups = menu.options || []
+  for (const [groupName, picks] of Object.entries(selection || {})) {
+    const group = groups.find((g) => g.name === groupName)
+    if (!group) return false
+    if (!group.multiple && picks.length > 1) return false
+    for (const label of picks) {
+      if (!(group.choices || []).some((c) => c.label === label)) return false
+    }
+  }
+  return missingRequiredGroup(menu, selection) === null
+}
+
 export const useCartStore = defineStore("cart", () => {
   // ── State ───────────────────────────────────────────────────────────────────
   const cart = ref(loadCart())
@@ -174,6 +189,58 @@ export const useCartStore = defineStore("cart", () => {
     delete cart.value[cartKey]
   }
 
+  // Samakan keranjang (yang tersimpan di HP) dengan daftar menu TERBARU dari server.
+  // Dipanggil setelah daftar menu berhasil dimuat. Hasilnya:
+  //   - menu sudah tidak ada (dihapus / nonaktif / jadi secret)  → baris dibuang
+  //   - menu habis                                               → baris dibuang
+  //   - pilihan opsi tidak cocok lagi dengan opsi menu           → baris dibuang (customer pilih ulang)
+  //   - harga berubah                                            → harga baris diperbarui
+  // Return rincian supaya pemanggil bisa memberi tahu customer.
+  const reconcileWithMenus = (menus) => {
+    const result = { removed: [], soldOut: [], optionsChanged: [], repriced: [] }
+    if (!Array.isArray(menus) || menus.length === 0) return result
+
+    const byId = new Map(menus.map((m) => [m.id, m]))
+
+    for (const key of Object.keys(cart.value)) {
+      const item = cart.value[key]
+      const menu = byId.get(item.id)
+
+      if (!menu) {
+        result.removed.push(item.name)
+        delete cart.value[key]
+        continue
+      }
+      if (!menu.is_available) {
+        result.soldOut.push(menu.name)
+        delete cart.value[key]
+        continue
+      }
+      // Catatan: item.options di keranjang = PILIHAN customer (bukan daftar opsi menu).
+      if (!selectionStillValid(menu, item.options)) {
+        result.optionsChanged.push(menu.name)
+        delete cart.value[key]
+        continue
+      }
+
+      const priceWeb = Number(menu.price_web ?? menu.price) || 0
+      const optionDetails = describeSelection(menu, item.options)
+      const extraPrice = optionDetails.reduce((sum, d) => sum + d.price, 0)
+      const unitPrice = priceWeb + extraPrice
+
+      if (unitPrice !== Number(item.price)) result.repriced.push(menu.name)
+
+      item.name = menu.name
+      item.image_url = menu.image_url
+      item.is_available = menu.is_available
+      item.price_web = priceWeb
+      item.extra_price = extraPrice
+      item.optionDetails = optionDetails
+      item.price = unitPrice
+    }
+    return result
+  }
+
   // ── Actions: loyalty ────────────────────────────────────────────────────────
   // Nomor permintaan terakhir. Kalau respons lama datang terlambat (nomor HP sudah
   // berganti atau dihapus), hasilnya diabaikan supaya status member tidak salah.
@@ -231,6 +298,7 @@ export const useCartStore = defineStore("cart", () => {
     decrementMenu,
     updateQuantity,
     removeFromCart,
+    reconcileWithMenus,
     clearCart,
     checkLoyalty,
     resetLoyalty,

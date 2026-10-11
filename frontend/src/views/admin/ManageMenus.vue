@@ -19,7 +19,7 @@
     <div class="adm-stats">
       <div class="adm-stat">
         <span class="adm-stat-icon tone-blue"><UtensilsCrossed :size="17" /></span>
-        <div><p class="adm-stat-value">{{ menus.length }}</p><p class="adm-stat-label">Total menu</p></div>
+        <div><p class="adm-stat-value">{{ activeCount }}</p><p class="adm-stat-label">Menu aktif</p></div>
       </div>
       <div class="adm-stat">
         <span class="adm-stat-icon tone-green"><CheckCircle2 :size="17" /></span>
@@ -51,6 +51,7 @@
           <option value="soldout">Habis</option>
           <option value="recommended">Rekomendasi</option>
           <option value="secret">Secret menu</option>
+          <option value="inactive">Nonaktif ({{ inactiveCount }})</option>
         </select>
         <select v-model="filterCategory" class="adm-input" aria-label="Filter kategori">
           <option value="">Semua kategori</option>
@@ -58,6 +59,13 @@
         </select>
       </div>
     </div>
+
+    <!-- Info menu nonaktif: biar tidak dikira menu hilang -->
+    <p v-if="!loading && inactiveCount > 0 && filterStatus !== 'inactive'" class="mm-inactive-note" role="status">
+      <EyeOff :size="13" />
+      {{ inactiveCount }} menu nonaktif (tidak tampil ke customer).
+      <button type="button" class="mm-inactive-link" @click="filterStatus = 'inactive'">Lihat</button>
+    </p>
 
     <!-- ── Loading ─────────────────────────────────────────────────── -->
     <div v-if="loading" class="adm-card adm-card--flush" aria-busy="true">
@@ -93,23 +101,24 @@
             {{ displayGroupName(catName) }}
             <span class="adm-badge">{{ items.length }} item</span>
           </h2>
-          <span class="mm-group-avail">{{ items.filter((m) => m.is_available).length }} / {{ items.length }} tersedia</span>
+          <span class="mm-group-avail">{{ items.filter((m) => isActive(m) && m.is_available).length }} / {{ items.length }} tersedia</span>
         </div>
 
         <div class="adm-card adm-card--flush">
           <ul class="mm-list">
             <li
               v-for="menu in items" :key="menu.id" class="mm-item"
-              :class="{ 'is-out': !menu.is_available, 'is-orphan': !menu.category_name }"
+              :class="{ 'is-out': !menu.is_available, 'is-orphan': !menu.category_name, 'is-inactive': !isActive(menu) }"
             >
               <div class="mm-thumb" :style="{ background: getCategoryColor(catName) }">
-                <img v-if="menu.image_url" :src="menu.image_url" :alt="menu.name" loading="lazy" />
+                <img v-if="menu.image_url" :src="getMediaUrl(menu.image_url, 100)" :alt="menu.name" loading="lazy" />
                 <span v-else>{{ menu.name.charAt(0).toUpperCase() }}</span>
               </div>
 
               <div class="mm-info">
                 <p class="mm-name">
                   <span class="adm-truncate">{{ menu.name }}</span>
+                  <span v-if="!isActive(menu)" class="adm-badge adm-badge--red mm-inactive-badge" title="Menu nonaktif: tidak tampil ke customer">Nonaktif</span>
                   <ThumbsUp v-if="menu.is_recommended" :size="13" class="mm-flag mm-flag--rec" title="Rekomendasi (badge jempol di halaman Menu)" />
                   <EyeOff v-if="menu.is_secret" :size="13" class="mm-flag mm-flag--secret" title="Secret menu: hanya muncul di New Order" />
                   <ListChecks v-if="menu.options?.length" :size="13" class="mm-flag mm-flag--opt" :title="`${menu.options.length} grup opsi`" />
@@ -123,7 +132,20 @@
 
               <p class="mm-price">{{ formatPrice(menu.price) }}</p>
 
+              <!-- Menu nonaktif: tombol aktifkan lagi (status stok tidak relevan) -->
               <button
+                v-if="!isActive(menu)"
+                type="button" class="adm-btn adm-btn--soft mm-reactivate"
+                :disabled="reactivatingId === menu.id"
+                :aria-label="`Aktifkan lagi ${menu.name}`"
+                @click="reactivate(menu)"
+              >
+                <span v-if="reactivatingId === menu.id" class="adm-spinner"></span><RotateCcw v-else :size="13" />
+                Aktifkan
+              </button>
+
+              <button
+                v-else
                 type="button" class="adm-badge mm-status"
                 :class="menu.is_available ? 'adm-badge--green' : 'adm-badge--red'"
                 :title="menu.is_available ? 'Klik untuk tandai habis' : 'Klik untuk tandai tersedia'"
@@ -346,13 +368,17 @@
       @update:model-value="(v) => !v && (deleteTarget = null)"
     >
       <p class="adm-modal-text">
-        Menu <strong>{{ deleteTarget?.name }}</strong> akan dihapus permanen beserta fotonya. Tindakan ini tidak bisa dibatalkan.
+        Menu <strong>{{ deleteTarget?.name }}</strong> akan dihapus beserta fotonya.
+      </p>
+      <p class="adm-modal-text mm-delete-note">
+        Kalau menu ini sudah pernah dipesan, riwayat order dijaga: menu <strong>tidak dihapus</strong>,
+        hanya dinonaktifkan dan disembunyikan dari customer. Fotonya tetap disimpan dan menu bisa diaktifkan lagi.
       </p>
       <template #footer>
         <button type="button" class="adm-btn adm-btn--ghost" :disabled="saving" @click="deleteTarget = null">Batal</button>
         <button type="button" class="adm-btn adm-btn--danger" data-autofocus :disabled="saving" @click="confirmDelete">
           <span v-if="saving" class="adm-spinner"></span><Trash2 v-else :size="15" />
-          {{ saving ? 'Menghapus…' : 'Ya, hapus' }}
+          {{ saving ? 'Memproses…' : 'Ya, lanjutkan' }}
         </button>
       </template>
     </AdminModal>
@@ -367,9 +393,10 @@ import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import {
   Plus, Search, X, Pencil, Trash2, Save, ImagePlus, Salad, AlertTriangle,
-  UtensilsCrossed, CheckCircle2, XCircle, Tag, ThumbsUp, EyeOff, ListChecks,
+  UtensilsCrossed, CheckCircle2, XCircle, Tag, ThumbsUp, EyeOff, ListChecks, RotateCcw,
 } from 'lucide-vue-next'
 import apiClient from '@/api/client'
+import { getMediaUrl } from '@/api'
 import ImageCropper from '@/components/ui/ImageCropper.vue'
 import AdminModal from '@/components/ui/admin/Adminmodal.vue'
 
@@ -382,6 +409,7 @@ const isDialogOpen   = ref(false)
 const editingMenu    = ref(null)
 const deleteTarget   = ref(null)
 const saving         = ref(false)
+const reactivatingId = ref(null)
 const searchQuery    = ref('')
 const filterStatus   = ref('')
 const filterCategory = ref('')
@@ -411,6 +439,9 @@ const MAX_CHOICES = 15
 const showCropper = ref(false)
 const rawImageForCropper = ref(null)
 
+// Label kategori untuk menu tanpa kategori. Dipakai di filter dan grup supaya konsisten.
+const NO_CATEGORY_LABEL = 'Tanpa Kategori'
+
 // ── Warna kategori (thumbnail tanpa foto) ───────────────────────────
 const COLORS = ['#E8521A', '#2563EB', '#059669', '#7C3AED', '#D97706', '#0891B2', '#BE185D']
 const _colorMap = {}
@@ -419,25 +450,35 @@ const getCategoryColor = (cat) => {
   return _colorMap[cat]
 }
 
+// ── Helpers status ──────────────────────────────────────────────────
+// Menu lama yang belum punya field is_active dianggap aktif.
+const isActive = (m) => m.is_active !== false
+
 // ── Computed ────────────────────────────────────────────────────────
-const availableCount = computed(() => menus.value.filter((m) => m.is_available).length)
-const soldOutCount   = computed(() => menus.value.filter((m) => !m.is_available).length)
-const categories     = computed(() => [...new Set(menus.value.map((m) => m.category_name || 'Lainnya'))])
-const categoryCount  = computed(() => categories.value.length)
+const activeCount    = computed(() => menus.value.filter(isActive).length)
+const inactiveCount  = computed(() => menus.value.filter((m) => !isActive(m)).length)
+const availableCount = computed(() => menus.value.filter((m) => isActive(m) && m.is_available).length)
+const soldOutCount   = computed(() => menus.value.filter((m) => isActive(m) && !m.is_available).length)
+const categories     = computed(() => [...new Set(menus.value.map((m) => m.category_name || NO_CATEGORY_LABEL))])
+const categoryCount  = computed(() => new Set(menus.value.map((m) => m.category_name).filter(Boolean)).size)
 const hasActiveFilter = computed(() => !!(searchQuery.value || filterStatus.value || filterCategory.value))
 
 const filteredMenus = computed(() => {
   const q = searchQuery.value.trim().toLowerCase()
-  return menus.value.filter((m) => {
-    const okStatus =
-      filterStatus.value === '' ||
-      (filterStatus.value === 'available' && m.is_available) ||
-      (filterStatus.value === 'soldout' && !m.is_available) ||
-      (filterStatus.value === 'recommended' && m.is_recommended) ||
-      (filterStatus.value === 'secret' && m.is_secret)
-    const okCat = filterCategory.value === '' || (m.category_name || 'Lainnya') === filterCategory.value
-    return m.name.toLowerCase().includes(q) && okStatus && okCat
-  })
+  return menus.value
+    .filter((m) => {
+      const okStatus =
+        filterStatus.value === '' ||
+        (filterStatus.value === 'available' && isActive(m) && m.is_available) ||
+        (filterStatus.value === 'soldout' && isActive(m) && !m.is_available) ||
+        (filterStatus.value === 'recommended' && m.is_recommended) ||
+        (filterStatus.value === 'secret' && m.is_secret) ||
+        (filterStatus.value === 'inactive' && !isActive(m))
+      const okCat = filterCategory.value === '' || (m.category_name || NO_CATEGORY_LABEL) === filterCategory.value
+      return m.name.toLowerCase().includes(q) && okStatus && okCat
+    })
+    // Menu nonaktif di bawah dalam tiap grup (sort stabil, urutan lain tidak berubah)
+    .sort((a, b) => Number(isActive(b)) - Number(isActive(a)))
 })
 
 const groupedFiltered = computed(() =>
@@ -455,7 +496,7 @@ const formatPrice = (p) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(p)
 
 const isOrphan = (catName) => catName === '__orphan__'
-const displayGroupName = (catName) => (isOrphan(catName) ? 'Tanpa Kategori' : catName)
+const displayGroupName = (catName) => (isOrphan(catName) ? NO_CATEGORY_LABEL : catName)
 
 const clearErrors = () => { errors.name = errors.category = errors.price = errors.options = '' }
 
@@ -661,11 +702,17 @@ const saveMenu = async () => {
     await fetchMenus({ silent: true })
     closeModal()
   } catch (err) {
-    // Pesan validasi dari server (mis. opsi tidak valid) ditampilkan di tempatnya
+    // Pesan validasi dari server (opsi tidak valid, harga ≤ 0, dll) ditampilkan di tempatnya
     const data = err.response?.data
     const optMsg = Array.isArray(data?.options) ? data.options[0] : data?.options
+    const priceMsg = Array.isArray(data?.price) ? data.price[0] : data?.price
     if (optMsg) errors.options = String(optMsg)
-    toast.error(optMsg ? 'Opsi menu belum valid' : 'Gagal menyimpan menu')
+    if (priceMsg) errors.price = String(priceMsg)
+    toast.error(
+      optMsg ? 'Opsi menu belum valid'
+        : priceMsg ? 'Harga menu belum valid'
+        : 'Gagal menyimpan menu'
+    )
   } finally {
     saving.value = false
   }
@@ -673,6 +720,10 @@ const saveMenu = async () => {
 
 const promptDelete = (menu) => { deleteTarget.value = menu }
 
+// Hasil akhirnya dibaca dari data terbaru, bukan dari respons: ada 3 kemungkinan.
+//   1) menu hilang dari daftar            → benar-benar dihapus
+//   2) menu masih ada, is_active = false  → punya riwayat order, hanya dinonaktifkan
+//   3) menu masih ada & aktif             → gagal
 const confirmDelete = async () => {
   const target = deleteTarget.value
   if (!target) return
@@ -680,16 +731,45 @@ const confirmDelete = async () => {
   try {
     await apiClient.delete(`/menus/${target.id}/`)
   } catch {
-    // Server kadang membalas error padahal data sudah terhapus — cek kenyataannya di bawah.
+    // Server kadang membalas error padahal data sudah terhapus: cek kenyataannya di bawah.
   }
   await fetchMenus({ silent: true })
-  if (menus.value.some((m) => m.id === target.id)) toast.error('Gagal menghapus menu')
-  else toast.success('Menu berhasil dihapus')
+
+  const still = menus.value.find((m) => m.id === target.id)
+  if (!still) {
+    toast.success('Menu berhasil dihapus')
+  } else if (!isActive(still)) {
+    toast.info(
+      isActive(target)
+        ? `${target.name} punya riwayat order, jadi dinonaktifkan (tidak dihapus).`
+        : `${target.name} tetap nonaktif karena punya riwayat order.`
+    )
+  } else {
+    toast.error('Gagal menghapus menu')
+  }
   deleteTarget.value = null
   saving.value = false
 }
 
+// Aktifkan lagi menu nonaktif. Backend menonaktifkan sekaligus menandai habis,
+// jadi di sini dua-duanya dikembalikan supaya menu langsung bisa dipesan.
+const reactivate = async (menu) => {
+  if (reactivatingId.value) return
+  reactivatingId.value = menu.id
+  try {
+    await apiClient.patch(`/menus/${menu.id}/`, { is_active: true, is_available: true })
+    menu.is_active = true
+    menu.is_available = true
+    toast.success(`${menu.name} diaktifkan lagi`)
+  } catch {
+    toast.error('Gagal mengaktifkan menu')
+  } finally {
+    reactivatingId.value = null
+  }
+}
+
 const toggleStock = async (menu) => {
+  if (!isActive(menu)) return
   const prev = menu.is_available
   menu.is_available = !prev
   try {
@@ -713,6 +793,16 @@ onMounted(async () => {
 /* Filter */
 .mm-filters { display: flex; gap: 0.5rem; }
 .mm-filters .adm-input { width: auto; min-width: 9.5rem; }
+
+/* Info menu nonaktif */
+.mm-inactive-note {
+  display: flex; align-items: center; gap: 0.4rem; margin: 0 0 1rem;
+  font-size: 0.78rem; color: var(--text-faint);
+}
+.mm-inactive-link {
+  padding: 0; border: none; background: none; font: inherit; font-weight: 600;
+  color: var(--accent-text); text-decoration: underline; cursor: pointer;
+}
 
 /* Grup */
 .mm-groups { display: flex; flex-direction: column; gap: 1.5rem; }
@@ -742,6 +832,10 @@ onMounted(async () => {
 .mm-item:hover { background: var(--surface-hover); }
 .mm-item.is-orphan { background: rgb(var(--ink) / 0.025); }
 .mm-item.is-out .mm-thumb, .mm-item.is-out .mm-info, .mm-item.is-out .mm-price { opacity: 0.5; }
+.mm-item.is-inactive .mm-thumb, .mm-item.is-inactive .mm-info, .mm-item.is-inactive .mm-price { opacity: 0.45; }
+.mm-item.is-inactive .mm-thumb { filter: grayscale(1); }
+/* Badge Nonaktif harus tetap jelas walau barisnya diredupkan */
+.mm-item.is-inactive .mm-inactive-badge { opacity: 1; }
 
 .mm-thumb {
   grid-area: thumb;
@@ -758,6 +852,8 @@ onMounted(async () => {
 .mm-cat { margin: 0.15rem 0 0; font-size: 0.72rem; color: var(--text-faint); }
 .mm-price { grid-area: price; margin: 0; font-size: 0.8125rem; font-weight: 600; color: var(--text-2); text-align: right; font-variant-numeric: tabular-nums; }
 .mm-status { grid-area: status; justify-self: end; }
+.mm-reactivate { grid-area: status; justify-self: end; padding: 0.3rem 0.75rem; font-size: 0.75rem; gap: 0.35rem; }
+.mm-inactive-badge { flex-shrink: 0; }
 .mm-actions { grid-area: actions; display: flex; gap: 0.1rem; }
 
 @media (max-width: 640px) {
@@ -784,6 +880,7 @@ onMounted(async () => {
 .mm-cat-add { flex-shrink: 0; width: 42px; padding: 0; }
 .mm-toggle-row { display: flex; align-items: center; gap: 0.7rem; min-height: 42px; }
 .mm-toggle-text { font-size: 0.8125rem; color: var(--text-2); }
+.mm-delete-note { margin-top: 0.6rem; font-size: 0.8rem; color: var(--text-faint); }
 
 /* Penanda di baris menu */
 .mm-flag { flex-shrink: 0; }

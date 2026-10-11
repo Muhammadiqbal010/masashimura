@@ -9,8 +9,8 @@ export const menuAPI = {
   getAll: () => apiClient.get("/menus/"),
 
   // Top 3 menu terlaris (publik) untuk badge "Terlaris" di Menu.vue.
-  // CATATAN: sesuaikan path dengan urls.py (route TopBestSellersMenuView).
-  getBestSellers: () => apiClient.get("/menus/best-sellers/"),
+  // Path HARUS sama dengan urls.py: 'menus/bestsellers/' (tanpa tanda strip).
+  getBestSellers: () => apiClient.get("/menus/bestsellers/"),
   create: (formData) =>
     apiClient.post("/menus/", formData, {
       headers: { "Content-Type": "multipart/form-data" },

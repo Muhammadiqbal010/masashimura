@@ -2,7 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
-from django.db.models import Sum, Q
+from django.db.models import Sum, Q, Count
 from django.db.models.deletion import ProtectedError
 from django.db.models.functions import Coalesce
 
@@ -17,7 +17,8 @@ def _is_staff(request):
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
-    queryset = Category.objects.all()
+    # annotate(Count) supaya menu_count dihitung dalam 1 query, bukan 1 query per kategori
+    queryset = Category.objects.annotate(menu_count=Count("menu")).order_by("name")
     serializer_class = CategorySerializer
     permission_classes = [PublicReadStaffWrite]
 
@@ -44,16 +45,16 @@ class MenuViewSet(viewsets.ModelViewSet):
         try:
             instance.delete()
             return Response(
-                {"detail": "Menu berhasil dihapus."},
-                status=status.HTTP_204_NO_CONTENT
+                {"detail": "Menu berhasil dihapus.", "deactivated": False},
+                status=status.HTTP_200_OK,
             )
         except ProtectedError:
             instance.is_active = False
             instance.is_available = False
             instance.save()
             return Response(
-                {"detail": "Menu memiliki riwayat order, dinonaktifkan.", "deactivated": True},
-                status=status.HTTP_200_OK
+                {"detail": "Menu memiliki riwayat order, jadi dinonaktifkan (tidak dihapus).", "deactivated": True},
+                status=status.HTTP_200_OK,
             )
 
 
@@ -62,25 +63,24 @@ class TopBestSellersMenuView(APIView):
 
     def get(self, request):
         # Endpoint publik: secret menu tidak boleh ikut, dan harga asli (price) tidak boleh bocor.
+        # Tidak ada fallback: kalau belum ada order lunas, hasilnya kosong supaya
+        # badge "Terlaris" tidak menempel di menu acak.
         top_menus = list(
             Menu.objects.select_related("category")
             .annotate(
                 total_ordered=Coalesce(
                     Sum(
-                        'orderitem__quantity',
-                        filter=Q(orderitem__order__status='completed', orderitem__order__payment_status='paid'),
+                        "orderitem__quantity",
+                        filter=Q(
+                            orderitem__order__status="completed",
+                            orderitem__order__payment_status="paid",
+                        ),
                     ),
-                    0
+                    0,
                 )
             )
             .filter(total_ordered__gt=0, is_active=True, is_secret=False)
-            .order_by('-total_ordered')[:3]
+            .order_by("-total_ordered")[:3]
         )
-
-        if not top_menus:
-            top_menus = list(
-                Menu.objects.select_related("category")
-                .filter(is_active=True, is_available=True, is_secret=False)[:3]
-            )
 
         return Response(PublicMenuSerializer(top_menus, many=True).data)

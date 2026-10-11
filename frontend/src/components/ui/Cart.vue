@@ -17,6 +17,8 @@
           <span class="font-mono text-[9px] tracking-[0.3em] text-[#DC2626] uppercase">Keranjang</span>
         </div>
         <button
+          type="button"
+          aria-label="Tutup keranjang"
           @click="$emit('close')"
           class="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-600 hover:text-white hover:bg-white/5 transition-all duration-150"
         >
@@ -63,9 +65,10 @@
           <div class="w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-xl overflow-hidden bg-[#111] border border-white/[0.06] flex-shrink-0">
             <img
               v-if="item.image_url"
-              :src="getMediaUrl(item.image_url)"
+              :src="getMediaUrl(item.image_url, 160)"
               class="w-full h-full object-cover pointer-events-none"
               :alt="item.name"
+              loading="lazy"
             />
             <div v-else class="w-full h-full flex items-center justify-center">
               <span class="text-zinc-800 text-lg">🍜</span>
@@ -79,6 +82,8 @@
                 {{ item.name }}
               </h4>
               <button
+                type="button"
+                :aria-label="'Hapus ' + item.name + ' dari keranjang'"
                 @click="cartStore.removeFromCart(item.cartKey)"
                 class="flex-shrink-0 text-zinc-800 hover:text-red-500 transition-colors p-0.5 -mt-0.5"
               >
@@ -106,6 +111,7 @@
             <input
               v-model="item.notes"
               type="text"
+              :aria-label="'Catatan untuk ' + item.name"
               placeholder="Catatan (contoh: tanpa sayur)"
               class="w-full bg-white/[0.03] border border-white/[0.06] hover:border-white/10 focus:border-[#DC2626]/50 rounded-lg py-1.5 px-3 text-[11px] font-mono text-zinc-400 placeholder:text-zinc-700 outline-none transition-colors duration-150"
             />
@@ -113,6 +119,8 @@
             <!-- Qty control -->
             <div class="flex items-center gap-2 mt-0.5">
               <button
+                type="button"
+                :aria-label="'Kurangi ' + item.name"
                 @click="cartStore.updateQuantity(item.cartKey, -1)"
                 class="w-7 h-7 flex items-center justify-center border border-white/[0.08] rounded-lg text-zinc-500 hover:text-white hover:border-white/20 transition-all duration-150 font-light text-base leading-none"
               >
@@ -122,6 +130,8 @@
                 {{ item.quantity }}
               </span>
               <button
+                type="button"
+                :aria-label="'Tambah ' + item.name"
                 @click="cartStore.updateQuantity(item.cartKey, 1)"
                 class="w-7 h-7 flex items-center justify-center border border-white/[0.08] rounded-lg text-zinc-500 hover:text-white hover:border-white/20 transition-all duration-150 font-light text-base leading-none"
               >
@@ -150,8 +160,22 @@
           </div>
         </div>
 
+        <!-- Toko tutup: beri tahu di sini, jangan sampai customer baru tahu di halaman checkout -->
+        <div
+          v-if="settingsReady && !isStoreOpen"
+          class="mb-4 flex items-start gap-2.5 bg-red-500/10 border border-red-500/20 rounded-lg px-3.5 py-3"
+          role="status"
+        >
+          <Lock :size="14" class="text-red-400 flex-shrink-0 mt-0.5" />
+          <p class="font-mono text-[10px] text-red-300 leading-relaxed">
+            Toko sedang tutup, pesanan belum bisa dibuat.
+            <span v-if="nextOpenText" class="block mt-0.5 font-bold">{{ nextOpenText }}</span>
+          </p>
+        </div>
+
         <!-- CTA -->
         <router-link
+          v-if="isStoreOpen"
           to="/checkout"
           @click="$emit('close')"
           class="flex items-center justify-center gap-2 w-full bg-[#DC2626] hover:bg-red-700 active:scale-[0.98] text-white font-sora text-[11px] font-bold uppercase tracking-widest py-4 rounded-xl transition-all duration-200"
@@ -159,17 +183,30 @@
           <span>Pesan Sekarang</span>
           <ArrowRight :size="14" />
         </router-link>
+        <button
+          v-else
+          type="button"
+          disabled
+          class="flex items-center justify-center gap-2 w-full bg-[#161616] text-zinc-600 border border-white/5 cursor-not-allowed font-sora text-[11px] font-bold uppercase tracking-widest py-4 rounded-xl"
+        >
+          <span>Toko Tutup</span>
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { onMounted } from "vue"
 import { useCartStore } from "@/stores/cart"
 import { getMediaUrl } from "@/api"
-import { X, ShoppingCart, ArrowRight } from "lucide-vue-next"
+import { useStoreSettings } from "@/composables/useStoreSettings"
+import { X, ShoppingCart, ArrowRight, Lock } from "lucide-vue-next"
 
 const cartStore = useCartStore()
+const { isStoreOpen, settingsReady, nextOpenText, fetchSettings } = useStoreSettings()
+
+onMounted(() => fetchSettings())
 
 defineProps({ formatPrice: Function })
 defineEmits(["close"])

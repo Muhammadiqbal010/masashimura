@@ -1,4 +1,5 @@
 import math
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
@@ -32,7 +33,10 @@ class Menu(models.Model):
         null=True,
         blank=True,
     )
-    price       = models.DecimalField(max_digits=10, decimal_places=0)
+    price       = models.DecimalField(
+        max_digits=10, decimal_places=0,
+        validators=[MinValueValidator(1)],
+    )
     price_web   = models.DecimalField(max_digits=10, decimal_places=0, editable=False, default=0)
     description = models.TextField(blank=True, null=True)
     is_available = models.BooleanField(default=True)

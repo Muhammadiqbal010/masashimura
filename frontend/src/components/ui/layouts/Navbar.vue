@@ -37,7 +37,7 @@
           v-for="link in navLinks"
           :key="link.path"
           :to="link.path"
-          class="relative px-4 py-2 text-[11px] uppercase tracking-[0.2em] font-bold font-oswald transition-colors duration-200 group"
+          class="relative px-4 py-2 text-[11px] uppercase tracking-[0.2em] font-bold font-sora transition-colors duration-200 group"
           :class="isExact(link.path) ? 'text-white' : 'text-white/40 hover:text-white/80'"
         >
           {{ link.name }}
@@ -54,6 +54,7 @@
         class="md:hidden relative w-10 h-10 flex flex-col items-center justify-center gap-[5px] cursor-pointer group"
         @click="toggleMenu"
         :aria-expanded="isOpen"
+        aria-controls="mobile-menu"
         aria-label="Toggle navigasi"
       >
         <span
@@ -82,7 +83,8 @@
     >
       <div
         v-if="isOpen"
-        class="md:hidden absolute top-full left-0 w-full bg-[#060606]/98 backdrop-blur-xl border-b border-white/[0.06] shadow-2xl"
+        id="mobile-menu"
+        class="md:hidden absolute top-full left-0 w-full bg-[#060606]/95 backdrop-blur-xl border-b border-white/[0.06] shadow-2xl"
       >
         <div class="max-w-7xl mx-auto px-6 py-6 space-y-1">
           <router-link
@@ -95,7 +97,7 @@
               : 'text-white/40 hover:text-white hover:bg-white/[0.03]'"
             @click="closeMenu"
           >
-            <span class="font-oswald text-base uppercase tracking-[0.15em] font-bold">{{ link.name }}</span>
+            <span class="font-sora text-sm uppercase tracking-[0.15em] font-bold">{{ link.name }}</span>
             <span
               class="text-[#DC2626] text-lg transition-transform duration-200 group-hover:translate-x-0.5"
               :class="isExact(link.path) ? 'opacity-100' : 'opacity-0 group-hover:opacity-60'"
@@ -110,10 +112,12 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from "vue"
 import { useRoute } from "vue-router"
+import { useScrollLock } from "@/composables/useScrollLock"
 
 const route = useRoute()
+const { lock, unlock } = useScrollLock()
 
-const isOpen    = ref(false)
+const isOpen     = ref(false)
 const isScrolled = ref(false)
 
 const isAdminRoute = computed(() => route.path.startsWith("/admin"))
@@ -128,25 +132,27 @@ const navLinks = [
 const isExact = (path) =>
   path === "/" ? route.path === "/" : route.path.startsWith(path)
 
-const toggleMenu  = () => { isOpen.value = !isOpen.value }
-const closeMenu   = () => { isOpen.value = false }
+const toggleMenu = () => { isOpen.value = !isOpen.value }
+const closeMenu  = () => { isOpen.value = false }
 
 // Tutup mobile menu saat pindah halaman
 watch(() => route.path, closeMenu)
 
-// Kunci scroll body saat mobile menu terbuka
-watch(isOpen, (val) => {
-  document.body.style.overflow = val ? "hidden" : ""
-})
+// Kunci scroll lewat composable terpusat (tidak bentrok dengan lightbox)
+watch(isOpen, (val) => (val ? lock() : unlock()))
 
 const handleScroll = () => { isScrolled.value = window.scrollY > 40 }
+const handleKeydown = (e) => {
+  if (e.key === "Escape" && isOpen.value) closeMenu()
+}
 
 onMounted(() => {
   window.addEventListener("scroll", handleScroll, { passive: true })
+  window.addEventListener("keydown", handleKeydown)
   handleScroll()
 })
 onUnmounted(() => {
   window.removeEventListener("scroll", handleScroll)
-  document.body.style.overflow = ""
+  window.removeEventListener("keydown", handleKeydown)
 })
 </script>

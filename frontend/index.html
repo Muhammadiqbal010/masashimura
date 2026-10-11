@@ -1,51 +1,68 @@
 <!doctype html>
-
-<html lang="">
+<html lang="id">
   <head>
     <meta charset="UTF-8" />
-
-    <link rel="icon" type="image/png" href="/favicon-m.png" />
-
-    <link rel="stylesheet" href="./src/index.css" />
-
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/dist/tabler-icons.min.css"
-    />
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="/favicon.ico" />
 
-    <title>masashimura</title>
+    <title>Masashimura — Warkop Level Up di Bekasi</title>
+    <meta name="description" content="Tempat nongkrong kasual modern di Bekasi. Menu enak, harga bersahabat, WiFi kencang. Pesan langsung lewat web atau datang ke Jl. Pintu Air No.48." />
+    <meta name="theme-color" content="#080808" />
+    <link rel="canonical" href="https://masashimura.vercel.app/" />
+
+    <!-- Open Graph (WhatsApp, Facebook, Telegram) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Masashimura" />
+    <meta property="og:locale" content="id_ID" />
+    <meta property="og:url" content="https://masashimura.vercel.app/" />
+    <meta property="og:title" content="Masashimura — Warkop Level Up di Bekasi" />
+    <meta property="og:description" content="Nongkrong kasual, menu enak, harga bersahabat. Pesan via web atau langsung datang." />
+    <meta property="og:image" content="https://masashimura.vercel.app/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Masashimura — Warkop Level Up" />
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Masashimura — Warkop Level Up di Bekasi" />
+    <meta name="twitter:description" content="Nongkrong kasual, menu enak, harga bersahabat." />
+    <meta name="twitter:image" content="https://masashimura.vercel.app/og-image.jpg" />
+
+    <!-- Data terstruktur: bantu Google menampilkan jam, alamat, dan sosmed -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Restaurant",
+      "name": "Masashimura",
+      "url": "https://masashimura.vercel.app/",
+      "image": "https://masashimura.vercel.app/og-image.jpg",
+      "email": "masashimura.id@gmail.com",
+      "servesCuisine": ["Indonesian", "Japanese"],
+      "priceRange": "$",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Jl. Pintu Air No.48, Harapan Mulya, Medan Satria",
+        "addressLocality": "Kota Bekasi",
+        "addressRegion": "Jawa Barat",
+        "addressCountry": "ID"
+      },
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+          "opens": "11:00",
+          "closes": "22:30"
+        }
+      ],
+      "sameAs": [
+        "https://www.instagram.com/masashimura.id",
+        "https://www.tiktok.com/@masashimura.id"
+      ]
+    }
+    </script>
   </head>
-
   <body>
     <div id="app"></div>
-
     <script type="module" src="/src/main.js"></script>
   </body>
-<!-- </html><!doctype html>
-
-<html lang="">
-  <head>
-    <meta charset="UTF-8" />
-
-    <link rel="icon" type="image/png" href="/favicon-m.png" />
-
-    <link rel="stylesheet" href="./src/index.css" />
-
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/dist/tabler-icons.min.css"
-    />
-
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-    <title>masashimura</title>
-  </head>
-
-  <body>
-    <div id="app"></div>
-
-    <script type="module" src="/src/main.js"></script>
-  </body>
-</html> -->
+</html>

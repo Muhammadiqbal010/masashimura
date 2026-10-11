@@ -4,11 +4,17 @@ from .options import clean_options, OptionError
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    menu_count = serializers.IntegerField(source="menu_set.count", read_only=True)
+    # Nilai dari annotate(Count) di CategoryViewSet. Kalau serializer dipakai tanpa
+    # annotate (mis. respons POST), baru jatuh ke hitung manual.
+    menu_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Category
         fields = ["id", "name", "group", "menu_count"]
+
+    def get_menu_count(self, obj):
+        annotated = getattr(obj, "menu_count", None)
+        return annotated if annotated is not None else obj.menu_set.count()
 
 
 class MenuSerializer(serializers.ModelSerializer):
@@ -34,6 +40,11 @@ class MenuSerializer(serializers.ModelSerializer):
             "is_available", "is_active",
             "is_recommended", "is_secret", "options",
         ]
+
+    def validate_price(self, value):
+        if value is None or value <= 0:
+            raise serializers.ValidationError("Harga harus lebih dari 0.")
+        return value
 
     def validate_options(self, value):
         try:

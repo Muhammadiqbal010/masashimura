@@ -1,530 +1,658 @@
 <template>
   <div class="min-h-screen bg-[#080808] text-white font-inter overflow-x-hidden selection:bg-red-600/30 selection:text-white">
 
-    <!-- LOADING -->
-    <div v-if="isLoading" class="h-screen w-screen flex flex-col justify-center items-center gap-5 bg-[#080808]">
-      <span class="font-sora text-xl font-extrabold uppercase tracking-[0.3em] text-white/80 animate-pulse">Masashimura</span>
-      <div class="w-24 h-px bg-white/10 overflow-hidden">
-        <div class="load-bar h-full w-1/2 bg-[#DC2626]"></div>
-      </div>
-    </div>
+    <!-- ═══════════════════════════════════════════
+         1. HERO (tampil langsung, bagian CMS pakai skeleton)
+    ═══════════════════════════════════════════ -->
+    <section class="hero relative flex items-end overflow-hidden">
 
-    <template v-else>
-
-      <!-- ═══════════════════════════════════════════
-           1. HERO
-      ═══════════════════════════════════════════ -->
-      <section class="hero relative flex items-end overflow-hidden">
-
-        <!-- Background full bleed (di-oversize supaya parallax nggak bikin celah) -->
-        <div class="absolute inset-0">
-          <div
-            class="absolute inset-x-0 -top-[12%] h-[124%] will-change-transform"
-            :style="{ transform: `translate3d(0, ${parallaxY}px, 0)` }"
-          >
-            <img
-              :src="cms.hero_bg_image || defaultHeroBg"
-              alt=""
-              fetchpriority="high"
-              decoding="async"
-              class="w-full h-full object-cover"
-            />
-          </div>
-          <!-- Overlay: gelap merata + gelap sisi kiri di desktop -->
-          <div class="absolute inset-0 bg-gradient-to-t from-[#080808] via-[#080808]/55 to-[#080808]/50"></div>
-          <div class="absolute inset-0 hidden lg:block bg-gradient-to-r from-[#080808] via-[#080808]/65 to-transparent"></div>
-          <div class="hero-glow absolute inset-0 pointer-events-none"></div>
-        </div>
-
-        <!-- Konten hero — anchored bawah -->
-        <div class="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-10 pt-32 pb-16 sm:pb-20 lg:pb-24 grid grid-cols-1 lg:grid-cols-12 gap-10 items-end">
-          <div class="lg:col-span-7 space-y-6 sm:space-y-7">
-
-            <!-- Eyebrow -->
-            <div class="hero-in flex items-center gap-3" style="--d: 0ms">
-              <span class="w-8 h-px bg-[#DC2626]"></span>
-              <span class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">Bekasi · Since 2024</span>
-            </div>
-
-            <!-- Headline: baris terakhir diberi aksen merah -->
-            <h1 class="hero-title hero-in font-sora font-extrabold tracking-tight uppercase leading-[0.95] text-white break-words" style="--d: 120ms">
-              <span
-                v-for="(line, i) in headlineLines"
-                :key="i"
-                class="block"
-                :class="line.accent ? 'text-[#DC2626]' : ''"
-              >{{ line.text }}</span>
-            </h1>
-
-            <p class="hero-in text-zinc-300 text-sm sm:text-base max-w-md font-light leading-relaxed" style="--d: 240ms">
-              {{ cms.hero_subheadline }}
-            </p>
-
-            <div class="hero-in flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2" style="--d: 360ms">
-              <router-link to="/menu"
-                class="group inline-flex items-center justify-center gap-3 bg-[#DC2626] hover:bg-red-700 text-white font-sora text-[11px] uppercase tracking-[0.2em] px-8 py-4 font-bold transition-all duration-200 hover:-translate-y-0.5">
-                Pesan Sekarang
-                <ArrowRight :size="14" class="transition-transform duration-200 group-hover:translate-x-1" />
-              </router-link>
-              <router-link to="/contact"
-                class="inline-flex items-center justify-center border border-white/25 hover:border-white/60 hover:bg-white/5 text-white font-sora text-[11px] uppercase tracking-[0.2em] px-8 py-4 font-bold transition-all duration-200">
-                Kontak Kami
-              </router-link>
-            </div>
-          </div>
-
-          <!-- Foto makanan — kartu kanan (desktop) -->
-          <div class="hero-in hidden lg:flex lg:col-span-5 justify-end items-end" style="--d: 300ms">
-            <div class="relative w-72">
-              <div class="absolute -top-3 -right-3 w-full h-full border border-[#DC2626]/40"></div>
-              <div class="relative aspect-square overflow-hidden border border-white/10 bg-zinc-900">
-                <img
-                  :src="cms.hero_food_image || defaultHeroFood"
-                  alt="Masashimura Signature Dish"
-                  class="w-full h-full object-cover"
-                />
-                <div class="absolute bottom-0 left-0 right-0 bg-[#080808]/80 backdrop-blur-sm px-4 py-2.5 flex justify-between items-center border-t border-white/10">
-                  <span class="font-mono text-[9px] tracking-[0.25em] text-zinc-400 uppercase">Signature Dish</span>
-                  <span class="w-1.5 h-1.5 rounded-full bg-[#DC2626] animate-pulse"></span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Scroll indicator (disembunyikan di mobile supaya nggak nabrak tombol) -->
-        <div class="hidden sm:flex absolute bottom-6 left-1/2 -translate-x-1/2 flex-col items-center gap-1.5 opacity-40 pointer-events-none">
-          <span class="font-mono text-[9px] tracking-[0.3em] uppercase text-zinc-400">Scroll</span>
-          <div class="w-px h-8 bg-gradient-to-b from-zinc-400 to-transparent"></div>
-        </div>
-      </section>
-
-      <!-- ═══════════════════════════════════════════
-           2. MARQUEE
-      ═══════════════════════════════════════════ -->
-      <div class="marquee-wrap border-y border-white/[0.06] bg-[#0a0a0a] overflow-hidden py-4" aria-hidden="true">
-        <div class="animate-marquee flex">
-          <div v-for="g in 2" :key="g" class="flex shrink-0 items-center">
-            <template v-for="m in 4" :key="m">
-              <span class="font-sora text-[11px] font-bold tracking-[0.35em] uppercase text-zinc-600 mx-8 whitespace-nowrap">
-                {{ cms.marquee_text }}
-              </span>
-              <span class="w-1.5 h-1.5 rotate-45 bg-[#DC2626] shrink-0"></span>
-            </template>
-          </div>
-        </div>
-      </div>
-
-      <!-- ═══════════════════════════════════════════
-           3. BEST SELLER
-      ═══════════════════════════════════════════ -->
-      <section v-reveal class="py-20 sm:py-28 lg:py-32 px-6 sm:px-10 max-w-7xl mx-auto">
-
-        <div class="flex items-end justify-between mb-10 sm:mb-14">
-          <div class="space-y-3">
-            <div class="flex items-center gap-3">
-              <span class="w-6 h-px bg-[#DC2626]"></span>
-              <span class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">Most Ordered</span>
-            </div>
-            <h2 class="font-sora text-3xl sm:text-4xl font-extrabold uppercase tracking-tight">Menu Terlaris</h2>
-          </div>
-          <router-link to="/menu"
-            class="hidden sm:flex items-center gap-2 font-mono text-[10px] tracking-[0.2em] uppercase text-zinc-500 hover:text-white transition group">
-            Lihat Semua
-            <span class="w-6 h-px bg-zinc-500 group-hover:w-10 group-hover:bg-white transition-all duration-300"></span>
-          </router-link>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-          <router-link
-            v-for="(item, idx) in topBestSellers"
-            :key="idx"
-            to="/menu"
-            class="group flex flex-col bg-[#0d0d0d] border border-white/[0.07] overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:border-[#DC2626]/50 hover:shadow-[0_24px_40px_-24px_rgba(220,38,38,0.4)]"
-          >
-            <!-- Foto -->
-            <div class="relative w-full aspect-[4/3] shrink-0 overflow-hidden bg-zinc-900">
-              <div class="w-full h-full transition-transform duration-700 ease-out group-hover:scale-105">
-                <img
-                  v-blur-img
-                  :src="item.image"
-                  :alt="item.name"
-                  loading="lazy"
-                  class="w-full h-full object-cover"
-                />
-              </div>
-              <div class="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/60 to-transparent pointer-events-none"></div>
-              <span class="absolute top-3 left-3 font-mono text-[10px] tracking-widest text-white/80 bg-black/50 backdrop-blur-sm px-2 py-1">
-                {{ String(idx + 1).padStart(2, '0') }}
-              </span>
-              <span v-if="idx === 0"
-                class="absolute top-3 right-3 font-mono text-[9px] tracking-[0.2em] uppercase bg-[#DC2626] text-white px-2 py-1">
-                Best Seller
-              </span>
-            </div>
-
-            <!-- Info -->
-            <div class="p-5 sm:p-6 flex flex-col gap-3 flex-1">
-              <h3 class="font-sora text-base font-bold uppercase tracking-wide text-white group-hover:text-[#DC2626] transition-colors line-clamp-2">
-                {{ item.name }}
-              </h3>
-              <p class="text-zinc-400 text-sm leading-relaxed flex-1 line-clamp-2">{{ item.desc }}</p>
-              <div class="flex items-center justify-between pt-4 mt-1 border-t border-white/10">
-                <span class="font-mono text-lg font-bold text-[#DC2626]">
-                  Rp {{ item.price.toLocaleString('id-ID') }}
-                </span>
-                <span class="inline-flex items-center gap-2 bg-[#DC2626] group-hover:bg-red-700 text-white font-sora text-[10px] uppercase tracking-[0.18em] font-bold px-4 py-2.5 transition-colors">
-                  Order
-                  <ArrowRight :size="12" class="transition-transform duration-200 group-hover:translate-x-0.5" />
-                </span>
-              </div>
-            </div>
-          </router-link>
-
-          <!-- Empty state -->
-          <div v-if="bestSellers.length === 0"
-            class="col-span-full py-20 text-center text-zinc-600 font-mono text-xs tracking-widest uppercase border border-dashed border-white/10">
-            Menu belum tersedia saat ini.
-          </div>
-        </div>
-
-        <!-- Link "lihat semua" untuk mobile -->
-        <div class="sm:hidden mt-8">
-          <router-link to="/menu"
-            class="flex items-center justify-center gap-3 w-full border border-white/20 hover:border-white/50 text-white font-sora text-[11px] uppercase tracking-[0.2em] px-6 py-4 font-bold transition">
-            Lihat Semua Menu
-            <ArrowRight :size="14" />
-          </router-link>
-        </div>
-      </section>
-
-      <!-- ═══════════════════════════════════════════
-           4. TENTANG MASASHIMURA
-      ═══════════════════════════════════════════ -->
-      <section v-reveal class="py-20 sm:py-28 lg:py-32 border-t border-white/[0.06] bg-[#0a0a0a]">
-        <div class="max-w-7xl mx-auto px-6 sm:px-10 grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20 items-center">
-
-          <!-- Foto outlet -->
-          <div class="relative">
-            <div class="aspect-square overflow-hidden bg-zinc-900">
-              <img v-blur-img :src="cms.about_image || defaultAboutImage" alt="Suasana Masashimura" loading="lazy"
-                class="w-full h-full object-cover grayscale-[15%] hover:grayscale-0" />
-            </div>
-            <!-- Aksen garis merah pojok -->
-            <div class="absolute -bottom-3 -right-3 sm:-bottom-4 sm:-right-4 w-16 h-16 sm:w-20 sm:h-20 border-b-2 border-r-2 border-[#DC2626] pointer-events-none"></div>
-            <div class="absolute -top-3 -left-3 sm:-top-4 sm:-left-4 w-16 h-16 sm:w-20 sm:h-20 border-t-2 border-l-2 border-[#DC2626] pointer-events-none"></div>
-          </div>
-
-          <!-- Teks -->
-          <div class="space-y-8 sm:space-y-10">
-            <div class="space-y-4">
-              <div class="flex items-center gap-3">
-                <span class="w-6 h-px bg-[#DC2626]"></span>
-                <span class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">Tentang Kami</span>
-              </div>
-              <h2 class="font-sora text-3xl sm:text-4xl font-extrabold uppercase tracking-tight leading-tight">
-                Masashimura
-              </h2>
-              <p class="text-zinc-400 text-sm sm:text-[15px] font-light leading-[1.9] max-w-md">{{ cms.about_text }}</p>
-            </div>
-
-            <!-- Metrics -->
-            <div ref="metricsRef" class="grid grid-cols-3 border border-white/[0.07] divide-x divide-white/[0.07] bg-[#080808]/40">
-              <div class="px-3 sm:px-6 py-5 space-y-1">
-                <p class="font-sora text-xl sm:text-2xl font-extrabold text-[#DC2626] leading-tight">{{ metricDisplays.m1 }}</p>
-                <p class="font-mono text-[9px] tracking-[0.2em] sm:tracking-[0.25em] text-zinc-500 uppercase">Berdiri</p>
-              </div>
-              <div class="px-3 sm:px-6 py-5 space-y-1">
-                <p class="font-sora text-xl sm:text-2xl font-extrabold text-white leading-tight">{{ metricDisplays.m2 }}</p>
-                <p class="font-mono text-[9px] tracking-[0.2em] sm:tracking-[0.25em] text-zinc-500 uppercase">Varian Menu</p>
-              </div>
-              <div class="px-3 sm:px-6 py-5 space-y-1">
-                <p class="font-sora font-extrabold text-amber-500 leading-tight whitespace-nowrap"
-                  :class="metric3IsStars ? 'text-[0.9rem] sm:text-2xl tracking-tighter pt-1 sm:pt-0' : 'text-xl sm:text-2xl'">
-                  {{ cms.metric_3 }}
-                </p>
-                <p class="font-mono text-[9px] tracking-[0.2em] sm:tracking-[0.25em] text-zinc-500 uppercase">Rating</p>
-              </div>
-            </div>
-
-            <router-link to="/menu"
-              class="inline-flex items-center gap-3 font-sora text-[11px] uppercase tracking-[0.2em] font-bold border-b border-[#DC2626] pb-1 text-white hover:text-[#DC2626] transition group">
-              Lihat Semua Menu
-              <span class="w-5 h-px bg-[#DC2626] group-hover:w-8 transition-all duration-300"></span>
-            </router-link>
-          </div>
-        </div>
-      </section>
-
-      <!-- ═══════════════════════════════════════════
-           5. BENTO FASILITAS (tanpa sel kosong, selaras dgn lebar section lain)
-      ═══════════════════════════════════════════ -->
-      <section v-reveal class="py-20 sm:py-28 lg:py-32 px-6 sm:px-10 max-w-7xl mx-auto">
-        <div class="mb-10 sm:mb-14 space-y-3">
-          <div class="flex items-center gap-3">
-            <span class="w-6 h-px bg-[#DC2626]"></span>
-            <span class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">Fasilitas</span>
-          </div>
-          <h2 class="font-sora text-3xl sm:text-4xl font-extrabold uppercase tracking-tight">Apa yang Lo Dapet</h2>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-3">
-
-          <!-- Kartu besar (featured) -->
-          <div v-if="bentoLarge.length" class="lg:col-span-5 flex flex-col gap-3">
-            <div
-              v-for="(bento, i) in bentoLarge"
-              :key="'l' + i"
-              class="group relative flex-1 min-h-[220px] sm:min-h-[260px] overflow-hidden border border-white/[0.07] bg-[#0d0d0d] p-8 sm:p-10 flex flex-col justify-between hover:border-[#DC2626]/40 transition-colors duration-300"
-            >
-              <div class="pointer-events-none absolute -right-10 -bottom-10 text-[#DC2626] opacity-[0.06] group-hover:opacity-[0.12] transition-opacity duration-500">
-                <component :is="getIcon(bento.icon_name)" :size="220" :stroke-width="1" />
-              </div>
-              <div class="relative w-12 h-12 flex items-center justify-center border border-[#DC2626]/40 bg-[#DC2626]/10 text-[#DC2626]">
-                <component :is="getIcon(bento.icon_name)" :size="22" />
-              </div>
-              <span class="relative font-sora text-2xl sm:text-3xl font-extrabold uppercase tracking-tight leading-tight text-white">
-                {{ bento.title }}
-              </span>
-            </div>
-          </div>
-
-          <!-- Kartu kecil -->
-          <div
-            class="grid grid-cols-2 gap-3 auto-rows-fr"
-            :class="bentoLarge.length ? 'lg:col-span-7' : 'lg:col-span-12'"
-          >
-            <div
-              v-for="(bento, i) in bentoSmall"
-              :key="'s' + i"
-              class="group p-5 sm:p-6 min-h-[112px] sm:min-h-[130px] border border-white/[0.07] bg-[#0d0d0d] flex flex-col justify-between gap-6 hover:border-[#DC2626]/40 hover:bg-[#101010] transition-all duration-300"
-              :class="isBentoOrphan(i) ? 'col-span-2' : ''"
-            >
-              <component
-                :is="getIcon(bento.icon_name)"
-                :size="18"
-                class="text-[#DC2626] opacity-70 group-hover:opacity-100 transition"
-              />
-              <span class="font-sora text-xs sm:text-sm font-bold uppercase tracking-wide text-zinc-300 group-hover:text-white transition-colors">
-                {{ bento.title }}
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ═══════════════════════════════════════════
-           6. GALLERY
-      ═══════════════════════════════════════════ -->
-      <section v-reveal class="py-20 sm:py-28 lg:py-32 border-t border-white/[0.06] bg-[#0a0a0a]">
-        <div class="max-w-7xl mx-auto px-6 sm:px-10">
-          <div class="mb-8 sm:mb-10 space-y-3">
-            <div class="flex items-center gap-3">
-              <span class="w-6 h-px bg-[#DC2626]"></span>
-              <span class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">Dokumentasi</span>
-            </div>
-            <h2 class="font-sora text-3xl sm:text-4xl font-extrabold uppercase tracking-tight">Gallery</h2>
-          </div>
-
-          <!-- Filter kategori — scroll horizontal di mobile, muncul cuma kalau ada >1 kategori nyata -->
-          <div v-if="galleryCategories.length > 2"
-            class="no-scrollbar flex gap-2 mb-8 sm:mb-10 overflow-x-auto sm:flex-wrap -mx-6 px-6 sm:mx-0 sm:px-0 pb-1">
-            <button
-              v-for="cat in galleryCategories"
-              :key="cat"
-              type="button"
-              @click="setCategory(cat)"
-              :class="[
-                activeCategory === cat
-                  ? 'bg-[#DC2626] border-[#DC2626] text-white'
-                  : 'bg-transparent border-white/10 text-zinc-400 hover:border-white/30 hover:text-white',
-                'shrink-0 whitespace-nowrap px-4 py-2.5 border font-mono text-[10px] tracking-[0.15em] uppercase transition-all cursor-pointer'
-              ]"
-            >
-              {{ cat }}
-            </button>
-          </div>
-
-          <!-- Grid dense: item pertama jadi featured hanya kalau fotonya cukup banyak -->
-          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 grid-flow-row-dense auto-rows-[150px] sm:auto-rows-[180px] gap-2 sm:gap-3">
-            <button
-              v-for="(img, i) in visibleGallery"
-              :key="img.id ?? img.image_url"
-              type="button"
-              :aria-label="'Buka foto: ' + (img.title || 'Masashimura')"
-              @click="openLightbox(i)"
-              :class="[
-                isFeatured(i) ? 'col-span-2 row-span-2' : '',
-                'relative overflow-hidden group text-left bg-zinc-900 border-0 p-0 cursor-pointer'
-              ]"
-            >
-              <div class="w-full h-full transition-transform duration-700 ease-out group-hover:scale-105">
-                <img v-blur-img :src="img.image_url" :alt="img.title || 'Dokumentasi Masashimura'" loading="lazy"
-                  class="w-full h-full object-cover grayscale-[15%] group-hover:grayscale-0" />
-              </div>
-              <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/0 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3 sm:p-4">
-                <div class="space-y-0.5 min-w-0">
-                  <p class="font-sora text-[10px] sm:text-xs font-bold uppercase tracking-wider text-white line-clamp-1">{{ img.title || 'Masashimura' }}</p>
-                  <p v-if="img.category" class="font-mono text-[9px] tracking-[0.2em] text-zinc-300 uppercase">{{ img.category }}</p>
-                </div>
-              </div>
-              <div class="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 w-7 h-7 rounded-full bg-black/50 border border-white/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <Expand :size="13" class="text-white" />
-              </div>
-            </button>
-
-            <div v-if="visibleGallery.length === 0"
-              class="col-span-full row-span-2 flex items-center justify-center text-center text-zinc-600 font-mono text-xs tracking-widest uppercase border border-dashed border-white/10">
-              Belum ada foto.
-            </div>
-          </div>
-
-          <!-- Muat lebih banyak -->
-          <div v-if="filteredGallery.length > visibleGallery.length" class="flex justify-center mt-10">
-            <button type="button" @click="galleryLimit += 8"
-              class="font-mono text-[10px] tracking-[0.25em] uppercase text-zinc-400 hover:text-white border border-white/10 hover:border-white/30 px-6 py-3.5 transition-all cursor-pointer">
-              Muat Lebih Banyak ({{ filteredGallery.length - visibleGallery.length }})
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <!-- LIGHTBOX GALLERY -->
-      <transition name="lightbox-fade">
-        <div v-if="lightboxIndex !== null"
-          class="fixed inset-0 z-[60] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4 sm:p-10"
-          role="dialog" aria-modal="true" aria-label="Galeri foto"
-          @click.self="closeLightbox"
-          @touchstart.passive="onTouchStart"
-          @touchend="handleSwipe($event, nextImage, prevImage)"
+      <div class="absolute inset-0">
+        <div
+          class="absolute inset-x-0 -top-[12%] h-[124%] will-change-transform"
+          :style="{ transform: `translate3d(0, ${parallaxY}px, 0)` }"
         >
-          <button type="button" @click="closeLightbox" aria-label="Tutup"
-            class="absolute top-4 right-4 sm:top-8 sm:right-8 w-11 h-11 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white transition cursor-pointer z-10">
-            <X :size="18" />
-          </button>
-
-          <span class="absolute top-6 left-5 sm:top-10 sm:left-10 font-mono text-[10px] tracking-[0.25em] text-zinc-500 uppercase">
-            {{ String(lightboxIndex + 1).padStart(2, '0') }} / {{ String(visibleGallery.length).padStart(2, '0') }}
-          </span>
-
-          <button v-if="visibleGallery.length > 1" type="button" @click.stop="prevImage" aria-label="Foto sebelumnya"
-            class="absolute left-2 sm:left-8 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white transition cursor-pointer z-10">
-            <ChevronLeft :size="20" />
-          </button>
-          <button v-if="visibleGallery.length > 1" type="button" @click.stop="nextImage" aria-label="Foto berikutnya"
-            class="absolute right-2 sm:right-8 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white transition cursor-pointer z-10">
-            <ChevronRight :size="20" />
-          </button>
-
-          <div class="max-w-4xl w-full space-y-4" @click.stop>
-            <div class="max-h-[75vh] flex items-center justify-center overflow-hidden">
-              <img :key="lightboxIndex" :src="currentLightboxImage?.image_url" :alt="currentLightboxImage?.title || 'Masashimura'"
-                class="lb-img max-h-[75vh] max-w-full object-contain" />
-            </div>
-            <div class="text-center space-y-1">
-              <p class="font-sora text-sm font-bold uppercase tracking-wider text-white">{{ currentLightboxImage?.title || 'Masashimura' }}</p>
-              <p v-if="currentLightboxImage?.category" class="font-mono text-[9px] tracking-[0.25em] text-zinc-500 uppercase">{{ currentLightboxImage.category }}</p>
-            </div>
-          </div>
+          <img
+            v-if="!loading.cms"
+            v-blur-img
+            :src="cms.hero_bg_image || defaultHeroBg"
+            alt=""
+            fetchpriority="high"
+            decoding="async"
+            class="w-full h-full object-cover"
+          />
         </div>
-      </transition>
+        <div class="absolute inset-0 bg-gradient-to-t from-[#080808] via-[#080808]/55 to-[#080808]/50"></div>
+        <div class="absolute inset-0 hidden lg:block bg-gradient-to-r from-[#080808] via-[#080808]/65 to-transparent"></div>
+        <div class="hero-glow absolute inset-0 pointer-events-none"></div>
+      </div>
 
-      <!-- ═══════════════════════════════════════════
-           7. REVIEW (tinggi otomatis, bisa swipe, ada kontrol)
-      ═══════════════════════════════════════════ -->
-      <section v-reveal class="py-20 sm:py-28 lg:py-32 px-6 sm:px-10 max-w-4xl mx-auto">
-        <div class="mb-10 sm:mb-14 space-y-3">
-          <div class="flex items-center gap-3">
-            <span class="w-6 h-px bg-[#DC2626]"></span>
-            <span class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">Kata Mereka</span>
+      <div class="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-10 pt-32 pb-16 sm:pb-20 lg:pb-24 grid grid-cols-1 lg:grid-cols-12 gap-10 items-end">
+        <div class="lg:col-span-7 space-y-6 sm:space-y-7">
+
+          <!-- Eyebrow -->
+          <div class="hero-in flex items-center gap-3" style="--d: 0ms">
+            <span class="w-8 h-px bg-[#DC2626]"></span>
+            <span class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">Bekasi · Since 2024</span>
           </div>
-          <h2 class="font-sora text-3xl sm:text-4xl font-extrabold uppercase tracking-tight">Review Pelanggan</h2>
-        </div>
 
-        <div v-if="reviews.length" class="select-none">
-          <!-- Semua review ditumpuk di 1 sel grid → tinggi = review terpanjang, nggak ada yang kepotong -->
-          <div class="grid">
-            <figure
-              v-for="(review, i) in reviews"
+          <!-- Badge buka / tutup -->
+          <div
+            class="hero-in flex w-fit items-center gap-2.5 border border-white/10 bg-black/40 backdrop-blur-sm px-3 py-1.5"
+            style="--d: 60ms"
+            role="status"
+          >
+            <span class="relative flex w-2 h-2 shrink-0">
+              <span
+                v-if="openStatus.isOpen"
+                class="absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-60 animate-ping"
+              ></span>
+              <span
+                class="relative inline-flex w-2 h-2 rounded-full"
+                :class="openStatus.isOpen ? 'bg-emerald-500' : 'bg-red-500'"
+              ></span>
+            </span>
+            <span class="font-mono text-[10px] tracking-[0.2em] uppercase text-white">{{ openStatus.label }}</span>
+            <span v-if="openStatus.detail" class="font-mono text-[10px] tracking-[0.2em] uppercase text-zinc-400">· {{ openStatus.detail }}</span>
+          </div>
+
+          <!-- Headline -->
+          <h1
+            v-if="!loading.cms"
+            class="hero-title hero-in font-sora font-extrabold tracking-tight uppercase leading-[0.95] text-white break-words"
+            style="--d: 120ms"
+          >
+            <span
+              v-for="(line, i) in headlineLines"
               :key="i"
-              :aria-hidden="i !== currentReviewIndex"
-              class="col-start-1 row-start-1 border-l-2 border-[#DC2626] pl-6 sm:pl-10 space-y-6 transition-all duration-500 ease-out"
-              :class="i === currentReviewIndex ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'"
-            >
-              <Quote :size="28" class="text-[#DC2626]/60" />
-              <blockquote class="text-zinc-200 text-lg sm:text-2xl font-sora font-light italic leading-relaxed max-w-2xl">
-                “{{ review.text }}”
-              </blockquote>
-              <figcaption class="flex items-center gap-3">
-                <span class="w-9 h-9 shrink-0 rounded-full bg-[#DC2626]/15 border border-[#DC2626]/30 flex items-center justify-center font-sora text-xs font-bold text-[#DC2626] uppercase">
-                  {{ (review.name || '?').trim().charAt(0) }}
-                </span>
-                <span class="flex flex-col min-w-0">
-                  <span class="font-mono text-[10px] tracking-[0.2em] text-zinc-300 uppercase truncate">{{ review.name }}</span>
-                  <span class="font-mono text-[10px] text-zinc-600">{{ review.status }}</span>
-                </span>
-              </figcaption>
-            </figure>
+              class="block"
+              :class="line.accent ? 'text-[#DC2626]' : ''"
+            >{{ line.text }}</span>
+          </h1>
+          <div v-else class="space-y-3" aria-hidden="true">
+            <div class="skeleton hero-skel w-[85%]"></div>
+            <div class="skeleton hero-skel w-[60%]"></div>
+            <div class="skeleton hero-skel w-[75%]"></div>
           </div>
 
-          <!-- Indikator saja (otomatis jalan, tanpa tombol) -->
-          <div v-if="reviews.length > 1" class="mt-10 sm:mt-12 flex items-center gap-2" aria-hidden="true">
-            <span v-for="(r, i) in reviews" :key="i"
-              class="block h-0.5 transition-all duration-500"
-              :class="i === currentReviewIndex ? 'w-8 bg-[#DC2626]' : 'w-4 bg-zinc-700'"></span>
+          <!-- Subheadline -->
+          <p
+            v-if="!loading.cms"
+            class="hero-in text-zinc-300 text-sm sm:text-base max-w-md font-light leading-relaxed"
+            style="--d: 240ms"
+          >
+            {{ cms.hero_subheadline }}
+          </p>
+          <div v-else class="space-y-2 max-w-md" aria-hidden="true">
+            <div class="skeleton h-4 w-full"></div>
+            <div class="skeleton h-4 w-2/3"></div>
           </div>
-        </div>
-      </section>
 
-      <!-- ═══════════════════════════════════════════
-           8. CTA
-      ═══════════════════════════════════════════ -->
-      <section v-reveal class="relative overflow-hidden border-t border-white/[0.06] bg-[#0a0a0a]">
-        <div class="cta-glow absolute inset-0 pointer-events-none"></div>
-        <div class="relative max-w-7xl mx-auto px-6 sm:px-10 py-20 sm:py-28 lg:py-32 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-          <div class="space-y-6">
-            <div class="flex items-center gap-3">
-              <span class="w-6 h-px bg-[#DC2626]"></span>
-              <span class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">Yuk Order</span>
-            </div>
-            <h2 class="font-sora text-5xl sm:text-6xl lg:text-7xl font-extrabold uppercase tracking-tight leading-[0.9]">
-              Udah<br/><span class="text-[#DC2626]">Laper?</span>
-            </h2>
-            <p class="text-zinc-400 text-sm font-light max-w-xs leading-relaxed">
-              Pilih menu favorit dan nikmati langsung di kedai atau melalui web ordering.
-            </p>
-          </div>
-          <div class="flex flex-col sm:flex-row lg:justify-end gap-3 sm:gap-4">
+          <div class="hero-in flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2" style="--d: 360ms">
             <router-link to="/menu"
-              class="group inline-flex items-center justify-center gap-3 bg-[#DC2626] hover:bg-red-700 text-white font-sora text-[11px] uppercase tracking-[0.2em] px-10 py-5 font-bold transition-all duration-200 hover:-translate-y-0.5">
-              Pesan via Web
+              class="group inline-flex items-center justify-center gap-3 bg-[#DC2626] hover:bg-red-700 text-white font-sora text-[11px] uppercase tracking-[0.2em] px-8 py-4 font-bold transition-all duration-200 hover:-translate-y-0.5">
+              Pesan Sekarang
               <ArrowRight :size="14" class="transition-transform duration-200 group-hover:translate-x-1" />
             </router-link>
             <router-link to="/contact"
-              class="inline-flex items-center justify-center border border-white/25 hover:border-white/60 hover:bg-white/5 text-white font-sora text-[11px] uppercase tracking-[0.2em] px-10 py-5 font-bold transition-all duration-200">
-              Hubungi Kami
+              class="inline-flex items-center justify-center border border-white/25 hover:border-white/60 hover:bg-white/5 text-white font-sora text-[11px] uppercase tracking-[0.2em] px-8 py-4 font-bold transition-all duration-200">
+              Kontak Kami
             </router-link>
           </div>
         </div>
-      </section>
 
-    </template>
+        <!-- Foto makanan — kartu kanan (desktop) -->
+        <div class="hero-in hidden lg:flex lg:col-span-5 justify-end items-end" style="--d: 300ms">
+          <div class="relative w-72">
+            <div class="absolute -top-3 -right-3 w-full h-full border border-[#DC2626]/40"></div>
+            <div class="relative aspect-square overflow-hidden border border-white/10 bg-zinc-900">
+              <img
+                v-if="!loading.cms"
+                v-blur-img
+                :src="cms.hero_food_image || defaultHeroFood"
+                alt="Masashimura Signature Dish"
+                class="w-full h-full object-cover"
+              />
+              <div v-else class="skeleton w-full h-full" aria-hidden="true"></div>
+              <div class="absolute bottom-0 left-0 right-0 bg-[#080808]/80 backdrop-blur-sm px-4 py-2.5 flex justify-between items-center border-t border-white/10">
+                <span class="font-mono text-[9px] tracking-[0.25em] text-zinc-400 uppercase">Signature Dish</span>
+                <span class="w-1.5 h-1.5 rounded-full bg-[#DC2626] animate-pulse"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hidden sm:flex absolute bottom-6 left-1/2 -translate-x-1/2 flex-col items-center gap-1.5 opacity-40 pointer-events-none">
+        <span class="font-mono text-[9px] tracking-[0.3em] uppercase text-zinc-400">Scroll</span>
+        <div class="w-px h-8 bg-gradient-to-b from-zinc-400 to-transparent"></div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         2. MARQUEE
+    ═══════════════════════════════════════════ -->
+    <div v-if="cms.marquee_text" class="marquee-wrap border-y border-white/[0.06] bg-[#0a0a0a] overflow-hidden py-4" aria-hidden="true">
+      <div class="animate-marquee flex">
+        <div v-for="g in 2" :key="g" class="flex shrink-0 items-center">
+          <template v-for="m in 4" :key="m">
+            <span class="font-sora text-[11px] font-bold tracking-[0.35em] uppercase text-zinc-600 mx-8 whitespace-nowrap">
+              {{ cms.marquee_text }}
+            </span>
+            <span class="w-1.5 h-1.5 rotate-45 bg-[#DC2626] shrink-0"></span>
+          </template>
+        </div>
+      </div>
+    </div>
+    <div v-else class="border-y border-white/[0.06] bg-[#0a0a0a] py-4" aria-hidden="true">
+      <div class="skeleton h-3 w-1/2 mx-auto"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         3. PROMO / EVENT (hanya muncul kalau diisi di CMS)
+    ═══════════════════════════════════════════ -->
+    <section v-if="hasPromo" v-reveal class="border-b border-white/[0.06] bg-[#0a0a0a]">
+      <div class="max-w-7xl mx-auto px-6 sm:px-10 py-8 sm:py-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div class="flex items-start gap-4 min-w-0">
+          <span class="shrink-0 w-11 h-11 flex items-center justify-center border border-[#DC2626]/40 bg-[#DC2626]/10 text-[#DC2626]">
+            <Tag :size="20" />
+          </span>
+          <div class="space-y-1.5 min-w-0">
+            <p class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">Promo &amp; Event</p>
+            <h2 class="font-sora text-lg sm:text-2xl font-extrabold uppercase tracking-tight leading-tight break-words">
+              {{ cms.promo_title }}
+            </h2>
+            <p v-if="cms.promo_text" class="text-zinc-400 text-sm font-light leading-relaxed max-w-xl">
+              {{ cms.promo_text }}
+            </p>
+          </div>
+        </div>
+
+        <component
+          v-if="cms.promo_link"
+          :is="promoIsExternal ? 'a' : RouterLink"
+          v-bind="promoIsExternal
+            ? { href: cms.promo_link, target: '_blank', rel: 'noopener noreferrer' }
+            : { to: cms.promo_link }"
+          class="group shrink-0 inline-flex items-center justify-center gap-3 bg-[#DC2626] hover:bg-red-700 text-white font-sora text-[11px] uppercase tracking-[0.2em] px-8 py-4 font-bold transition-all duration-200 hover:-translate-y-0.5"
+        >
+          {{ cms.promo_link_label || "Lihat Detail" }}
+          <ArrowRight :size="14" class="transition-transform duration-200 group-hover:translate-x-1" />
+        </component>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         4. BEST SELLER
+    ═══════════════════════════════════════════ -->
+    <section v-reveal class="py-20 sm:py-28 lg:py-32 px-6 sm:px-10 max-w-7xl mx-auto">
+
+      <div class="flex items-end justify-between mb-10 sm:mb-14">
+        <div class="space-y-3">
+          <div class="flex items-center gap-3">
+            <span class="w-6 h-px bg-[#DC2626]"></span>
+            <span class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">Most Ordered</span>
+          </div>
+          <h2 class="font-sora text-3xl sm:text-4xl font-extrabold uppercase tracking-tight">Menu Terlaris</h2>
+        </div>
+        <router-link to="/menu"
+          class="hidden sm:flex items-center gap-2 font-mono text-[10px] tracking-[0.2em] uppercase text-zinc-500 hover:text-white transition group">
+          Lihat Semua
+          <span class="w-6 h-px bg-zinc-500 group-hover:w-10 group-hover:bg-white transition-all duration-300"></span>
+        </router-link>
+      </div>
+
+      <!-- Skeleton -->
+      <div v-if="loading.best" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5" aria-hidden="true">
+        <div v-for="n in 3" :key="n" class="bg-[#0d0d0d] border border-white/[0.07] overflow-hidden">
+          <div class="skeleton aspect-[4/3] w-full"></div>
+          <div class="p-5 sm:p-6 space-y-3">
+            <div class="skeleton h-4 w-3/4"></div>
+            <div class="skeleton h-3 w-full"></div>
+            <div class="skeleton h-3 w-2/3"></div>
+            <div class="flex items-center justify-between pt-4 mt-1 border-t border-white/10">
+              <div class="skeleton h-5 w-24"></div>
+              <div class="skeleton h-9 w-24"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+        <router-link
+          v-for="(item, idx) in topBestSellers"
+          :key="idx"
+          to="/menu"
+          class="group flex flex-col bg-[#0d0d0d] border border-white/[0.07] overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:border-[#DC2626]/50 hover:shadow-[0_24px_40px_-24px_rgba(220,38,38,0.4)]"
+        >
+          <div class="relative w-full aspect-[4/3] shrink-0 overflow-hidden bg-zinc-900">
+            <div class="w-full h-full transition-transform duration-700 ease-out group-hover:scale-105">
+              <img
+                v-blur-img
+                :src="item.image"
+                :alt="item.name"
+                loading="lazy"
+                class="w-full h-full object-cover"
+              />
+            </div>
+            <div class="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/60 to-transparent pointer-events-none"></div>
+            <span class="absolute top-3 left-3 font-mono text-[10px] tracking-widest text-white/80 bg-black/50 backdrop-blur-sm px-2 py-1">
+              {{ String(idx + 1).padStart(2, '0') }}
+            </span>
+            <span v-if="idx === 0"
+              class="absolute top-3 right-3 font-mono text-[9px] tracking-[0.2em] uppercase bg-[#DC2626] text-white px-2 py-1">
+              Best Seller
+            </span>
+          </div>
+
+          <div class="p-5 sm:p-6 flex flex-col gap-3 flex-1">
+            <h3 class="font-sora text-base font-bold uppercase tracking-wide text-white group-hover:text-[#DC2626] transition-colors line-clamp-2">
+              {{ item.name }}
+            </h3>
+            <p class="text-zinc-400 text-sm leading-relaxed flex-1 line-clamp-2">{{ item.desc }}</p>
+            <div class="flex items-center justify-between pt-4 mt-1 border-t border-white/10">
+              <span class="font-mono text-lg font-bold text-[#DC2626]">
+                {{ formatRupiah(item.price) }}
+              </span>
+              <span class="inline-flex items-center gap-2 bg-[#DC2626] group-hover:bg-red-700 text-white font-sora text-[10px] uppercase tracking-[0.18em] font-bold px-4 py-2.5 transition-colors">
+                Order
+                <ArrowRight :size="12" class="transition-transform duration-200 group-hover:translate-x-0.5" />
+              </span>
+            </div>
+          </div>
+        </router-link>
+
+        <div v-if="bestSellers.length === 0"
+          class="col-span-full py-20 text-center text-zinc-600 font-mono text-xs tracking-widest uppercase border border-dashed border-white/10">
+          Menu belum tersedia saat ini.
+        </div>
+      </div>
+
+      <div class="sm:hidden mt-8">
+        <router-link to="/menu"
+          class="flex items-center justify-center gap-3 w-full border border-white/20 hover:border-white/50 text-white font-sora text-[11px] uppercase tracking-[0.2em] px-6 py-4 font-bold transition">
+          Lihat Semua Menu
+          <ArrowRight :size="14" />
+        </router-link>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         5. TENTANG MASASHIMURA
+    ═══════════════════════════════════════════ -->
+    <section v-reveal class="py-20 sm:py-28 lg:py-32 border-t border-white/[0.06] bg-[#0a0a0a]">
+      <div class="max-w-7xl mx-auto px-6 sm:px-10 grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20 items-center">
+
+        <div class="relative">
+          <div class="aspect-square overflow-hidden bg-zinc-900">
+            <img v-if="!loading.cms" v-blur-img :src="cms.about_image || defaultAboutImage" alt="Suasana Masashimura" loading="lazy"
+              class="w-full h-full object-cover grayscale-[15%] hover:grayscale-0" />
+            <div v-else class="skeleton w-full h-full" aria-hidden="true"></div>
+          </div>
+          <div class="absolute -bottom-3 -right-3 sm:-bottom-4 sm:-right-4 w-16 h-16 sm:w-20 sm:h-20 border-b-2 border-r-2 border-[#DC2626] pointer-events-none"></div>
+          <div class="absolute -top-3 -left-3 sm:-top-4 sm:-left-4 w-16 h-16 sm:w-20 sm:h-20 border-t-2 border-l-2 border-[#DC2626] pointer-events-none"></div>
+        </div>
+
+        <div class="space-y-8 sm:space-y-10">
+          <div class="space-y-4">
+            <div class="flex items-center gap-3">
+              <span class="w-6 h-px bg-[#DC2626]"></span>
+              <span class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">Tentang Kami</span>
+            </div>
+            <h2 class="font-sora text-3xl sm:text-4xl font-extrabold uppercase tracking-tight leading-tight">
+              Masashimura
+            </h2>
+            <p v-if="!loading.cms" class="text-zinc-400 text-sm sm:text-[15px] font-light leading-[1.9] max-w-md">{{ cms.about_text }}</p>
+            <div v-else class="space-y-2.5 max-w-md" aria-hidden="true">
+              <div class="skeleton h-3.5 w-full"></div>
+              <div class="skeleton h-3.5 w-full"></div>
+              <div class="skeleton h-3.5 w-4/5"></div>
+            </div>
+          </div>
+
+          <!-- Metrics -->
+          <div ref="metricsRef" class="grid grid-cols-3 border border-white/[0.07] divide-x divide-white/[0.07] bg-[#080808]/40">
+            <div class="px-3 sm:px-6 py-5 space-y-1">
+              <p class="font-sora text-xl sm:text-2xl font-extrabold text-[#DC2626] leading-tight">{{ metricDisplays.m1 }}</p>
+              <p class="font-mono text-[9px] tracking-[0.2em] sm:tracking-[0.25em] text-zinc-500 uppercase">Berdiri</p>
+            </div>
+            <div class="px-3 sm:px-6 py-5 space-y-1">
+              <p class="font-sora text-xl sm:text-2xl font-extrabold text-white leading-tight">{{ metricDisplays.m2 }}</p>
+              <p class="font-mono text-[9px] tracking-[0.2em] sm:tracking-[0.25em] text-zinc-500 uppercase">Varian Menu</p>
+            </div>
+            <div class="px-3 sm:px-6 py-5 space-y-1">
+              <p class="font-sora font-extrabold text-amber-500 leading-tight whitespace-nowrap"
+                :class="metric3IsStars ? 'text-[0.9rem] sm:text-2xl tracking-tighter pt-1 sm:pt-0' : 'text-xl sm:text-2xl'">
+                {{ cms.metric_3 || "–" }}
+              </p>
+              <p class="font-mono text-[9px] tracking-[0.2em] sm:tracking-[0.25em] text-zinc-500 uppercase">Rating</p>
+            </div>
+          </div>
+
+          <router-link to="/menu"
+            class="inline-flex items-center gap-3 font-sora text-[11px] uppercase tracking-[0.2em] font-bold border-b border-[#DC2626] pb-1 text-white hover:text-[#DC2626] transition group">
+            Lihat Semua Menu
+            <span class="w-5 h-px bg-[#DC2626] group-hover:w-8 transition-all duration-300"></span>
+          </router-link>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         6. BENTO FASILITAS
+    ═══════════════════════════════════════════ -->
+    <section v-reveal class="py-20 sm:py-28 lg:py-32 px-6 sm:px-10 max-w-7xl mx-auto">
+      <div class="mb-10 sm:mb-14 space-y-3">
+        <div class="flex items-center gap-3">
+          <span class="w-6 h-px bg-[#DC2626]"></span>
+          <span class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">Fasilitas</span>
+        </div>
+        <h2 class="font-sora text-3xl sm:text-4xl font-extrabold uppercase tracking-tight">Apa yang Lo Dapet</h2>
+      </div>
+
+      <!-- Skeleton -->
+      <div v-if="loading.bento" class="grid grid-cols-1 lg:grid-cols-12 gap-3" aria-hidden="true">
+        <div class="skeleton lg:col-span-5 min-h-[220px] sm:min-h-[260px]"></div>
+        <div class="lg:col-span-7 grid grid-cols-2 gap-3 auto-rows-fr">
+          <div v-for="n in 4" :key="n" class="skeleton min-h-[112px] sm:min-h-[130px]"></div>
+        </div>
+      </div>
+
+      <div v-else class="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        <div v-if="bentoLarge.length" class="lg:col-span-5 flex flex-col gap-3">
+          <div
+            v-for="(bento, i) in bentoLarge"
+            :key="'l' + i"
+            class="group relative flex-1 min-h-[220px] sm:min-h-[260px] overflow-hidden border border-white/[0.07] bg-[#0d0d0d] p-8 sm:p-10 flex flex-col justify-between hover:border-[#DC2626]/40 transition-colors duration-300"
+          >
+            <div class="pointer-events-none absolute -right-10 -bottom-10 text-[#DC2626] opacity-[0.06] group-hover:opacity-[0.12] transition-opacity duration-500">
+              <component :is="getIcon(bento.icon_name)" :size="220" :stroke-width="1" />
+            </div>
+            <div class="relative w-12 h-12 flex items-center justify-center border border-[#DC2626]/40 bg-[#DC2626]/10 text-[#DC2626]">
+              <component :is="getIcon(bento.icon_name)" :size="22" />
+            </div>
+            <span class="relative font-sora text-2xl sm:text-3xl font-extrabold uppercase tracking-tight leading-tight text-white">
+              {{ bento.title }}
+            </span>
+          </div>
+        </div>
+
+        <div
+          class="grid grid-cols-2 gap-3 auto-rows-fr"
+          :class="bentoLarge.length ? 'lg:col-span-7' : 'lg:col-span-12'"
+        >
+          <div
+            v-for="(bento, i) in bentoSmall"
+            :key="'s' + i"
+            class="group p-5 sm:p-6 min-h-[112px] sm:min-h-[130px] border border-white/[0.07] bg-[#0d0d0d] flex flex-col justify-between gap-6 hover:border-[#DC2626]/40 hover:bg-[#101010] transition-all duration-300"
+            :class="isBentoOrphan(i) ? 'col-span-2' : ''"
+          >
+            <component
+              :is="getIcon(bento.icon_name)"
+              :size="18"
+              class="text-[#DC2626] opacity-70 group-hover:opacity-100 transition"
+            />
+            <span class="font-sora text-xs sm:text-sm font-bold uppercase tracking-wide text-zinc-300 group-hover:text-white transition-colors">
+              {{ bento.title }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         7. GALLERY
+    ═══════════════════════════════════════════ -->
+    <section v-reveal class="py-20 sm:py-28 lg:py-32 border-t border-white/[0.06] bg-[#0a0a0a]">
+      <div class="max-w-7xl mx-auto px-6 sm:px-10">
+        <div class="mb-8 sm:mb-10 space-y-3">
+          <div class="flex items-center gap-3">
+            <span class="w-6 h-px bg-[#DC2626]"></span>
+            <span class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">Dokumentasi</span>
+          </div>
+          <h2 class="font-sora text-3xl sm:text-4xl font-extrabold uppercase tracking-tight">Gallery</h2>
+        </div>
+
+        <div v-if="!loading.gallery && galleryCategories.length > 2"
+          class="no-scrollbar flex gap-2 mb-8 sm:mb-10 overflow-x-auto sm:flex-wrap -mx-6 px-6 sm:mx-0 sm:px-0 pb-1">
+          <button
+            v-for="cat in galleryCategories"
+            :key="cat"
+            type="button"
+            @click="setCategory(cat)"
+            :class="[
+              activeCategory === cat
+                ? 'bg-[#DC2626] border-[#DC2626] text-white'
+                : 'bg-transparent border-white/10 text-zinc-400 hover:border-white/30 hover:text-white',
+              'shrink-0 whitespace-nowrap px-4 py-2.5 border font-mono text-[10px] tracking-[0.15em] uppercase transition-all cursor-pointer'
+            ]"
+          >
+            {{ cat }}
+          </button>
+        </div>
+
+        <!-- Skeleton -->
+        <div v-if="loading.gallery"
+          class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 auto-rows-[150px] sm:auto-rows-[180px] gap-2 sm:gap-3" aria-hidden="true">
+          <div v-for="n in 8" :key="n" class="skeleton" :class="n === 1 ? 'col-span-2 row-span-2' : ''"></div>
+        </div>
+
+        <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 grid-flow-row-dense auto-rows-[150px] sm:auto-rows-[180px] gap-2 sm:gap-3">
+          <button
+            v-for="(img, i) in visibleGallery"
+            :key="img.id ?? img.image_url"
+            type="button"
+            :aria-label="'Buka foto: ' + (img.title || 'Masashimura')"
+            @click="openLightbox(i)"
+            :class="[
+              isFeatured(i) ? 'col-span-2 row-span-2' : '',
+              'relative overflow-hidden group text-left bg-zinc-900 border-0 p-0 cursor-pointer'
+            ]"
+          >
+            <div class="w-full h-full transition-transform duration-700 ease-out group-hover:scale-105">
+              <img v-blur-img :src="img.image_url" :alt="img.title || 'Dokumentasi Masashimura'" loading="lazy"
+                class="w-full h-full object-cover grayscale-[15%] group-hover:grayscale-0" />
+            </div>
+            <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/0 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3 sm:p-4">
+              <div class="space-y-0.5 min-w-0">
+                <p class="font-sora text-[10px] sm:text-xs font-bold uppercase tracking-wider text-white line-clamp-1">{{ img.title || 'Masashimura' }}</p>
+                <p v-if="img.category" class="font-mono text-[9px] tracking-[0.2em] text-zinc-300 uppercase">{{ img.category }}</p>
+              </div>
+            </div>
+            <div class="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 w-7 h-7 rounded-full bg-black/50 border border-white/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <Expand :size="13" class="text-white" />
+            </div>
+          </button>
+
+          <div v-if="visibleGallery.length === 0"
+            class="col-span-full row-span-2 flex items-center justify-center text-center text-zinc-600 font-mono text-xs tracking-widest uppercase border border-dashed border-white/10">
+            Belum ada foto.
+          </div>
+        </div>
+
+        <div v-if="!loading.gallery && filteredGallery.length > visibleGallery.length" class="flex justify-center mt-10">
+          <button type="button" @click="galleryLimit += 8"
+            class="font-mono text-[10px] tracking-[0.25em] uppercase text-zinc-400 hover:text-white border border-white/10 hover:border-white/30 px-6 py-3.5 transition-all cursor-pointer">
+            Muat Lebih Banyak ({{ filteredGallery.length - visibleGallery.length }})
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- LIGHTBOX GALLERY -->
+    <transition name="lightbox-fade">
+      <div v-if="lightboxIndex !== null"
+        class="fixed inset-0 z-[60] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4 sm:p-10"
+        role="dialog" aria-modal="true" aria-label="Galeri foto"
+        @click.self="closeLightbox"
+        @touchstart.passive="onTouchStart"
+        @touchend="handleSwipe($event, nextImage, prevImage)"
+      >
+        <button type="button" @click="closeLightbox" aria-label="Tutup"
+          class="absolute top-4 right-4 sm:top-8 sm:right-8 w-11 h-11 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white transition cursor-pointer z-10">
+          <X :size="18" />
+        </button>
+
+        <span class="absolute top-6 left-5 sm:top-10 sm:left-10 font-mono text-[10px] tracking-[0.25em] text-zinc-500 uppercase">
+          {{ String(lightboxIndex + 1).padStart(2, '0') }} / {{ String(visibleGallery.length).padStart(2, '0') }}
+        </span>
+
+        <button v-if="visibleGallery.length > 1" type="button" @click.stop="prevImage" aria-label="Foto sebelumnya"
+          class="absolute left-2 sm:left-8 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white transition cursor-pointer z-10">
+          <ChevronLeft :size="20" />
+        </button>
+        <button v-if="visibleGallery.length > 1" type="button" @click.stop="nextImage" aria-label="Foto berikutnya"
+          class="absolute right-2 sm:right-8 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white transition cursor-pointer z-10">
+          <ChevronRight :size="20" />
+        </button>
+
+        <div class="max-w-4xl w-full space-y-4" @click.stop>
+          <div class="max-h-[75vh] flex items-center justify-center overflow-hidden">
+            <img :key="lightboxIndex" :src="currentLightboxImage?.image_url" :alt="currentLightboxImage?.title || 'Masashimura'"
+              class="lb-img max-h-[75vh] max-w-full object-contain" />
+          </div>
+          <div class="text-center space-y-1">
+            <p class="font-sora text-sm font-bold uppercase tracking-wider text-white">{{ currentLightboxImage?.title || 'Masashimura' }}</p>
+            <p v-if="currentLightboxImage?.category" class="font-mono text-[9px] tracking-[0.25em] text-zinc-500 uppercase">{{ currentLightboxImage.category }}</p>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- ═══════════════════════════════════════════
+         8. REVIEW (bisa swipe di mobile)
+    ═══════════════════════════════════════════ -->
+    <section v-reveal class="py-20 sm:py-28 lg:py-32 px-6 sm:px-10 max-w-4xl mx-auto">
+      <div class="mb-10 sm:mb-14 space-y-3">
+        <div class="flex items-center gap-3">
+          <span class="w-6 h-px bg-[#DC2626]"></span>
+          <span class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">Kata Mereka</span>
+        </div>
+        <h2 class="font-sora text-3xl sm:text-4xl font-extrabold uppercase tracking-tight">Review Pelanggan</h2>
+      </div>
+
+      <!-- Skeleton -->
+      <div v-if="loading.reviews" class="border-l-2 border-white/10 pl-6 sm:pl-10 space-y-6" aria-hidden="true">
+        <div class="skeleton h-7 w-7"></div>
+        <div class="space-y-3 max-w-2xl">
+          <div class="skeleton h-5 w-full"></div>
+          <div class="skeleton h-5 w-5/6"></div>
+          <div class="skeleton h-5 w-2/3"></div>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="skeleton w-9 h-9 rounded-full"></div>
+          <div class="space-y-2">
+            <div class="skeleton h-3 w-28"></div>
+            <div class="skeleton h-3 w-20"></div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        v-else-if="reviews.length"
+        class="select-none touch-pan-y"
+        @touchstart.passive="onTouchStart"
+        @touchend="onReviewSwipe"
+      >
+        <div class="grid">
+          <figure
+            v-for="(review, i) in reviews"
+            :key="i"
+            :aria-hidden="i !== currentReviewIndex"
+            class="col-start-1 row-start-1 border-l-2 border-[#DC2626] pl-6 sm:pl-10 space-y-6 transition-all duration-500 ease-out"
+            :class="i === currentReviewIndex ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'"
+          >
+            <Quote :size="28" class="text-[#DC2626]/60" />
+            <blockquote class="text-zinc-200 text-lg sm:text-2xl font-sora font-light italic leading-relaxed max-w-2xl">
+              “{{ review.text }}”
+            </blockquote>
+            <figcaption class="flex items-center gap-3">
+              <span class="w-9 h-9 shrink-0 rounded-full bg-[#DC2626]/15 border border-[#DC2626]/30 flex items-center justify-center font-sora text-xs font-bold text-[#DC2626] uppercase">
+                {{ (review.name || '?').trim().charAt(0) }}
+              </span>
+              <span class="flex flex-col min-w-0">
+                <span class="font-mono text-[10px] tracking-[0.2em] text-zinc-300 uppercase truncate">{{ review.name }}</span>
+                <span class="font-mono text-[10px] text-zinc-600">{{ review.status }}</span>
+              </span>
+            </figcaption>
+          </figure>
+        </div>
+
+        <div v-if="reviews.length > 1" class="mt-10 sm:mt-12 flex items-center gap-2" aria-hidden="true">
+          <span v-for="(r, i) in reviews" :key="i"
+            class="block h-0.5 transition-all duration-500"
+            :class="i === currentReviewIndex ? 'w-8 bg-[#DC2626]' : 'w-4 bg-zinc-700'"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         9. CTA
+    ═══════════════════════════════════════════ -->
+    <section v-reveal class="relative overflow-hidden border-t border-white/[0.06] bg-[#0a0a0a]">
+      <div class="cta-glow absolute inset-0 pointer-events-none"></div>
+      <div class="relative max-w-7xl mx-auto px-6 sm:px-10 py-20 sm:py-28 lg:py-32 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+        <div class="space-y-6">
+          <div class="flex items-center gap-3">
+            <span class="w-6 h-px bg-[#DC2626]"></span>
+            <span class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">Yuk Order</span>
+          </div>
+          <h2 class="font-sora text-5xl sm:text-6xl lg:text-7xl font-extrabold uppercase tracking-tight leading-[0.9]">
+            Udah<br/><span class="text-[#DC2626]">Laper?</span>
+          </h2>
+          <p class="text-zinc-400 text-sm font-light max-w-xs leading-relaxed">
+            Pilih menu favorit dan nikmati langsung di kedai atau melalui web ordering.
+          </p>
+        </div>
+        <div class="flex flex-col sm:flex-row lg:justify-end gap-3 sm:gap-4">
+          <router-link to="/menu"
+            class="group inline-flex items-center justify-center gap-3 bg-[#DC2626] hover:bg-red-700 text-white font-sora text-[11px] uppercase tracking-[0.2em] px-10 py-5 font-bold transition-all duration-200 hover:-translate-y-0.5">
+            Pesan via Web
+            <ArrowRight :size="14" class="transition-transform duration-200 group-hover:translate-x-1" />
+          </router-link>
+          <router-link to="/contact"
+            class="inline-flex items-center justify-center border border-white/25 hover:border-white/60 hover:bg-white/5 text-white font-sora text-[11px] uppercase tracking-[0.2em] px-10 py-5 font-bold transition-all duration-200">
+            Hubungi Kami
+          </router-link>
+        </div>
+      </div>
+    </section>
+
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from "vue"
+import { ref, reactive, computed, watch, onMounted, onUnmounted } from "vue"
+import { RouterLink } from "vue-router"
 import {
   Coffee, Wifi, Zap, Utensils, DollarSign, Moon, Shield, Tv,
   Music, Gamepad2, Beer, BatteryCharging, Heart, Award, Smartphone,
-  Expand, X, ChevronLeft, ChevronRight, ArrowRight, Quote
+  Expand, X, ChevronLeft, ChevronRight, ArrowRight, Quote, Tag
 } from "lucide-vue-next"
 import apiClient from "@/api/client"
+import { useOpenStatus } from "@/composables/useOpenStatus"
+import { useScrollLock } from "@/composables/useScrollLock"
+import { getWebPrice, formatRupiah } from "@/utils/price"
 
-const isLoading          = ref(true)
+// ── Status per bagian: skeleton tampil sampai datanya datang ─────────────
+const loading = reactive({
+  cms: true,
+  best: true,
+  menuCount: true,
+  bento: true,
+  gallery: true,
+  reviews: true,
+})
+
 const scrollY            = ref(0)
 const currentReviewIndex = ref(0)
 let   reviewInterval     = null
+
+const { status: openStatus } = useOpenStatus()
+const { lock: lockScroll, unlock: unlockScroll } = useScrollLock()
+
+const defaultHeroBg     = "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1920"
+const defaultHeroFood   = "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?q=80&w=800"
+const defaultAboutImage = "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1000"
 
 const cms = ref({
   hero_headline:    "",
@@ -534,17 +662,16 @@ const cms = ref({
   marquee_text:     "",
   about_text:       "",
   about_image:      null,
-  metric_1: "", metric_2: "", metric_3: ""
+  metric_1: "", metric_2: "", metric_3: "",
+  // Promo: kosong = section tidak tampil
+  promo_title: "", promo_text: "", promo_link: "", promo_link_label: "", promo_until: "",
 })
 
-const defaultHeroBg    = "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1920"
-const defaultHeroFood  = "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?q=80&w=800"
-const defaultAboutImage = "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1000"
-
-const bestSellers    = ref([])
+const bestSellers     = ref([])
 const bentoFacilities = ref([])
-const galleryData    = ref([])
-const reviews        = ref([])
+const galleryData     = ref([])
+const reviews         = ref([])
+const menuCount       = ref(null)
 
 const iconMap = {
   Coffee, Wifi, Zap, Utensils, DollarSign, Moon, Shield, Tv,
@@ -552,7 +679,7 @@ const iconMap = {
 }
 const getIcon = (name) => iconMap[name] || iconMap["Coffee"]
 
-// ── Scroll reveal directive: fade + slide up sekali pas section masuk viewport ──
+// ── Scroll reveal directive ──────────────────────────────────────────────
 const vReveal = {
   mounted(el) {
     el.classList.add("reveal")
@@ -568,7 +695,7 @@ const vReveal = {
   }
 }
 
-// ── Image fade-up directive: img mulai transparan+scale, muncul pas selesai load ──
+// ── Image fade-up directive ──────────────────────────────────────────────
 const vBlurImg = {
   mounted(el) {
     el.classList.add("img-blur")
@@ -577,11 +704,12 @@ const vBlurImg = {
       markLoaded()
     } else {
       el.addEventListener("load", markLoaded, { once: true })
+      el.addEventListener("error", markLoaded, { once: true })
     }
   }
 }
 
-// ── Hero: headline (baris terakhir beraksen merah) + parallax ─────────────
+// ── Hero ─────────────────────────────────────────────────────────────────
 const headlineLines = computed(() => {
   const lines = String(cms.value.hero_headline || "")
     .split("\n")
@@ -592,13 +720,28 @@ const headlineLines = computed(() => {
 
 const parallaxY = computed(() => Math.min(scrollY.value, 700) * 0.1)
 
-// ── Metric count-up (section Tentang) ────────────────────────────────────
-const metricsRef     = ref(null)
-const metricDisplays = ref({ m1: "0", m2: "0" })
+// ── Promo: tampil hanya kalau judul/teks diisi & belum lewat tanggalnya ──
+const hasPromo = computed(() => {
+  const { promo_title, promo_text, promo_until } = cms.value
+  if (!promo_title && !promo_text) return false
+  if (promo_until) {
+    // promo_until format YYYY-MM-DD, berlaku sampai akhir hari (WIB)
+    const end = new Date(`${promo_until}T23:59:59+07:00`)
+    if (!isNaN(end) && end.getTime() < Date.now()) return false
+  }
+  return true
+})
+const promoIsExternal = computed(() => /^https?:\/\//i.test(cms.value.promo_link || ""))
+
+// ── Metric count-up (jalan setelah terlihat DAN data CMS + jumlah menu siap) ──
+const metricsRef      = ref(null)
+const metricDisplays  = ref({ m1: "–", m2: "–" })
+const metricsVisible  = ref(false)
 let   metricsAnimated = false
 let   metricsObserver = null
 
 const metric3IsStars = computed(() => /★/.test(String(cms.value.metric_3 || "")))
+const metricsReady   = computed(() => !loading.cms && !loading.menuCount)
 
 const parseMetricParts = (raw) => {
   const str = String(raw ?? "")
@@ -615,7 +758,7 @@ const parseMetricParts = (raw) => {
 const animateMetric = (raw, key) => {
   const parts = parseMetricParts(raw)
   if (!parts) {
-    metricDisplays.value[key] = raw
+    metricDisplays.value[key] = raw || "–"
     return
   }
   const { target, decimals, suffix } = parts
@@ -631,14 +774,20 @@ const animateMetric = (raw, key) => {
   requestAnimationFrame(step)
 }
 
+watch([metricsVisible, metricsReady], ([visible, ready]) => {
+  if (!visible || !ready || metricsAnimated) return
+  metricsAnimated = true
+  animateMetric(cms.value.metric_1, "m1")
+  // Varian menu: pakai jumlah asli dari API, fallback ke isi CMS
+  animateMetric(menuCount.value != null ? String(menuCount.value) : cms.value.metric_2, "m2")
+})
+
 const setupMetricsObserver = () => {
   if (!metricsRef.value) return
   metricsObserver = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
-      if (entry.isIntersecting && !metricsAnimated) {
-        metricsAnimated = true
-        animateMetric(cms.value.metric_1, "m1")
-        animateMetric(cms.value.metric_2, "m2")
+      if (entry.isIntersecting) {
+        metricsVisible.value = true
         metricsObserver.unobserve(entry.target)
       }
     })
@@ -646,18 +795,18 @@ const setupMetricsObserver = () => {
   metricsObserver.observe(metricsRef.value)
 }
 
-// ── Best seller: maksimal 6 biar grid 3 kolom selalu rapi ────────────────
+// ── Best seller: maksimal 6 ──────────────────────────────────────────────
 const topBestSellers = computed(() => bestSellers.value.slice(0, 6))
 
-// ── Bento: pisah kartu besar & kecil, kartu kecil ganjil terakhir dilebarkan ──
+// ── Bento ────────────────────────────────────────────────────────────────
 const bentoLarge = computed(() => bentoFacilities.value.filter(b => b.size === "large"))
 const bentoSmall = computed(() => bentoFacilities.value.filter(b => b.size !== "large"))
 const isBentoOrphan = (i) => bentoSmall.value.length % 2 === 1 && i === bentoSmall.value.length - 1
 
-// ── Gallery: filter kategori + pagination + lightbox ──────────────────────
+// ── Gallery ──────────────────────────────────────────────────────────────
 const activeCategory = ref("Semua")
-const galleryLimit    = ref(8)
-const lightboxIndex   = ref(null)
+const galleryLimit   = ref(8)
+const lightboxIndex  = ref(null)
 
 const galleryCategories = computed(() => {
   const cats = new Set(galleryData.value.map(g => g.category).filter(Boolean))
@@ -671,7 +820,6 @@ const filteredGallery = computed(() => {
 
 const visibleGallery = computed(() => filteredGallery.value.slice(0, galleryLimit.value))
 
-// Item pertama baru dibesarkan kalau fotonya >= 5, supaya grid nggak bolong
 const isFeatured = (i) => i === 0 && visibleGallery.value.length >= 5
 
 const currentLightboxImage = computed(() =>
@@ -702,12 +850,10 @@ const handleLightboxKeydown = (e) => {
   if (e.key === "ArrowLeft")  prevImage()
 }
 
-// Kunci scroll halaman saat lightbox terbuka
-watch(lightboxIndex, (v) => {
-  document.body.style.overflow = v !== null ? "hidden" : ""
-})
+// Kunci scroll lewat composable terpusat (tidak bentrok dengan navbar)
+watch(lightboxIndex, (v) => (v !== null ? lockScroll() : unlockScroll()))
 
-// ── Swipe (dipakai lightbox & review) ─────────────────────────────────────
+// ── Swipe (lightbox & review) ────────────────────────────────────────────
 let touchX = 0
 let touchY = 0
 const onTouchStart = (e) => {
@@ -715,16 +861,18 @@ const onTouchStart = (e) => {
   touchX = t.clientX
   touchY = t.clientY
 }
+// Return true kalau memang terdeteksi sebagai swipe horizontal
 const handleSwipe = (e, onLeft, onRight) => {
   const t = e.changedTouches[0]
   const dx = t.clientX - touchX
   const dy = t.clientY - touchY
-  if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) return
+  if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) return false
   if (dx < 0) onLeft()
   else onRight()
+  return true
 }
 
-// ── Review slider ─────────────────────────────────────────────────────────
+// ── Review slider ────────────────────────────────────────────────────────
 const stopAutoplay = () => {
   if (reviewInterval) {
     clearInterval(reviewInterval)
@@ -737,6 +885,11 @@ const nextReview = () => {
   if (n === 0) return
   currentReviewIndex.value = (currentReviewIndex.value + 1) % n
 }
+const prevReview = () => {
+  const n = reviews.value.length
+  if (n === 0) return
+  currentReviewIndex.value = (currentReviewIndex.value - 1 + n) % n
+}
 
 const startAutoplay = () => {
   stopAutoplay()
@@ -744,25 +897,42 @@ const startAutoplay = () => {
   reviewInterval = setInterval(nextReview, 6000)
 }
 
-// ── Data fetchers ─────────────────────────────────────────────────────────
+// Setelah swipe, reset timer supaya review tidak langsung loncat sendiri
+const onReviewSwipe = (e) => {
+  if (handleSwipe(e, nextReview, prevReview)) startAutoplay()
+}
+
+// ── Data fetchers ────────────────────────────────────────────────────────
 const fetchCMSData = async () => {
+  let d = {}
   try {
-    const { data: d } = await apiClient.get("/homepage/config/current/")
-    cms.value = {
-      hero_headline:    d.hero_headline?.trim()    || "Warkop Level Up\nMasashimura",
-      hero_subheadline: d.hero_subheadline?.trim() || "Tempat nongkrong kasual modern di Bekasi dengan cita rasa nikmat.",
-      hero_bg_image:    d.hero_bg_image    || null,
-      hero_food_image:  d.hero_food_image  || null,
-      marquee_text:     d.marquee_text?.trim()     || "MASA SIH MURAH? • WARKOP EVOLUTION • GOOD FOOD • GOOD VIBES • SINCE 2024",
-      about_text:       d.about_text?.trim()       || "Masashimura adalah usaha kuliner asal Bekasi yang berdiri sejak 2024. Mengusung konsep tempat makan kasual yang nyaman, kami hadir buat lo yang mau nongkrong sambil menikmati makanan dengan harga bersahabat.",
-      about_image:      d.about_image || null,
-      metric_1: d.metric_1?.trim() || "2024",
-      metric_2: d.metric_2?.trim() || "50+",
-      metric_3: d.metric_3?.trim() || "★★★★★",
-    }
+    const res = await apiClient.get("/homepage/config/current/")
+    d = res.data || {}
   } catch (err) {
     console.error("CMS fallback:", err)
   }
+  const t = (v) => (typeof v === "string" ? v.trim() : v)
+
+  cms.value = {
+    // Positioning seragam: "Warkop Level Up" (sama dengan footer)
+    hero_headline:    t(d.hero_headline)    || "Warkop Level Up\nMasashimura",
+    hero_subheadline: t(d.hero_subheadline) || "Tempat nongkrong kasual modern di Bekasi dengan cita rasa nikmat.",
+    hero_bg_image:    d.hero_bg_image   || null,
+    hero_food_image:  d.hero_food_image || null,
+    marquee_text:     t(d.marquee_text) || "MASA SIH MURAH? • WARKOP EVOLUTION • GOOD FOOD • GOOD VIBES • SINCE 2024",
+    about_text:       t(d.about_text)   || "Masashimura adalah usaha kuliner asal Bekasi yang berdiri sejak 2024. Mengusung konsep tempat makan kasual yang nyaman, kami hadir buat lo yang mau nongkrong sambil menikmati makanan dengan harga bersahabat.",
+    about_image:      d.about_image || null,
+    metric_1: t(d.metric_1) || "2024",
+    metric_2: t(d.metric_2) || "50+",
+    metric_3: t(d.metric_3) || "★★★★★",
+    // Promo: TANPA default. Kosong di CMS = section tidak muncul.
+    promo_title:      t(d.promo_title)      || "",
+    promo_text:       t(d.promo_text)       || "",
+    promo_link:       t(d.promo_link)       || "",
+    promo_link_label: t(d.promo_link_label) || "",
+    promo_until:      t(d.promo_until)      || "",
+  }
+  loading.cms = false
 }
 
 const fetchBestSellers = async () => {
@@ -772,12 +942,32 @@ const fetchBestSellers = async () => {
       bestSellers.value = data.map(item => ({
         name:  item.name,
         desc:  item.description || "Menu favorit pilihan squad Masashimura.",
-        price: Number(item.price_web),
+        price: getWebPrice(item),   // sama persis dengan halaman Menu
         image: item.image_url || defaultHeroFood,
       }))
     }
   } catch (err) {
     console.error("Best sellers:", err)
+  } finally {
+    loading.best = false
+  }
+}
+
+// Jumlah varian menu asli dari API (menyesuaikan endpoint daftar menu kamu)
+const fetchMenuCount = async () => {
+  try {
+    const { data } = await apiClient.get("/menus/")
+    const list = Array.isArray(data) ? data : data?.results
+    if (Array.isArray(list)) {
+      const total = !Array.isArray(data) && typeof data?.count === "number"
+        ? data.count
+        : list.filter(m => m.is_available !== false).length
+      if (total > 0) menuCount.value = total
+    }
+  } catch (err) {
+    console.error("Menu count:", err)
+  } finally {
+    loading.menuCount = false
   }
 }
 
@@ -793,6 +983,9 @@ const fetchGoogleReviews = async () => {
     reviews.value = data?.length > 0 ? data : fallbackReviews
   } catch {
     reviews.value = fallbackReviews
+  } finally {
+    loading.reviews = false
+    startAutoplay()
   }
 }
 
@@ -805,7 +998,7 @@ const fallbackBento = [
 
 const fallbackGallery = [
   { title: "Suasana Kedai", image_url: defaultHeroBg,   category: "Suasana Kedai" },
-  { title: "Menu Andalan",  image_url: defaultHeroFood,  category: "Best Seller" },
+  { title: "Menu Andalan",  image_url: defaultHeroFood, category: "Best Seller" },
 ]
 
 const fetchBentoAndGallery = async () => {
@@ -819,10 +1012,13 @@ const fetchBentoAndGallery = async () => {
   } catch {
     bentoFacilities.value = fallbackBento
     galleryData.value     = fallbackGallery
+  } finally {
+    loading.bento = false
+    loading.gallery = false
   }
 }
 
-// ── Scroll parallax (di-throttle pakai rAF) ──────────────────────────────
+// ── Scroll parallax (throttle rAF) ───────────────────────────────────────
 let scrollTicking = false
 const handleScroll = () => {
   if (scrollTicking) return
@@ -833,45 +1029,56 @@ const handleScroll = () => {
   })
 }
 
-// ── Lifecycle ────────────────────────────────────────────────────────────
-onMounted(async () => {
+// ── Lifecycle: halaman tampil duluan, semua fetch jalan paralel ──────────
+onMounted(() => {
   window.addEventListener("scroll", handleScroll, { passive: true })
   window.addEventListener("keydown", handleLightboxKeydown)
-  await Promise.all([fetchCMSData(), fetchBestSellers(), fetchGoogleReviews(), fetchBentoAndGallery()])
-  isLoading.value = false
-  await nextTick()
   setupMetricsObserver()
-  startAutoplay()
+
+  fetchCMSData()
+  fetchBestSellers()
+  fetchMenuCount()
+  fetchGoogleReviews()
+  fetchBentoAndGallery()
 })
 
 onUnmounted(() => {
   window.removeEventListener("scroll", handleScroll)
   window.removeEventListener("keydown", handleLightboxKeydown)
-  document.body.style.overflow = ""
   stopAutoplay()
   if (metricsObserver) metricsObserver.disconnect()
 })
 </script>
 
 <style scoped>
-/* Fokus keyboard yang jelas & konsisten */
 a:focus-visible,
 button:focus-visible {
   outline: 2px solid #DC2626;
   outline-offset: 3px;
 }
 
-/* ── Loading bar ── */
-@keyframes loadBar {
-  0%   { transform: translateX(-100%); }
-  100% { transform: translateX(200%); }
+/* ── Skeleton ── */
+.skeleton {
+  background: linear-gradient(
+    100deg,
+    rgba(255, 255, 255, 0.04) 30%,
+    rgba(255, 255, 255, 0.09) 50%,
+    rgba(255, 255, 255, 0.04) 70%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
 }
-.load-bar { animation: loadBar 1.2s ease-in-out infinite; }
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+/* tinggi baris headline skeleton menyamai ukuran font hero */
+.hero-skel { height: clamp(2.1rem, 8vw, 4.4rem); }
 
 /* ── Hero ── */
 .hero {
   min-height: 100vh;
-  min-height: 100svh; /* aman dari address bar browser mobile */
+  min-height: 100svh;
 }
 .hero-title {
   font-size: clamp(2.25rem, 8.5vw, 4.75rem);
@@ -908,7 +1115,6 @@ button:focus-visible {
 .marquee-wrap:hover .animate-marquee {
   animation-play-state: paused;
 }
-/* Fade di sisi kiri & kanan: teks masuk/keluar pelan-pelan, garis border tetap solid */
 .marquee-wrap { position: relative; }
 .marquee-wrap::before,
 .marquee-wrap::after {
@@ -976,8 +1182,9 @@ button:focus-visible {
     transform: none;
   }
   .animate-marquee,
-  .load-bar,
-  .lb-img {
+  .lb-img,
+  .skeleton,
+  .animate-ping {
     animation: none;
   }
 }

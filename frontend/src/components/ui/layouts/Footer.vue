@@ -17,7 +17,7 @@
             class="h-10 md:h-12 w-auto select-none pointer-events-none"
           />
           <p class="text-zinc-500 text-[13px] leading-relaxed max-w-[260px]">
-            Kedai Jepang kekinian di jantung Bekasi. Cozy, kustom, harga bersahabat.
+            Warkop modern di jantung Bekasi. Cozy, kustom, harga bersahabat.
           </p>
           <!-- Social row -->
           <div class="flex items-center gap-2.5">
@@ -96,10 +96,25 @@
         <p class="font-mono text-[10px] text-zinc-700 tracking-wider">
           &copy; {{ currentYear }} Masashimura. All rights reserved.
         </p>
-        <div class="flex items-center gap-2">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+        <div class="flex flex-col sm:flex-row items-center gap-1.5 sm:gap-3 text-center sm:text-right" role="status">
+          <span class="flex items-center gap-2">
+            <span class="relative flex w-1.5 h-1.5 shrink-0">
+              <span
+                v-if="status.isOpen"
+                class="absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-60 animate-ping"
+              />
+              <span
+                class="relative inline-flex w-1.5 h-1.5 rounded-full"
+                :class="status.isOpen ? 'bg-emerald-500' : 'bg-red-500'"
+              />
+            </span>
+            <span class="font-mono text-[9px] tracking-[0.18em] uppercase" :class="status.isOpen ? 'text-zinc-400' : 'text-zinc-500'">
+              {{ status.label }}<template v-if="status.detail"> · {{ status.detail }}</template>
+            </span>
+          </span>
+          <span class="hidden sm:block w-px h-3 bg-white/10" />
           <span class="font-mono text-[9px] tracking-[0.18em] uppercase text-zinc-700">
-            Buka Senin – Sabtu &nbsp;·&nbsp; 11.00 – 22.30 WIB
+            {{ scheduleText }}
           </span>
         </div>
       </div>
@@ -110,9 +125,11 @@
 
 <script setup>
 import { computed } from "vue"
-import { Instagram, Music4, MessageCircle, Mail, MapPin } from "lucide-vue-next"
+import { Instagram, Music4, Mail, MapPin } from "lucide-vue-next"
+import { useOpenStatus } from "@/composables/useOpenStatus"
 
 const currentYear = computed(() => new Date().getFullYear())
+const { status, scheduleText } = useOpenStatus()
 
 const navLinks = [
   { name: "Home",   path: "/" },
@@ -121,7 +138,7 @@ const navLinks = [
 ]
 
 const socials = [
-  { href: "https://www.instagram.com/masashimura.id?igsh=aWdwemFoZHJyMGd4",  label: "Instagram Masashimura", icon: Instagram     },
-  { href: "https://www.tiktok.com/@masashimura.id?_r=1&_d=f38e5ga547698m&sec_uid=MS4wLjABAAAA1-eEz10qZSYQro3iEvI4zRAS99Wvns1CtDuIpVSmB6UTgQfKNvet5Qpygdlq8lAC&share_author_id=7127158177099383835&sharer_language=id&source=h5_t&u_code=e2i24ec15jml4d&timestamp=1782825174&user_id=7117580086647620609&sec_user_id=MS4wLjABAAAAXgDON-GVMjr2LsCnwBStw6PMVAVGV3oTYoKExKyw6jUofn8z29xgPjMcyoi2ODSu&item_author_type=2&utm_source=whatsapp&utm_campaign=client_share&utm_medium=android&share_iid=7654320356233185045&share_link_id=0ce00482-3200-4348-97bc-357ec1b8b47e&share_app_id=1180&ugbiz_name=ACCOUNT&ug_btm=b6880%2Cb5836&social_share_type=5&share_enter_from=others_homepage&item_author_type=2&enable_checksum=1",    label: "TikTok Masashimura",    icon: Music4        },
+  { href: "https://www.instagram.com/masashimura.id", label: "Instagram Masashimura", icon: Instagram },
+  { href: "https://www.tiktok.com/@masashimura.id",   label: "TikTok Masashimura",    icon: Music4    },
 ]
 </script>

@@ -20,11 +20,11 @@
         >
           <div class="w-full sm:max-w-md bg-[#0d0d0d] border border-white/[0.08] rounded-t-3xl sm:rounded-2xl overflow-hidden max-h-[90vh] flex flex-col">
 
-            <!-- Foto -->
-            <div class="w-full aspect-[4/3] bg-[#111] relative flex-shrink-0">
+            <!-- Foto (16:9, sama dengan hasil crop di admin) -->
+            <div class="w-full aspect-video bg-[#111] relative flex-shrink-0">
               <img
                 v-if="menu.image_url"
-                :src="getMediaUrl(menu.image_url)"
+                :src="getMediaUrl(menu.image_url, 900)"
                 :alt="menu.name"
                 class="w-full h-full object-cover"
               />

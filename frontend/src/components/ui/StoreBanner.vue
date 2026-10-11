@@ -2,7 +2,7 @@
   StoreBanner.vue
   Taruh di src/components/ui/StoreBanner.vue
 
-  Pakai di MenuView.vue dan CheckoutView.vue:
+  Dipakai di Checkout.vue:
     import StoreBanner from "@/components/ui/StoreBanner.vue"
     <StoreBanner />
 -->
@@ -12,7 +12,7 @@
     enter-from-class="opacity-0 -translate-y-2"
     enter-to-class="opacity-100 translate-y-0"
   >
-    <div v-if="!isStoreOpen" class="store-banner">
+    <div v-if="settingsReady && !isStoreOpen" class="store-banner" role="status">
       <div class="banner-icon">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="3" y="11" width="18" height="11" rx="2"/>
@@ -22,6 +22,7 @@
       <div class="banner-content">
         <p class="banner-title">Toko Sedang Tutup</p>
         <p class="banner-msg">{{ closedMessage }}</p>
+        <p v-if="nextOpenText" class="banner-next">{{ nextOpenText }}</p>
       </div>
       <div v-if="todaySchedule" class="banner-hours">
         <span class="hours-label">Jam buka hari ini</span>
@@ -35,7 +36,7 @@
 import { computed, onMounted } from "vue"
 import { useStoreSettings } from "@/composables/useStoreSettings"
 
-const { isStoreOpen, closedMessage, settings, fetchSettings } = useStoreSettings()
+const { isStoreOpen, closedMessage, nextOpenText, settingsReady, settings, fetchSettings } = useStoreSettings()
 
 onMounted(() => fetchSettings())
 
@@ -94,6 +95,14 @@ const todaySchedule = computed(() => {
   color: rgba(255, 255, 255, 0.35);
   margin-top: 4px;
   line-height: 1.5;
+}
+
+.banner-next {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 6px;
+  line-height: 1.4;
 }
 
 .banner-hours {
