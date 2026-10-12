@@ -1,181 +1,97 @@
 """
-Evaluasi & pemilihan metode forecast revenue harian.
+Penyimpanan state model prediksi di DATABASE (bukan file).
 
-Dua kandidat:
-- baseline : median berbobot per hari-dalam-seminggu (lihat baseline.py)
-- random_forest : ML dengan fitur kalender saja (tanpa lag)
+Filesystem serverless (Vercel) read-only, jadi training tidak bisa menulis
+metadata.json / revenue_model.joblib di sana. Semua dibaca/ditulis lewat
+PredictionModelState supaya tersimpan permanen dan sama untuk semua instance.
 
-Aturan pemilihan (sengaja konservatif):
-1. Data < MIN_DAYS_FOR_BACKTEST hari -> baseline, belum bisa dievaluasi.
-2. Data < MIN_DAYS_FOR_ML hari -> baseline, ML belum dicoba (menghafal doang).
-3. Selain itu keduanya di-backtest pada hari-hari terakhir, dan ML HANYA
-   dipakai kalau MAE-nya minimal 10% lebih kecil dari baseline.
-
-Backtest-nya walk-forward tanpa kebocoran data: baseline di-fit ulang untuk
-tiap hari uji memakai histori SEBELUM hari itu saja, ML dilatih hanya dari
-data sebelum split. Evaluasi hanya di HARI BUKA (hari libur rutin pasti Rp0,
-kalau ikut dihitung malah bikin metrik kelihatan bagus palsu).
+Semua pembacaan dibungkus savepoint (transaction.atomic) dan tidak pernah
+melempar error: kalau tabel belum dimigrasi atau DB bermasalah, hasilnya
+"belum ada state" dan forecast otomatis memakai baseline.
 """
+import io
 import logging
 
-import numpy as np
-from django.utils import timezone
-from sklearn.ensemble import RandomForestRegressor
+import joblib
+from django.db import DatabaseError, transaction
 
-from . import store
-from .baseline import (
-    CALENDAR_FEATURES,
-    build_calendar_features,
-    fit_baseline,
-    ml_upper_bound,
-    predict_baseline,
-)
-from .data import SCALE_FACTOR, get_daily_revenue_df, get_regular_closed_weekdays
+from ..models import PredictionModelState
 
 logger = logging.getLogger(__name__)
 
-TEST_SIZE_DAYS = 14        # jumlah hari terakhir untuk backtest (dikecilkan otomatis kalau data pendek)
-MIN_DAYS_FOR_BACKTEST = 14
-MIN_DAYS_FOR_ML = 56       # 8 minggu
-ML_WIN_MARGIN = 0.9        # ML harus MAE <= 90% MAE baseline
+STATE_NAME = 'revenue'
+
+# Cache model di memori proses, dikunci oleh updated_at supaya tidak
+# di-unpickle ulang di setiap request.
+_cache = {'stamp': None, 'model': None}
 
 
-def _metrics(y_true, y_pred) -> dict:
-    """Semua dalam Rupiah asli. MAPE hanya dihitung di hari dengan omzet > 0."""
-    y_true = np.asarray(y_true, dtype=float)
-    y_pred = np.asarray(y_pred, dtype=float)
-    nonzero = y_true > 0
-    mape = (
-        float(np.mean(np.abs(y_true[nonzero] - y_pred[nonzero]) / y_true[nonzero]) * 100)
-        if nonzero.any() else None
-    )
-    return {
-        'mae': float(np.mean(np.abs(y_true - y_pred))),
-        'rmse': float(np.sqrt(np.mean((y_true - y_pred) ** 2))),
-        'mape': mape,
-        'n_test_days': int(len(y_true)),
-    }
+def load_metadata() -> dict:
+    """Metadata tersimpan, atau {} kalau belum pernah dilatih / DB tidak bisa dibaca."""
+    try:
+        with transaction.atomic():
+            row = (PredictionModelState.objects
+                   .defer('model_blob').filter(name=STATE_NAME).first())
+    except DatabaseError:
+        logger.warning('State model prediksi tidak bisa dibaca (tabel belum dimigrasi?). '
+                       'Forecast pakai baseline.', exc_info=True)
+        return {}
+    return dict(row.metadata or {}) if row else {}
 
 
-def _new_rf() -> RandomForestRegressor:
-    return RandomForestRegressor(
-        n_estimators=200,
-        max_depth=4,
-        min_samples_leaf=3,
-        random_state=42,
-    )
+def load_model():
+    """Model ML tersimpan, atau None (-> baseline)."""
+    try:
+        with transaction.atomic():
+            stamp = (PredictionModelState.objects.filter(name=STATE_NAME)
+                     .values_list('updated_at', flat=True).first())
+            if stamp is None:
+                return None
+            if _cache['stamp'] == stamp and _cache['model'] is not None:
+                return _cache['model']
+            blob = (PredictionModelState.objects.filter(name=STATE_NAME)
+                    .values_list('model_blob', flat=True).first())
+    except DatabaseError:
+        logger.warning('Model prediksi tidak bisa dibaca dari DB, pakai baseline.', exc_info=True)
+        return None
 
-
-def _fit_rf(daily, closed, end_idx: int) -> RandomForestRegressor:
-    """Latih RF dari baris [0, end_idx) -- hanya hari buka."""
-    head = daily.iloc[:end_idx]
-    open_mask = ~head['date'].dt.dayofweek.isin(closed).to_numpy()
-    X = build_calendar_features(head['date'], closed)[open_mask]
-    y = (head['revenue'] / SCALE_FACTOR).to_numpy()[open_mask]
-    model = _new_rf()
-    model.fit(X, y)
+    if not blob:
+        return None
+    try:
+        # joblib = pickle. Aman di sini karena blob hanya ditulis oleh kode training
+        # server ini sendiri (save_state), bukan input pengguna.
+        model = joblib.load(io.BytesIO(bytes(blob)))
+    except Exception:
+        logger.exception('Model prediksi gagal di-load, pakai baseline.')
+        return None
+    _cache.update(stamp=stamp, model=model)
     return model
 
 
-def _backtest_baseline(daily, closed, split_idx: int):
-    actual, preds = [], []
-    for i in range(split_idx, len(daily)):
-        date = daily['date'].iloc[i]
-        if date.dayofweek in closed:
-            continue
-        baseline = fit_baseline(daily.iloc[:i], closed)
-        preds.append(predict_baseline(baseline, date)[0])
-        actual.append(float(daily['revenue'].iloc[i]))
-    return actual, preds
-
-
-def _backtest_ml(daily, closed, split_idx: int):
-    model = _fit_rf(daily, closed, split_idx)
-    test = daily.iloc[split_idx:]
-    open_mask = ~test['date'].dt.dayofweek.isin(closed).to_numpy()
-    if not open_mask.any():
-        return [], []
-    X_test = build_calendar_features(test['date'], closed)[open_mask]
-    preds = np.clip(model.predict(X_test), a_min=0, a_max=None) * SCALE_FACTOR
-    preds = np.clip(preds, 0, ml_upper_bound(daily.iloc[:split_idx]))
-    actual = test['revenue'].to_numpy(dtype=float)[open_mask]
-    return list(actual), list(preds)
-
-
-def train_and_select_best():
+def save_state(metadata: dict, model=None) -> None:
     """
-    Backtest baseline vs ML, pilih metode, simpan metadata (dan model ML
-    kalau ML yang menang). Return dict yang dilempar apa adanya ke view.
+    Simpan metadata (+ model kalau ada) ke DB, atomik. `model=None` berarti baseline
+    yang menang, jadi model lama dihapus supaya tidak basi. Melempar exception kalau
+    gagal, dan pemanggil yang menanganinya.
     """
-    daily = get_daily_revenue_df()
-    if daily.empty:
-        return {
-            'success': False,
-            'reason': 'Belum ada transaksi lunas sama sekali, belum ada yang bisa dipakai untuk forecast.',
-        }
+    blob = None
+    if model is not None:
+        buf = io.BytesIO()
+        joblib.dump(model, buf)
+        blob = buf.getvalue()
 
-    closed = get_regular_closed_weekdays()
-    n_days = int(len(daily))
-    metrics = {}
-    best_name = 'baseline'
-
-    if n_days < MIN_DAYS_FOR_BACKTEST:
-        reason = (
-            f'Data baru {n_days} hari (minimal {MIN_DAYS_FOR_BACKTEST} hari untuk evaluasi). '
-            'Memakai baseline median per hari-dalam-seminggu, belum bisa diuji akurasinya.'
+    with transaction.atomic():
+        PredictionModelState.objects.update_or_create(
+            name=STATE_NAME,
+            defaults={
+                'metadata': metadata,
+                'model_blob': blob,
+                'trained_at': _parse_dt(metadata.get('trained_at')),
+            },
         )
-    else:
-        test_size = min(TEST_SIZE_DAYS, n_days // 4)
-        split_idx = n_days - test_size
+    _cache.update(stamp=None, model=None)
 
-        actual, preds = _backtest_baseline(daily, closed, split_idx)
-        if actual:
-            metrics['baseline'] = _metrics(actual, preds)
 
-        if n_days < MIN_DAYS_FOR_ML:
-            reason = (
-                f'Data baru {n_days} hari (ML baru dicoba mulai {MIN_DAYS_FOR_ML} hari, '
-                'di bawah itu ML cuma menghafal). Memakai baseline.'
-            )
-        else:
-            ml_actual, ml_preds = _backtest_ml(daily, closed, split_idx)
-            if ml_actual:
-                metrics['random_forest'] = _metrics(ml_actual, ml_preds)
-
-            base, ml = metrics.get('baseline'), metrics.get('random_forest')
-            if base and ml and ml['mae'] <= base['mae'] * ML_WIN_MARGIN:
-                best_name = 'random_forest'
-                reason = (
-                    f"Random Forest lebih akurat di backtest (MAE Rp{ml['mae']:,.0f} "
-                    f"vs baseline Rp{base['mae']:,.0f})."
-                )
-            else:
-                reason = (
-                    'Random Forest tidak cukup lebih akurat dari baseline di backtest '
-                    f'(butuh MAE minimal {round((1 - ML_WIN_MARGIN) * 100)}% lebih kecil). Memakai baseline.'
-                )
-
-    metadata = {
-        'trained_at': timezone.now().isoformat(),
-        'best_model': best_name,
-        'selection_reason': reason,
-        'n_training_days': n_days,
-        'feature_columns': CALENDAR_FEATURES if best_name == 'random_forest' else [],
-        'metrics': metrics,
-    }
-
-    # State disimpan di DATABASE (bukan file) supaya tetap tersimpan di server
-    # serverless yang filesystem-nya read-only.
-    persisted, persist_error = True, None
-    try:
-        final_model = _fit_rf(daily, closed, n_days) if best_name == 'random_forest' else None
-        store.save_state(metadata, final_model)  # retrain pakai SEMUA data kalau RF menang
-    except Exception:
-        persisted = False
-        persist_error = (
-            'Evaluasi selesai, tetapi hasilnya gagal disimpan ke database. '
-            'Pastikan migrasi app prediction sudah dijalankan (python manage.py migrate).'
-        )
-        logger.exception('Gagal menyimpan state model prediksi')
-
-    return {'success': True, 'persisted': persisted, 'persist_error': persist_error, **metadata}
+def _parse_dt(value):
+    from django.utils.dateparse import parse_datetime
+    return parse_datetime(value) if isinstance(value, str) else None
