@@ -17,6 +17,7 @@ data sebelum split. Evaluasi hanya di HARI BUKA (hari libur rutin pasti Rp0,
 kalau ikut dihitung malah bikin metrik kelihatan bagus palsu).
 """
 import json
+import logging
 from datetime import datetime
 from pathlib import Path
 
@@ -33,8 +34,14 @@ from .baseline import (
 )
 from .data import SCALE_FACTOR, get_daily_revenue_df, get_regular_closed_weekdays
 
+logger = logging.getLogger(__name__)
+
 MODEL_DIR = Path(__file__).resolve().parent.parent / 'saved_models'
-MODEL_DIR.mkdir(exist_ok=True)
+try:
+    MODEL_DIR.mkdir(exist_ok=True)
+except OSError:
+    # Filesystem read-only (misal serverless Vercel): folder harus sudah ada dari deploy.
+    pass
 
 MODEL_PATH = MODEL_DIR / 'revenue_model.joblib'
 METADATA_PATH = MODEL_DIR / 'metadata.json'
@@ -160,12 +167,6 @@ def train_and_select_best():
                     f'(butuh MAE minimal {round((1 - ML_WIN_MARGIN) * 100)}% lebih kecil). Memakai baseline.'
                 )
 
-    if best_name == 'random_forest':
-        final_model = _fit_rf(daily, closed, n_days)  # retrain pakai SEMUA data
-        joblib.dump(final_model, MODEL_PATH)
-    else:
-        MODEL_PATH.unlink(missing_ok=True)  # buang model lama biar tidak basi
-
     metadata = {
         'trained_at': datetime.now().isoformat(),
         'best_model': best_name,
@@ -174,7 +175,25 @@ def train_and_select_best():
         'feature_columns': CALENDAR_FEATURES if best_name == 'random_forest' else [],
         'metrics': metrics,
     }
-    with open(METADATA_PATH, 'w') as f:
-        json.dump(metadata, f, indent=2)
 
-    return {'success': True, **metadata}
+    # Penyimpanan ke disk bisa gagal di server read-only (serverless Vercel).
+    # Evaluasi tetap dikembalikan, tapi jujur lapor bahwa hasilnya TIDAK tersimpan.
+    persisted, persist_error = True, None
+    try:
+        if best_name == 'random_forest':
+            final_model = _fit_rf(daily, closed, n_days)  # retrain pakai SEMUA data
+            joblib.dump(final_model, MODEL_PATH)
+        else:
+            MODEL_PATH.unlink(missing_ok=True)  # buang model lama biar tidak basi
+        with open(METADATA_PATH, 'w') as f:
+            json.dump(metadata, f, indent=2)
+    except OSError as exc:
+        persisted = False
+        persist_error = (
+            'Hasil evaluasi dihitung tetapi tidak bisa disimpan karena server bersifat read-only. '
+            'Jalankan "python manage.py train_revenue_model" di lokal lalu deploy ulang '
+            'file di prediction/saved_models/.'
+        )
+        logger.warning('Gagal menyimpan model/metadata: %s', exc)
+
+    return {'success': True, 'persisted': persisted, 'persist_error': persist_error, **metadata}

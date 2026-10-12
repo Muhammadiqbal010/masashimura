@@ -1,9 +1,13 @@
+import logging
+
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .ml.predict import ModelNotTrainedError, forecast
 from .ml.train import train_and_select_best
+
+logger = logging.getLogger(__name__)
 
 
 class RevenuePredictionView(APIView):
@@ -44,7 +48,14 @@ class TrainRevenuePredictionView(APIView):
     permission_classes = [IsAdminUser]
 
     def post(self, request):
-        result = train_and_select_best()
+        try:
+            result = train_and_select_best()
+        except Exception:
+            logger.exception('Training model prediksi gagal')
+            return Response(
+                {'error': 'Training gagal di server. Cek log backend.'},
+                status=500,
+            )
         if not result['success']:
             return Response({'error': result['reason']}, status=422)
         return Response(result)
