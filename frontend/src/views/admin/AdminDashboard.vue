@@ -136,6 +136,8 @@
           </div>
         </div>
 
+        <p v-if="retrainNotice" class="predict-notice" role="status">{{ retrainNotice }}</p>
+
         <div v-if="predictionLoading" class="empty-state">
           <p class="empty-text">Memuat prediksi…</p>
         </div>
@@ -143,10 +145,11 @@
         <div v-else-if="predictionError" class="empty-state">
           <div class="empty-icon">🤖</div>
           <p class="empty-text">{{ predictionError }}</p>
-          <p class="empty-hint">Butuh lebih banyak data transaksi lunas dulu sebelum model bisa dilatih</p>
+          <p v-if="predictionErrorHint" class="empty-hint">{{ predictionErrorHint }}</p>
         </div>
 
-        <div v-else class="chart-grid">
+        <template v-else>
+        <div class="chart-grid">
           <div class="chart-card">
             <h4 class="chart-title">Tren Penjualan Historis vs Prediksi</h4>
             <div class="chart-wrap">
@@ -160,6 +163,8 @@
             </div>
           </div>
         </div>
+        <PredictionInsights :prediction="prediction" />
+        </template>
       </div>
 
       <!-- TOP MENU TABLE -->
@@ -228,6 +233,7 @@ import {
 } from 'chart.js';
 import apiClient from '@/api/client';
 import { useTheme } from '@/composables/useTheme';
+import PredictionInsights from '@/components/ui/admin/PredictionInsights.vue';
 
 ChartJS.register(LineElement, PointElement, BarElement, CategoryScale, LinearScale, Filler, Tooltip, Legend);
 
@@ -311,19 +317,51 @@ const fetchStats = async () => {
 onMounted(fetchStats);
 
 // ── Prediksi Penjualan (ML) ───────────────────────────────────────────────
-const prediction        = ref(null);
-const predictionLoading = ref(true);
-const predictionError   = ref('');
-const retraining        = ref(false);
+const prediction          = ref(null);
+const predictionLoading   = ref(true);
+const predictionError     = ref('');
+const predictionErrorHint = ref('');
+const retraining          = ref(false);
+const retrainNotice       = ref('');
 
+// best_model dari API: 'baseline' atau 'random_forest'
+const MODEL_LABELS = {
+  random_forest: 'Random Forest',
+  baseline: 'Baseline (median per hari)',
+};
 const predictionModelLabel = computed(() => {
   if (!prediction.value) return '';
-  return prediction.value.best_model === 'random_forest' ? 'Random Forest' : 'Ridge Regression';
+  const key = prediction.value.best_model;
+  return MODEL_LABELS[key] || key || '';
 });
+
+// Pesan error dibedakan menurut status HTTP supaya tidak menyesatkan
+// (data kurang vs server bermasalah vs tidak ada koneksi).
+const describeError = (err, dataFallback) => {
+  if (!err.response) {
+    return { text: 'Tidak dapat terhubung ke server. Periksa koneksi lalu coba lagi.', hint: '' };
+  }
+  const status = err.response.status;
+  const apiMsg = typeof err.response.data?.error === 'string' ? err.response.data.error : '';
+  if (status === 403) {
+    return { text: 'Hanya admin yang dapat mengakses prediksi penjualan.', hint: '' };
+  }
+  if (status === 409 || status === 422) {
+    return {
+      text: apiMsg || dataFallback,
+      hint: 'Butuh lebih banyak data transaksi lunas dulu sebelum prediksi tersedia.',
+    };
+  }
+  return {
+    text: `Server sedang bermasalah (kode ${status}).`,
+    hint: 'Data transaksi kamu tidak hilang. Coba lagi sebentar.',
+  };
+};
 
 const fetchPrediction = async () => {
   predictionLoading.value = true;
   predictionError.value = '';
+  predictionErrorHint.value = '';
   try {
     const { data } = await apiClient.get('/prediction/revenue/', {
       params: { days: 7, history_days: 30 },
@@ -331,8 +369,9 @@ const fetchPrediction = async () => {
     prediction.value = data;
   } catch (err) {
     prediction.value = null;
-    predictionError.value =
-      err.response?.data?.error || 'Belum ada model prediksi yang terlatih.';
+    const { text, hint } = describeError(err, 'Belum ada data untuk dibuat prediksinya.');
+    predictionError.value = text;
+    predictionErrorHint.value = hint;
   } finally {
     predictionLoading.value = false;
   }
@@ -340,11 +379,19 @@ const fetchPrediction = async () => {
 
 const retrainModel = async () => {
   retraining.value = true;
+  retrainNotice.value = '';
   try {
-    await apiClient.post('/prediction/revenue/train/');
+    const { data } = await apiClient.post('/prediction/revenue/train/');
+    // persisted === false: evaluasi berhasil dihitung tapi server tidak bisa
+    // menyimpan model (filesystem read-only, mis. Vercel).
+    retrainNotice.value = data?.persisted === false
+      ? 'Evaluasi selesai, tetapi model baru tidak bisa disimpan di server ini. Prediksi tetap memakai model yang sudah ada.'
+      : 'Model berhasil dilatih ulang.';
     await fetchPrediction();
   } catch (err) {
-    predictionError.value = err.response?.data?.error || 'Gagal melatih ulang model.';
+    // Gagal latih ulang TIDAK boleh menghapus grafik prediksi yang sudah tampil.
+    const { text } = describeError(err, 'Data belum cukup untuk melatih ulang model.');
+    retrainNotice.value = `Gagal melatih ulang model. ${text}`;
   } finally {
     retraining.value = false;
   }
@@ -1019,6 +1066,15 @@ const formatPrice = (value) =>
 }
 .retrain-btn:hover:not(:disabled) { background: rgba(220,38,38,0.18); }
 .retrain-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.predict-notice {
+  margin: -0.75rem 0 1.25rem;
+  padding: 0.55rem 0.8rem;
+  font-size: 0.72rem;
+  font-family: 'Inter', sans-serif;
+  color: var(--text-faint);
+  border: 1px solid rgba(128, 128, 128, 0.3);
+  border-radius: 8px;
+}
 
 .chart-grid {
   display: grid;
