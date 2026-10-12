@@ -148,38 +148,9 @@
     </div>
 
     <!-- ═══════════════════════════════════════════
-         3. PROMO / EVENT (hanya muncul kalau diisi di CMS)
+         3. PROMO / EVENT (komponen sendiri, hanya muncul kalau diisi di CMS)
     ═══════════════════════════════════════════ -->
-    <section v-if="hasPromo" v-reveal class="border-b border-white/[0.06] bg-[#0a0a0a]">
-      <div class="max-w-7xl mx-auto px-6 sm:px-10 py-8 sm:py-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div class="flex items-start gap-4 min-w-0">
-          <span class="shrink-0 w-11 h-11 flex items-center justify-center border border-[#DC2626]/40 bg-[#DC2626]/10 text-[#DC2626]">
-            <Tag :size="20" />
-          </span>
-          <div class="space-y-1.5 min-w-0">
-            <p class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">Promo &amp; Event</p>
-            <h2 class="font-sora text-lg sm:text-2xl font-extrabold uppercase tracking-tight leading-tight break-words">
-              {{ cms.promo_title }}
-            </h2>
-            <p v-if="cms.promo_text" class="text-zinc-400 text-sm font-light leading-relaxed max-w-xl">
-              {{ cms.promo_text }}
-            </p>
-          </div>
-        </div>
-
-        <component
-          v-if="cms.promo_link"
-          :is="promoIsExternal ? 'a' : RouterLink"
-          v-bind="promoIsExternal
-            ? { href: cms.promo_link, target: '_blank', rel: 'noopener noreferrer' }
-            : { to: cms.promo_link }"
-          class="group shrink-0 inline-flex items-center justify-center gap-3 bg-[#DC2626] hover:bg-red-700 text-white font-sora text-[11px] uppercase tracking-[0.2em] px-8 py-4 font-bold transition-all duration-200 hover:-translate-y-0.5"
-        >
-          {{ cms.promo_link_label || "Lihat Detail" }}
-          <ArrowRight :size="14" class="transition-transform duration-200 group-hover:translate-x-1" />
-        </component>
-      </div>
-    </section>
+    <PromoBanner :promo="cms" />
 
     <!-- ═══════════════════════════════════════════
          4. BEST SELLER
@@ -622,13 +593,13 @@
 
 <script setup>
 import { ref, reactive, computed, watch, onMounted, onUnmounted } from "vue"
-import { RouterLink } from "vue-router"
 import {
   Coffee, Wifi, Zap, Utensils, DollarSign, Moon, Shield, Tv,
   Music, Gamepad2, Beer, BatteryCharging, Heart, Award, Smartphone,
-  Expand, X, ChevronLeft, ChevronRight, ArrowRight, Quote, Tag
+  Expand, X, ChevronLeft, ChevronRight, ArrowRight, Quote
 } from "lucide-vue-next"
 import apiClient from "@/api/client"
+import PromoBanner from "@/components/ui/PromoBanner.vue"
 import { useOpenStatus } from "@/composables/useOpenStatus"
 import { useScrollLock } from "@/composables/useScrollLock"
 import { getWebPrice, formatRupiah } from "@/utils/price"
@@ -663,8 +634,12 @@ const cms = ref({
   about_text:       "",
   about_image:      null,
   metric_1: "", metric_2: "", metric_3: "",
-  // Promo: kosong = section tidak tampil
-  promo_title: "", promo_text: "", promo_link: "", promo_link_label: "", promo_until: "",
+  // Promo: kosong = banner tidak tampil (diatur penuh oleh PromoBanner.vue)
+  promo_badge: "", promo_title: "", promo_text: "", promo_link: "", promo_link_label: "",
+  promo_image: null, promo_image_alt: "", promo_image_ratio: "16:9",
+  promo_layout: "split", promo_image_side: "left", promo_focus: "center",
+  promo_theme: "red", promo_align: "left", promo_overlay: 55,
+  promo_from: "", promo_until: "", promo_countdown: false, promo_dismissible: false,
 })
 
 const bestSellers     = ref([])
@@ -719,19 +694,6 @@ const headlineLines = computed(() => {
 })
 
 const parallaxY = computed(() => Math.min(scrollY.value, 700) * 0.1)
-
-// ── Promo: tampil hanya kalau judul/teks diisi & belum lewat tanggalnya ──
-const hasPromo = computed(() => {
-  const { promo_title, promo_text, promo_until } = cms.value
-  if (!promo_title && !promo_text) return false
-  if (promo_until) {
-    // promo_until format YYYY-MM-DD, berlaku sampai akhir hari (WIB)
-    const end = new Date(`${promo_until}T23:59:59+07:00`)
-    if (!isNaN(end) && end.getTime() < Date.now()) return false
-  }
-  return true
-})
-const promoIsExternal = computed(() => /^https?:\/\//i.test(cms.value.promo_link || ""))
 
 // ── Metric count-up (jalan setelah terlihat DAN data CMS + jumlah menu siap) ──
 const metricsRef      = ref(null)
@@ -925,12 +887,26 @@ const fetchCMSData = async () => {
     metric_1: t(d.metric_1) || "2024",
     metric_2: t(d.metric_2) || "50+",
     metric_3: t(d.metric_3) || "★★★★★",
-    // Promo: TANPA default. Kosong di CMS = section tidak muncul.
+    // Promo: TANPA default isi. Kosong di CMS = banner tidak muncul.
+    // Opsi tampilan dikirim apa adanya; PromoBanner yang memvalidasi & punya fallback.
+    promo_badge:      t(d.promo_badge)      || "",
     promo_title:      t(d.promo_title)      || "",
     promo_text:       t(d.promo_text)       || "",
     promo_link:       t(d.promo_link)       || "",
     promo_link_label: t(d.promo_link_label) || "",
-    promo_until:      t(d.promo_until)      || "",
+    promo_image:      d.promo_image         || null,
+    promo_image_alt:  t(d.promo_image_alt)  || "",
+    promo_image_ratio: d.promo_image_ratio  || "16:9",
+    promo_layout:     d.promo_layout        || "split",
+    promo_image_side: d.promo_image_side    || "left",
+    promo_focus:      d.promo_focus         || "center",
+    promo_theme:      d.promo_theme         || "red",
+    promo_align:      d.promo_align         || "left",
+    promo_overlay:    d.promo_overlay ?? 55,
+    promo_from:       d.promo_from          || "",
+    promo_until:      d.promo_until         || "",
+    promo_countdown:  !!d.promo_countdown,
+    promo_dismissible: !!d.promo_dismissible,
   }
   loading.cms = false
 }
