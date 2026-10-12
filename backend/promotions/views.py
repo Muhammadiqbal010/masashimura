@@ -1,7 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAdminUser
+from accounts.permissions import IsAdminLevel
 from .models import Promo
 from .serializers import PromoSerializer, ValidatePromoSerializer
 
@@ -9,7 +9,7 @@ from .serializers import PromoSerializer, ValidatePromoSerializer
 class PromoViewSet(viewsets.ModelViewSet):
     queryset = Promo.objects.all()
     serializer_class = PromoSerializer
-    permission_classes = [IsAdminUser]  # cuma admin/owner yang bisa CRUD
+    permission_classes = [IsAdminLevel]  # cuma admin/owner yang bisa CRUD
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)

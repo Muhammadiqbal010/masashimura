@@ -13,7 +13,6 @@ export const orderAPI = {
   getAvailablePointRewards: (phone) =>
     apiClient.get("/orders/point-rewards/available/", { params: { phone } }),
 
-  getLoyalCustomers: () => apiClient.get("/orders/loyal/"),
   getOrderReports: (params = {}) =>
     apiClient.get("/orders/reports/", { params }),
 

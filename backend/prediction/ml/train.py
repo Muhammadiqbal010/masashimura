@@ -16,15 +16,13 @@ tiap hari uji memakai histori SEBELUM hari itu saja, ML dilatih hanya dari
 data sebelum split. Evaluasi hanya di HARI BUKA (hari libur rutin pasti Rp0,
 kalau ikut dihitung malah bikin metrik kelihatan bagus palsu).
 """
-import json
 import logging
-from datetime import datetime
-from pathlib import Path
 
-import joblib
 import numpy as np
+from django.utils import timezone
 from sklearn.ensemble import RandomForestRegressor
 
+from . import store
 from .baseline import (
     CALENDAR_FEATURES,
     build_calendar_features,
@@ -35,16 +33,6 @@ from .baseline import (
 from .data import SCALE_FACTOR, get_daily_revenue_df, get_regular_closed_weekdays
 
 logger = logging.getLogger(__name__)
-
-MODEL_DIR = Path(__file__).resolve().parent.parent / 'saved_models'
-try:
-    MODEL_DIR.mkdir(exist_ok=True)
-except OSError:
-    # Filesystem read-only (misal serverless Vercel): folder harus sudah ada dari deploy.
-    pass
-
-MODEL_PATH = MODEL_DIR / 'revenue_model.joblib'
-METADATA_PATH = MODEL_DIR / 'metadata.json'
 
 TEST_SIZE_DAYS = 14        # jumlah hari terakhir untuk backtest (dikecilkan otomatis kalau data pendek)
 MIN_DAYS_FOR_BACKTEST = 14
@@ -123,7 +111,7 @@ def train_and_select_best():
     if daily.empty:
         return {
             'success': False,
-            'reason': 'Belum ada transaksi completed sama sekali, belum ada yang bisa dipakai untuk forecast.',
+            'reason': 'Belum ada transaksi lunas sama sekali, belum ada yang bisa dipakai untuk forecast.',
         }
 
     closed = get_regular_closed_weekdays()
@@ -168,7 +156,7 @@ def train_and_select_best():
                 )
 
     metadata = {
-        'trained_at': datetime.now().isoformat(),
+        'trained_at': timezone.now().isoformat(),
         'best_model': best_name,
         'selection_reason': reason,
         'n_training_days': n_days,
@@ -176,24 +164,18 @@ def train_and_select_best():
         'metrics': metrics,
     }
 
-    # Penyimpanan ke disk bisa gagal di server read-only (serverless Vercel).
-    # Evaluasi tetap dikembalikan, tapi jujur lapor bahwa hasilnya TIDAK tersimpan.
+    # State disimpan di DATABASE (bukan file) supaya tetap tersimpan di server
+    # serverless yang filesystem-nya read-only.
     persisted, persist_error = True, None
     try:
-        if best_name == 'random_forest':
-            final_model = _fit_rf(daily, closed, n_days)  # retrain pakai SEMUA data
-            joblib.dump(final_model, MODEL_PATH)
-        else:
-            MODEL_PATH.unlink(missing_ok=True)  # buang model lama biar tidak basi
-        with open(METADATA_PATH, 'w') as f:
-            json.dump(metadata, f, indent=2)
-    except OSError as exc:
+        final_model = _fit_rf(daily, closed, n_days) if best_name == 'random_forest' else None
+        store.save_state(metadata, final_model)  # retrain pakai SEMUA data kalau RF menang
+    except Exception:
         persisted = False
         persist_error = (
-            'Hasil evaluasi dihitung tetapi tidak bisa disimpan karena server bersifat read-only. '
-            'Jalankan "python manage.py train_revenue_model" di lokal lalu deploy ulang '
-            'file di prediction/saved_models/.'
+            'Evaluasi selesai, tetapi hasilnya gagal disimpan ke database. '
+            'Pastikan migrasi app prediction sudah dijalankan (python manage.py migrate).'
         )
-        logger.warning('Gagal menyimpan model/metadata: %s', exc)
+        logger.exception('Gagal menyimpan state model prediksi')
 
     return {'success': True, 'persisted': persisted, 'persist_error': persist_error, **metadata}

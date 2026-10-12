@@ -1,6 +1,6 @@
 import logging
 
-from rest_framework.permissions import IsAdminUser
+from accounts.permissions import IsAdminLevel
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -16,7 +16,7 @@ class RevenuePredictionView(APIView):
     Balikin prediksi revenue harian untuk N hari ke depan + total estimasi,
     plus info model apa yang dipakai dan seberapa akurat dia pas dievaluasi.
     """
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminLevel]
 
     def get(self, request):
         try:
@@ -45,7 +45,7 @@ class TrainRevenuePredictionView(APIView):
     Trigger (re)training manual dari dashboard — misal habis ada banyak
     order baru dan mau update modelnya tanpa nunggu jadwal otomatis.
     """
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminLevel]
 
     def post(self, request):
         try:

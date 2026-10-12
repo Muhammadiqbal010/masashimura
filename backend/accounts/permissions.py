@@ -27,3 +27,39 @@ class IsAdminOrOwner(permissions.BasePermission):
             return request.user.profile.role in ['owner', 'admin']
 
         return False
+
+
+def _profile_role(user):
+    """Role dari UserProfile ('owner'/'admin'/'kasir'/'pelanggan') atau None."""
+    profile = getattr(user, 'profile', None)
+    return getattr(profile, 'role', None)
+
+
+class IsStaffLevel(permissions.BasePermission):
+    """
+    Semua staff: owner, admin, kasir. Dipakai endpoint operasional (POS, tagihan,
+    pesanan aktif). Pengganti IsAdminUser, yang hanya mengecek is_staff padahal
+    akun staff buatan form Staff tidak pernah diberi is_staff. Akun is_staff /
+    superuser yang sudah ada tetap lolos, jadi tidak ada yang kehilangan akses.
+    """
+    def has_permission(self, request, view):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        if user.is_superuser or user.is_staff:
+            return True
+        return _profile_role(user) in ('owner', 'admin', 'kasir')
+
+
+class IsAdminLevel(permissions.BasePermission):
+    """
+    Owner atau admin saja (kasir TIDAK termasuk). Dipakai laporan, statistik,
+    keuangan, pengaturan, dan prediksi. Pengganti IsAdminUser (lihat IsStaffLevel).
+    """
+    def has_permission(self, request, view):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        if user.is_superuser or user.is_staff:
+            return True
+        return _profile_role(user) in ('owner', 'admin')

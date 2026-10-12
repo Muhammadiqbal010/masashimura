@@ -89,6 +89,7 @@
           Metode yang dipakai saat ini: <strong>{{ methodLabel }}</strong>.
           <template v-if="prediction.selection_reason"> {{ prediction.selection_reason }}</template>
         </p>
+        <p v-if="trainedAtLabel" class="pi-meta">Terakhir dilatih dan dievaluasi: {{ trainedAtLabel }}</p>
 
         <p v-if="metricsMismatch" class="pi-note">
           Angka evaluasi di bawah berasal dari pelatihan sebelumnya dan belum mencerminkan
@@ -119,7 +120,7 @@
           </table>
         </div>
         <p v-else class="pi-meta">
-          Belum ada evaluasi model (data historis belum cukup untuk pengujian).
+          Belum ada evaluasi tersimpan. Klik Latih Ulang untuk menjalankannya (butuh minimal 14 hari data).
         </p>
 
         <p v-if="metricRows.length" class="pi-meta pi-caption">
@@ -209,6 +210,11 @@ const MODEL_SHORT = {
 };
 const methodKey = computed(() => props.prediction.best_model || props.prediction.method);
 const methodLabel = computed(() => METHOD_LABELS[methodKey.value] || methodKey.value || '—');
+
+const trainedAtLabel = computed(() => {
+  const t = props.prediction.trained_at;
+  return t ? new Date(t).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : '';
+});
 
 const metrics = computed(() => props.prediction.metrics || {});
 const metricRows = computed(() =>

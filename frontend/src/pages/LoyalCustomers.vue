@@ -50,6 +50,15 @@
       <p>Memuat data pelanggan...</p>
     </div>
 
+    <!-- ── ERROR ──────────────────────────────────────────────────── -->
+    <div v-else-if="loyalty.error" class="table-card">
+      <div class="empty-cell">
+        <div class="empty-icon">⚠️</div>
+        <p class="empty-text">{{ loyalty.error }}</p>
+        <button type="button" class="action-btn action-active" @click="fetchAdminLoyalData">Coba lagi</button>
+      </div>
+    </div>
+
     <!-- ── TABLE ──────────────────────────────────────────────────── -->
     <div v-else class="table-card">
       <div class="table-card-head">
@@ -229,22 +238,9 @@ const selectedCustomer  = ref(null);
 const adjustAmount      = ref(null);
 const adjustNote        = ref("");
 const isSaving          = ref(false);
-const expiryMonths      = ref(0);
+const expiryMonths      = computed(() => loyalty.expiryMonths);
 
-const fetchAdminLoyalData = async () => {
-  try {
-    const res  = await apiClient.get("/orders/loyal-customers/");
-    const data = res.data;
-    if (data?.customers) {
-      loyalty.loyalCustomers = data.customers;
-      expiryMonths.value     = data.settings?.points_expiry_months ?? 0;
-    } else if (Array.isArray(data)) {
-      loyalty.loyalCustomers = data;
-    }
-  } catch {
-    loyalty.fetchLoyalCustomers();
-  }
-};
+const fetchAdminLoyalData = () => loyalty.fetchLoyalCustomers();
 
 const expiryLabel = computed(() =>
   expiryMonths.value > 0 ? `${expiryMonths.value} bulan tidak order` : 'tidak pernah hangus (nonaktif)'

@@ -5,42 +5,39 @@ import { statsAPI } from "@/api";
 
 export const useLoyaltyStore = defineStore("loyalty", () => {
   const loyalCustomers = ref([]);
+  const expiryMonths = ref(0);
   const loading = ref(false);
+  const error = ref("");
 
   const fetchLoyalCustomers = async () => {
     loading.value = true;
+    error.value = "";
 
     try {
-      const response = await statsAPI.getLoyalCustomers();
-      // Pastikan data yang diterima adalah array sebelum disimpan
-      loyalCustomers.value = Array.isArray(response.data) ? response.data : [];
-    } catch (error) {
-      console.warn(
-        "⚠️ Gagal mengambil data pelanggan loyal, menggunakan dummy data:",
-        error,
-      );
+      const { data } = await statsAPI.getLoyalCustomers();
 
-      // Dummy data tetap disediakan agar UI tetap bisa diuji saat backend belum siap
-      loyalCustomers.value = [
-        {
-          phone: "6281234567890",
-          name: "Budi",
-          total_orders: 15,
-          total_spent: 2450000,
-          points: 42,
-          last_order_at: new Date().toISOString(),
-          points_expired: false,
-        },
-        {
-          phone: "6289876543210",
-          name: "Siti",
-          total_orders: 12,
-          total_spent: 1850000,
-          points: 8,
-          last_order_at: new Date().toISOString(),
-          points_expired: false,
-        },
-      ];
+      if (Array.isArray(data?.customers)) {
+        // Bentuk respons saat ini: { settings, customers }
+        loyalCustomers.value = data.customers;
+        expiryMonths.value = data.settings?.points_expiry_months ?? 0;
+      } else if (Array.isArray(data)) {
+        loyalCustomers.value = data;
+      } else {
+        loyalCustomers.value = [];
+      }
+    } catch (err) {
+      // JANGAN pernah mengisi data dummy di sini: admin bisa mengira itu pelanggan
+      // asli dan menyesuaikan poinnya. Cukup kosongkan dan tampilkan error yang jujur.
+      loyalCustomers.value = [];
+      const status = err?.response?.status;
+      if (!err?.response) {
+        error.value = "Tidak dapat terhubung ke server. Periksa koneksi lalu coba lagi.";
+      } else if (status === 403) {
+        error.value = "Akun kamu tidak punya akses ke data pelanggan loyal.";
+      } else {
+        error.value = `Server mengembalikan error (${status}). Data pelanggan tidak hilang, coba lagi sebentar.`;
+      }
+      console.error("Gagal memuat pelanggan loyal:", err);
     } finally {
       loading.value = false;
     }
@@ -48,7 +45,9 @@ export const useLoyaltyStore = defineStore("loyalty", () => {
 
   return {
     loyalCustomers,
+    expiryMonths,
     loading,
+    error,
     fetchLoyalCustomers,
   };
 });

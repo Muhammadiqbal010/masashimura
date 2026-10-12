@@ -13,7 +13,9 @@ from django.utils.dateparse import parse_date, parse_datetime
 
 from rest_framework import viewsets
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.permissions import AllowAny
+
+from accounts.permissions import IsAdminLevel, IsStaffLevel
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -412,7 +414,7 @@ GATEWAY_NOT_PAID_Q = (
 
 
 @api_view(["GET"])
-@permission_classes([IsAdminUser])
+@permission_classes([IsAdminLevel])
 def list_orders(request):
     orders = (
         Order.objects
@@ -526,7 +528,7 @@ def _delete_order_permanently(order, deleted_by=""):
 
 
 @api_view(["GET", "DELETE"])
-@permission_classes([IsAdminUser])
+@permission_classes([IsStaffLevel])
 def get_order(request, pk):
     order = get_object_or_404(
         Order.objects.select_related("promo").prefetch_related("items__menu", "payments"),
@@ -534,8 +536,8 @@ def get_order(request, pk):
     )
 
     if request.method == "DELETE":
-        # IsAdminUser cuma cek is_staff — BUKAN role owner. Hapus permanen
-        # cuma boleh owner, jadi dicek manual di sini juga.
+        # IsStaffLevel mengizinkan owner, admin, dan kasir. Hapus permanen
+        # cuma boleh owner, jadi dicek manual di sini.
         profile = getattr(request.user, "profile", None)
         if not profile or profile.role != "owner":
             return Response(
@@ -555,7 +557,7 @@ def get_order(request, pk):
     return Response(OrderSerializer(order).data)
 
 @api_view(["GET"])
-@permission_classes([IsAdminUser])
+@permission_classes([IsStaffLevel])
 def active_orders_per_day(request):
     raw_date = request.query_params.get("target_date")
     if not raw_date:
@@ -686,7 +688,7 @@ def available_point_rewards(request):
 class PointRewardViewSet(viewsets.ModelViewSet):
     queryset = PointReward.objects.select_related('menu').all()
     serializer_class = PointRewardSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminLevel]
 
 
 # ─────────────────────────────────────────────
@@ -694,7 +696,7 @@ class PointRewardViewSet(viewsets.ModelViewSet):
 # ─────────────────────────────────────────────
 
 @api_view(["GET"])
-@permission_classes([IsAdminUser])
+@permission_classes([IsAdminLevel])
 def order_reports(request):
     month = request.query_params.get("month")
     year  = request.query_params.get("year")
@@ -721,7 +723,7 @@ def order_reports(request):
 
 
 class DashboardStatsView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminLevel]
 
     def get(self, request):
         date_from = request.query_params.get('date_from')
@@ -778,7 +780,7 @@ class DashboardStatsView(APIView):
 
 
 @api_view(["GET"])
-@permission_classes([IsAdminUser])
+@permission_classes([IsAdminLevel])
 def admin_dashboard_daily_stats(request):
     target_date = request.query_params.get("target_date")
 
@@ -805,7 +807,7 @@ def admin_dashboard_daily_stats(request):
 
 
 @api_view(["GET"])
-@permission_classes([IsAdminUser])
+@permission_classes([IsAdminLevel])
 def finance_monthly_summary(request):
     from django.db.models.functions import ExtractMonth, TruncMonth
 
@@ -847,7 +849,7 @@ def finance_monthly_summary(request):
 
 
 @api_view(["GET"])
-@permission_classes([IsAdminUser])
+@permission_classes([IsAdminLevel])
 def finance_daily_summary(request):
     """
     GET /api/orders/finance/daily/?year=2026&month=6
@@ -902,7 +904,7 @@ def finance_daily_summary(request):
 # ─────────────────────────────────────────────
 
 @api_view(["GET"])
-@permission_classes([IsAdminUser])
+@permission_classes([IsAdminLevel])
 def export_excel_report(request):
     """
     GET /api/orders/export/finance-excel/?mode=monthly&month=7&year=2026
@@ -913,7 +915,7 @@ def export_excel_report(request):
 
 
 @api_view(["GET"])
-@permission_classes([IsAdminUser])
+@permission_classes([IsAdminLevel])
 def export_pdf_report(request):
     """
     GET /api/orders/export/finance-pdf/?mode=monthly&month=7&year=2026
@@ -928,7 +930,7 @@ def export_pdf_report(request):
 # ─────────────────────────────────────────────
 
 class LoyaltySettingsView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminLevel]
 
     def get(self, request):
         return Response(LoyaltySettingsSerializer(LoyaltySettings.get_settings()).data)
@@ -946,7 +948,7 @@ class LoyalCustomersView(APIView):
     Sumber data langsung dari CustomerLoyalty (points/total_spent/total_orders/
     last_order_at udah kesimpen real-time lewat signal tiap order completed).
     """
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminLevel]
 
     def get(self, request):
         settings  = LoyaltySettings.get_settings()
@@ -975,7 +977,7 @@ class AdjustPointsView(APIView):
     Adjust poin manual (nambah/mengurangi), alasan wajib & tercatat sebagai
     PointAdjustment (audit log).
     """
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminLevel]
 
     @transaction.atomic
     def post(self, request, phone):
@@ -1024,7 +1026,7 @@ class AdjustPointsView(APIView):
 # ─────────────────────────────────────────────
 
 @api_view(["GET"])
-@permission_classes([IsAdminUser])
+@permission_classes([IsStaffLevel])
 def unpaid_orders(request):
     search = request.query_params.get("search", "")
 
@@ -1047,7 +1049,7 @@ def unpaid_orders(request):
 
 
 @api_view(["PATCH"])
-@permission_classes([IsAdminUser])
+@permission_classes([IsStaffLevel])
 @transaction.atomic
 def pay_order(request, pk):
     """
@@ -1152,7 +1154,7 @@ def pay_order(request, pk):
 
 
 @api_view(["PATCH"])
-@permission_classes([IsAdminUser])
+@permission_classes([IsStaffLevel])
 @transaction.atomic
 def cancel_order(request, pk):
     """
@@ -1212,7 +1214,7 @@ NOTIFICATION_BACKLOG_SKIP_THRESHOLD = 50
 
 
 @api_view(["GET"])
-@permission_classes([IsAdminUser])
+@permission_classes([IsStaffLevel])
 def new_order_notifications(request):
     """
     GET /api/orders/notifications/?after_id=123&after_payment_id=45
@@ -1286,7 +1288,7 @@ def new_order_notifications(request):
 # ─────────────────────────────────────────────
 
 @api_view(["GET"])
-@permission_classes([IsAdminUser])
+@permission_classes([IsAdminLevel])
 def order_history(request):
     """
     GET /api/orders/history/?period=today|week|month|year
@@ -1316,7 +1318,7 @@ def order_history(request):
 
 
 @api_view(["GET"])
-@permission_classes([IsAdminUser])
+@permission_classes([IsAdminLevel])
 def order_full_report(request):
     from django.db.models.functions import ExtractHour, TruncDate, TruncMonth
 
@@ -1560,7 +1562,7 @@ class StoreSettingsView(APIView):
     def get_permissions(self):
         if self.request.method == "GET":
             return [AllowAny()]
-        return [IsAdminUser()]
+        return [IsAdminLevel()]
 
     def get(self, request):
         return Response(StoreSettingsSerializer(StoreSettings.get()).data)
@@ -1609,7 +1611,7 @@ def _refresh_totals(order):
 
 
 @api_view(["POST"])
-@permission_classes([IsAdminUser])
+@permission_classes([IsStaffLevel])
 @transaction.atomic
 def add_order_item(request, pk):
     """
@@ -1659,7 +1661,7 @@ def add_order_item(request, pk):
     return Response(OrderSerializer(order).data)
 
 @api_view(["PATCH", "DELETE"])
-@permission_classes([IsAdminUser])
+@permission_classes([IsStaffLevel])
 @transaction.atomic
 def order_item_detail(request, pk, item_id):
     """
@@ -1705,7 +1707,7 @@ def order_item_detail(request, pk, item_id):
 
 
 @api_view(["POST"])
-@permission_classes([IsAdminUser])
+@permission_classes([IsStaffLevel])
 @transaction.atomic
 def split_order(request, pk):
     """

@@ -1,5 +1,8 @@
 """
-Agregasi data Order (status=completed) jadi time series revenue harian.
+Agregasi data Order jadi time series revenue harian.
+
+Definisi omzet SAMA dengan kartu Total Revenue di dashboard (DashboardStatsView):
+order yang sudah dibayar (payment_status='paid') dan tidak dibatalkan.
 """
 from datetime import timedelta
 import pandas as pd
@@ -35,7 +38,11 @@ def get_daily_revenue_df() -> pd.DataFrame:
     """
     Return DataFrame dengan kolom: date, revenue (dalam Rupiah asli).
     """
-    rows = Order.objects.filter(status='completed').values_list('created_at', 'total_price')
+    rows = (
+        Order.objects.filter(payment_status='paid')
+        .exclude(status='cancelled')
+        .values_list('created_at', 'total_price')
+    )
 
     if not rows:
         return pd.DataFrame(columns=['date', 'revenue'])

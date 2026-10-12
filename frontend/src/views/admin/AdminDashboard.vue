@@ -116,7 +116,7 @@
           <div class="predict-title-block">
             <h3 class="table-title">Prediksi Penjualan (Machine Learning)</h3>
             <p class="table-sub" v-if="prediction && !predictionError">
-              Model: {{ predictionModelLabel }} · Update terakhir {{ formatDateTime(prediction.trained_at) }}
+              Model: {{ predictionModelLabel }}<template v-if="predictionDataEnd"> · Data s.d. {{ predictionDataEnd }}</template><template v-if="prediction.trained_at"> · Dilatih {{ formatDateTime(prediction.trained_at) }}</template>
             </p>
             <p class="table-sub" v-else>Estimasi penjualan berdasarkan data historis</p>
           </div>
@@ -335,6 +335,12 @@ const predictionModelLabel = computed(() => {
   return MODEL_LABELS[key] || key || '';
 });
 
+// Tanggal data terakhir yang dipakai untuk membuat prediksi (bukan tanggal training).
+const predictionDataEnd = computed(() => {
+  const end = prediction.value?.data_range?.end;
+  return end ? formatDate(end) : '';
+});
+
 // Pesan error dibedakan menurut status HTTP supaya tidak menyesatkan
 // (data kurang vs server bermasalah vs tidak ada koneksi).
 const describeError = (err, dataFallback) => {
@@ -382,11 +388,10 @@ const retrainModel = async () => {
   retrainNotice.value = '';
   try {
     const { data } = await apiClient.post('/prediction/revenue/train/');
-    // persisted === false: evaluasi berhasil dihitung tapi server tidak bisa
-    // menyimpan model (filesystem read-only, mis. Vercel).
+    // persisted === false: evaluasi berhasil dihitung tapi gagal disimpan ke database.
     retrainNotice.value = data?.persisted === false
-      ? 'Evaluasi selesai, tetapi model baru tidak bisa disimpan di server ini. Prediksi tetap memakai model yang sudah ada.'
-      : 'Model berhasil dilatih ulang.';
+      ? (data.persist_error || 'Evaluasi selesai, tetapi hasilnya gagal disimpan. Prediksi tetap memakai model yang sudah ada.')
+      : 'Model berhasil dilatih ulang dan tersimpan.';
     await fetchPrediction();
   } catch (err) {
     // Gagal latih ulang TIDAK boleh menghapus grafik prediksi yang sudah tampil.

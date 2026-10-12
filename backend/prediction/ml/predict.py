@@ -4,7 +4,7 @@ Generate forecast revenue harian N hari ke depan.
 Metode default: BASELINE (median berbobot per hari-dalam-seminggu, lihat
 baseline.py). Model Random Forest hanya dipakai kalau train.py sudah
 membuktikan lewat backtest bahwa dia lebih akurat (best_model di
-metadata.json == 'random_forest') dan file modelnya berhasil di-load.
+metadata di database == 'random_forest') dan file modelnya berhasil di-load.
 Selain itu otomatis jatuh ke baseline, jadi endpoint ini TIDAK lagi error
 409 cuma karena model belum pernah dilatih.
 
@@ -16,15 +16,13 @@ dipakai buat keputusan besar.
 Tidak ada fitur lag di sini, jadi tidak ada lagi masalah "lag dibekukan"
 atau error yang menumpuk antar hari forecast.
 """
-import json
 import logging
 from datetime import timedelta
-from pathlib import Path
 
-import joblib
 import numpy as np
 import pandas as pd
 
+from . import store
 from .baseline import (
     CALENDAR_FEATURES,
     build_calendar_features,
@@ -37,10 +35,6 @@ from .baseline import (
 from .data import SCALE_FACTOR, get_daily_revenue_df, get_regular_closed_weekdays
 
 logger = logging.getLogger(__name__)
-
-MODEL_DIR = Path(__file__).resolve().parent.parent / 'saved_models'
-MODEL_PATH = MODEL_DIR / 'revenue_model.joblib'
-METADATA_PATH = MODEL_DIR / 'metadata.json'
 
 MIN_N_DAYS = 1
 MAX_N_DAYS = 90
@@ -84,32 +78,20 @@ def _validate_inputs(n_days: int, history_days: int) -> tuple[int, int]:
 
 
 def _load_metadata() -> dict:
-    if not METADATA_PATH.exists():
-        return {}
-    try:
-        with open(METADATA_PATH) as f:
-            return json.load(f)
-    except (OSError, ValueError):
-        logger.warning('metadata.json gagal dibaca, forecast pakai baseline.', exc_info=True)
-        return {}
+    return store.load_metadata()
 
 
 def _load_ml_model(metadata: dict):
-    """Return model ML kalau memang terpilih & bisa di-load, selain itu None (-> baseline)."""
-    if metadata.get('best_model') != 'random_forest' or not MODEL_PATH.exists():
+    """Return model ML kalau terpilih & bisa di-load, selain itu None (-> baseline)."""
+    if metadata.get('best_model') != 'random_forest':
         return None
-    # Model lama (sebelum versi baseline) dilatih dengan 8 fitur termasuk lag.
-    # Kalau fiturnya tidak sama dengan fitur kalender sekarang, JANGAN dipakai
+    # Model dengan fitur yang tidak sama dengan fitur kalender sekarang JANGAN dipakai
     # (bisa error / hasil ngawur) -- jatuh ke baseline sampai "Latih Ulang".
     if metadata.get('feature_columns') != CALENDAR_FEATURES:
         logger.warning('Model tersimpan memakai fitur lama, forecast pakai baseline. '
                        'Latih ulang model untuk memperbarui.')
         return None
-    try:
-        return joblib.load(MODEL_PATH)
-    except Exception:
-        logger.exception('Model ML gagal di-load, forecast pakai baseline.')
-        return None
+    return store.load_model()
 
 
 def _summarize_weekly(forecast_list: list) -> list:
