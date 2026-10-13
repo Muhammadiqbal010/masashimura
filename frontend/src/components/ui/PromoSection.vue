@@ -14,10 +14,10 @@
 <template>
   <section
     v-if="rows.length"
-    class="border-b border-white/[0.06] bg-[#0a0a0a]"
+    class="promo-section relative border-b border-white/[0.06]"
     aria-label="Promo dan event"
   >
-    <div class="max-w-7xl mx-auto px-6 sm:px-10 py-8 sm:py-10">
+    <div class="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14 lg:px-10">
       <TransitionGroup name="promo" tag="div" appear class="promo-rows">
         <div
           v-for="row in rows"
@@ -83,12 +83,26 @@ const rows = computed(() => buildRows(visible.value))
 </script>
 
 <style scoped>
-.promo-rows { display: flex; flex-direction: column; gap: 2rem; }
+/* Latar sama dengan halaman (#0B0A0A), ditambah sorot halus supaya promo terasa menonjol */
+.promo-section {
+  background:
+    radial-gradient(50% 80% at 50% 0%, rgba(215, 38, 61, 0.07), transparent 70%),
+    #0B0A0A;
+}
+
+.promo-rows { display: flex; flex-direction: column; gap: 1.25rem; }
+@media (min-width: 640px) {
+  .promo-rows { gap: 1.5rem; }
+}
+
 .promo-row {
   display: grid;
   grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr));
-  gap: 1.5rem;
+  gap: 1.25rem;
   align-items: start;
+}
+@media (min-width: 640px) {
+  .promo-row { gap: 1.5rem; }
 }
 @media (max-width: 767px) {
   .promo-row { grid-template-columns: minmax(0, 1fr); }

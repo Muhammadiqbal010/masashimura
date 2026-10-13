@@ -8,7 +8,7 @@
     compact  = true kalau kartu berbagi baris dengan kartu lain (2-3 menyamping)
 -->
 <template>
-  <article class="promo-card" :class="cardClass" :style="[vars, cardStyle]">
+  <article class="promo-card" :class="[cardClass, { 'has-close': p.dismissible }]" :style="[vars, cardStyle]">
 
     <button
       v-if="p.dismissible"
@@ -35,7 +35,7 @@
     </div>
 
     <div class="promo-copy" :class="{ 'is-center': isCenter }">
-      <p class="promo-eyebrow"><i></i>{{ p.badge || "Promo & Event" }}</p>
+      <p class="promo-eyebrow">{{ p.badge || "Promo & Event" }}</p>
       <h2 class="promo-title" :class="'promo-title--' + layout">{{ p.title }}</h2>
       <p v-if="p.text" class="promo-text">{{ p.text }}</p>
       <p v-if="metaText" class="promo-meta">{{ metaText }}</p>
@@ -49,7 +49,7 @@
         class="promo-btn group"
       >
         {{ p.link_label || "Lihat Detail" }}
-        <ArrowRight :size="14" class="promo-btn-arrow" />
+        <ArrowRight :size="16" class="promo-btn-arrow" />
       </component>
     </div>
   </article>
@@ -125,7 +125,7 @@ const mediaStyle = computed(() => {
 
 const shade = computed(() => {
   const s = Math.min(Math.max(Number(p.value.overlay) || 0, 0), 90) / 100
-  return `linear-gradient(to top, rgba(8,8,8,${Math.min(1, s + 0.35)}), rgba(8,8,8,${(s * 0.55).toFixed(2)}) 60%, rgba(8,8,8,${(s * 0.2).toFixed(2)}))`
+  return `linear-gradient(to top, rgba(11,10,10,${Math.min(1, s + 0.35)}), rgba(11,10,10,${(s * 0.55).toFixed(2)}) 60%, rgba(11,10,10,${(s * 0.2).toFixed(2)}))`
 })
 
 // ── Teks tanggal + hitung mundur ─────────────────────────────────────────
@@ -155,7 +155,32 @@ const metaText = computed(() => {
 </script>
 
 <style scoped>
-.promo-card { position: relative; display: flex; align-items: center; gap: 1.5rem; min-width: 0; }
+/*
+  Palet: Surface #141211 · Washi #F5F0EA · Muted #A39A93
+  Warna aksen (--pa) dan warna teks tombol (--pa-ink) tetap diambil dari tema yang
+  dipilih admin lewat THEMES, jadi pilihan tema di admin tetap berfungsi.
+*/
+
+.promo-card { position: relative; display: flex; align-items: center; gap: 1.75rem; min-width: 0; }
+
+/* Kartu berisi (split, poster, teks): satu kartu surface dengan padding */
+.promo-card--split,
+.promo-card--poster,
+.promo-card--text {
+  border-radius: 1.75rem;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  background:
+    radial-gradient(70% 90% at 100% 0%, var(--pa-soft), transparent 70%),
+    linear-gradient(180deg, rgb(255 255 255 / 0.04), rgb(255 255 255 / 0.01)),
+    #141211;
+  padding: 1.25rem;
+}
+@media (min-width: 640px) {
+  .promo-card--split,
+  .promo-card--poster,
+  .promo-card--text { padding: 1.5rem; }
+}
+
 .promo-card--split.is-right { flex-direction: row-reverse; }
 .promo-card--poster { flex-direction: column; align-items: flex-start; }
 .promo-card--poster.is-center { align-items: center; }
@@ -167,31 +192,29 @@ const metaText = computed(() => {
   aspect-ratio: var(--ratio, 16 / 9);
   min-height: 15rem;
   overflow: hidden;
+  border-radius: 1.75rem;
   border: 1px solid rgb(255 255 255 / 0.1);
-  background: #18181b;
+  background: #141211;
 }
 
-/* Tombol tutup */
+/* Tombol tutup: selalu di dalam kartu, pojok kanan atas */
 .promo-close {
-  position: absolute; top: 0; right: 0; z-index: 3;
+  position: absolute; top: 0.75rem; right: 0.75rem; z-index: 3;
   display: flex; align-items: center; justify-content: center;
-  width: 2.25rem; height: 2.25rem;
-  color: #d4d4d8; background: rgb(0 0 0 / 0.55);
+  width: 2.5rem; height: 2.5rem;
+  color: #F5F0EA; background: rgb(0 0 0 / 0.55);
   border: 1px solid rgb(255 255 255 / 0.15);
-  backdrop-filter: blur(4px); cursor: pointer;
+  border-radius: 9999px;
+  backdrop-filter: blur(12px); cursor: pointer;
   transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
-.promo-close:hover { color: #fff; background: rgb(0 0 0 / 0.85); border-color: var(--pa); }
-.promo-close:focus-visible { outline: 2px solid var(--pa); outline-offset: 2px; }
-.promo-card--split .promo-close,
-.promo-card--poster .promo-close,
-.promo-card--text .promo-close { top: -0.25rem; right: -0.25rem; }
-.promo-card--split.is-compact .promo-close,
-.promo-card--poster.is-compact .promo-close { top: 0; right: 0; } /* di atas gambar */
+.promo-close:hover { background: rgb(0 0 0 / 0.85); border-color: var(--pa); }
+.promo-close:focus-visible { outline: 2px solid #D4B483; outline-offset: 2px; }
 
 .promo-icon {
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-  width: 2.75rem; height: 2.75rem;
+  width: 3rem; height: 3rem;
+  border-radius: 0.875rem;
   border: 1px solid var(--pa-line); background: var(--pa-soft); color: var(--pa);
 }
 
@@ -199,60 +222,78 @@ const metaText = computed(() => {
 .promo-media {
   position: relative; flex-shrink: 0; overflow: hidden;
   width: var(--media-w, auto);
-  border: 1px solid rgb(255 255 255 / 0.1); background: #18181b;
+  border-radius: 1.25rem;
+  border: 1px solid rgb(255 255 255 / 0.1); background: #1A1716;
 }
 .promo-media img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.promo-card--overlay .promo-media { position: absolute; inset: 0; width: auto; border: none; }
+.promo-card--overlay .promo-media { position: absolute; inset: 0; width: auto; border: none; border-radius: 0; }
 .promo-shade { position: absolute; inset: 0; pointer-events: none; }
 
 /* Compact: berbagi baris -> gambar di atas, teks di bawah */
-.promo-card--split.is-compact { flex-direction: column; align-items: stretch; gap: 1rem; }
+.promo-card--split.is-compact { flex-direction: column; align-items: stretch; gap: 1.25rem; }
 .promo-card--split.is-compact .promo-copy,
 .promo-card--poster.is-compact .promo-copy { max-width: none; }
-.promo-card--poster.is-compact { align-items: stretch; gap: 1rem; }
+.promo-card--poster.is-compact { align-items: stretch; gap: 1.25rem; }
 
 /* Teks */
-.promo-copy { position: relative; z-index: 1; min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 0.5rem; }
-.promo-card--overlay .promo-copy { justify-content: flex-end; padding: 1.5rem 1.75rem; }
-.promo-card--overlay.is-compact .promo-copy { padding: 1.1rem; }
+.promo-copy { position: relative; z-index: 1; min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 0.625rem; }
+.promo-card--overlay .promo-copy { justify-content: flex-end; padding: 1.75rem 2rem; }
+.promo-card--overlay.is-compact .promo-copy { padding: 1.25rem; }
 .promo-card--poster .promo-copy { flex: none; width: 100%; max-width: 32rem; }
 .promo-copy.is-center { align-items: center; text-align: center; }
 
+/* Beri ruang supaya judul tidak menabrak tombol tutup di kartu berisi */
+.has-close.promo-card--text .promo-copy,
+.has-close.promo-card--poster .promo-copy { padding-right: 2.75rem; }
+
+/* Badge: pill dengan warna tema */
 .promo-eyebrow {
-  display: flex; align-items: center; gap: 0.75rem; margin: 0;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--pa);
+  align-self: flex-start;
+  margin: 0;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  border: 1px solid var(--pa-line);
+  background: var(--pa-soft);
+  font-size: 0.75rem; font-weight: 600; line-height: 1.4;
+  color: var(--pa);
 }
-.promo-eyebrow i { display: block; width: 1.5rem; height: 1px; background: var(--pa); }
+.promo-copy.is-center .promo-eyebrow { align-self: center; }
 
 .promo-title {
-  margin: 0; font-weight: 800; text-transform: uppercase; letter-spacing: -0.01em;
-  line-height: 1.1; color: #fff; overflow-wrap: anywhere;
-  font-size: clamp(1.15rem, 1rem + 1vw, 1.6rem);
+  margin: 0;
+  font-family: "Sora", ui-sans-serif, system-ui, sans-serif;
+  font-weight: 600; letter-spacing: -0.02em;
+  line-height: 1.15; color: #F5F0EA; overflow-wrap: anywhere;
+  font-size: clamp(1.25rem, 1.05rem + 1vw, 1.75rem);
 }
 .promo-title--split,
-.promo-title--overlay { font-size: clamp(1.4rem, 1rem + 2vw, 2.4rem); }
+.promo-title--overlay { font-size: clamp(1.5rem, 1.1rem + 2vw, 2.5rem); }
 .is-compact .promo-title,
 .is-compact .promo-title--split,
-.is-compact .promo-title--overlay { font-size: clamp(1.1rem, 0.9rem + 0.9vw, 1.5rem); }
+.is-compact .promo-title--overlay { font-size: clamp(1.2rem, 1rem + 0.9vw, 1.6rem); }
 
-.promo-text { margin: 0; max-width: 36rem; font-size: 0.875rem; font-weight: 300; line-height: 1.6; color: #a1a1aa; }
+.promo-text { margin: 0; max-width: 36rem; font-size: 0.9375rem; line-height: 1.65; color: #A39A93; }
+.promo-card--overlay .promo-text { color: rgb(245 240 234 / 0.82); }
+
 .promo-meta {
-  margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--pa);
+  margin: 0;
+  font-size: 0.8125rem; font-weight: 600; font-variant-numeric: tabular-nums;
+  color: var(--pa);
 }
 
 /* Tombol */
 .promo-btn {
-  align-self: flex-start; display: inline-flex; align-items: center; justify-content: center; gap: 0.75rem;
-  margin-top: 0.6rem; padding: 0.95rem 2rem;
+  align-self: flex-start; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  margin-top: 0.5rem; min-height: 3rem; padding: 0.75rem 1.75rem;
+  border-radius: 9999px;
   background: var(--pa); color: var(--pa-ink);
-  font-size: 11px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
-  transition: transform 0.2s, filter 0.2s;
+  font-size: 0.875rem; font-weight: 600;
+  transition: transform 0.2s, filter 0.2s, box-shadow 0.2s;
 }
-.is-compact .promo-btn { padding: 0.8rem 1.4rem; letter-spacing: 0.15em; }
-.promo-btn:hover { transform: translateY(-2px); filter: brightness(0.9); }
-.promo-btn:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+.is-compact .promo-btn { padding: 0.7rem 1.4rem; }
+.promo-btn:hover { transform: translateY(-2px); filter: brightness(0.92); box-shadow: 0 10px 28px -10px var(--pa); }
+.promo-btn:active { transform: scale(0.98); }
+.promo-btn:focus-visible { outline: 2px solid #D4B483; outline-offset: 3px; }
 .promo-btn-arrow { transition: transform 0.2s; }
 .promo-btn:hover .promo-btn-arrow { transform: translateX(4px); }
 .promo-copy.is-center .promo-btn { align-self: center; }
@@ -261,20 +302,24 @@ const metaText = computed(() => {
 @media (min-width: 768px) {
   .promo-card--text { justify-content: space-between; }
   .promo-card--text .promo-copy { flex-direction: column; }
-  .promo-card--text .promo-btn { margin-top: 0.4rem; }
+  .promo-card--text .promo-btn { margin-top: 0.5rem; }
 }
 
 /* Mobile */
 @media (max-width: 767px) {
   .promo-card--split,
   .promo-card--split.is-right,
-  .promo-card--text { flex-direction: column; align-items: stretch; gap: 1.1rem; }
+  .promo-card--text { flex-direction: column; align-items: stretch; gap: 1.25rem; }
   .promo-card--split .promo-media { width: 100%; max-width: 26rem; }
   .promo-card--text .promo-icon { align-self: flex-start; }
   .promo-btn { width: 100%; align-self: stretch; }
   .promo-card--poster .promo-btn { align-self: stretch; }
-  .promo-card--overlay .promo-copy { padding: 1.1rem; }
+  .promo-card--overlay .promo-copy { padding: 1.25rem; }
   .promo-card--overlay .promo-btn { align-self: stretch; }
   .promo-card--overlay.is-center .promo-btn { align-self: stretch; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .promo-btn, .promo-btn-arrow, .promo-close { transition: none; }
 }
 </style>

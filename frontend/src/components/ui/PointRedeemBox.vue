@@ -1,7 +1,7 @@
 <template>
   <div v-if="points > 0 || affordable.length || locked.length" class="point-box">
     <div class="point-header">
-      <Gift :size="14" class="point-icon" />
+      <span class="point-icon-tile"><Gift :size="15" /></span>
       <span class="point-label">Poin kamu</span>
       <span class="point-balance">{{ points.toLocaleString("id-ID") }}</span>
     </div>
@@ -14,6 +14,7 @@
         type="button"
         class="point-item point-item--affordable"
         :class="{ 'point-item--selected': isSelected(reward.id) }"
+        :aria-pressed="isSelected(reward.id)"
         @click="toggle(reward.id)"
       >
         <span class="point-item-check">
@@ -31,7 +32,7 @@
         :key="reward.id"
         class="point-item point-item--locked"
       >
-        <Lock :size="11" class="point-item-lock" />
+        <Lock :size="12" class="point-item-lock" />
         <span class="point-item-name">{{ reward.menu_name }}</span>
         <span class="point-item-missing">kurang {{ reward.missing_points.toLocaleString("id-ID") }} poin</span>
       </div>
@@ -73,108 +74,135 @@ const totalPointsUsed = computed(() =>
 </script>
 
 <style scoped>
+/* Palet: Surface #141211 · Washi #F5F0EA · Champagne #D4B483 (poin & reward) */
+
 .point-box {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  background: #0f0f0f;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 0.75rem 0.85rem;
+  gap: 0.75rem;
+  background:
+    radial-gradient(80% 100% at 100% 0%, rgba(212, 180, 131, 0.08), transparent 70%),
+    #0F0D0C;
+  border: 1px solid rgba(212, 180, 131, 0.18);
+  border-radius: 1rem;
+  padding: 1rem;
 }
 
 .point-header {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.625rem;
 }
-.point-icon { color: #fbbf24; }
+.point-icon-tile {
+  display: flex;
+  height: 2rem;
+  width: 2rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.625rem;
+  border: 1px solid rgba(212, 180, 131, 0.25);
+  background: rgba(212, 180, 131, 0.1);
+  color: #D4B483;
+}
 .point-label {
-  font-family: monospace;
-  font-size: 0.68rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.4);
   flex: 1;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #A39A93;
 }
 .point-balance {
-  font-family: monospace;
-  font-weight: 700;
-  font-size: 0.85rem;
-  color: #fbbf24;
+  font-family: "Sora", ui-sans-serif, system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 1.125rem;
+  font-variant-numeric: tabular-nums;
+  color: #D4B483;
 }
 
 .point-list {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.5rem;
 }
 
 .point-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
   width: 100%;
+  min-height: 2.75rem;
   text-align: left;
-  border-radius: 9px;
-  padding: 0.5rem 0.65rem;
+  border-radius: 0.75rem;
+  padding: 0.625rem 0.875rem;
   font-family: "Inter", sans-serif;
   cursor: default;
 }
 
 .point-item--affordable {
-  background: rgba(34, 197, 94, 0.06);
-  border: 1px solid rgba(34, 197, 94, 0.2);
+  background: rgba(212, 180, 131, 0.05);
+  border: 1px solid rgba(212, 180, 131, 0.2);
   cursor: pointer;
   transition: all 0.15s;
 }
-.point-item--affordable:hover { border-color: rgba(34, 197, 94, 0.4); }
+.point-item--affordable:hover { border-color: rgba(212, 180, 131, 0.45); }
 .point-item--selected {
-  background: rgba(34, 197, 94, 0.15);
-  border-color: rgba(34, 197, 94, 0.6);
+  background: rgba(212, 180, 131, 0.14);
+  border-color: rgba(212, 180, 131, 0.7);
 }
 
 .point-item-check {
-  width: 16px; height: 16px;
-  border-radius: 5px;
-  border: 1px solid rgba(74, 222, 128, 0.5);
+  width: 20px; height: 20px;
+  border-radius: 6px;
+  border: 1px solid rgba(212, 180, 131, 0.5);
   display: flex; align-items: center; justify-content: center;
-  color: #4ade80;
+  color: #2A1D08;
   flex-shrink: 0;
+  transition: all 0.15s;
+}
+.point-item--selected .point-item-check {
+  background: #D4B483;
+  border-color: #D4B483;
 }
 
 .point-item-name {
   flex: 1;
-  font-size: 0.78rem;
-  color: #fff;
+  min-width: 0;
+  font-size: 0.875rem;
+  color: #F5F0EA;
   font-weight: 600;
 }
 .point-item-cost {
-  font-family: monospace;
-  font-size: 0.7rem;
-  color: #4ade80;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #D4B483;
   white-space: nowrap;
 }
 
 .point-item--locked {
   background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  opacity: 0.55;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  opacity: 0.65;
 }
-.point-item-lock { color: rgba(255, 255, 255, 0.3); flex-shrink: 0; }
-.point-item--locked .point-item-name { color: rgba(255, 255, 255, 0.5); font-weight: 500; }
+.point-item-lock { color: #6F6761; flex-shrink: 0; }
+.point-item--locked .point-item-name { color: #A39A93; font-weight: 500; }
 .point-item-missing {
-  font-family: monospace;
-  font-size: 0.68rem;
-  color: rgba(255, 255, 255, 0.35);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  color: #6F6761;
   white-space: nowrap;
 }
 
 .point-summary {
-  font-family: monospace;
-  font-size: 0.7rem;
-  color: #fbbf24;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #D4B483;
   margin: 0;
-  padding-left: 0.15rem;
+  padding-left: 0.125rem;
+}
+
+.point-item--affordable:focus-visible {
+  outline: 2px solid #D4B483;
+  outline-offset: 2px;
 }
 </style>

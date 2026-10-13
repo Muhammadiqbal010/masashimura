@@ -1,44 +1,44 @@
 <template>
   <Teleport to="body">
     <div
-      class="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center"
+      class="fixed inset-0 z-[70] flex items-end justify-center bg-black/75 backdrop-blur-md sm:items-center sm:p-6"
       role="dialog"
       aria-modal="true"
       :aria-label="`Pilih opsi ${menu.name}`"
       @click.self="$emit('close')"
       @keydown.esc="$emit('close')"
     >
-      <div class="w-full sm:max-w-md bg-[#0d0d0d] border border-white/[0.08] rounded-t-3xl sm:rounded-2xl max-h-[90vh] flex flex-col overflow-hidden">
+      <div class="picker-sheet flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-[2rem] border border-white/[0.08] sm:max-w-lg sm:rounded-[2rem]">
 
         <!-- Header -->
-        <div class="flex items-start justify-between gap-3 px-6 pt-5 pb-4 border-b border-white/[0.06]">
+        <div class="flex items-start justify-between gap-3 border-b border-white/[0.07] px-6 pb-4 pt-6 sm:px-7">
           <div class="min-w-0">
-            <p class="font-mono text-[9px] tracking-[0.25em] uppercase text-[#DC2626]">Pilih opsi</p>
-            <h3 class="mt-1 font-sora text-base font-extrabold uppercase tracking-wide text-white leading-tight">
+            <p class="text-xs font-medium text-[#D4B483]">Pilih opsi</p>
+            <h3 class="mt-1 font-sora text-xl font-semibold leading-tight tracking-tight text-[#F5F0EA]">
               {{ menu.name }}
             </h3>
           </div>
           <button
             type="button"
             aria-label="Tutup"
-            class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full text-zinc-500 hover:text-white hover:bg-white/5 transition-colors"
+            class="-mr-2 -mt-1 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-[#A39A93] transition-colors hover:bg-white/5 hover:text-[#F5F0EA]"
             @click="$emit('close')"
           >
-            <X :size="16" />
+            <X :size="18" />
           </button>
         </div>
 
         <!-- Grup opsi -->
-        <div class="flex-1 overflow-y-auto px-6 py-5 space-y-6">
-          <fieldset v-for="group in menu.options" :key="group.name" class="space-y-2.5">
-            <legend class="w-full flex items-baseline justify-between gap-3">
-              <span class="font-sora text-[11px] font-bold uppercase tracking-widest text-white">{{ group.name }}</span>
-              <span class="font-mono text-[9px] tracking-[0.15em] uppercase" :class="group.required ? 'text-[#DC2626]' : 'text-zinc-600'">
+        <div class="flex-1 space-y-7 overflow-y-auto px-6 py-6 sm:px-7">
+          <fieldset v-for="group in menu.options" :key="group.name" class="space-y-3">
+            <legend class="flex w-full flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+              <span class="font-sora text-base font-semibold text-[#F5F0EA]">{{ group.name }}</span>
+              <span class="text-xs font-medium" :class="group.required ? 'text-[#F2707A]' : 'text-[#6F6761]'">
                 {{ group.required ? "Wajib" : "Opsional" }} · {{ group.multiple ? "boleh lebih dari satu" : "pilih satu" }}
               </span>
             </legend>
 
-            <div class="space-y-1.5" :role="group.multiple ? 'group' : 'radiogroup'" :aria-label="group.name">
+            <div class="space-y-2" :role="group.multiple ? 'group' : 'radiogroup'" :aria-label="group.name">
               <button
                 v-for="choice in group.choices"
                 :key="choice.label"
@@ -46,26 +46,26 @@
                 :role="group.multiple ? 'checkbox' : 'radio'"
                 :aria-checked="isPicked(group, choice)"
                 :class="[
-                  'w-full flex items-center justify-between gap-3 px-4 py-3 border text-left transition-colors duration-150',
+                  'flex min-h-[52px] w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition-all duration-150',
                   isPicked(group, choice)
-                    ? 'border-[#DC2626] bg-[#DC2626]/10'
-                    : 'border-white/10 bg-[#111] hover:border-white/25'
+                    ? 'border-[#D7263D] bg-[#D7263D]/10'
+                    : 'border-white/10 bg-white/[0.03] hover:border-white/25'
                 ]"
                 @click="toggle(group, choice)"
               >
-                <span class="flex items-center gap-3 min-w-0">
+                <span class="flex min-w-0 items-center gap-3">
                   <span
                     :class="[
-                      'flex-shrink-0 w-4 h-4 border flex items-center justify-center',
-                      group.multiple ? 'rounded-sm' : 'rounded-full',
-                      isPicked(group, choice) ? 'border-[#DC2626] bg-[#DC2626]' : 'border-white/25'
+                      'flex h-5 w-5 flex-shrink-0 items-center justify-center border transition-colors',
+                      group.multiple ? 'rounded-md' : 'rounded-full',
+                      isPicked(group, choice) ? 'border-[#D7263D] bg-[#D7263D]' : 'border-white/25'
                     ]"
                   >
-                    <Check v-if="isPicked(group, choice)" :size="11" class="text-white" />
+                    <Check v-if="isPicked(group, choice)" :size="12" class="text-white" />
                   </span>
-                  <span class="text-[13px] text-white truncate">{{ choice.label }}</span>
+                  <span class="truncate text-[15px] text-[#F5F0EA]">{{ choice.label }}</span>
                 </span>
-                <span v-if="Number(choice.price) > 0" class="flex-shrink-0 font-mono text-[11px] text-amber-400">
+                <span v-if="Number(choice.price) > 0" class="flex-shrink-0 text-sm font-semibold tabular-nums text-[#D4B483]">
                   +{{ formatPrice(choice.price) }}
                 </span>
               </button>
@@ -74,30 +74,30 @@
         </div>
 
         <!-- Footer: jumlah + konfirmasi -->
-        <div class="px-6 pt-4 pb-5 border-t border-white/[0.06] bg-[#080808] space-y-3">
-          <p v-if="missingGroup" class="font-mono text-[10px] text-zinc-500">
+        <div class="footer-safe space-y-3 border-t border-white/[0.07] bg-black/25 px-6 pt-4 sm:px-7">
+          <p v-if="missingGroup" class="text-sm text-[#D4B483]">
             Pilih "{{ missingGroup }}" dulu.
           </p>
           <div class="flex items-center gap-3">
-            <div class="flex items-center border border-white/10 flex-shrink-0">
+            <div class="flex flex-shrink-0 items-center rounded-full border border-white/10 bg-white/[0.03] p-1">
               <button
                 type="button"
                 aria-label="Kurangi jumlah"
                 :disabled="quantity <= 1"
-                class="w-10 h-12 flex items-center justify-center text-zinc-300 hover:text-white disabled:opacity-30 transition-colors"
+                class="flex h-11 w-11 items-center justify-center rounded-full text-[#F5F0EA] transition-colors hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent"
                 @click="quantity--"
               >
-                <Minus :size="14" />
+                <Minus :size="16" />
               </button>
-              <span class="min-w-[2rem] text-center font-mono text-[13px] font-bold text-white">{{ quantity }}</span>
+              <span class="min-w-[2rem] text-center text-base font-semibold tabular-nums text-[#F5F0EA]">{{ quantity }}</span>
               <button
                 type="button"
                 aria-label="Tambah jumlah"
                 :disabled="quantity >= 99"
-                class="w-10 h-12 flex items-center justify-center text-zinc-300 hover:text-white disabled:opacity-30 transition-colors"
+                class="flex h-11 w-11 items-center justify-center rounded-full text-[#F5F0EA] transition-colors hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent"
                 @click="quantity++"
               >
-                <Plus :size="14" />
+                <Plus :size="16" />
               </button>
             </div>
 
@@ -105,15 +105,15 @@
               type="button"
               :disabled="!!missingGroup"
               :class="[
-                'flex-1 h-12 flex items-center justify-center gap-2 px-4 font-sora text-[11px] font-bold uppercase tracking-widest transition-all duration-200',
+                'flex h-[52px] flex-1 items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold transition-all duration-200',
                 missingGroup
-                  ? 'bg-[#1a1a1a] text-zinc-600 cursor-not-allowed border border-white/5'
-                  : 'bg-[#DC2626] hover:bg-red-700 text-white active:scale-[0.98]'
+                  ? 'cursor-not-allowed border border-white/5 bg-[#1A1716] text-[#6F6761]'
+                  : 'bg-[#D7263D] text-white hover:bg-[#B91C32] hover:shadow-[0_8px_24px_-8px_rgba(215,38,61,0.6)] active:scale-[0.98]'
               ]"
               @click="confirm"
             >
               <span>Tambah</span>
-              <span class="font-mono">· {{ formatPrice(total) }}</span>
+              <span class="tabular-nums">· {{ formatPrice(total) }}</span>
             </button>
           </div>
         </div>
@@ -179,3 +179,20 @@ const onKey = (e) => { if (e.key === "Escape") emit("close") }
 onMounted(() => document.addEventListener("keydown", onKey))
 onUnmounted(() => document.removeEventListener("keydown", onKey))
 </script>
+
+<style scoped>
+/* Palet: Surface #141211 · Washi #F5F0EA · Crimson #D7263D · Champagne #D4B483 */
+
+.picker-sheet {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)), #141211;
+  box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.7);
+}
+
+/* Footer aman dari home-indicator di HP */
+.footer-safe { padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px)); }
+
+button:focus-visible {
+  outline: 2px solid #D4B483;
+  outline-offset: 3px;
+}
+</style>

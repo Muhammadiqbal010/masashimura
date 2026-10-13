@@ -3,11 +3,14 @@
     <!-- Belum ada promo terpakai -->
     <div v-if="!appliedPromo" class="promo-input-row">
       <div class="promo-input-wrap">
-        <Tag :size="14" class="promo-icon" />
+        <Tag :size="16" class="promo-icon" />
         <input
           v-model="codeInput"
           type="text"
           placeholder="Punya kode promo?"
+          aria-label="Kode promo"
+          autocomplete="off"
+          autocapitalize="characters"
           class="promo-input"
           :disabled="isChecking"
           @keyup.enter="applyPromo"
@@ -15,6 +18,7 @@
         />
       </div>
       <button
+        type="button"
         class="promo-apply-btn"
         :disabled="!codeInput.trim() || isChecking"
         @click="applyPromo"
@@ -26,16 +30,16 @@
     <!-- Promo berhasil diterapkan -->
     <div v-else class="promo-applied-strip">
       <div class="promo-applied-info">
-        <Check :size="14" class="promo-applied-icon" />
+        <span class="promo-applied-icon"><Check :size="13" /></span>
         <span class="promo-applied-code">{{ appliedPromo.code }}</span>
         <span class="promo-applied-amount">-{{ formatPrice(appliedPromo.discount_amount) }}</span>
       </div>
-      <button class="promo-remove-btn" @click="removePromo">
-        <X :size="13" />
+      <button type="button" class="promo-remove-btn" aria-label="Hapus kode promo" @click="removePromo">
+        <X :size="15" />
       </button>
     </div>
 
-    <p v-if="errorMessage" class="promo-error">{{ errorMessage }}</p>
+    <p v-if="errorMessage" class="promo-error" role="alert">{{ errorMessage }}</p>
   </div>
 </template>
 
@@ -103,7 +107,9 @@ defineExpose({ removePromo });
 </script>
 
 <style scoped>
-.promo-box { display: flex; flex-direction: column; gap: 0.4rem; }
+/* Palet: Surface #0F0D0C · Washi #F5F0EA · Crimson #D7263D · Champagne #D4B483 */
+
+.promo-box { display: flex; flex-direction: column; gap: 0.5rem; }
 
 .promo-input-row { display: flex; gap: 0.5rem; }
 
@@ -115,83 +121,122 @@ defineExpose({ removePromo });
 }
 .promo-icon {
   position: absolute;
-  left: 0.75rem;
-  color: rgba(255,255,255,0.25);
+  left: 0.875rem;
+  color: #6F6761;
   pointer-events: none;
 }
+
+/* 16px di HP supaya iOS tidak zoom otomatis */
 .promo-input {
   width: 100%;
-  background: #0f0f0f;
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 10px;
-  padding: 0.65rem 0.85rem 0.65rem 2.25rem;
-  color: #fff;
-  font-family: monospace;
-  font-size: 0.82rem;
-  letter-spacing: 0.05em;
+  height: 3rem;
+  background: #0F0D0C;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  padding: 0 1rem 0 2.5rem;
+  color: #F5F0EA;
+  font-family: "Inter", sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   outline: none;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-.promo-input::placeholder { color: rgba(255,255,255,0.2); font-family: 'Inter', sans-serif; letter-spacing: normal; }
-.promo-input:focus { border-color: rgba(220,38,38,0.5); }
+@media (min-width: 640px) {
+  .promo-input { font-size: 0.875rem; }
+}
+.promo-input::placeholder {
+  color: #6F6761;
+  font-weight: 400;
+  letter-spacing: normal;
+}
+.promo-input:hover:not(:disabled) { border-color: rgba(255, 255, 255, 0.2); }
+.promo-input:focus {
+  border-color: rgba(212, 180, 131, 0.6);
+  box-shadow: 0 0 0 3px rgba(212, 180, 131, 0.12);
+}
 .promo-input:disabled { opacity: 0.5; }
 
 .promo-apply-btn {
-  padding: 0 1.1rem;
-  background: #dc2626;
+  min-width: 5rem;
+  padding: 0 1.25rem;
+  background: #D7263D;
   border: none;
-  border-radius: 10px;
+  border-radius: 0.75rem;
   color: #fff;
-  font-family: 'Oswald', sans-serif;
-  font-size: 0.7rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-family: "Sora", ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, transform 0.15s;
   white-space: nowrap;
 }
-.promo-apply-btn:hover:not(:disabled) { background: #b91c1c; }
+.promo-apply-btn:hover:not(:disabled) { background: #B91C32; }
+.promo-apply-btn:active:not(:disabled) { transform: scale(0.97); }
 .promo-apply-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
 .promo-applied-strip {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.65rem 0.85rem;
-  background: rgba(34,197,94,0.08);
-  border: 1px solid rgba(34,197,94,0.25);
-  border-radius: 10px;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem 0.625rem 1rem;
+  background: rgba(52, 211, 153, 0.08);
+  border: 1px solid rgba(52, 211, 153, 0.25);
+  border-radius: 0.75rem;
 }
-.promo-applied-info { display: flex; align-items: center; gap: 0.5rem; }
-.promo-applied-icon { color: #4ade80; }
+.promo-applied-info {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-width: 0;
+}
+.promo-applied-icon {
+  display: flex;
+  height: 1.375rem;
+  width: 1.375rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: rgba(52, 211, 153, 0.2);
+  color: #6EE7B7;
+}
 .promo-applied-code {
-  font-family: monospace;
   font-weight: 700;
-  font-size: 0.8rem;
-  color: #fff;
-  letter-spacing: 0.05em;
+  font-size: 0.875rem;
+  color: #F5F0EA;
+  letter-spacing: 0.06em;
 }
 .promo-applied-amount {
-  font-family: monospace;
-  font-size: 0.8rem;
-  color: #4ade80;
-  font-weight: 700;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #6EE7B7;
+  white-space: nowrap;
 }
 .promo-remove-btn {
-  width: 24px; height: 24px;
+  width: 2rem; height: 2rem;
+  flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
-  background: rgba(255,255,255,0.06);
-  border: none; border-radius: 6px;
-  color: rgba(255,255,255,0.5);
+  background: rgba(255, 255, 255, 0.06);
+  border: none; border-radius: 9999px;
+  color: #A39A93;
   cursor: pointer;
   transition: all 0.15s;
 }
-.promo-remove-btn:hover { background: rgba(239,68,68,0.15); color: #f87171; }
+.promo-remove-btn:hover { background: rgba(215, 38, 61, 0.15); color: #F2707A; }
 
 .promo-error {
-  font-size: 0.72rem;
-  color: #f87171;
+  font-size: 0.8125rem;
+  color: #F2707A;
   margin: 0;
   padding-left: 0.25rem;
+}
+
+.promo-apply-btn:focus-visible,
+.promo-remove-btn:focus-visible {
+  outline: 2px solid #D4B483;
+  outline-offset: 2px;
 }
 </style>
