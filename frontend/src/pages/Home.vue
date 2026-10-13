@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-[#080808] text-white font-inter overflow-x-hidden selection:bg-red-600/30 selection:text-white">
+  <div class="min-h-screen overflow-x-hidden bg-[#0B0A0A] font-inter text-[#F5F0EA] selection:bg-[#D7263D]/40 selection:text-white">
 
     <!-- ═══════════════════════════════════════════
          1. HERO (tampil langsung, bagian CMS pakai skeleton)
@@ -18,231 +18,225 @@
             alt=""
             fetchpriority="high"
             decoding="async"
-            class="w-full h-full object-cover"
+            class="h-full w-full object-cover"
           />
         </div>
-        <div class="absolute inset-0 bg-gradient-to-t from-[#080808] via-[#080808]/55 to-[#080808]/50"></div>
-        <div class="absolute inset-0 hidden lg:block bg-gradient-to-r from-[#080808] via-[#080808]/65 to-transparent"></div>
-        <div class="hero-glow absolute inset-0 pointer-events-none"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-[#0B0A0A] via-[#0B0A0A]/60 to-[#0B0A0A]/55"></div>
+        <div class="absolute inset-0 hidden bg-gradient-to-r from-[#0B0A0A] via-[#0B0A0A]/70 to-transparent lg:block"></div>
+        <div class="hero-glow pointer-events-none absolute inset-0"></div>
       </div>
 
-      <div class="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-10 pt-32 pb-16 sm:pb-20 lg:pb-24 grid grid-cols-1 lg:grid-cols-12 gap-10 items-end">
-        <div class="lg:col-span-7 space-y-6 sm:space-y-7">
+      <div class="relative z-10 mx-auto grid w-full max-w-7xl grid-cols-1 items-end gap-10 px-5 pb-16 pt-32 sm:px-8 sm:pb-20 lg:grid-cols-12 lg:px-10 lg:pb-24">
+        <div class="space-y-6 sm:space-y-7 lg:col-span-7">
 
-          <!-- Eyebrow -->
-          <div class="hero-in flex items-center gap-3" style="--d: 0ms">
-            <span class="w-8 h-px bg-[#DC2626]"></span>
-            <span class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">Bekasi · Since 2024</span>
-          </div>
-
-          <!-- Badge buka / tutup -->
-          <div
-            class="hero-in flex w-fit items-center gap-2.5 border border-white/10 bg-black/40 backdrop-blur-sm px-3 py-1.5"
-            style="--d: 60ms"
-            role="status"
-          >
-            <span class="relative flex w-2 h-2 shrink-0">
-              <span
-                v-if="openStatus.isOpen"
-                class="absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-60 animate-ping"
-              ></span>
-              <span
-                class="relative inline-flex w-2 h-2 rounded-full"
-                :class="openStatus.isOpen ? 'bg-emerald-500' : 'bg-red-500'"
-              ></span>
+          <!-- Status + lokasi -->
+          <div class="hero-in flex flex-wrap items-center gap-2" style="--d: 0ms">
+            <div
+              class="flex w-fit items-center gap-2.5 rounded-full border border-white/10 bg-black/40 px-3.5 py-1.5 backdrop-blur-md"
+              role="status"
+            >
+              <span class="relative flex h-2 w-2 shrink-0">
+                <span
+                  v-if="openStatus.isOpen"
+                  class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60"
+                ></span>
+                <span
+                  class="relative inline-flex h-2 w-2 rounded-full"
+                  :class="openStatus.isOpen ? 'bg-emerald-400' : 'bg-[#D7263D]'"
+                ></span>
+              </span>
+              <span class="text-xs font-medium text-[#F5F0EA]">{{ openStatus.label }}</span>
+              <span v-if="openStatus.detail" class="text-xs text-[#A39A93]">{{ openStatus.detail }}</span>
+            </div>
+            <span class="rounded-full border border-[#D4B483]/25 bg-[#D4B483]/10 px-3.5 py-1.5 text-xs font-medium text-[#D4B483]">
+              Bekasi, sejak 2024
             </span>
-            <span class="font-mono text-[10px] tracking-[0.2em] uppercase text-white">{{ openStatus.label }}</span>
-            <span v-if="openStatus.detail" class="font-mono text-[10px] tracking-[0.2em] uppercase text-zinc-400">· {{ openStatus.detail }}</span>
           </div>
 
           <!-- Headline -->
           <h1
             v-if="!loading.cms"
-            class="hero-title hero-in font-sora font-extrabold tracking-tight uppercase leading-[0.95] text-white break-words"
-            style="--d: 120ms"
+            class="hero-title hero-in break-words font-sora font-semibold leading-[1.02] tracking-tight text-[#F5F0EA]"
+            style="--d: 100ms"
           >
             <span
               v-for="(line, i) in headlineLines"
               :key="i"
               class="block"
-              :class="line.accent ? 'text-[#DC2626]' : ''"
+              :class="line.accent ? 'text-[#D4B483]' : ''"
             >{{ line.text }}</span>
           </h1>
           <div v-else class="space-y-3" aria-hidden="true">
-            <div class="skeleton hero-skel w-[85%]"></div>
-            <div class="skeleton hero-skel w-[60%]"></div>
-            <div class="skeleton hero-skel w-[75%]"></div>
+            <div class="skeleton hero-skel w-[85%] rounded-xl"></div>
+            <div class="skeleton hero-skel w-[60%] rounded-xl"></div>
           </div>
 
           <!-- Subheadline -->
           <p
             v-if="!loading.cms"
-            class="hero-in text-zinc-300 text-sm sm:text-base max-w-md font-light leading-relaxed"
-            style="--d: 240ms"
+            class="hero-in max-w-md text-base leading-relaxed text-[#C9C1B9] sm:text-lg"
+            style="--d: 220ms"
           >
             {{ cms.hero_subheadline }}
           </p>
-          <div v-else class="space-y-2 max-w-md" aria-hidden="true">
-            <div class="skeleton h-4 w-full"></div>
-            <div class="skeleton h-4 w-2/3"></div>
+          <div v-else class="max-w-md space-y-2" aria-hidden="true">
+            <div class="skeleton h-4 w-full rounded-full"></div>
+            <div class="skeleton h-4 w-2/3 rounded-full"></div>
           </div>
 
-          <div class="hero-in flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2" style="--d: 360ms">
-            <router-link to="/menu"
-              class="group inline-flex items-center justify-center gap-3 bg-[#DC2626] hover:bg-red-700 text-white font-sora text-[11px] uppercase tracking-[0.2em] px-8 py-4 font-bold transition-all duration-200 hover:-translate-y-0.5">
-              Pesan Sekarang
-              <ArrowRight :size="14" class="transition-transform duration-200 group-hover:translate-x-1" />
+          <div class="hero-in flex flex-col gap-3 pt-2 sm:flex-row sm:gap-4" style="--d: 320ms">
+            <router-link to="/menu" class="btn-primary group px-8 py-4">
+              Pesan sekarang
+              <ArrowRight :size="16" class="transition-transform duration-200 group-hover:translate-x-1" />
             </router-link>
-            <router-link to="/contact"
-              class="inline-flex items-center justify-center border border-white/25 hover:border-white/60 hover:bg-white/5 text-white font-sora text-[11px] uppercase tracking-[0.2em] px-8 py-4 font-bold transition-all duration-200">
-              Kontak Kami
+            <router-link to="/contact" class="btn-ghost px-8 py-4">
+              Kontak kami
             </router-link>
           </div>
         </div>
 
-        <!-- Foto makanan — kartu kanan (desktop) -->
-        <div class="hero-in hidden lg:flex lg:col-span-5 justify-end items-end" style="--d: 300ms">
-          <div class="relative w-72">
-            <div class="absolute -top-3 -right-3 w-full h-full border border-[#DC2626]/40"></div>
-            <div class="relative aspect-square overflow-hidden border border-white/10 bg-zinc-900">
+        <!-- Foto makanan (desktop) -->
+        <div class="hero-in hidden items-end justify-end lg:col-span-5 lg:flex" style="--d: 300ms">
+          <div class="relative w-80">
+            <div class="absolute -right-3 -top-3 h-full w-full rounded-[2rem] border border-[#D4B483]/30"></div>
+            <div class="relative aspect-square overflow-hidden rounded-[2rem] border border-white/10 bg-[#141211]">
               <img
                 v-if="!loading.cms"
                 v-blur-img
                 :src="cms.hero_food_image || defaultHeroFood"
                 alt="Masashimura Signature Dish"
-                class="w-full h-full object-cover"
+                class="h-full w-full object-cover"
               />
-              <div v-else class="skeleton w-full h-full" aria-hidden="true"></div>
-              <div class="absolute bottom-0 left-0 right-0 bg-[#080808]/80 backdrop-blur-sm px-4 py-2.5 flex justify-between items-center border-t border-white/10">
-                <span class="font-mono text-[9px] tracking-[0.25em] text-zinc-400 uppercase">Signature Dish</span>
-                <span class="w-1.5 h-1.5 rounded-full bg-[#DC2626] animate-pulse"></span>
+              <div v-else class="skeleton h-full w-full" aria-hidden="true"></div>
+              <div class="absolute inset-x-3 bottom-3 flex items-center justify-between rounded-2xl border border-white/10 bg-black/55 px-4 py-3 backdrop-blur-md">
+                <span class="text-sm font-medium text-[#F5F0EA]">Signature dish</span>
+                <span class="h-2 w-2 animate-pulse rounded-full bg-[#D7263D]"></span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="hidden sm:flex absolute bottom-6 left-1/2 -translate-x-1/2 flex-col items-center gap-1.5 opacity-40 pointer-events-none">
-        <span class="font-mono text-[9px] tracking-[0.3em] uppercase text-zinc-400">Scroll</span>
-        <div class="w-px h-8 bg-gradient-to-b from-zinc-400 to-transparent"></div>
+      <div class="pointer-events-none absolute bottom-6 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-1.5 opacity-40 sm:flex">
+        <span class="text-xs text-[#A39A93]">Scroll</span>
+        <div class="h-8 w-px bg-gradient-to-b from-[#A39A93] to-transparent"></div>
       </div>
     </section>
 
     <!-- ═══════════════════════════════════════════
          2. MARQUEE
     ═══════════════════════════════════════════ -->
-    <div v-if="cms.marquee_text" class="marquee-wrap border-y border-white/[0.06] bg-[#0a0a0a] overflow-hidden py-4" aria-hidden="true">
+    <div v-if="cms.marquee_text" class="marquee-wrap overflow-hidden border-y border-white/[0.06] bg-[#0F0D0C] py-5" aria-hidden="true">
       <div class="animate-marquee flex">
         <div v-for="g in 2" :key="g" class="flex shrink-0 items-center">
           <template v-for="m in 4" :key="m">
-            <span class="font-sora text-[11px] font-bold tracking-[0.35em] uppercase text-zinc-600 mx-8 whitespace-nowrap">
+            <span class="mx-8 whitespace-nowrap font-sora text-sm font-medium tracking-[0.2em] text-[#6F6761]">
               {{ cms.marquee_text }}
             </span>
-            <span class="w-1.5 h-1.5 rotate-45 bg-[#DC2626] shrink-0"></span>
+            <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-[#D4B483]"></span>
           </template>
         </div>
       </div>
     </div>
-    <div v-else class="border-y border-white/[0.06] bg-[#0a0a0a] py-4" aria-hidden="true">
-      <div class="skeleton h-3 w-1/2 mx-auto"></div>
+    <div v-else class="border-y border-white/[0.06] bg-[#0F0D0C] py-5" aria-hidden="true">
+      <div class="skeleton mx-auto h-3 w-1/2 rounded-full"></div>
     </div>
 
     <!-- ═══════════════════════════════════════════
-         3. PROMO / EVENT (maks 5, susunan otomatis mengikuti rasio gambar)
+         3. PROMO / EVENT
     ═══════════════════════════════════════════ -->
     <PromoSection :promos="promos" />
 
     <!-- ═══════════════════════════════════════════
          4. BEST SELLER
     ═══════════════════════════════════════════ -->
-    <section v-reveal class="py-20 sm:py-28 lg:py-32 px-6 sm:px-10 max-w-7xl mx-auto">
+    <section v-reveal class="mx-auto max-w-7xl px-5 py-20 sm:px-8 sm:py-28 lg:px-10 lg:py-32">
 
-      <div class="flex items-end justify-between mb-10 sm:mb-14">
+      <div class="mb-10 flex items-end justify-between gap-6 sm:mb-14">
         <div class="space-y-3">
-          <div class="flex items-center gap-3">
-            <span class="w-6 h-px bg-[#DC2626]"></span>
-            <span class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">Most Ordered</span>
-          </div>
-          <h2 class="font-sora text-3xl sm:text-4xl font-extrabold uppercase tracking-tight">Menu Terlaris</h2>
+          <h2 class="section-title">Menu terlaris</h2>
+          <p class="max-w-md text-base text-[#A39A93]">Yang paling sering dipesan pelanggan kami.</p>
         </div>
-        <router-link to="/menu"
-          class="hidden sm:flex items-center gap-2 font-mono text-[10px] tracking-[0.2em] uppercase text-zinc-500 hover:text-white transition group">
-          Lihat Semua
-          <span class="w-6 h-px bg-zinc-500 group-hover:w-10 group-hover:bg-white transition-all duration-300"></span>
+        <router-link to="/menu" class="group hidden items-center gap-2 text-sm font-medium text-[#D4B483] transition-colors hover:text-[#F5F0EA] sm:inline-flex">
+          Lihat semua
+          <ArrowRight :size="15" class="transition-transform duration-200 group-hover:translate-x-1" />
         </router-link>
       </div>
 
       <!-- Skeleton -->
-      <div v-if="loading.best" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5" aria-hidden="true">
-        <div v-for="n in 3" :key="n" class="bg-[#0d0d0d] border border-white/[0.07] overflow-hidden">
+      <div v-if="loading.best" class="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3" aria-hidden="true">
+        <div v-for="n in 3" :key="n" class="overflow-hidden rounded-3xl border border-white/[0.07] bg-[#141211]">
           <div class="skeleton aspect-[4/3] w-full"></div>
-          <div class="p-5 sm:p-6 space-y-3">
-            <div class="skeleton h-4 w-3/4"></div>
-            <div class="skeleton h-3 w-full"></div>
-            <div class="skeleton h-3 w-2/3"></div>
-            <div class="flex items-center justify-between pt-4 mt-1 border-t border-white/10">
-              <div class="skeleton h-5 w-24"></div>
-              <div class="skeleton h-9 w-24"></div>
+          <div class="space-y-3 p-6">
+            <div class="skeleton h-5 w-3/4 rounded-full"></div>
+            <div class="skeleton h-3 w-full rounded-full"></div>
+            <div class="skeleton h-3 w-2/3 rounded-full"></div>
+            <div class="mt-1 flex items-center justify-between border-t border-white/10 pt-4">
+              <div class="skeleton h-5 w-24 rounded-full"></div>
+              <div class="skeleton h-10 w-24 rounded-full"></div>
             </div>
           </div>
         </div>
       </div>
 
-      <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+      <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
         <router-link
           v-for="(item, idx) in topBestSellers"
           :key="idx"
           to="/menu"
-          class="group flex flex-col bg-[#0d0d0d] border border-white/[0.07] overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:border-[#DC2626]/50 hover:shadow-[0_24px_40px_-24px_rgba(220,38,38,0.4)]"
+          class="card-surface group flex flex-col overflow-hidden !p-0 transition-all duration-300 hover:-translate-y-1 hover:border-[#D4B483]/35 hover:shadow-[0_28px_48px_-30px_rgba(215,38,61,0.5)]"
         >
-          <div class="relative w-full aspect-[4/3] shrink-0 overflow-hidden bg-zinc-900">
-            <div class="w-full h-full transition-transform duration-700 ease-out group-hover:scale-105">
+          <div class="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-[#1A1716]">
+            <div class="h-full w-full transition-transform duration-700 ease-out group-hover:scale-105">
               <img
                 v-blur-img
                 :src="item.image"
                 :alt="item.name"
                 loading="lazy"
-                class="w-full h-full object-cover"
+                class="h-full w-full object-cover"
               />
             </div>
-            <div class="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/60 to-transparent pointer-events-none"></div>
-            <span class="absolute top-3 left-3 font-mono text-[10px] tracking-widest text-white/80 bg-black/50 backdrop-blur-sm px-2 py-1">
-              {{ String(idx + 1).padStart(2, '0') }}
+            <div class="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#141211] to-transparent opacity-80"></div>
+            <span class="absolute left-3 top-3 flex h-8 min-w-8 items-center justify-center rounded-full border border-white/10 bg-black/55 px-2 text-xs font-semibold tabular-nums text-[#F5F0EA] backdrop-blur-md">
+              {{ idx + 1 }}
             </span>
-            <span v-if="idx === 0"
-              class="absolute top-3 right-3 font-mono text-[9px] tracking-[0.2em] uppercase bg-[#DC2626] text-white px-2 py-1">
-              Best Seller
+            <span
+              v-if="idx === 0"
+              class="absolute right-3 top-3 rounded-full bg-[#D4B483] px-3 py-1 text-xs font-semibold text-[#2A1D08]"
+            >
+              Terlaris
             </span>
           </div>
 
-          <div class="p-5 sm:p-6 flex flex-col gap-3 flex-1">
-            <h3 class="font-sora text-base font-bold uppercase tracking-wide text-white group-hover:text-[#DC2626] transition-colors line-clamp-2">
+          <div class="flex flex-1 flex-col gap-3 p-6">
+            <h3 class="line-clamp-2 font-sora text-lg font-semibold leading-snug text-[#F5F0EA]">
               {{ item.name }}
             </h3>
-            <p class="text-zinc-400 text-sm leading-relaxed flex-1 line-clamp-2">{{ item.desc }}</p>
-            <div class="flex items-center justify-between pt-4 mt-1 border-t border-white/10">
-              <span class="font-mono text-lg font-bold text-[#DC2626]">
+            <p class="line-clamp-2 flex-1 text-sm leading-relaxed text-[#A39A93]">{{ item.desc }}</p>
+            <div class="mt-1 flex items-center justify-between border-t border-white/[0.07] pt-4">
+              <span class="font-sora text-lg font-semibold tracking-tight text-[#F5F0EA]">
                 {{ formatRupiah(item.price) }}
               </span>
-              <span class="inline-flex items-center gap-2 bg-[#DC2626] group-hover:bg-red-700 text-white font-sora text-[10px] uppercase tracking-[0.18em] font-bold px-4 py-2.5 transition-colors">
-                Order
-                <ArrowRight :size="12" class="transition-transform duration-200 group-hover:translate-x-0.5" />
+              <span class="inline-flex items-center gap-2 rounded-full bg-[#D7263D] px-5 py-2.5 text-sm font-semibold text-white transition-colors group-hover:bg-[#B91C32]">
+                Pesan
+                <ArrowRight :size="14" class="transition-transform duration-200 group-hover:translate-x-0.5" />
               </span>
             </div>
           </div>
         </router-link>
 
-        <div v-if="bestSellers.length === 0"
-          class="col-span-full py-20 text-center text-zinc-600 font-mono text-xs tracking-widest uppercase border border-dashed border-white/10">
+        <div
+          v-if="bestSellers.length === 0"
+          class="col-span-full rounded-3xl border border-dashed border-white/10 py-20 text-center text-sm text-[#6F6761]"
+        >
           Menu belum tersedia saat ini.
         </div>
       </div>
 
-      <div class="sm:hidden mt-8">
-        <router-link to="/menu"
-          class="flex items-center justify-center gap-3 w-full border border-white/20 hover:border-white/50 text-white font-sora text-[11px] uppercase tracking-[0.2em] px-6 py-4 font-bold transition">
-          Lihat Semua Menu
-          <ArrowRight :size="14" />
+      <div class="mt-8 sm:hidden">
+        <router-link to="/menu" class="btn-ghost w-full px-6 py-4">
+          Lihat semua menu
+          <ArrowRight :size="16" />
         </router-link>
       </div>
     </section>
@@ -250,59 +244,59 @@
     <!-- ═══════════════════════════════════════════
          5. TENTANG MASASHIMURA
     ═══════════════════════════════════════════ -->
-    <section v-reveal class="py-20 sm:py-28 lg:py-32 border-t border-white/[0.06] bg-[#0a0a0a]">
-      <div class="max-w-7xl mx-auto px-6 sm:px-10 grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20 items-center">
+    <section v-reveal class="border-y border-white/[0.06] bg-[#0F0D0C] py-20 sm:py-28 lg:py-32">
+      <div class="mx-auto grid max-w-7xl grid-cols-1 items-center gap-14 px-5 sm:px-8 lg:grid-cols-2 lg:gap-20 lg:px-10">
 
         <div class="relative">
-          <div class="aspect-square overflow-hidden bg-zinc-900">
-            <img v-if="!loading.cms" v-blur-img :src="cms.about_image || defaultAboutImage" alt="Suasana Masashimura" loading="lazy"
-              class="w-full h-full object-cover grayscale-[15%] hover:grayscale-0" />
-            <div v-else class="skeleton w-full h-full" aria-hidden="true"></div>
+          <div class="absolute -bottom-3 -left-3 h-full w-full rounded-[2rem] border border-[#D4B483]/25 sm:-bottom-4 sm:-left-4"></div>
+          <div class="relative aspect-square overflow-hidden rounded-[2rem] bg-[#141211]">
+            <img
+              v-if="!loading.cms"
+              v-blur-img
+              :src="cms.about_image || defaultAboutImage"
+              alt="Suasana Masashimura"
+              loading="lazy"
+              class="h-full w-full object-cover"
+            />
+            <div v-else class="skeleton h-full w-full" aria-hidden="true"></div>
           </div>
-          <div class="absolute -bottom-3 -right-3 sm:-bottom-4 sm:-right-4 w-16 h-16 sm:w-20 sm:h-20 border-b-2 border-r-2 border-[#DC2626] pointer-events-none"></div>
-          <div class="absolute -top-3 -left-3 sm:-top-4 sm:-left-4 w-16 h-16 sm:w-20 sm:h-20 border-t-2 border-l-2 border-[#DC2626] pointer-events-none"></div>
         </div>
 
         <div class="space-y-8 sm:space-y-10">
           <div class="space-y-4">
-            <div class="flex items-center gap-3">
-              <span class="w-6 h-px bg-[#DC2626]"></span>
-              <span class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">Tentang Kami</span>
-            </div>
-            <h2 class="font-sora text-3xl sm:text-4xl font-extrabold uppercase tracking-tight leading-tight">
-              Masashimura
-            </h2>
-            <p v-if="!loading.cms" class="text-zinc-400 text-sm sm:text-[15px] font-light leading-[1.9] max-w-md">{{ cms.about_text }}</p>
-            <div v-else class="space-y-2.5 max-w-md" aria-hidden="true">
-              <div class="skeleton h-3.5 w-full"></div>
-              <div class="skeleton h-3.5 w-full"></div>
-              <div class="skeleton h-3.5 w-4/5"></div>
+            <h2 class="section-title">Tentang Masashimura</h2>
+            <p v-if="!loading.cms" class="max-w-md text-base leading-[1.85] text-[#A39A93]">{{ cms.about_text }}</p>
+            <div v-else class="max-w-md space-y-2.5" aria-hidden="true">
+              <div class="skeleton h-4 w-full rounded-full"></div>
+              <div class="skeleton h-4 w-full rounded-full"></div>
+              <div class="skeleton h-4 w-4/5 rounded-full"></div>
             </div>
           </div>
 
           <!-- Metrics -->
-          <div ref="metricsRef" class="grid grid-cols-3 border border-white/[0.07] divide-x divide-white/[0.07] bg-[#080808]/40">
-            <div class="px-3 sm:px-6 py-5 space-y-1">
-              <p class="font-sora text-xl sm:text-2xl font-extrabold text-[#DC2626] leading-tight">{{ metricDisplays.m1 }}</p>
-              <p class="font-mono text-[9px] tracking-[0.2em] sm:tracking-[0.25em] text-zinc-500 uppercase">Berdiri</p>
+          <div ref="metricsRef" class="grid grid-cols-3 divide-x divide-white/[0.07] overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02]">
+            <div class="space-y-1 px-3 py-5 sm:px-6">
+              <p class="font-sora text-2xl font-semibold leading-tight text-[#F5F0EA] sm:text-3xl">{{ metricDisplays.m1 }}</p>
+              <p class="text-xs text-[#A39A93] sm:text-sm">Berdiri</p>
             </div>
-            <div class="px-3 sm:px-6 py-5 space-y-1">
-              <p class="font-sora text-xl sm:text-2xl font-extrabold text-white leading-tight">{{ metricDisplays.m2 }}</p>
-              <p class="font-mono text-[9px] tracking-[0.2em] sm:tracking-[0.25em] text-zinc-500 uppercase">Varian Menu</p>
+            <div class="space-y-1 px-3 py-5 sm:px-6">
+              <p class="font-sora text-2xl font-semibold leading-tight text-[#F5F0EA] sm:text-3xl">{{ metricDisplays.m2 }}</p>
+              <p class="text-xs text-[#A39A93] sm:text-sm">Varian menu</p>
             </div>
-            <div class="px-3 sm:px-6 py-5 space-y-1">
-              <p class="font-sora font-extrabold text-amber-500 leading-tight whitespace-nowrap"
-                :class="metric3IsStars ? 'text-[0.9rem] sm:text-2xl tracking-tighter pt-1 sm:pt-0' : 'text-xl sm:text-2xl'">
+            <div class="space-y-1 px-3 py-5 sm:px-6">
+              <p
+                class="whitespace-nowrap font-sora font-semibold leading-tight text-[#D4B483]"
+                :class="metric3IsStars ? 'pt-1 text-[0.9rem] tracking-tighter sm:pt-0 sm:text-2xl' : 'text-2xl sm:text-3xl'"
+              >
                 {{ cms.metric_3 || "–" }}
               </p>
-              <p class="font-mono text-[9px] tracking-[0.2em] sm:tracking-[0.25em] text-zinc-500 uppercase">Rating</p>
+              <p class="text-xs text-[#A39A93] sm:text-sm">Rating</p>
             </div>
           </div>
 
-          <router-link to="/menu"
-            class="inline-flex items-center gap-3 font-sora text-[11px] uppercase tracking-[0.2em] font-bold border-b border-[#DC2626] pb-1 text-white hover:text-[#DC2626] transition group">
-            Lihat Semua Menu
-            <span class="w-5 h-px bg-[#DC2626] group-hover:w-8 transition-all duration-300"></span>
+          <router-link to="/menu" class="group inline-flex items-center gap-2 text-sm font-semibold text-[#D4B483] transition-colors hover:text-[#F5F0EA]">
+            Lihat semua menu
+            <ArrowRight :size="15" class="transition-transform duration-200 group-hover:translate-x-1" />
           </router-link>
         </div>
       </div>
@@ -311,58 +305,52 @@
     <!-- ═══════════════════════════════════════════
          6. BENTO FASILITAS
     ═══════════════════════════════════════════ -->
-    <section v-reveal class="py-20 sm:py-28 lg:py-32 px-6 sm:px-10 max-w-7xl mx-auto">
-      <div class="mb-10 sm:mb-14 space-y-3">
-        <div class="flex items-center gap-3">
-          <span class="w-6 h-px bg-[#DC2626]"></span>
-          <span class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">Fasilitas</span>
-        </div>
-        <h2 class="font-sora text-3xl sm:text-4xl font-extrabold uppercase tracking-tight">Apa yang Lo Dapet</h2>
+    <section v-reveal class="mx-auto max-w-7xl px-5 py-20 sm:px-8 sm:py-28 lg:px-10 lg:py-32">
+      <div class="mb-10 sm:mb-14">
+        <h2 class="section-title">Apa yang lo dapet</h2>
       </div>
 
       <!-- Skeleton -->
-      <div v-if="loading.bento" class="grid grid-cols-1 lg:grid-cols-12 gap-3" aria-hidden="true">
-        <div class="skeleton lg:col-span-5 min-h-[220px] sm:min-h-[260px]"></div>
-        <div class="lg:col-span-7 grid grid-cols-2 gap-3 auto-rows-fr">
-          <div v-for="n in 4" :key="n" class="skeleton min-h-[112px] sm:min-h-[130px]"></div>
+      <div v-if="loading.bento" class="grid grid-cols-1 gap-3 lg:grid-cols-12" aria-hidden="true">
+        <div class="skeleton min-h-[220px] rounded-3xl sm:min-h-[260px] lg:col-span-5"></div>
+        <div class="grid auto-rows-fr grid-cols-2 gap-3 lg:col-span-7">
+          <div v-for="n in 4" :key="n" class="skeleton min-h-[112px] rounded-2xl sm:min-h-[130px]"></div>
         </div>
       </div>
 
-      <div v-else class="grid grid-cols-1 lg:grid-cols-12 gap-3">
-        <div v-if="bentoLarge.length" class="lg:col-span-5 flex flex-col gap-3">
+      <div v-else class="grid grid-cols-1 gap-3 lg:grid-cols-12">
+        <div v-if="bentoLarge.length" class="flex flex-col gap-3 lg:col-span-5">
           <div
             v-for="(bento, i) in bentoLarge"
             :key="'l' + i"
-            class="group relative flex-1 min-h-[220px] sm:min-h-[260px] overflow-hidden border border-white/[0.07] bg-[#0d0d0d] p-8 sm:p-10 flex flex-col justify-between hover:border-[#DC2626]/40 transition-colors duration-300"
+            class="bento-large group relative flex min-h-[220px] flex-1 flex-col justify-between overflow-hidden rounded-3xl border border-white/[0.07] p-8 transition-colors duration-300 hover:border-[#D4B483]/35 sm:min-h-[260px] sm:p-10"
           >
-            <div class="pointer-events-none absolute -right-10 -bottom-10 text-[#DC2626] opacity-[0.06] group-hover:opacity-[0.12] transition-opacity duration-500">
+            <div class="pointer-events-none absolute -bottom-10 -right-10 text-[#D4B483] opacity-[0.07] transition-opacity duration-500 group-hover:opacity-[0.14]">
               <component :is="getIcon(bento.icon_name)" :size="220" :stroke-width="1" />
             </div>
-            <div class="relative w-12 h-12 flex items-center justify-center border border-[#DC2626]/40 bg-[#DC2626]/10 text-[#DC2626]">
+            <div class="icon-tile relative !h-12 !w-12">
               <component :is="getIcon(bento.icon_name)" :size="22" />
             </div>
-            <span class="relative font-sora text-2xl sm:text-3xl font-extrabold uppercase tracking-tight leading-tight text-white">
+            <span class="relative font-sora text-2xl font-semibold leading-tight tracking-tight text-[#F5F0EA] sm:text-3xl">
               {{ bento.title }}
             </span>
           </div>
         </div>
 
         <div
-          class="grid grid-cols-2 gap-3 auto-rows-fr"
+          class="grid auto-rows-fr grid-cols-2 gap-3"
           :class="bentoLarge.length ? 'lg:col-span-7' : 'lg:col-span-12'"
         >
           <div
             v-for="(bento, i) in bentoSmall"
             :key="'s' + i"
-            class="group p-5 sm:p-6 min-h-[112px] sm:min-h-[130px] border border-white/[0.07] bg-[#0d0d0d] flex flex-col justify-between gap-6 hover:border-[#DC2626]/40 hover:bg-[#101010] transition-all duration-300"
+            class="card-surface group flex min-h-[112px] flex-col justify-between gap-6 !p-5 transition-colors duration-300 hover:border-[#D4B483]/35 sm:min-h-[130px] sm:!p-6"
             :class="isBentoOrphan(i) ? 'col-span-2' : ''"
           >
-            <component
-              :is="getIcon(bento.icon_name)"
-              :size="18"
-              class="text-[#DC2626] opacity-70 group-hover:opacity-100 transition"
-            />
-            <span class="font-sora text-xs sm:text-sm font-bold uppercase tracking-wide text-zinc-300 group-hover:text-white transition-colors">
+            <div class="icon-tile">
+              <component :is="getIcon(bento.icon_name)" :size="18" />
+            </div>
+            <span class="font-sora text-sm font-semibold text-[#F5F0EA] sm:text-base">
               {{ bento.title }}
             </span>
           </div>
@@ -373,18 +361,16 @@
     <!-- ═══════════════════════════════════════════
          7. GALLERY
     ═══════════════════════════════════════════ -->
-    <section v-reveal class="py-20 sm:py-28 lg:py-32 border-t border-white/[0.06] bg-[#0a0a0a]">
-      <div class="max-w-7xl mx-auto px-6 sm:px-10">
-        <div class="mb-8 sm:mb-10 space-y-3">
-          <div class="flex items-center gap-3">
-            <span class="w-6 h-px bg-[#DC2626]"></span>
-            <span class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">Dokumentasi</span>
-          </div>
-          <h2 class="font-sora text-3xl sm:text-4xl font-extrabold uppercase tracking-tight">Gallery</h2>
+    <section v-reveal class="border-y border-white/[0.06] bg-[#0F0D0C] py-20 sm:py-28 lg:py-32">
+      <div class="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
+        <div class="mb-8 sm:mb-10">
+          <h2 class="section-title">Gallery</h2>
         </div>
 
-        <div v-if="!loading.gallery && galleryCategories.length > 2"
-          class="no-scrollbar flex gap-2 mb-8 sm:mb-10 overflow-x-auto sm:flex-wrap -mx-6 px-6 sm:mx-0 sm:px-0 pb-1">
+        <div
+          v-if="!loading.gallery && galleryCategories.length > 2"
+          class="no-scrollbar -mx-5 mb-8 flex gap-2 overflow-x-auto px-5 pb-1 sm:mx-0 sm:flex-wrap sm:px-0 md:mb-10"
+        >
           <button
             v-for="cat in galleryCategories"
             :key="cat"
@@ -392,9 +378,9 @@
             @click="setCategory(cat)"
             :class="[
               activeCategory === cat
-                ? 'bg-[#DC2626] border-[#DC2626] text-white'
-                : 'bg-transparent border-white/10 text-zinc-400 hover:border-white/30 hover:text-white',
-              'shrink-0 whitespace-nowrap px-4 py-2.5 border font-mono text-[10px] tracking-[0.15em] uppercase transition-all cursor-pointer'
+                ? 'border-[#D7263D] bg-[#D7263D] text-white'
+                : 'border-white/10 bg-[#141211] text-[#A39A93] hover:border-white/25 hover:text-[#F5F0EA]',
+              'shrink-0 cursor-pointer whitespace-nowrap rounded-full border px-4 py-2.5 text-sm font-medium transition-all'
             ]"
           >
             {{ cat }}
@@ -402,12 +388,15 @@
         </div>
 
         <!-- Skeleton -->
-        <div v-if="loading.gallery"
-          class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 auto-rows-[150px] sm:auto-rows-[180px] gap-2 sm:gap-3" aria-hidden="true">
-          <div v-for="n in 8" :key="n" class="skeleton" :class="n === 1 ? 'col-span-2 row-span-2' : ''"></div>
+        <div
+          v-if="loading.gallery"
+          class="grid auto-rows-[150px] grid-cols-2 gap-2 sm:auto-rows-[180px] sm:grid-cols-3 sm:gap-3 md:grid-cols-4"
+          aria-hidden="true"
+        >
+          <div v-for="n in 8" :key="n" class="skeleton rounded-2xl" :class="n === 1 ? 'col-span-2 row-span-2' : ''"></div>
         </div>
 
-        <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 grid-flow-row-dense auto-rows-[150px] sm:auto-rows-[180px] gap-2 sm:gap-3">
+        <div v-else class="grid auto-rows-[150px] grid-flow-row-dense grid-cols-2 gap-2 sm:auto-rows-[180px] sm:grid-cols-3 sm:gap-3 md:grid-cols-4">
           <button
             v-for="(img, i) in visibleGallery"
             :key="img.id ?? img.image_url"
@@ -416,34 +405,40 @@
             @click="openLightbox(i)"
             :class="[
               isFeatured(i) ? 'col-span-2 row-span-2' : '',
-              'relative overflow-hidden group text-left bg-zinc-900 border-0 p-0 cursor-pointer'
+              'group relative cursor-pointer overflow-hidden rounded-2xl border-0 bg-[#141211] p-0 text-left'
             ]"
           >
-            <div class="w-full h-full transition-transform duration-700 ease-out group-hover:scale-105">
-              <img v-blur-img :src="img.image_url" :alt="img.title || 'Dokumentasi Masashimura'" loading="lazy"
-                class="w-full h-full object-cover grayscale-[15%] group-hover:grayscale-0" />
+            <div class="h-full w-full transition-transform duration-700 ease-out group-hover:scale-105">
+              <img
+                v-blur-img
+                :src="img.image_url"
+                :alt="img.title || 'Dokumentasi Masashimura'"
+                loading="lazy"
+                class="h-full w-full object-cover"
+              />
             </div>
-            <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/0 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3 sm:p-4">
-              <div class="space-y-0.5 min-w-0">
-                <p class="font-sora text-[10px] sm:text-xs font-bold uppercase tracking-wider text-white line-clamp-1">{{ img.title || 'Masashimura' }}</p>
-                <p v-if="img.category" class="font-mono text-[9px] tracking-[0.2em] text-zinc-300 uppercase">{{ img.category }}</p>
+            <div class="absolute inset-0 flex items-end bg-gradient-to-t from-black/80 via-black/0 to-transparent p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100 sm:p-4">
+              <div class="min-w-0 space-y-0.5">
+                <p class="line-clamp-1 font-sora text-sm font-semibold text-white">{{ img.title || 'Masashimura' }}</p>
+                <p v-if="img.category" class="text-xs text-[#D4B483]">{{ img.category }}</p>
               </div>
             </div>
-            <div class="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 w-7 h-7 rounded-full bg-black/50 border border-white/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <Expand :size="13" class="text-white" />
+            <div class="absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-black/55 opacity-0 backdrop-blur-md transition-opacity duration-300 group-hover:opacity-100 sm:right-3 sm:top-3">
+              <Expand :size="14" class="text-white" />
             </div>
           </button>
 
-          <div v-if="visibleGallery.length === 0"
-            class="col-span-full row-span-2 flex items-center justify-center text-center text-zinc-600 font-mono text-xs tracking-widest uppercase border border-dashed border-white/10">
+          <div
+            v-if="visibleGallery.length === 0"
+            class="col-span-full row-span-2 flex items-center justify-center rounded-2xl border border-dashed border-white/10 text-center text-sm text-[#6F6761]"
+          >
             Belum ada foto.
           </div>
         </div>
 
-        <div v-if="!loading.gallery && filteredGallery.length > visibleGallery.length" class="flex justify-center mt-10">
-          <button type="button" @click="galleryLimit += 8"
-            class="font-mono text-[10px] tracking-[0.25em] uppercase text-zinc-400 hover:text-white border border-white/10 hover:border-white/30 px-6 py-3.5 transition-all cursor-pointer">
-            Muat Lebih Banyak ({{ filteredGallery.length - visibleGallery.length }})
+        <div v-if="!loading.gallery && filteredGallery.length > visibleGallery.length" class="mt-10 flex justify-center">
+          <button type="button" @click="galleryLimit += 8" class="btn-ghost cursor-pointer px-6 py-3.5">
+            Muat lebih banyak ({{ filteredGallery.length - visibleGallery.length }})
           </button>
         </div>
       </div>
@@ -451,39 +446,50 @@
 
     <!-- LIGHTBOX GALLERY -->
     <transition name="lightbox-fade">
-      <div v-if="lightboxIndex !== null"
-        class="fixed inset-0 z-[60] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4 sm:p-10"
+      <div
+        v-if="lightboxIndex !== null"
+        class="fixed inset-0 z-[60] flex items-center justify-center bg-black/95 p-4 backdrop-blur-sm sm:p-10"
         role="dialog" aria-modal="true" aria-label="Galeri foto"
         @click.self="closeLightbox"
         @touchstart.passive="onTouchStart"
         @touchend="handleSwipe($event, nextImage, prevImage)"
       >
-        <button type="button" @click="closeLightbox" aria-label="Tutup"
-          class="absolute top-4 right-4 sm:top-8 sm:right-8 w-11 h-11 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white transition cursor-pointer z-10">
+        <button
+          type="button" @click="closeLightbox" aria-label="Tutup"
+          class="absolute right-4 top-4 z-10 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/5 text-white transition hover:bg-white/10 sm:right-8 sm:top-8"
+        >
           <X :size="18" />
         </button>
 
-        <span class="absolute top-6 left-5 sm:top-10 sm:left-10 font-mono text-[10px] tracking-[0.25em] text-zinc-500 uppercase">
-          {{ String(lightboxIndex + 1).padStart(2, '0') }} / {{ String(visibleGallery.length).padStart(2, '0') }}
+        <span class="absolute left-5 top-6 text-sm font-medium tabular-nums text-[#A39A93] sm:left-10 sm:top-10">
+          {{ lightboxIndex + 1 }} / {{ visibleGallery.length }}
         </span>
 
-        <button v-if="visibleGallery.length > 1" type="button" @click.stop="prevImage" aria-label="Foto sebelumnya"
-          class="absolute left-2 sm:left-8 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white transition cursor-pointer z-10">
+        <button
+          v-if="visibleGallery.length > 1" type="button" @click.stop="prevImage" aria-label="Foto sebelumnya"
+          class="absolute left-2 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/5 text-white transition hover:bg-white/10 sm:left-8"
+        >
           <ChevronLeft :size="20" />
         </button>
-        <button v-if="visibleGallery.length > 1" type="button" @click.stop="nextImage" aria-label="Foto berikutnya"
-          class="absolute right-2 sm:right-8 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white transition cursor-pointer z-10">
+        <button
+          v-if="visibleGallery.length > 1" type="button" @click.stop="nextImage" aria-label="Foto berikutnya"
+          class="absolute right-2 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/5 text-white transition hover:bg-white/10 sm:right-8"
+        >
           <ChevronRight :size="20" />
         </button>
 
-        <div class="max-w-4xl w-full space-y-4" @click.stop>
-          <div class="max-h-[75vh] flex items-center justify-center overflow-hidden">
-            <img :key="lightboxIndex" :src="currentLightboxImage?.image_url" :alt="currentLightboxImage?.title || 'Masashimura'"
-              class="lb-img max-h-[75vh] max-w-full object-contain" />
+        <div class="w-full max-w-4xl space-y-4" @click.stop>
+          <div class="flex max-h-[75vh] items-center justify-center overflow-hidden">
+            <img
+              :key="lightboxIndex"
+              :src="currentLightboxImage?.image_url"
+              :alt="currentLightboxImage?.title || 'Masashimura'"
+              class="lb-img max-h-[75vh] max-w-full rounded-2xl object-contain"
+            />
           </div>
-          <div class="text-center space-y-1">
-            <p class="font-sora text-sm font-bold uppercase tracking-wider text-white">{{ currentLightboxImage?.title || 'Masashimura' }}</p>
-            <p v-if="currentLightboxImage?.category" class="font-mono text-[9px] tracking-[0.25em] text-zinc-500 uppercase">{{ currentLightboxImage.category }}</p>
+          <div class="space-y-1 text-center">
+            <p class="font-sora text-base font-semibold text-[#F5F0EA]">{{ currentLightboxImage?.title || 'Masashimura' }}</p>
+            <p v-if="currentLightboxImage?.category" class="text-sm text-[#D4B483]">{{ currentLightboxImage.category }}</p>
           </div>
         </div>
       </div>
@@ -492,35 +498,31 @@
     <!-- ═══════════════════════════════════════════
          8. REVIEW (bisa swipe di mobile)
     ═══════════════════════════════════════════ -->
-    <section v-reveal class="py-20 sm:py-28 lg:py-32 px-6 sm:px-10 max-w-4xl mx-auto">
-      <div class="mb-10 sm:mb-14 space-y-3">
-        <div class="flex items-center gap-3">
-          <span class="w-6 h-px bg-[#DC2626]"></span>
-          <span class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">Kata Mereka</span>
-        </div>
-        <h2 class="font-sora text-3xl sm:text-4xl font-extrabold uppercase tracking-tight">Review Pelanggan</h2>
+    <section v-reveal class="mx-auto max-w-4xl px-5 py-20 sm:px-8 sm:py-28 lg:px-10 lg:py-32">
+      <div class="mb-10 sm:mb-14">
+        <h2 class="section-title">Kata pelanggan</h2>
       </div>
 
       <!-- Skeleton -->
-      <div v-if="loading.reviews" class="border-l-2 border-white/10 pl-6 sm:pl-10 space-y-6" aria-hidden="true">
-        <div class="skeleton h-7 w-7"></div>
-        <div class="space-y-3 max-w-2xl">
-          <div class="skeleton h-5 w-full"></div>
-          <div class="skeleton h-5 w-5/6"></div>
-          <div class="skeleton h-5 w-2/3"></div>
+      <div v-if="loading.reviews" class="space-y-6" aria-hidden="true">
+        <div class="skeleton h-8 w-8 rounded-full"></div>
+        <div class="max-w-2xl space-y-3">
+          <div class="skeleton h-5 w-full rounded-full"></div>
+          <div class="skeleton h-5 w-5/6 rounded-full"></div>
+          <div class="skeleton h-5 w-2/3 rounded-full"></div>
         </div>
         <div class="flex items-center gap-3">
-          <div class="skeleton w-9 h-9 rounded-full"></div>
+          <div class="skeleton h-10 w-10 rounded-full"></div>
           <div class="space-y-2">
-            <div class="skeleton h-3 w-28"></div>
-            <div class="skeleton h-3 w-20"></div>
+            <div class="skeleton h-3 w-28 rounded-full"></div>
+            <div class="skeleton h-3 w-20 rounded-full"></div>
           </div>
         </div>
       </div>
 
       <div
         v-else-if="reviews.length"
-        class="select-none touch-pan-y"
+        class="touch-pan-y select-none"
         @touchstart.passive="onTouchStart"
         @touchend="onReviewSwipe"
       >
@@ -529,29 +531,32 @@
             v-for="(review, i) in reviews"
             :key="i"
             :aria-hidden="i !== currentReviewIndex"
-            class="col-start-1 row-start-1 border-l-2 border-[#DC2626] pl-6 sm:pl-10 space-y-6 transition-all duration-500 ease-out"
-            :class="i === currentReviewIndex ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'"
+            class="col-start-1 row-start-1 space-y-7 transition-all duration-500 ease-out"
+            :class="i === currentReviewIndex ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-3 opacity-0'"
           >
-            <Quote :size="28" class="text-[#DC2626]/60" />
-            <blockquote class="text-zinc-200 text-lg sm:text-2xl font-sora font-light italic leading-relaxed max-w-2xl">
+            <Quote :size="32" class="text-[#D4B483]/70" />
+            <blockquote class="max-w-2xl font-sora text-xl font-normal leading-relaxed text-[#F5F0EA] sm:text-2xl">
               “{{ review.text }}”
             </blockquote>
             <figcaption class="flex items-center gap-3">
-              <span class="w-9 h-9 shrink-0 rounded-full bg-[#DC2626]/15 border border-[#DC2626]/30 flex items-center justify-center font-sora text-xs font-bold text-[#DC2626] uppercase">
+              <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#D4B483]/30 bg-[#D4B483]/10 font-sora text-sm font-semibold uppercase text-[#D4B483]">
                 {{ (review.name || '?').trim().charAt(0) }}
               </span>
-              <span class="flex flex-col min-w-0">
-                <span class="font-mono text-[10px] tracking-[0.2em] text-zinc-300 uppercase truncate">{{ review.name }}</span>
-                <span class="font-mono text-[10px] text-zinc-600">{{ review.status }}</span>
+              <span class="flex min-w-0 flex-col">
+                <span class="truncate text-sm font-semibold text-[#F5F0EA]">{{ review.name }}</span>
+                <span class="text-sm text-[#6F6761]">{{ review.status }}</span>
               </span>
             </figcaption>
           </figure>
         </div>
 
-        <div v-if="reviews.length > 1" class="mt-10 sm:mt-12 flex items-center gap-2" aria-hidden="true">
-          <span v-for="(r, i) in reviews" :key="i"
-            class="block h-0.5 transition-all duration-500"
-            :class="i === currentReviewIndex ? 'w-8 bg-[#DC2626]' : 'w-4 bg-zinc-700'"></span>
+        <div v-if="reviews.length > 1" class="mt-10 flex items-center gap-2 sm:mt-12" aria-hidden="true">
+          <span
+            v-for="(r, i) in reviews"
+            :key="i"
+            class="block h-1.5 rounded-full transition-all duration-500"
+            :class="i === currentReviewIndex ? 'w-8 bg-[#D7263D]' : 'w-1.5 bg-white/20'"
+          ></span>
         </div>
       </div>
     </section>
@@ -559,30 +564,32 @@
     <!-- ═══════════════════════════════════════════
          9. CTA
     ═══════════════════════════════════════════ -->
-    <section v-reveal class="relative overflow-hidden border-t border-white/[0.06] bg-[#0a0a0a]">
-      <div class="cta-glow absolute inset-0 pointer-events-none"></div>
-      <div class="relative max-w-7xl mx-auto px-6 sm:px-10 py-20 sm:py-28 lg:py-32 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-        <div class="space-y-6">
-          <div class="flex items-center gap-3">
-            <span class="w-6 h-px bg-[#DC2626]"></span>
-            <span class="font-mono text-[10px] tracking-[0.3em] text-[#DC2626] uppercase">Yuk Order</span>
-          </div>
-          <h2 class="font-sora text-5xl sm:text-6xl lg:text-7xl font-extrabold uppercase tracking-tight leading-[0.9]">
-            Udah<br/><span class="text-[#DC2626]">Laper?</span>
+    <section v-reveal class="mx-auto max-w-7xl px-5 pb-20 sm:px-8 sm:pb-28 lg:px-10 lg:pb-32">
+      <div class="cta relative grid grid-cols-1 items-center gap-10 overflow-hidden rounded-[2rem] p-8 sm:p-12 lg:grid-cols-2 lg:gap-16 lg:p-16">
+        <div class="cta-sheen pointer-events-none absolute inset-0" aria-hidden="true"></div>
+
+        <div class="relative space-y-5">
+          <h2 class="font-sora text-4xl font-semibold leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-6xl">
+            Udah laper?
           </h2>
-          <p class="text-zinc-400 text-sm font-light max-w-xs leading-relaxed">
-            Pilih menu favorit dan nikmati langsung di kedai atau melalui web ordering.
+          <p class="max-w-xs text-base leading-relaxed text-white/75">
+            Pilih menu favorit dan nikmati langsung di kedai atau lewat web ordering.
           </p>
         </div>
-        <div class="flex flex-col sm:flex-row lg:justify-end gap-3 sm:gap-4">
-          <router-link to="/menu"
-            class="group inline-flex items-center justify-center gap-3 bg-[#DC2626] hover:bg-red-700 text-white font-sora text-[11px] uppercase tracking-[0.2em] px-10 py-5 font-bold transition-all duration-200 hover:-translate-y-0.5">
-            Pesan via Web
-            <ArrowRight :size="14" class="transition-transform duration-200 group-hover:translate-x-1" />
+
+        <div class="relative flex flex-col gap-3 sm:flex-row sm:gap-4 lg:justify-end">
+          <router-link
+            to="/menu"
+            class="group inline-flex items-center justify-center gap-2.5 whitespace-nowrap rounded-full bg-[#F5F0EA] px-9 py-4 font-sora text-sm font-semibold text-[#2A0A0F] transition-all duration-200 hover:bg-white active:scale-[0.98]"
+          >
+            Pesan via web
+            <ArrowRight :size="16" class="transition-transform duration-200 group-hover:translate-x-1" />
           </router-link>
-          <router-link to="/contact"
-            class="inline-flex items-center justify-center border border-white/25 hover:border-white/60 hover:bg-white/5 text-white font-sora text-[11px] uppercase tracking-[0.2em] px-10 py-5 font-bold transition-all duration-200">
-            Hubungi Kami
+          <router-link
+            to="/contact"
+            class="inline-flex items-center justify-center whitespace-nowrap rounded-full border border-white/30 px-9 py-4 font-sora text-sm font-semibold text-white transition-all duration-200 hover:border-white/70 hover:bg-white/10 active:scale-[0.98]"
+          >
+            Hubungi kami
           </router-link>
         </div>
       </div>
@@ -994,10 +1001,87 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/*
+  Palet (sama dengan halaman Menu dan Lokasi & Kontak)
+  Warm black #0B0A0A · Band #0F0D0C · Surface #141211 · Washi #F5F0EA
+  Crimson #D7263D (aksi) · Champagne #D4B483 (detail premium)
+*/
+
 a:focus-visible,
 button:focus-visible {
-  outline: 2px solid #DC2626;
+  outline: 2px solid #D4B483;
   outline-offset: 3px;
+}
+
+/* ── Judul section ── */
+.section-title {
+  font-family: "Sora", ui-sans-serif, system-ui, sans-serif;
+  font-size: clamp(1.875rem, 4vw, 2.75rem);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: #F5F0EA;
+}
+
+/* ── Kartu & tombol ── */
+.card-surface {
+  border-radius: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012)), #141211;
+  padding: 1.5rem;
+}
+
+.bento-large {
+  background:
+    radial-gradient(70% 70% at 100% 100%, rgba(215, 38, 61, 0.14), transparent 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012)),
+    #141211;
+}
+
+.icon-tile {
+  display: flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(212, 180, 131, 0.22);
+  background: rgba(212, 180, 131, 0.1);
+  color: #D4B483;
+}
+
+.btn-primary,
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+.btn-primary {
+  background: #D7263D;
+  color: #fff;
+}
+.btn-primary:hover {
+  background: #B91C32;
+  box-shadow: 0 8px 24px -8px rgba(215, 38, 61, 0.6);
+  transform: translateY(-2px);
+}
+.btn-ghost {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #F5F0EA;
+}
+.btn-ghost:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.06);
+}
+.btn-primary:active,
+.btn-ghost:active {
+  transform: scale(0.98);
 }
 
 /* ── Skeleton ── */
@@ -1024,16 +1108,15 @@ button:focus-visible {
   min-height: 100svh;
 }
 .hero-title {
-  font-size: clamp(2.25rem, 8.5vw, 4.75rem);
+  font-size: clamp(2.5rem, 9vw, 5rem);
 }
 @media (min-width: 1024px) {
-  .hero-title { font-size: clamp(3rem, 6vw, 4.75rem); }
+  .hero-title { font-size: clamp(3.25rem, 6vw, 5rem); }
 }
 .hero-glow {
-  background: radial-gradient(60% 50% at 0% 100%, rgba(220, 38, 38, 0.18), transparent 70%);
-}
-.cta-glow {
-  background: radial-gradient(50% 70% at 100% 100%, rgba(220, 38, 38, 0.14), transparent 70%);
+  background:
+    radial-gradient(60% 50% at 0% 100%, rgba(215, 38, 61, 0.2), transparent 70%),
+    radial-gradient(40% 40% at 100% 0%, rgba(212, 180, 131, 0.08), transparent 70%);
 }
 
 @keyframes heroIn {
@@ -1044,6 +1127,17 @@ button:focus-visible {
   transform: translateY(18px);
   animation: heroIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   animation-delay: var(--d, 0ms);
+}
+
+/* ── CTA ── */
+.cta {
+  background: linear-gradient(135deg, #8E1426 0%, #B01E31 45%, #5A0D1A 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.cta-sheen {
+  background:
+    radial-gradient(60% 90% at 100% 0%, rgba(255, 214, 170, 0.22), transparent 65%),
+    radial-gradient(50% 70% at 0% 100%, rgba(0, 0, 0, 0.35), transparent 70%);
 }
 
 /* ── Marquee ── */
@@ -1069,8 +1163,8 @@ button:focus-visible {
   z-index: 1;
   pointer-events: none;
 }
-.marquee-wrap::before { left: 0;  background: linear-gradient(90deg,  #0a0a0a, transparent); }
-.marquee-wrap::after  { right: 0; background: linear-gradient(270deg, #0a0a0a, transparent); }
+.marquee-wrap::before { left: 0;  background: linear-gradient(90deg,  #0F0D0C, transparent); }
+.marquee-wrap::after  { right: 0; background: linear-gradient(270deg, #0F0D0C, transparent); }
 
 /* ── Lightbox ── */
 .lightbox-fade-enter-active,
