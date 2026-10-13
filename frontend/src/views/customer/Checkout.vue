@@ -7,7 +7,7 @@
       <!-- Header -->
       <header class="mb-8 sm:mb-10">
         <h1 class="font-sora text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl">
-          Pesanan lo
+          Pesanan Kamu
         </h1>
         <p class="mt-3 text-base text-[#A39A93]">Cek item, isi data, lalu pilih cara bayar.</p>
       </header>
