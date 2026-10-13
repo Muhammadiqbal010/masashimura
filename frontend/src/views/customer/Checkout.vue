@@ -1,117 +1,101 @@
 <template>
-  <div class="min-h-screen bg-[#060606] text-white pt-24 pb-24 font-inter">
-    <div class="max-w-6xl mx-auto px-4 sm:px-8 py-6">
+  <div class="page relative min-h-screen bg-[#0B0A0A] pb-24 pt-28 font-inter text-[#F5F0EA] sm:pt-32">
+    <div class="page-glow pointer-events-none absolute inset-x-0 top-0 h-[420px]" aria-hidden="true"></div>
+
+    <div class="relative mx-auto max-w-6xl px-5 sm:px-8 lg:px-10">
 
       <!-- Header -->
-      <div class="mb-10 space-y-1">
-        <div class="flex items-center gap-2">
-          <span class="w-4 h-px bg-[#DC2626]"></span>
-          <span class="font-mono text-[9px] tracking-[0.35em] text-[#DC2626] uppercase">Checkout</span>
-        </div>
-        <h1 class="font-sora text-3xl sm:text-4xl font-extrabold uppercase tracking-tight text-white">
-          Pesanan Lo
+      <header class="mb-8 sm:mb-10">
+        <h1 class="font-sora text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl">
+          Pesanan lo
         </h1>
-      </div>
+        <p class="mt-3 text-base text-[#A39A93]">Cek item, isi data, lalu pilih cara bayar.</p>
+      </header>
 
       <!-- ══ PANEL STATUS PEMBAYARAN ONLINE (muncul setelah order gateway dibuat) ══ -->
       <div
         v-if="payment"
-        class="max-w-md mx-auto bg-[#0d0d0d] border border-white/[0.06] rounded-2xl p-6 sm:p-8 text-center space-y-5"
+        class="card mx-auto max-w-md space-y-6 text-center"
+        role="status"
       >
         <div
-          class="mx-auto w-14 h-14 rounded-2xl border flex items-center justify-center"
+          class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border"
           :class="phaseIconClass"
         >
           <div
             v-if="payment.phase === 'starting' || payment.phase === 'waiting'"
-            class="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin"
+            class="h-7 w-7 animate-spin rounded-full border-2 border-white/20 border-t-[#D4B483]"
           ></div>
-          <Check v-else-if="payment.phase === 'paid'" :size="24" class="text-emerald-400" />
-          <X v-else-if="payment.phase === 'failed'" :size="24" class="text-red-400" />
-          <Clock v-else :size="24" class="text-amber-400" />
+          <Check v-else-if="payment.phase === 'paid'" :size="26" class="text-emerald-400" />
+          <X v-else-if="payment.phase === 'failed'" :size="26" class="text-[#F2707A]" />
+          <Clock v-else :size="26" class="text-[#D4B483]" />
         </div>
 
-        <div class="space-y-1.5">
-          <h2 class="font-sora text-lg font-extrabold uppercase tracking-tight text-white">{{ phaseTitle }}</h2>
-          <p class="font-mono text-[11px] text-zinc-500 leading-relaxed">{{ phaseDescription }}</p>
+        <div class="space-y-2">
+          <h2 class="font-sora text-2xl font-semibold tracking-tight text-[#F5F0EA]">{{ phaseTitle }}</h2>
+          <p class="text-sm leading-relaxed text-[#A39A93]">{{ phaseDescription }}</p>
         </div>
 
-        <div class="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 space-y-2 text-left">
-          <div class="flex justify-between items-center">
-            <span class="font-mono text-[10px] uppercase tracking-widest text-zinc-600">No. Order</span>
-            <span class="font-mono text-[12px] text-white">#{{ payment.orderNumber }}</span>
+        <div class="summary-box space-y-2.5 text-left">
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-[#A39A93]">No. order</span>
+            <span class="text-sm font-semibold tabular-nums text-[#F5F0EA]">#{{ payment.orderNumber }}</span>
           </div>
-          <div class="flex justify-between items-center">
-            <span class="font-mono text-[10px] uppercase tracking-widest text-zinc-600">Total</span>
-            <span class="font-mono text-[14px] font-bold text-amber-400">{{ formatPrice(payment.total) }}</span>
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-[#A39A93]">Total</span>
+            <span class="font-sora text-lg font-semibold text-[#F5F0EA]">{{ formatPrice(payment.total) }}</span>
           </div>
 
-          <!-- Ringkasan pesanan (disimpan bersama status pembayaran, jadi tetap tampil setelah refresh) -->
+          <!-- Ringkasan pesanan (tetap tampil setelah refresh) -->
           <div
             v-if="payment.items?.length"
-            class="pt-2 mt-1 border-t border-white/[0.06] space-y-1"
+            class="mt-1 space-y-1.5 border-t border-white/[0.07] pt-3"
           >
             <div
               v-for="(it, i) in payment.items"
               :key="i"
-              class="flex justify-between gap-3"
+              class="flex justify-between gap-3 text-sm"
             >
-              <span class="font-mono text-[11px] text-zinc-500 truncate">
+              <span class="truncate text-[#A39A93]">
                 {{ it.quantity }}x {{ it.name }}<template v-if="it.optionText"> ({{ it.optionText }})</template>
               </span>
-              <span class="font-mono text-[11px] text-zinc-600 flex-shrink-0">{{ formatPrice(it.price * it.quantity) }}</span>
+              <span class="flex-shrink-0 tabular-nums text-[#6F6761]">{{ formatPrice(it.price * it.quantity) }}</span>
             </div>
           </div>
         </div>
 
-        <div class="space-y-2">
+        <div class="space-y-2.5">
           <!-- Berhasil -->
           <template v-if="payment.phase === 'paid'">
             <button
               v-if="payment.waMessage"
               type="button"
-              class="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-sora text-[11px] font-bold uppercase tracking-widest transition-all duration-200 active:scale-[0.98]"
+              class="btn-wa"
               @click="openWhatsApp(payment.waMessage)"
             >
-              Kabari Admin via WhatsApp
+              Kabari admin via WhatsApp
             </button>
-            <button
-              type="button"
-              class="w-full py-3.5 rounded-xl border border-white/[0.1] text-zinc-400 hover:text-white hover:border-white/20 font-sora text-[11px] font-bold uppercase tracking-widest transition-all duration-200"
-              @click="finishPayment"
-            >
+            <button type="button" class="btn-ghost" @click="finishPayment">
               Selesai
             </button>
           </template>
 
           <!-- Gagal / kedaluwarsa -->
           <template v-else-if="payment.phase === 'failed'">
-            <button
-              type="button"
-              class="w-full py-3.5 rounded-xl bg-[#DC2626] hover:bg-red-700 text-white font-sora text-[11px] font-bold uppercase tracking-widest transition-all duration-200 active:scale-[0.98]"
-              @click="backToMenu"
-            >
-              Kembali ke Menu
+            <button type="button" class="btn-primary" @click="backToMenu">
+              Kembali ke menu
             </button>
           </template>
 
           <!-- Belum terkonfirmasi -->
           <template v-else-if="payment.phase === 'pending'">
-            <button
-              type="button"
-              class="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-sora text-[11px] font-bold uppercase tracking-widest transition-all duration-200 active:scale-[0.98]"
-              @click="openSnap"
-            >
-              Lanjutkan Bayar
+            <button type="button" class="btn-primary" @click="openSnap">
+              Lanjutkan bayar
             </button>
-            <button
-              type="button"
-              class="w-full py-3.5 rounded-xl border border-white/[0.1] text-zinc-400 hover:text-white hover:border-white/20 font-sora text-[11px] font-bold uppercase tracking-widest transition-all duration-200"
-              @click="onCheckStatusClick"
-            >
-              Cek Status
+            <button type="button" class="btn-ghost" @click="onCheckStatusClick">
+              Cek status
             </button>
-            <p class="font-mono text-[9px] text-zinc-700 pt-1">
+            <p class="pt-1 text-xs text-[#6F6761]">
               Order otomatis dibatalkan kalau tidak dibayar dalam 30 menit.
             </p>
           </template>
@@ -123,59 +107,51 @@
            popup yang dibuka setelah proses async. Jadi customer menekan tombolnya sendiri. -->
       <div
         v-else-if="cashDone"
-        class="max-w-md mx-auto bg-[#0d0d0d] border border-white/[0.06] rounded-2xl p-6 sm:p-8 text-center space-y-5"
+        class="card mx-auto max-w-md space-y-6 text-center"
       >
-        <div class="mx-auto w-14 h-14 rounded-2xl border bg-emerald-500/10 border-emerald-500/30 flex items-center justify-center">
-          <Check :size="24" class="text-emerald-400" />
+        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-emerald-400/30 bg-emerald-400/10">
+          <Check :size="26" class="text-emerald-400" />
         </div>
 
-        <div class="space-y-1.5">
-          <h2 class="font-sora text-lg font-extrabold uppercase tracking-tight text-white">Pesanan Dibuat</h2>
-          <p class="font-mono text-[11px] text-zinc-500 leading-relaxed">
+        <div class="space-y-2">
+          <h2 class="font-sora text-2xl font-semibold tracking-tight text-[#F5F0EA]">Pesanan dibuat</h2>
+          <p class="text-sm leading-relaxed text-[#A39A93]">
             Bayar langsung di toko, kasir yang mengonfirmasi pembayaranmu. Kabari admin lewat WhatsApp supaya pesananmu cepat diproses.
           </p>
         </div>
 
-        <div class="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 space-y-2 text-left">
-          <div class="flex justify-between items-center">
-            <span class="font-mono text-[10px] uppercase tracking-widest text-zinc-600">No. Order</span>
-            <span class="font-mono text-[12px] text-white">#{{ cashDone.orderNumber }}</span>
+        <div class="summary-box space-y-2.5 text-left">
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-[#A39A93]">No. order</span>
+            <span class="text-sm font-semibold tabular-nums text-[#F5F0EA]">#{{ cashDone.orderNumber }}</span>
           </div>
-          <div class="flex justify-between items-center">
-            <span class="font-mono text-[10px] uppercase tracking-widest text-zinc-600">Total</span>
-            <span class="font-mono text-[14px] font-bold text-amber-400">{{ formatPrice(cashDone.total) }}</span>
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-[#A39A93]">Total</span>
+            <span class="font-sora text-lg font-semibold text-[#F5F0EA]">{{ formatPrice(cashDone.total) }}</span>
           </div>
 
           <div
             v-if="cashDone.items?.length"
-            class="pt-2 mt-1 border-t border-white/[0.06] space-y-1"
+            class="mt-1 space-y-1.5 border-t border-white/[0.07] pt-3"
           >
             <div
               v-for="(it, i) in cashDone.items"
               :key="i"
-              class="flex justify-between gap-3"
+              class="flex justify-between gap-3 text-sm"
             >
-              <span class="font-mono text-[11px] text-zinc-500 truncate">
+              <span class="truncate text-[#A39A93]">
                 {{ it.quantity }}x {{ it.name }}<template v-if="it.optionText"> ({{ it.optionText }})</template>
               </span>
-              <span class="font-mono text-[11px] text-zinc-600 flex-shrink-0">{{ formatPrice(it.price * it.quantity) }}</span>
+              <span class="flex-shrink-0 tabular-nums text-[#6F6761]">{{ formatPrice(it.price * it.quantity) }}</span>
             </div>
           </div>
         </div>
 
-        <div class="space-y-2">
-          <button
-            type="button"
-            class="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-sora text-[11px] font-bold uppercase tracking-widest transition-all duration-200 active:scale-[0.98]"
-            @click="openWhatsApp(cashDone.waMessage)"
-          >
-            Kabari Admin via WhatsApp
+        <div class="space-y-2.5">
+          <button type="button" class="btn-wa" @click="openWhatsApp(cashDone.waMessage)">
+            Kabari admin via WhatsApp
           </button>
-          <button
-            type="button"
-            class="w-full py-3.5 rounded-xl border border-white/[0.1] text-zinc-400 hover:text-white hover:border-white/20 font-sora text-[11px] font-bold uppercase tracking-widest transition-all duration-200"
-            @click="finishCash"
-          >
+          <button type="button" class="btn-ghost" @click="finishCash">
             Selesai
           </button>
         </div>
@@ -183,233 +159,235 @@
 
       <!-- ══ FORM CHECKOUT NORMAL ══ -->
       <div v-else>
-      <!-- Toko tutup: jelaskan kenapa tombol pesan tidak bisa dipakai -->
-      <StoreBanner />
+        <!-- Toko tutup: jelaskan kenapa tombol pesan tidak bisa dipakai -->
+        <StoreBanner />
 
-      <div class="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 lg:gap-8 items-start">
+        <div class="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1fr_400px] lg:gap-8">
 
-        <!-- ── KIRI: List Item ──────────────────────────────────── -->
-        <div class="space-y-3">
+          <!-- ── KIRI: List Item ──────────────────────────────────── -->
+          <section class="space-y-3" aria-label="Item pesanan">
 
-          <!-- Empty -->
-          <div
-            v-if="cartStore.isEmpty"
-            class="bg-[#0d0d0d] border border-white/[0.06] rounded-2xl p-16 text-center space-y-4"
-          >
-            <div class="w-12 h-12 rounded-2xl bg-[#111] border border-white/5 flex items-center justify-center mx-auto">
-              <ShoppingCart :size="20" class="text-zinc-700" />
-            </div>
-            <p class="font-sora text-[11px] font-bold uppercase tracking-widest text-zinc-600">Keranjang masih kosong</p>
-            <router-link
-              to="/menu"
-              class="inline-block font-mono text-[10px] tracking-widest text-[#DC2626] uppercase border border-[#DC2626]/30 hover:border-[#DC2626]/60 px-4 py-2 rounded-lg transition-all duration-150"
+            <!-- Empty -->
+            <div
+              v-if="cartStore.isEmpty"
+              class="space-y-4 rounded-3xl border border-dashed border-white/10 px-6 py-20 text-center"
             >
-              Lihat Menu
-            </router-link>
-          </div>
-
-          <!-- Items -->
-          <div
-            v-for="item in Object.values(cartStore.cart)"
-            :key="item.cartKey"
-            class="bg-[#0d0d0d] border border-white/[0.06] rounded-2xl p-4 sm:p-5 flex gap-4 group"
-          >
-            <!-- Thumbnail -->
-            <div class="w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-xl overflow-hidden bg-[#111] border border-white/[0.06] flex-shrink-0">
-              <img
-                v-if="item.image_url"
-                :src="getMediaUrl(item.image_url, 160)"
-                class="w-full h-full object-cover pointer-events-none"
-                :alt="item.name"
-              />
-              <div v-else class="w-full h-full flex items-center justify-center text-zinc-800 text-xl">🍜</div>
+              <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-[#141211]">
+                <ShoppingCart :size="22" class="text-[#A39A93]" />
+              </div>
+              <p class="font-sora text-lg font-semibold text-[#F5F0EA]">Keranjang masih kosong</p>
+              <p class="text-sm text-[#A39A93]">Pilih menu favoritmu dulu, lalu balik ke sini.</p>
+              <router-link to="/menu" class="btn-primary !inline-flex !w-auto px-7">
+                Lihat menu
+              </router-link>
             </div>
 
-            <!-- Detail -->
-            <div class="flex-1 min-w-0">
-              <div class="flex items-start justify-between gap-3">
-                <h4 class="font-sora text-[12px] font-bold uppercase tracking-wide text-white leading-tight">
-                  {{ item.name }}
-                </h4>
+            <!-- Items -->
+            <div
+              v-for="item in Object.values(cartStore.cart)"
+              :key="item.cartKey"
+              class="card-item flex gap-4"
+            >
+              <!-- Thumbnail -->
+              <div class="h-[72px] w-[72px] flex-shrink-0 overflow-hidden rounded-2xl border border-white/[0.07] bg-[#1A1716] sm:h-20 sm:w-20">
+                <img
+                  v-if="item.image_url"
+                  :src="getMediaUrl(item.image_url, 160)"
+                  class="pointer-events-none h-full w-full object-cover"
+                  :alt="item.name"
+                />
+                <div v-else class="flex h-full w-full items-center justify-center text-xl opacity-30">🍜</div>
+              </div>
+
+              <!-- Detail -->
+              <div class="min-w-0 flex-1">
+                <div class="flex items-start justify-between gap-3">
+                  <h4 class="font-sora text-base font-semibold leading-snug text-[#F5F0EA]">
+                    {{ item.name }}
+                  </h4>
+                  <button
+                    type="button"
+                    :aria-label="'Hapus ' + item.name + ' dari keranjang'"
+                    @click="cartStore.removeFromCart(item.cartKey)"
+                    class="-mr-2 -mt-1.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#6F6761] transition-colors duration-150 hover:bg-[#D7263D]/10 hover:text-[#F2707A]"
+                  >
+                    <X :size="16" />
+                  </button>
+                </div>
+
+                <p class="mt-1 text-sm text-[#A39A93]">
+                  {{ item.quantity }} × {{ formatPrice(item.price) }}
+                </p>
+
+                <div v-if="item.optionDetails?.length" class="mt-2 flex flex-wrap gap-1.5">
+                  <span
+                    v-for="opt in item.optionDetails"
+                    :key="opt.group + opt.label"
+                    class="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-xs font-medium text-[#C9C1B9]"
+                  >
+                    {{ opt.label }}<template v-if="opt.price"> +{{ formatPrice(opt.price) }}</template>
+                  </span>
+                </div>
+
+                <p v-if="item.notes" class="mt-2 text-xs italic text-[#D4B483]">
+                  "{{ item.notes }}"
+                </p>
+
+                <p class="mt-3 font-sora text-base font-semibold tracking-tight text-[#F5F0EA]">
+                  {{ formatPrice(item.price * item.quantity) }}
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <!-- ── KANAN: Form & Payment ────────────────────────────── -->
+          <aside class="card space-y-6 lg:sticky lg:top-24">
+
+            <h2 class="font-sora text-xl font-semibold tracking-tight text-[#F5F0EA]">Data pemesan</h2>
+
+            <!-- Nama -->
+            <div class="space-y-2">
+              <label for="co-name" class="block text-sm font-medium text-[#C9C1B9]">Nama</label>
+              <input
+                id="co-name"
+                v-model="name"
+                type="text"
+                autocomplete="name"
+                class="field"
+                placeholder="Nama kamu"
+              />
+            </div>
+
+            <!-- Nomor WA -->
+            <div class="space-y-2">
+              <label for="co-phone" class="block text-sm font-medium text-[#C9C1B9]">Nomor WhatsApp</label>
+              <input
+                id="co-phone"
+                v-model="phone"
+                type="tel"
+                inputmode="tel"
+                autocomplete="tel"
+                class="field tabular-nums"
+                placeholder="08123456789"
+              />
+              <p v-if="checkingLoyalty" class="text-xs text-[#6F6761]">Mengecek status member...</p>
+              <div
+                v-else-if="cartStore.isMember"
+                class="flex items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-2"
+              >
+                <span class="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-emerald-400"></span>
+                <p class="text-xs font-medium text-emerald-300">
+                  Member aktif · Poin saat ini: {{ cartStore.points }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Metode Pembayaran -->
+            <div class="space-y-2">
+              <span class="block text-sm font-medium text-[#C9C1B9]">Pembayaran</span>
+              <div class="grid grid-cols-2 gap-2.5">
                 <button
-                  @click="cartStore.removeFromCart(item.cartKey)"
-                  class="flex-shrink-0 text-zinc-800 hover:text-red-500 transition-colors duration-150 p-0.5 -mt-0.5"
+                  type="button"
+                  @click="selectPayment('cash')"
+                  :aria-pressed="paymentMethod === 'cash'"
+                  :class="[
+                    'rounded-2xl border px-4 py-3 text-left transition-all duration-150',
+                    paymentMethod === 'cash'
+                      ? 'border-[#D7263D] bg-[#D7263D]/10'
+                      : 'border-white/10 bg-white/[0.03] hover:border-white/25'
+                  ]"
                 >
-                  <X :size="13" />
+                  <span class="block font-sora text-sm font-semibold text-[#F5F0EA]">Cash</span>
+                  <span class="block text-xs text-[#A39A93]">Bayar di toko</span>
+                </button>
+                <button
+                  type="button"
+                  :disabled="gatewayUnavailable"
+                  @click="selectPayment('gateway')"
+                  :aria-pressed="paymentMethod === 'gateway'"
+                  :class="[
+                    'rounded-2xl border px-4 py-3 text-left transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-35',
+                    paymentMethod === 'gateway'
+                      ? 'border-[#D7263D] bg-[#D7263D]/10'
+                      : 'border-white/10 bg-white/[0.03] hover:border-white/25'
+                  ]"
+                >
+                  <span class="block font-sora text-sm font-semibold text-[#F5F0EA]">QRIS</span>
+                  <span class="block text-xs text-[#A39A93]">Bayar online</span>
                 </button>
               </div>
-
-              <div class="flex items-center gap-1.5 mt-1">
-                <span class="font-mono text-[11px] text-zinc-600">{{ item.quantity }}x</span>
-                <span class="font-mono text-[11px] text-zinc-700">·</span>
-                <span class="font-mono text-[11px] text-zinc-600">
-                  {{ formatPrice(item.price) }}
-                </span>
-              </div>
-
-              <div v-if="item.optionDetails?.length" class="mt-1.5 flex flex-wrap gap-1">
-                <span
-                  v-for="opt in item.optionDetails"
-                  :key="opt.group + opt.label"
-                  class="font-mono text-[10px] text-zinc-400 bg-white/[0.04] border border-white/[0.06] rounded-md px-1.5 py-0.5"
-                >
-                  {{ opt.label }}<template v-if="opt.price"> +{{ formatPrice(opt.price) }}</template>
-                </span>
-              </div>
-
-              <p v-if="item.notes" class="mt-1.5 font-mono text-[10px] text-amber-500/70 italic">
-                "{{ item.notes }}"
+              <p class="pt-0.5 text-xs leading-relaxed text-[#6F6761]">
+                <template v-if="paymentMethod === 'cash'">
+                  Bayar langsung di toko. Kasir yang mengonfirmasi pembayaranmu.
+                </template>
+                <template v-else>
+                  Bayar lewat QRIS di popup. Pesanan diproses setelah pembayaran terkonfirmasi otomatis.
+                </template>
+              </p>
+              <p v-if="gatewayUnavailable && !cartStore.isEmpty" class="text-xs text-[#D4B483]">
+                Total Rp0 (semua item tukar poin), pembayaran online tidak diperlukan. Pakai Cash.
               </p>
             </div>
 
-            <!-- Subtotal -->
-            <div class="flex-shrink-0 text-right">
-              <span class="font-mono text-[13px] font-bold text-amber-400">
-                {{ formatPrice(item.price * item.quantity) }}
-              </span>
-            </div>
-          </div>
-        </div>
+            <div class="border-t border-white/[0.07]"></div>
 
-        <!-- ── KANAN: Form & Payment ────────────────────────────── -->
-        <div class="bg-[#0d0d0d] border border-white/[0.06] rounded-2xl p-5 sm:p-6 sticky top-24 space-y-5">
+            <!-- Ringkasan Harga -->
+            <div class="space-y-3">
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-[#A39A93]">Subtotal</span>
+                <span class="tabular-nums text-[#F5F0EA]">{{ formatPrice(cartStore.subtotal) }}</span>
+              </div>
 
-          <!-- Section label -->
-          <div class="flex items-center gap-2 pb-1">
-            <span class="w-3 h-px bg-zinc-700"></span>
-            <span class="font-mono text-[9px] tracking-[0.3em] text-zinc-600 uppercase">Data Pemesan</span>
-          </div>
+              <!-- Kode Promo -->
+              <PromoCodeBox
+                ref="promoBoxRef"
+                :subtotal="cartStore.totalPrice"
+                @applied="onPromoApplied"
+                @removed="onPromoRemoved"
+              />
 
-          <!-- Nama -->
-          <div class="space-y-1.5">
-            <label class="block font-mono text-[9px] uppercase tracking-widest text-zinc-600">Nama</label>
-            <input
-              v-model="name"
-              type="text"
-              class="w-full bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.12] focus:border-[#DC2626]/50 rounded-xl px-4 py-3 text-[13px] text-white placeholder:text-zinc-700 outline-none transition-colors duration-150 font-inter"
-              placeholder="Nama kamu"
-            />
-          </div>
+              <div v-if="appliedPromo" class="flex items-center justify-between text-sm">
+                <span class="text-emerald-300">Diskon promo ({{ appliedPromo.code }})</span>
+                <span class="tabular-nums text-emerald-300">−{{ formatPrice(appliedPromo.discount_amount) }}</span>
+              </div>
 
-          <!-- Nomor WA -->
-          <div class="space-y-1.5">
-            <label class="block font-mono text-[9px] uppercase tracking-widest text-zinc-600">Nomor WhatsApp</label>
-            <input
-              v-model="phone"
-              type="tel"
-              class="w-full bg-white/[0.03] border border-white/[0.08] hover:border-white/[0.12] focus:border-[#DC2626]/50 rounded-xl px-4 py-3 text-[13px] text-white placeholder:text-zinc-700 outline-none transition-colors duration-150 font-mono"
-              placeholder="08123456789"
-            />
-            <p v-if="checkingLoyalty" class="font-mono text-[10px] text-zinc-700">Mengecek status member...</p>
-            <div v-else-if="cartStore.isMember" class="flex items-center gap-1.5 mt-1">
-              <span class="w-3 h-px bg-emerald-500/60"></span>
-              <p class="font-mono text-[10px] text-emerald-500">
-                Member aktif · Poin saat ini: {{ cartStore.points }}
-              </p>
-            </div>
-          </div>
+              <!-- Tukar Poin -->
+              <PointRedeemBox
+                :points="pointsBalance"
+                :affordable="affordableRewards"
+                :locked="lockedRewards"
+                v-model:selected-ids="selectedRewardIds"
+              />
 
-          <!-- Metode Pembayaran -->
-          <div class="space-y-1.5">
-            <label class="block font-mono text-[9px] uppercase tracking-widest text-zinc-600">Pembayaran</label>
-            <div class="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                @click="selectPayment('cash')"
-                :class="[
-                  'py-3 rounded-xl text-[10px] font-sora font-bold uppercase tracking-widest border transition-all duration-150',
-                  paymentMethod === 'cash'
-                    ? 'bg-[#DC2626] border-[#DC2626] text-white'
-                    : 'bg-white/[0.03] border-white/[0.08] text-zinc-600 hover:text-zinc-300 hover:border-white/[0.15]'
-                ]"
+              <div
+                v-for="reward in selectedRewards"
+                :key="`reward-${reward.id}`"
+                class="flex items-center justify-between gap-3 text-sm"
               >
-                Cash
-              </button>
-              <button
-                type="button"
-                :disabled="gatewayUnavailable"
-                @click="selectPayment('gateway')"
-                :class="[
-                  'py-3 rounded-xl text-[10px] font-sora font-bold uppercase tracking-widest border transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed',
-                  paymentMethod === 'gateway'
-                    ? 'bg-[#DC2626] border-[#DC2626] text-white'
-                    : 'bg-white/[0.03] border-white/[0.08] text-zinc-600 hover:text-zinc-300 hover:border-white/[0.15]'
-                ]"
-              >
-                QRIS
-              </button>
-            </div>
-            <p class="font-mono text-[9px] text-zinc-700 leading-relaxed pt-0.5">
-              <template v-if="paymentMethod === 'cash'">
-                Bayar langsung di toko. Kasir yang mengonfirmasi pembayaranmu.
-              </template>
-              <template v-else>
-                Bayar lewat QRIS di popup. Pesanan diproses setelah pembayaran terkonfirmasi otomatis.
-              </template>
-            </p>
-            <p v-if="gatewayUnavailable && !cartStore.isEmpty" class="font-mono text-[9px] text-amber-600">
-              Total Rp0 (semua item tukar poin), pembayaran online tidak diperlukan. Pakai Cash.
-            </p>
-          </div>
+                <span class="text-[#D4B483]">🎁 {{ reward.menu_name }} (gratis)</span>
+                <span class="flex-shrink-0 tabular-nums text-[#6F6761]">−{{ reward.point_cost.toLocaleString("id-ID") }} poin</span>
+              </div>
 
-          <div class="border-t border-white/[0.05]"></div>
-
-          <!-- Ringkasan Harga -->
-          <div class="space-y-2.5">
-            <div class="flex justify-between items-center">
-              <span class="font-mono text-[11px] text-zinc-600">Subtotal</span>
-              <span class="font-mono text-[11px] text-zinc-400">{{ formatPrice(cartStore.subtotal) }}</span>
+              <div class="flex items-end justify-between border-t border-white/[0.07] pt-4">
+                <span class="text-sm font-medium text-[#A39A93]">Total bayar</span>
+                <span class="font-sora text-3xl font-semibold leading-none tracking-tight text-[#F5F0EA]">
+                  {{ formatPrice(finalTotal) }}
+                </span>
+              </div>
             </div>
 
-            <!-- Kode Promo -->
-            <PromoCodeBox
-              ref="promoBoxRef"
-              :subtotal="cartStore.totalPrice"
-              @applied="onPromoApplied"
-              @removed="onPromoRemoved"
-            />
-
-            <div v-if="appliedPromo" class="flex justify-between items-center">
-              <span class="font-mono text-[11px] text-emerald-600">Diskon Promo ({{ appliedPromo.code }})</span>
-              <span class="font-mono text-[11px] text-emerald-500">−{{ formatPrice(appliedPromo.discount_amount) }}</span>
-            </div>
-
-            <!-- Tukar Poin -->
-            <PointRedeemBox
-              :points="pointsBalance"
-              :affordable="affordableRewards"
-              :locked="lockedRewards"
-              v-model:selected-ids="selectedRewardIds"
-            />
-
-            <div
-              v-for="reward in selectedRewards"
-              :key="`reward-${reward.id}`"
-              class="flex justify-between items-center"
+            <!-- CTA -->
+            <button
+              type="button"
+              class="btn-primary !min-h-[56px] !text-base"
+              @click="checkout"
+              :disabled="isCheckoutDisabled"
             >
-              <span class="font-mono text-[11px] text-amber-500">🎁 {{ reward.menu_name }} (gratis)</span>
-              <span class="font-mono text-[11px] text-zinc-600">−{{ reward.point_cost.toLocaleString("id-ID") }} poin</span>
-            </div>
-
-            <div class="flex justify-between items-center pt-2 border-t border-white/[0.05]">
-              <span class="font-mono text-[10px] tracking-widest text-zinc-600 uppercase">Total Bayar</span>
-              <span class="font-mono text-xl font-bold text-amber-400 tracking-tight leading-none">
-                {{ formatPrice(finalTotal) }}
-              </span>
-            </div>
-          </div>
-
-          <!-- CTA -->
-          <button
-            class="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-30 disabled:cursor-not-allowed text-white font-sora text-[11px] font-bold uppercase tracking-widest py-4 rounded-xl transition-all duration-200 active:scale-[0.98]"
-            @click="checkout"
-            :disabled="isCheckoutDisabled"
-          >
-            <span>{{ ctaLabel }}</span>
-            <ArrowRight v-if="!isProcessing" :size="14" />
-          </button>
+              <span>{{ ctaLabel }}</span>
+              <ArrowRight v-if="!isProcessing" :size="18" />
+            </button>
+          </aside>
         </div>
-      </div>
       </div>
     </div>
   </div>
@@ -796,9 +774,9 @@ const phaseDescription = computed(() => {
 })
 
 const phaseIconClass = computed(() => ({
-  paid:    "bg-emerald-500/10 border-emerald-500/30",
-  failed:  "bg-red-500/10 border-red-500/30",
-  pending: "bg-amber-500/10 border-amber-500/30",
+  paid:    "bg-emerald-400/10 border-emerald-400/30",
+  failed:  "bg-[#D7263D]/10 border-[#D7263D]/30",
+  pending: "bg-[#D4B483]/10 border-[#D4B483]/30",
 }[payment.value?.phase] || "bg-white/[0.04] border-white/[0.08]"))
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1009,3 +987,128 @@ onBeforeUnmount(() => {
   stopPolling()
 })
 </script>
+
+<style scoped>
+/*
+  Palet (sama dengan Home, Menu, dan Lokasi & Kontak)
+  Warm black #0B0A0A · Surface #141211 · Washi #F5F0EA
+  Crimson #D7263D (aksi) · Champagne #D4B483 (detail premium)
+  Hijau hanya untuk status sukses dan tombol WhatsApp.
+*/
+
+.page-glow {
+  background:
+    radial-gradient(60% 70% at 15% 0%, rgba(215, 38, 61, 0.14), transparent 70%),
+    radial-gradient(40% 50% at 90% 10%, rgba(212, 180, 131, 0.06), transparent 70%);
+}
+
+.card {
+  border-radius: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012)), #141211;
+  padding: 1.5rem;
+}
+@media (min-width: 640px) {
+  .card { padding: 1.75rem; }
+}
+
+.card-item {
+  border-radius: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)), #141211;
+  padding: 1rem;
+}
+@media (min-width: 640px) {
+  .card-item { padding: 1.25rem; }
+}
+
+.summary-box {
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.025);
+  padding: 1rem 1.125rem;
+}
+
+/* Input: 16px di HP supaya iOS tidak zoom otomatis */
+.field {
+  width: 100%;
+  height: 3rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #0F0D0C;
+  padding: 0 1rem;
+  font-size: 1rem;
+  color: #F5F0EA;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+@media (min-width: 640px) {
+  .field { font-size: 0.875rem; }
+}
+.field::placeholder { color: #6F6761; }
+.field:hover { border-color: rgba(255, 255, 255, 0.2); }
+.field:focus {
+  border-color: rgba(212, 180, 131, 0.6);
+  box-shadow: 0 0 0 3px rgba(212, 180, 131, 0.12);
+}
+
+.btn-primary,
+.btn-ghost,
+.btn-wa {
+  display: flex;
+  width: 100%;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+.btn-primary {
+  background: #D7263D;
+  color: #fff;
+}
+.btn-primary:hover:not(:disabled) {
+  background: #B91C32;
+  box-shadow: 0 8px 24px -8px rgba(215, 38, 61, 0.6);
+}
+.btn-primary:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+.btn-ghost {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #F5F0EA;
+}
+.btn-ghost:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.05);
+}
+.btn-wa {
+  background: #1FA855;
+  color: #fff;
+}
+.btn-wa:hover {
+  background: #1A9149;
+}
+.btn-primary:active:not(:disabled),
+.btn-ghost:active,
+.btn-wa:active {
+  transform: scale(0.98);
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid #D4B483;
+  outline-offset: 3px;
+}
+.field:focus-visible { outline: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-spin { animation-duration: 2s; }
+}
+</style>
