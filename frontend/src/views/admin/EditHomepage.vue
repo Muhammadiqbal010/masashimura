@@ -101,7 +101,7 @@
           <div class="adm-field">
             <label class="adm-label" for="metric-2">Angka 2 <span class="adm-opt">(jumlah menu)</span></label>
             <input id="metric-2" v-model="form.metric_2" type="text" class="adm-input eh-metric" />
-            <p class="adm-hint">Di homepage otomatis memakai jumlah menu asli; isian ini cadangan.</p>
+            <p class="adm-hint">Tampil apa adanya di homepage (contoh: 40+). Ubah manual kalau jumlah menu berubah.</p>
           </div>
           <div class="adm-field">
             <label class="adm-label" for="metric-3">Angka 3 <span class="adm-opt">(rating)</span></label>

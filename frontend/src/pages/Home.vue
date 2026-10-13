@@ -608,7 +608,6 @@ import { getWebPrice, formatRupiah } from "@/utils/price"
 const loading = reactive({
   cms: true,
   best: true,
-  menuCount: true,
   bento: true,
   gallery: true,
   reviews: true,
@@ -643,7 +642,6 @@ const bestSellers     = ref([])
 const bentoFacilities = ref([])
 const galleryData     = ref([])
 const reviews         = ref([])
-const menuCount       = ref(null)
 
 const iconMap = {
   Coffee, Wifi, Zap, Utensils, DollarSign, Moon, Shield, Tv,
@@ -700,7 +698,7 @@ let   metricsAnimated = false
 let   metricsObserver = null
 
 const metric3IsStars = computed(() => /★/.test(String(cms.value.metric_3 || "")))
-const metricsReady   = computed(() => !loading.cms && !loading.menuCount)
+const metricsReady   = computed(() => !loading.cms)
 
 const parseMetricParts = (raw) => {
   const str = String(raw ?? "")
@@ -738,7 +736,7 @@ watch([metricsVisible, metricsReady], ([visible, ready]) => {
   metricsAnimated = true
   animateMetric(cms.value.metric_1, "m1")
   // Varian menu: pakai jumlah asli dari API, fallback ke isi CMS
-  animateMetric(menuCount.value != null ? String(menuCount.value) : cms.value.metric_2, "m2")
+  animateMetric(cms.value.metric_2, "m2")
 })
 
 const setupMetricsObserver = () => {
@@ -916,24 +914,6 @@ const fetchBestSellers = async () => {
   }
 }
 
-// Jumlah varian menu asli dari API (menyesuaikan endpoint daftar menu kamu)
-const fetchMenuCount = async () => {
-  try {
-    const { data } = await apiClient.get("/menus/")
-    const list = Array.isArray(data) ? data : data?.results
-    if (Array.isArray(list)) {
-      const total = !Array.isArray(data) && typeof data?.count === "number"
-        ? data.count
-        : list.filter(m => m.is_available !== false).length
-      if (total > 0) menuCount.value = total
-    }
-  } catch (err) {
-    console.error("Menu count:", err)
-  } finally {
-    loading.menuCount = false
-  }
-}
-
 const fallbackReviews = [
   { name: "Irfan Setya",  status: "Maps Local Guide", text: "WiFi kenceng, makanannya enak, harga mahasiswa — Masashimura jawara nongkrong di Bekasi!" },
   { name: "Helen S",      status: "Maps Reviewer",    text: "Tiap kali nyari tempat yang gak bising tapi estetik minimalis, selalu balik ke Masashimura." },
@@ -1001,7 +981,6 @@ onMounted(() => {
   fetchCMSData()
   fetchPromos()
   fetchBestSellers()
-  fetchMenuCount()
   fetchGoogleReviews()
   fetchBentoAndGallery()
 })
