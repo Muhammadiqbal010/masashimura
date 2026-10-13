@@ -179,7 +179,7 @@
 
         <!-- Email -->
         <a
-          href="mailto:masashimura.id@gmail.com"
+          href="mailto:kedaimasashimura@gmail.com"
           class="card group flex flex-col gap-6 transition-colors duration-300 hover:border-[#D4B483]/40 lg:col-span-2"
         >
           <div class="flex items-center justify-between gap-3">
@@ -193,7 +193,7 @@
           </div>
           <div class="space-y-1.5">
             <p class="font-sora text-xl font-semibold text-[#F5F0EA]">Kirim pesan</p>
-            <p class="break-all text-sm text-[#A39A93]">masashimura.id@gmail.com</p>
+            <p class="break-all text-sm text-[#A39A93]">kedaimasashimura@gmail.com</p>
           </div>
         </a>
 

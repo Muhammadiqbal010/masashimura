@@ -56,13 +56,13 @@
           <p class="font-mono text-[9px] tracking-[0.3em] uppercase text-zinc-700">Kontak</p>
           <div class="space-y-4">
 
-            <a href="mailto:masashimura.id@gmail.com" class="group flex items-start gap-3">
+            <a href="mailto:kedaimasashimura@gmail.com" class="group flex items-start gap-3">
               <div class="w-8 h-8 rounded-xl bg-white/[0.04] border border-white/[0.07] flex items-center justify-center shrink-0 group-hover:border-[#DC2626]/40 group-hover:bg-[#DC2626]/5 transition-all duration-200">
                 <Mail :size="13" class="text-zinc-600 group-hover:text-[#DC2626] transition-colors duration-200" />
               </div>
               <div class="pt-1">
                 <p class="font-mono text-[11px] text-zinc-500 group-hover:text-white transition-colors duration-150 break-all leading-snug">
-                  masashimura.id@gmail.com
+                  kedaimasashimura@gmail.com
                 </p>
               </div>
             </a>
