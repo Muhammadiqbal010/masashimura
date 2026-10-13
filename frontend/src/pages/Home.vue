@@ -148,9 +148,9 @@
     </div>
 
     <!-- ═══════════════════════════════════════════
-         3. PROMO / EVENT (komponen sendiri, hanya muncul kalau diisi di CMS)
+         3. PROMO / EVENT (maks 5, susunan otomatis mengikuti rasio gambar)
     ═══════════════════════════════════════════ -->
-    <PromoBanner :promo="cms" />
+    <PromoSection :promos="promos" />
 
     <!-- ═══════════════════════════════════════════
          4. BEST SELLER
@@ -599,7 +599,7 @@ import {
   Expand, X, ChevronLeft, ChevronRight, ArrowRight, Quote
 } from "lucide-vue-next"
 import apiClient from "@/api/client"
-import PromoBanner from "@/components/ui/PromoBanner.vue"
+import PromoSection from "@/components/ui/PromoSection.vue"
 import { useOpenStatus } from "@/composables/useOpenStatus"
 import { useScrollLock } from "@/composables/useScrollLock"
 import { getWebPrice, formatRupiah } from "@/utils/price"
@@ -634,13 +634,10 @@ const cms = ref({
   about_text:       "",
   about_image:      null,
   metric_1: "", metric_2: "", metric_3: "",
-  // Promo: kosong = banner tidak tampil (diatur penuh oleh PromoBanner.vue)
-  promo_badge: "", promo_title: "", promo_text: "", promo_link: "", promo_link_label: "",
-  promo_image: null, promo_image_alt: "", promo_image_ratio: "16:9",
-  promo_layout: "split", promo_image_side: "left", promo_focus: "center",
-  promo_theme: "red", promo_align: "left", promo_overlay: 55,
-  promo_from: "", promo_until: "", promo_countdown: false, promo_dismissible: false,
 })
+
+// Promo & Event: array dari /homepage/promos/ (kosong = section tidak tampil)
+const promos = ref([])
 
 const bestSellers     = ref([])
 const bentoFacilities = ref([])
@@ -887,28 +884,18 @@ const fetchCMSData = async () => {
     metric_1: t(d.metric_1) || "2024",
     metric_2: t(d.metric_2) || "50+",
     metric_3: t(d.metric_3) || "★★★★★",
-    // Promo: TANPA default isi. Kosong di CMS = banner tidak muncul.
-    // Opsi tampilan dikirim apa adanya; PromoBanner yang memvalidasi & punya fallback.
-    promo_badge:      t(d.promo_badge)      || "",
-    promo_title:      t(d.promo_title)      || "",
-    promo_text:       t(d.promo_text)       || "",
-    promo_link:       t(d.promo_link)       || "",
-    promo_link_label: t(d.promo_link_label) || "",
-    promo_image:      d.promo_image         || null,
-    promo_image_alt:  t(d.promo_image_alt)  || "",
-    promo_image_ratio: d.promo_image_ratio  || "16:9",
-    promo_layout:     d.promo_layout        || "split",
-    promo_image_side: d.promo_image_side    || "left",
-    promo_focus:      d.promo_focus         || "center",
-    promo_theme:      d.promo_theme         || "red",
-    promo_align:      d.promo_align         || "left",
-    promo_overlay:    d.promo_overlay ?? 55,
-    promo_from:       d.promo_from          || "",
-    promo_until:      d.promo_until         || "",
-    promo_countdown:  !!d.promo_countdown,
-    promo_dismissible: !!d.promo_dismissible,
   }
   loading.cms = false
+}
+
+const fetchPromos = async () => {
+  try {
+    const { data } = await apiClient.get("/homepage/promos/")
+    promos.value = Array.isArray(data) ? data.slice(0, 5) : []
+  } catch (err) {
+    console.error("Promos:", err)
+    promos.value = []
+  }
 }
 
 const fetchBestSellers = async () => {
@@ -1012,6 +999,7 @@ onMounted(() => {
   setupMetricsObserver()
 
   fetchCMSData()
+  fetchPromos()
   fetchBestSellers()
   fetchMenuCount()
   fetchGoogleReviews()

@@ -116,41 +116,69 @@
       <div class="adm-card-head">
         <span class="eh-num">04</span>
         <div class="adm-card-head-main">
-          <h2 class="adm-card-title">Promo & Event</h2>
+          <h2 class="adm-card-title">Promo & Event <span class="adm-opt">({{ promos.length }}/{{ PROMO_MAX }})</span></h2>
           <p class="adm-card-desc">
-            Banner di bawah teks berjalan. <strong>Kosongkan judul, keterangan, dan gambar</strong> kalau tidak ada promo, section otomatis hilang.
+            Maksimal {{ PROMO_MAX }} promo di bawah teks berjalan. Susunan otomatis: gambar <strong>lebar</strong> tampil memanjang, gambar <strong>kotak / portrait</strong> berjajar 2–3 menyamping. Perubahan promo <strong>disimpan sendiri</strong> lewat tombol “Simpan promo”.
           </p>
         </div>
-        <div v-if="hasPromo" class="adm-card-head-actions">
-          <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" @click="clearPromo">
-            <Trash2 :size="14" /> Kosongkan
+        <div class="adm-card-head-actions">
+          <button type="button" class="adm-btn adm-btn--soft adm-btn--sm" :disabled="promos.length >= PROMO_MAX || isNewPromo" @click="newPromo">
+            <Plus :size="14" /> Tambah promo
           </button>
         </div>
       </div>
 
       <div class="adm-card-body">
 
+        <!-- Daftar promo -->
+        <div v-if="promos.length || isNewPromo" class="eh-pstrip" role="tablist" aria-label="Daftar promo">
+          <button
+            v-for="(it, i) in promos" :key="it.id" type="button" role="tab"
+            class="eh-ptab" :class="{ 'is-active': !isNewPromo && selectedId === it.id }"
+            :aria-selected="!isNewPromo && selectedId === it.id"
+            @click="selectPromo(it)"
+          >
+            <span class="eh-ptab-thumb"><img v-if="it.image" :src="it.image" alt="" /><Tag v-else :size="14" /></span>
+            <span class="eh-ptab-main">
+              <b class="adm-truncate">{{ it.title || it.text || 'Tanpa judul' }}</b>
+              <small>#{{ i + 1 }}<template v-if="it.image"> · {{ it.image_ratio }}</template></small>
+            </span>
+          </button>
+          <span v-if="isNewPromo" class="eh-ptab is-active">
+            <span class="eh-ptab-thumb"><Plus :size="14" /></span>
+            <span class="eh-ptab-main"><b>Promo baru</b><small>belum disimpan</small></span>
+          </span>
+        </div>
+
+        <div v-if="!promos.length && !isNewPromo" class="adm-empty">
+          <div class="adm-empty-icon"><Tag :size="22" /></div>
+          <p class="adm-empty-title">Belum ada promo</p>
+          <p class="adm-empty-text">Klik “Tambah promo”. Section promo otomatis hilang dari homepage kalau kosong.</p>
+        </div>
+
+        <template v-if="editingPromo">
+
         <!-- Gambar -->
         <div class="adm-field">
           <span class="adm-label">Gambar promo <span class="adm-opt">(opsional · bebas rasio)</span></span>
           <AdminImageField
-            v-model="form.promo_image" label="gambar promo" :ratio="promoRatioCss" thumb-width="9rem" removable
+            v-model="pf.image" label="gambar promo" :ratio="promoRatioCss" thumb-width="9rem" removable
             hint="Gambar diperkecil otomatis (maks 1800px) sebelum diupload. Rasio tampilan diatur lewat opsi di bawah."
-            @pick="uploadPromoImage" @clear="form.promo_image = null"
+            @pick="uploadPromoImage" @clear="pf.image = null"
           />
         </div>
 
         <!-- Opsi gambar: muncul setelah ada gambar -->
-        <template v-if="form.promo_image">
+        <template v-if="pf.image">
 
           <div class="adm-field">
             <span id="pr-ratio" class="adm-label">Rasio tampilan gambar</span>
             <div class="eh-opts" role="radiogroup" aria-labelledby="pr-ratio">
               <button
                 v-for="r in RATIO_OPTIONS" :key="r.value" type="button" role="radio"
-                class="eh-opt" :class="{ 'is-selected': form.promo_image_ratio === r.value }"
-                :aria-checked="form.promo_image_ratio === r.value"
-                @click="form.promo_image_ratio = r.value"
+                class="eh-opt" :class="{ 'is-selected': pf.image_ratio === r.value }"
+                :aria-checked="pf.image_ratio === r.value"
+                @click="pf.image_ratio = r.value"
               >
                 <span class="eh-ratio-box" :style="ratioBox(r.num)"></span>
                 <span class="eh-opt-main">{{ r.value }}</span>
@@ -164,9 +192,9 @@
             <div class="eh-opts eh-opts--wide" role="radiogroup" aria-labelledby="pr-layout">
               <button
                 v-for="l in LAYOUT_OPTIONS" :key="l.value" type="button" role="radio"
-                class="eh-opt eh-opt--text" :class="{ 'is-selected': form.promo_layout === l.value }"
-                :aria-checked="form.promo_layout === l.value"
-                @click="form.promo_layout = l.value"
+                class="eh-opt eh-opt--text" :class="{ 'is-selected': pf.layout === l.value }"
+                :aria-checked="pf.layout === l.value"
+                @click="pf.layout = l.value"
               >
                 <span class="eh-opt-main">{{ l.label }}</span>
                 <span class="eh-opt-sub">{{ l.hint }}</span>
@@ -175,25 +203,25 @@
           </div>
 
           <div class="adm-grid-2">
-            <div v-if="form.promo_layout === 'split'" class="adm-field">
+            <div v-if="pf.layout === 'split'" class="adm-field">
               <span id="pr-side" class="adm-label">Posisi gambar</span>
               <div class="adm-seg adm-seg--fill" role="radiogroup" aria-labelledby="pr-side">
-                <button type="button" role="radio" class="adm-seg-btn" :aria-checked="form.promo_image_side === 'left'" @click="form.promo_image_side = 'left'">Kiri</button>
-                <button type="button" role="radio" class="adm-seg-btn" :aria-checked="form.promo_image_side === 'right'" @click="form.promo_image_side = 'right'">Kanan</button>
+                <button type="button" role="radio" class="adm-seg-btn" :aria-checked="pf.image_side === 'left'" @click="pf.image_side = 'left'">Kiri</button>
+                <button type="button" role="radio" class="adm-seg-btn" :aria-checked="pf.image_side === 'right'" @click="pf.image_side = 'right'">Kanan</button>
               </div>
             </div>
 
-            <div v-if="form.promo_layout !== 'split'" class="adm-field">
+            <div v-if="pf.layout !== 'split'" class="adm-field">
               <span id="pr-align" class="adm-label">Rata teks</span>
               <div class="adm-seg adm-seg--fill" role="radiogroup" aria-labelledby="pr-align">
-                <button type="button" role="radio" class="adm-seg-btn" :aria-checked="form.promo_align === 'left'" @click="form.promo_align = 'left'">Kiri</button>
-                <button type="button" role="radio" class="adm-seg-btn" :aria-checked="form.promo_align === 'center'" @click="form.promo_align = 'center'">Tengah</button>
+                <button type="button" role="radio" class="adm-seg-btn" :aria-checked="pf.align === 'left'" @click="pf.align = 'left'">Kiri</button>
+                <button type="button" role="radio" class="adm-seg-btn" :aria-checked="pf.align === 'center'" @click="pf.align = 'center'">Tengah</button>
               </div>
             </div>
 
-            <div v-if="form.promo_layout === 'overlay'" class="adm-field">
-              <label class="adm-label" for="pr-overlay">Gelap overlay <span class="adm-opt">({{ form.promo_overlay }}%)</span></label>
-              <input id="pr-overlay" v-model.number="form.promo_overlay" type="range" min="0" max="90" step="5" class="eh-range" />
+            <div v-if="pf.layout === 'overlay'" class="adm-field">
+              <label class="adm-label" for="pr-overlay">Gelap overlay <span class="adm-opt">({{ pf.overlay }}%)</span></label>
+              <input id="pr-overlay" v-model.number="pf.overlay" type="range" min="0" max="90" step="5" class="eh-range" />
               <p class="adm-hint">Makin tinggi, teks makin mudah dibaca di atas foto yang terang.</p>
             </div>
           </div>
@@ -204,9 +232,9 @@
               <div class="eh-focus" role="radiogroup" aria-labelledby="pr-focus">
                 <button
                   v-for="f in FOCUS_OPTIONS" :key="f.value" type="button" role="radio"
-                  class="eh-focus-dot" :class="{ 'is-selected': form.promo_focus === f.value }"
-                  :aria-checked="form.promo_focus === f.value" :aria-label="f.label" :title="f.label"
-                  @click="form.promo_focus = f.value"
+                  class="eh-focus-dot" :class="{ 'is-selected': pf.focus === f.value }"
+                  :aria-checked="pf.focus === f.value" :aria-label="f.label" :title="f.label"
+                  @click="pf.focus = f.value"
                 ><span></span></button>
               </div>
               <p class="adm-hint">Terpilih: <strong>{{ focusLabel }}</strong>. Berguna kalau wajah/makanan utama ada di pinggir foto.</p>
@@ -215,28 +243,28 @@
 
           <div class="adm-field">
             <label class="adm-label" for="pr-alt">Deskripsi gambar <span class="adm-opt">(untuk pembaca layar, opsional)</span></label>
-            <input id="pr-alt" v-model="form.promo_image_alt" type="text" maxlength="150" class="adm-input" placeholder="Contoh: Poster live music Sabtu malam" />
+            <input id="pr-alt" v-model="pf.image_alt" type="text" maxlength="150" class="adm-input" placeholder="Contoh: Poster live music Sabtu malam" />
           </div>
         </template>
 
         <!-- Teks -->
         <div class="adm-field">
           <label class="adm-label" for="pr-badge">Label kecil <span class="adm-opt">(opsional, default “Promo &amp; Event”)</span></label>
-          <input id="pr-badge" v-model="form.promo_badge" type="text" maxlength="30" class="adm-input" placeholder="Contoh: Live Music" />
+          <input id="pr-badge" v-model="pf.badge" type="text" maxlength="30" class="adm-input" placeholder="Contoh: Live Music" />
           <div class="eh-presets">
-            <button v-for="p in BADGE_PRESETS" :key="p" type="button" class="eh-preset" @click="form.promo_badge = p">{{ p }}</button>
+            <button v-for="p in BADGE_PRESETS" :key="p" type="button" class="eh-preset" @click="pf.badge = p">{{ p }}</button>
           </div>
         </div>
 
         <div class="adm-field">
           <label class="adm-label" for="promo-title">Judul promo / event</label>
-          <input id="promo-title" v-model="form.promo_title" type="text" maxlength="120"
+          <input id="promo-title" v-model="pf.title" type="text" maxlength="120"
             class="adm-input eh-strong" placeholder="Contoh: Diskon 20% khusus mahasiswa" />
         </div>
 
         <div class="adm-field">
           <label class="adm-label" for="promo-text">Keterangan <span class="adm-opt">(opsional)</span></label>
-          <input id="promo-text" v-model="form.promo_text" type="text" maxlength="255"
+          <input id="promo-text" v-model="pf.text" type="text" maxlength="255"
             class="adm-input" placeholder="Contoh: Tunjukkan KTM, berlaku Senin–Jumat" />
         </div>
 
@@ -244,12 +272,12 @@
         <div class="adm-grid-2">
           <div class="adm-field">
             <label class="adm-label" for="promo-label">Teks tombol <span class="adm-opt">(opsional)</span></label>
-            <input id="promo-label" v-model="form.promo_link_label" type="text" maxlength="40"
+            <input id="promo-label" v-model="pf.link_label" type="text" maxlength="40"
               class="adm-input" placeholder="Lihat Detail" />
           </div>
           <div class="adm-field">
             <label class="adm-label" for="promo-link">Link tombol <span class="adm-opt">(opsional)</span></label>
-            <input id="promo-link" v-model="form.promo_link" type="text"
+            <input id="promo-link" v-model="pf.link" type="text"
               class="adm-input adm-input--mono" placeholder="/menu atau https://wa.me/62..." />
             <p class="adm-hint">Pakai <code class="eh-code">/menu</code> untuk halaman sendiri, atau <code class="eh-code">https://…</code> untuk link luar. Kosong = tanpa tombol.</p>
           </div>
@@ -261,10 +289,10 @@
           <div class="eh-swatches" role="radiogroup" aria-labelledby="pr-theme">
             <button
               v-for="t in THEME_OPTIONS" :key="t.value" type="button" role="radio"
-              class="eh-swatch" :class="{ 'is-selected': form.promo_theme === t.value }"
-              :aria-checked="form.promo_theme === t.value" :aria-label="t.label" :title="t.label"
+              class="eh-swatch" :class="{ 'is-selected': pf.theme === t.value }"
+              :aria-checked="pf.theme === t.value" :aria-label="t.label" :title="t.label"
               :style="{ '--sw': t.accent }"
-              @click="form.promo_theme = t.value"
+              @click="pf.theme = t.value"
             ></button>
           </div>
         </div>
@@ -273,26 +301,26 @@
         <div class="adm-grid-2">
           <div class="adm-field">
             <label class="adm-label" for="promo-from">Mulai tayang <span class="adm-opt">(opsional)</span></label>
-            <input id="promo-from" v-model="form.promo_from" type="date" class="adm-input" />
+            <input id="promo-from" v-model="pf.show_from" type="date" class="adm-input" />
             <p class="adm-hint">Kosong = langsung tayang setelah disimpan.</p>
           </div>
           <div class="adm-field">
             <label class="adm-label" for="promo-until">Tayang sampai <span class="adm-opt">(opsional)</span></label>
-            <input id="promo-until" v-model="form.promo_until" type="date" class="adm-input" />
+            <input id="promo-until" v-model="pf.show_until" type="date" class="adm-input" />
             <p class="adm-hint">Hilang otomatis setelah tanggal ini (akhir hari WIB). Kosong = tayang terus.</p>
           </div>
         </div>
 
         <div class="eh-checks">
           <label class="eh-check">
-            <input v-model="form.promo_countdown" type="checkbox" :disabled="!form.promo_until" />
+            <input v-model="pf.countdown" type="checkbox" :disabled="!pf.show_until" />
             <span>
               Tampilkan hitung mundur
               <small>Contoh: “Sisa 2 hari”. Perlu tanggal “Tayang sampai”.</small>
             </span>
           </label>
           <label class="eh-check">
-            <input v-model="form.promo_dismissible" type="checkbox" />
+            <input v-model="pf.dismissible" type="checkbox" />
             <span>
               Pengunjung boleh menutup banner
               <small>Tombol ✕ muncul; banner muncul lagi kalau isi promo diganti.</small>
@@ -311,24 +339,49 @@
 
               <span v-if="pvLayout === 'text'" class="pv-icon"><Tag :size="16" /></span>
 
-              <div v-if="form.promo_image && pvLayout !== 'text'" class="pv-media" :style="pvMediaStyle">
-                <img :src="form.promo_image" alt="" :style="{ objectPosition: focusCss }" />
+              <div v-if="pf.image && pvLayout !== 'text'" class="pv-media" :style="pvMediaStyle">
+                <img :src="pf.image" alt="" :style="{ objectPosition: focusCss }" />
                 <div v-if="pvLayout === 'overlay'" class="pv-shade" :style="{ background: pvShade }"></div>
               </div>
 
               <div class="pv-copy" :class="{ 'is-center': pvCenter }">
-                <p class="pv-eyebrow"><i></i>{{ form.promo_badge || 'Promo & Event' }}</p>
-                <p class="pv-title" :class="'pv-title--' + pvLayout">{{ form.promo_title || 'Judul promo' }}</p>
-                <p v-if="form.promo_text" class="pv-text">{{ form.promo_text }}</p>
-                <p v-if="form.promo_until" class="pv-meta">
-                  Sampai {{ untilLabel }}<template v-if="form.promo_countdown"> · hitung mundur aktif</template>
+                <p class="pv-eyebrow"><i></i>{{ pf.badge || 'Promo & Event' }}</p>
+                <p class="pv-title" :class="'pv-title--' + pvLayout">{{ pf.title || 'Judul promo' }}</p>
+                <p v-if="pf.text" class="pv-text">{{ pf.text }}</p>
+                <p v-if="pf.show_until" class="pv-meta">
+                  Sampai {{ untilLabel }}<template v-if="pf.countdown"> · hitung mundur aktif</template>
                 </p>
-                <span v-if="form.promo_link" class="pv-btn">{{ form.promo_link_label || 'Lihat Detail' }} →</span>
+                <span v-if="pf.link" class="pv-btn">{{ pf.link_label || 'Lihat Detail' }} →</span>
               </div>
             </div>
           </div>
         </div>
 
+
+        <!-- Aksi promo -->
+        <div class="eh-pactions">
+          <div class="eh-pactions-main">
+            <button type="button" class="adm-btn adm-btn--primary" :disabled="isSavingPromo || !promoDirty" @click="savePromo">
+              <Save :size="14" /> {{ isSavingPromo ? 'Menyimpan…' : (isNewPromo ? 'Tambahkan promo' : 'Simpan promo') }}
+            </button>
+            <button type="button" class="adm-btn adm-btn--ghost" :disabled="isSavingPromo" @click="cancelPromo">
+              {{ isNewPromo ? 'Batal' : 'Batalkan perubahan' }}
+            </button>
+          </div>
+          <div v-if="!isNewPromo" class="eh-pactions-side">
+            <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" :disabled="selectedIndex <= 0" @click="movePromo(-1)" aria-label="Geser ke depan">
+              <ChevronLeft :size="14" /> Maju
+            </button>
+            <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" :disabled="selectedIndex >= promos.length - 1" @click="movePromo(1)" aria-label="Geser ke belakang">
+              Mundur <ChevronRight :size="14" />
+            </button>
+            <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" @click="deletePromo">
+              <Trash2 :size="14" /> Hapus
+            </button>
+          </div>
+        </div>
+
+        </template>
       </div>
     </section>
 
@@ -349,8 +402,8 @@
         <div class="eh-preview-marquee adm-mono">
           <span>Marquee</span>{{ form.marquee_text || '—' }}
         </div>
-        <div v-if="hasPromo" class="eh-preview-marquee adm-mono">
-          <span>Promo</span>{{ form.promo_title || form.promo_text || 'Hanya gambar' }}
+        <div v-if="promos.length" class="eh-preview-marquee adm-mono">
+          <span>Promo</span>{{ promos.length }} promo tayang di homepage
         </div>
       </div>
     </section>
@@ -551,7 +604,7 @@ import { useAdminConfirm } from '@/composables/useAdminConfirm'
 import {
   Coffee, Wifi, Zap, Utensils, DollarSign, Moon, Shield, Tv,
   Music, Gamepad2, Beer, BatteryCharging, Heart, Award, Smartphone,
-  Plus, Pencil, Trash2, Save, Eye, LayoutGrid, Image as ImageIcon, Tag,
+  Plus, Pencil, Trash2, Save, Eye, LayoutGrid, Image as ImageIcon, Tag, ChevronLeft, ChevronRight,
 } from 'lucide-vue-next'
 
 // Objek mapping icon agar bisa di-looping di template
@@ -577,6 +630,7 @@ const imageSrc = ref('')
 const cropType = ref('hero')
 
 // ── Opsi promo ──────────────────────────────────────────────────────
+const PROMO_MAX = 5
 const RATIO_OPTIONS = [
   { value: '16:9', css: '16 / 9', num: 16 / 9, hint: 'Landscape' },
   { value: '21:9', css: '21 / 9', num: 21 / 9, hint: 'Ultrawide' },
@@ -624,39 +678,20 @@ const defaultMain = () => ({
   metric_1: '2024',
   metric_2: '50+',
   metric_3: '★★★★★',
-  // Promo & Event
-  promo_badge: '',
-  promo_title: '',
-  promo_text: '',
-  promo_link: '',
-  promo_link_label: '',
-  promo_image: null,
-  promo_image_alt: '',
-  promo_image_ratio: '16:9',
-  promo_layout: 'split',
-  promo_image_side: 'left',
-  promo_focus: 'center',
-  promo_theme: 'red',
-  promo_align: 'left',
-  promo_overlay: 55,
-  promo_from: null,
-  promo_until: null,
-  promo_countdown: false,
-  promo_dismissible: false,
 })
 const form = ref(defaultMain())
 const savedMain = ref(JSON.stringify(defaultMain()))
 const hasChanges = computed(() => JSON.stringify(form.value) !== savedMain.value)
 
 // ── Promo: computed ─────────────────────────────────────────────────
-const hasPromo = computed(() => !!(form.value.promo_title || form.value.promo_text || form.value.promo_image))
+const hasPromo = computed(() => !!(pf.value.title || pf.value.text || pf.value.image))
 
-const ratioOpt = computed(() => RATIO_OPTIONS.find((r) => r.value === form.value.promo_image_ratio) || RATIO_OPTIONS[0])
+const ratioOpt = computed(() => RATIO_OPTIONS.find((r) => r.value === pf.value.image_ratio) || RATIO_OPTIONS[0])
 const promoRatioCss = computed(() => ratioOpt.value.css)
-const focusOpt = computed(() => FOCUS_OPTIONS.find((f) => f.value === form.value.promo_focus) || FOCUS_OPTIONS[4])
+const focusOpt = computed(() => FOCUS_OPTIONS.find((f) => f.value === pf.value.focus) || FOCUS_OPTIONS[4])
 const focusCss = computed(() => focusOpt.value.css)
 const focusLabel = computed(() => focusOpt.value.label)
-const themeOpt = computed(() => THEME_OPTIONS.find((t) => t.value === form.value.promo_theme) || THEME_OPTIONS[0])
+const themeOpt = computed(() => THEME_OPTIONS.find((t) => t.value === pf.value.theme) || THEME_OPTIONS[0])
 
 // Kotak kecil penanda rasio di tombol pilihan
 const ratioBox = (num) => {
@@ -667,14 +702,14 @@ const ratioBox = (num) => {
 }
 
 const untilLabel = computed(() => {
-  if (!form.value.promo_until) return ''
-  const d = new Date(`${form.value.promo_until}T12:00:00+07:00`)
-  return isNaN(d) ? form.value.promo_until : d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+  if (!pf.value.show_until) return ''
+  const d = new Date(`${pf.value.show_until}T12:00:00+07:00`)
+  return isNaN(d) ? pf.value.show_until : d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
 })
 
 // ── Pratinjau promo ─────────────────────────────────────────────────
-const pvLayout = computed(() => (form.value.promo_image ? form.value.promo_layout : 'text'))
-const pvCenter = computed(() => pvLayout.value !== 'split' && pvLayout.value !== 'text' && form.value.promo_align === 'center')
+const pvLayout = computed(() => (pf.value.image ? pf.value.layout : 'text'))
+const pvCenter = computed(() => pvLayout.value !== 'split' && pvLayout.value !== 'text' && pf.value.align === 'center')
 const pvVars = computed(() => ({
   '--pa': themeOpt.value.accent,
   '--pa-ink': themeOpt.value.ink,
@@ -683,7 +718,7 @@ const pvVars = computed(() => ({
 }))
 const pvWrapClass = computed(() => [
   `pv-wrap--${pvLayout.value}`,
-  pvLayout.value === 'split' && form.value.promo_image_side === 'right' ? 'is-right' : '',
+  pvLayout.value === 'split' && pf.value.image_side === 'right' ? 'is-right' : '',
 ])
 const pvWrapStyle = computed(() => {
   if (pvLayout.value !== 'overlay') return {}
@@ -699,13 +734,150 @@ const pvMediaStyle = computed(() => {
   return { width, aspectRatio: ratioOpt.value.css }
 })
 const pvShade = computed(() => {
-  const s = Math.min(Math.max(Number(form.value.promo_overlay) || 0, 0), 90) / 100
+  const s = Math.min(Math.max(Number(pf.value.overlay) || 0, 0), 90) / 100
   return `linear-gradient(to top, rgba(8,8,8,${Math.min(1, s + 0.35)}), rgba(8,8,8,${(s * 0.55).toFixed(2)}) 60%, rgba(8,8,8,${(s * 0.2).toFixed(2)}))`
 })
 
-const clearPromo = () => {
-  const d = defaultMain()
-  Object.keys(d).filter((k) => k.startsWith('promo_')).forEach((k) => { form.value[k] = d[k] })
+// ── Promo: daftar + editor (banyak item, maks PROMO_MAX) ────────────
+const defaultPromo = () => ({
+  badge: '', title: '', text: '', link: '', link_label: '',
+  image: null, image_alt: '', image_ratio: '16:9',
+  layout: 'split', image_side: 'left', focus: 'center',
+  theme: 'red', align: 'left', overlay: 55,
+  show_from: null, show_until: null, countdown: false, dismissible: false,
+})
+const promos = ref([])
+const selectedId = ref(null)       // id promo yang sedang diedit
+const isNewPromo = ref(false)      // true = formulir untuk promo baru (belum ada id)
+const pf = ref(defaultPromo())
+const pfSaved = ref(JSON.stringify(defaultPromo()))
+const isSavingPromo = ref(false)
+
+const editingPromo = computed(() => isNewPromo.value || selectedId.value !== null)
+const promoDirty = computed(() => isNewPromo.value || JSON.stringify(pf.value) !== pfSaved.value)
+const selectedIndex = computed(() => promos.value.findIndex((x) => x.id === selectedId.value))
+
+const loadIntoForm = (it) => {
+  const base = defaultPromo()
+  const next = {}
+  for (const k of Object.keys(base)) next[k] = it?.[k] ?? base[k]
+  pf.value = next
+  pfSaved.value = JSON.stringify(next)
+}
+
+const selectPromo = async (it) => {
+  if (!isNewPromo.value && selectedId.value === it.id) return
+  if (editingPromo.value && promoDirty.value) {
+    const ok = await ask({
+      title: 'Buang perubahan?',
+      message: 'Perubahan promo yang sedang dibuka belum disimpan.',
+      confirmText: 'Ya, buang',
+      danger: true,
+    })
+    if (!ok) return
+  }
+  isNewPromo.value = false
+  selectedId.value = it.id
+  loadIntoForm(it)
+}
+
+const newPromo = () => {
+  if (promos.value.length >= PROMO_MAX) return toast.warning(`Maksimal ${PROMO_MAX} promo.`)
+  isNewPromo.value = true
+  selectedId.value = null
+  pf.value = defaultPromo()
+  pfSaved.value = JSON.stringify(pf.value)
+}
+
+const cancelPromo = () => {
+  if (isNewPromo.value) {
+    isNewPromo.value = false
+    const first = promos.value[0]
+    selectedId.value = first ? first.id : null
+    loadIntoForm(first || null)
+  } else {
+    pf.value = JSON.parse(pfSaved.value)
+  }
+}
+
+const fetchPromos = async () => {
+  const { data } = await apiClient.get('/homepage/promos/')
+  promos.value = Array.isArray(data) ? data : []
+  const cur = promos.value.find((x) => x.id === selectedId.value) || promos.value[0] || null
+  isNewPromo.value = false
+  selectedId.value = cur ? cur.id : null
+  loadIntoForm(cur)
+}
+
+const savePromo = async () => {
+  if (!(pf.value.title || pf.value.text || pf.value.image)) {
+    return toast.warning('Isi minimal judul, keterangan, atau gambar.')
+  }
+  const payload = { ...pf.value }
+  for (const k of ['image', 'show_from', 'show_until']) if (payload[k] === '') payload[k] = null
+  if (!payload.show_until) payload.countdown = false
+
+  isSavingPromo.value = true
+  try {
+    let saved
+    if (isNewPromo.value) {
+      saved = (await apiClient.post('/homepage/promos/create/', payload)).data
+      promos.value = [...promos.value, saved]
+      toast.success('Promo ditambahkan dan tayang di homepage!')
+    } else {
+      saved = (await apiClient.put(`/homepage/promos/${selectedId.value}/`, payload)).data
+      promos.value = promos.value.map((x) => (x.id === saved.id ? saved : x))
+      toast.success('Promo disimpan!')
+    }
+    isNewPromo.value = false
+    selectedId.value = saved.id
+    loadIntoForm(saved)
+  } catch (err) {
+    console.error('Gagal menyimpan promo:', err)
+    toast.error(apiErrorText(err, 'Gagal menyimpan promo.'))
+  } finally {
+    isSavingPromo.value = false
+  }
+}
+
+const deletePromo = async () => {
+  const it = promos.value.find((x) => x.id === selectedId.value)
+  if (!it) return
+  const ok = await ask({
+    title: 'Hapus promo?',
+    message: `"${it.title || it.text || 'Promo ini'}" akan dihapus dari homepage. Tindakan ini tidak bisa dibatalkan.`,
+    confirmText: 'Ya, hapus',
+    danger: true,
+  })
+  if (!ok) return
+  try {
+    await apiClient.delete(`/homepage/promos/${it.id}/`)
+    promos.value = promos.value.filter((x) => x.id !== it.id)
+    const next = promos.value[0] || null
+    selectedId.value = next ? next.id : null
+    loadIntoForm(next)
+    toast.success('Promo dihapus.')
+  } catch {
+    toast.error('Gagal menghapus promo.')
+  }
+}
+
+// Geser urutan: maju = lebih awal di homepage
+const movePromo = async (dir) => {
+  const i = selectedIndex.value
+  const j = i + dir
+  if (i < 0 || j < 0 || j >= promos.value.length) return
+  const arr = [...promos.value]
+  ;[arr[i], arr[j]] = [arr[j], arr[i]]
+  const before = promos.value
+  promos.value = arr
+  try {
+    const { data } = await apiClient.post('/homepage/promos/reorder/', { ids: arr.map((x) => x.id) })
+    promos.value = data
+  } catch {
+    promos.value = before
+    toast.error('Gagal mengubah urutan.')
+  }
 }
 
 // Sub-modul dinamis
@@ -737,10 +909,15 @@ const fetchHomepageData = async () => {
       apiClient.get('/homepage/bento/'),
       apiClient.get('/homepage/gallery/'),
     ])
-    if (coreRes.data) form.value = { ...form.value, ...coreRes.data }
+    if (coreRes.data) {
+      // Field promo lama di config sudah tidak dipakai (promo kini di /homepage/promos/)
+      const core = Object.fromEntries(Object.entries(coreRes.data).filter(([k]) => !k.startsWith('promo_')))
+      form.value = { ...form.value, ...core }
+    }
     if (bentoRes.data) bentoFacilities.value = bentoRes.data
     if (galleryRes.data) galleryData.value = galleryRes.data
     savedMain.value = JSON.stringify(form.value)
+    await fetchPromos()
   } catch (err) {
     console.error('Gagal sinkronisasi data CMS homepage:', err)
     toast.error('Gagal memuat konfigurasi homepage dari server.')
@@ -754,11 +931,9 @@ const saveHomepageData = async () => {
   isSaving.value = true
 
   const payload = { ...form.value }
-  for (const k of ['hero_food_image', 'hero_bg_image', 'about_image', 'promo_image', 'promo_from', 'promo_until']) {
+  for (const k of ['hero_food_image', 'hero_bg_image', 'about_image']) {
     if (payload[k] === '') payload[k] = null
   }
-  // Hitung mundur hanya masuk akal kalau ada tanggal selesai
-  if (!payload.promo_until) payload.promo_countdown = false
 
   try {
     await apiClient.post('/homepage/config/update/', payload)
@@ -861,7 +1036,7 @@ const uploadPromoImage = async (file) => {
     fd.append('upload_preset', CLOUDINARY_UPLOAD_PRESET)
     const { data } = await axios.post(CLOUDINARY_UPLOAD_URL, fd)
     if (!data?.secure_url) throw new Error('no url')
-    form.value.promo_image = data.secure_url
+    pf.value.image = data.secure_url
     toast.success('Gambar promo berhasil diupload!', { id: toastId })
   } catch {
     toast.error('Gagal upload gambar promo.', { id: toastId })
@@ -1045,6 +1220,27 @@ onMounted(fetchHomepageData)
 .eh-check input { margin-top: 0.2rem; width: 1rem; height: 1rem; accent-color: var(--accent); flex-shrink: 0; }
 .eh-check input:disabled + span { opacity: 0.5; }
 .eh-check small { display: block; margin-top: 0.1rem; font-size: 0.7rem; color: var(--text-faint); }
+
+/* ── Daftar promo (tab) & aksi ── */
+.eh-pstrip { display: grid; grid-template-columns: repeat(auto-fill, minmax(11.5rem, 1fr)); gap: 0.5rem; }
+.eh-ptab {
+  display: flex; align-items: center; gap: 0.6rem; min-width: 0; padding: 0.5rem 0.65rem; text-align: left;
+  border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-2); color: var(--text-dim);
+  cursor: pointer; transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.eh-ptab:hover { border-color: var(--line-accent); color: var(--text); }
+.eh-ptab.is-active { border-color: var(--accent); background: var(--tint-accent); color: var(--text); }
+span.eh-ptab { cursor: default; }
+.eh-ptab-thumb {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;
+  width: 2.4rem; height: 2.4rem; border-radius: var(--r-sm); background: var(--surface); border: 1px solid var(--border);
+}
+.eh-ptab-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.eh-ptab-main { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.eh-ptab-main b { font-size: 0.78rem; font-weight: 700; }
+.eh-ptab-main small { font-size: 0.66rem; opacity: 0.7; }
+.eh-pactions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; padding-top: 0.25rem; }
+.eh-pactions-main, .eh-pactions-side { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
 
 /* ── Pratinjau promo (selalu gelap, meniru homepage) ── */
 .pv { border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-2); padding: 0.85rem; }

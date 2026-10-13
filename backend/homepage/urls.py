@@ -2,7 +2,8 @@ from django.urls import path
 from .views import (
     CurrentHomepageConfigView, UpdateHomepageConfigView,
     BentoFacilityListView, BentoFacilityCreateView, BentoFacilityDetailView,
-    GalleryListView, GalleryCreateView, GalleryDetailView, GoogleMapsReviewsView
+    GalleryListView, GalleryCreateView, GalleryDetailView, GoogleMapsReviewsView,
+    PromoListView, PromoCreateView, PromoDetailView, PromoReorderView,
 )
 
 urlpatterns = [
@@ -10,6 +11,12 @@ urlpatterns = [
     path('config/current/', CurrentHomepageConfigView.as_view(), name='current-homepage-config'),
     path('config/update/', UpdateHomepageConfigView.as_view(), name='update-homepage-config'),
     
+    # Promo & Event (maks 5)
+    path('promos/', PromoListView.as_view(), name='promo-list'),
+    path('promos/create/', PromoCreateView.as_view(), name='promo-create'),
+    path('promos/reorder/', PromoReorderView.as_view(), name='promo-reorder'),
+    path('promos/<int:pk>/', PromoDetailView.as_view(), name='promo-detail'),
+
     # Dynamic Bento Grid Layout URLs
     path('bento/', BentoFacilityListView.as_view(), name='bento-list'),
     path('bento/create/', BentoFacilityCreateView.as_view(), name='bento-create'),

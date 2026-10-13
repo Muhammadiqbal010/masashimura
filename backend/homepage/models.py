@@ -89,6 +89,47 @@ class HomepageConfig(models.Model):
         return "Konfigurasi Halaman Depan Masashimura"
 
 
+# 1b. PROMO & EVENT (maksimal PROMO_MAX_ITEMS, diurutkan lewat field `order`)
+PROMO_MAX_ITEMS = 5
+
+
+class PromoItem(models.Model):
+    # Isi
+    badge = models.CharField(max_length=30, blank=True, default="", help_text="Label kecil di atas judul, contoh: Promo, Event, Baru")
+    title = models.CharField(max_length=120, blank=True, default="")
+    text = models.CharField(max_length=255, blank=True, default="")
+    link = models.CharField(max_length=300, blank=True, default="", help_text="'/menu' (halaman sendiri) atau 'https://...' (link luar)")
+    link_label = models.CharField(max_length=40, blank=True, default="")
+
+    # Gambar & tampilan
+    image = models.URLField(max_length=500, blank=True, null=True)
+    image_alt = models.CharField(max_length=150, blank=True, default="")
+    image_ratio = models.CharField(max_length=5, choices=PROMO_RATIO_CHOICES, default="16:9")
+    layout = models.CharField(max_length=10, choices=PROMO_LAYOUT_CHOICES, default="split")
+    image_side = models.CharField(max_length=5, choices=PROMO_SIDE_CHOICES, default="left")
+    focus = models.CharField(max_length=15, choices=PROMO_FOCUS_CHOICES, default="center")
+    theme = models.CharField(max_length=10, choices=PROMO_THEME_CHOICES, default="red")
+    align = models.CharField(max_length=6, choices=PROMO_ALIGN_CHOICES, default="left")
+    overlay = models.PositiveSmallIntegerField(default=55, validators=[MaxValueValidator(90)])
+
+    # Jadwal & perilaku
+    show_from = models.DateField(null=True, blank=True, help_text="Mulai tayang (opsional)")
+    show_until = models.DateField(null=True, blank=True, help_text="Tayang sampai akhir hari WIB (opsional)")
+    countdown = models.BooleanField(default=False)
+    dismissible = models.BooleanField(default=False)
+
+    order = models.PositiveSmallIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["order", "id"]
+        verbose_name = "Promo & Event"
+        verbose_name_plural = "Promo & Event"
+
+    def __str__(self):
+        return self.title or f"Promo #{self.pk}"
+
+
 # 2. TABEL BENTO GRID FASILITAS
 class BentoFacility(models.Model):
     SIZE_CHOICES = [
@@ -188,3 +229,22 @@ def delete_cloudinary_image_on_record_delete(sender, instance, **kwargs):
     if instance.image_url:
         print(f"[Cloudinary] Menghapus aset karena record dihapus: {get_cloudinary_public_id(instance.image_url)}")
         destroy_cloudinary_asset(instance.image_url)
+
+
+# D. Gambar promo diganti / promo dihapus -> hapus aset lama di Cloudinary
+@receiver(pre_save, sender=PromoItem)
+def clean_old_promo_image(sender, instance, **kwargs):
+    if not instance.pk:
+        return
+    try:
+        old = PromoItem.objects.get(pk=instance.pk)
+    except PromoItem.DoesNotExist:
+        return
+    if old.image and old.image != instance.image:
+        destroy_cloudinary_asset(old.image)
+
+
+@receiver(post_delete, sender=PromoItem)
+def delete_promo_image_on_record_delete(sender, instance, **kwargs):
+    if instance.image:
+        destroy_cloudinary_asset(instance.image)

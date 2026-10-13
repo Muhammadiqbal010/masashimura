@@ -1,6 +1,6 @@
 import re
 from rest_framework import serializers
-from .models import HomepageConfig, BentoFacility, GalleryLookbook
+from .models import HomepageConfig, BentoFacility, GalleryLookbook, PromoItem
 
 # Teks: null -> "" (kolomnya tidak boleh NULL)
 PROMO_TEXT_FIELDS = (
@@ -57,6 +57,61 @@ class HomepageConfigSerializer(serializers.ModelSerializer):
         if start and end and start > end:
             raise serializers.ValidationError(
                 {"promo_until": "Tanggal selesai tidak boleh sebelum tanggal mulai."}
+            )
+        return attrs
+
+
+# ── Promo & Event (banyak item) ─────────────────────────────────────
+PROMOITEM_TEXT_FIELDS = ("badge", "title", "text", "link", "link_label", "image_alt")
+PROMOITEM_SKIP_IF_EMPTY = (
+    "image_ratio", "layout", "image_side", "focus", "theme", "align",
+    "overlay", "countdown", "dismissible", "order",
+)
+PROMOITEM_DATE_FIELDS = ("show_from", "show_until")
+
+
+class PromoItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PromoItem
+        fields = "__all__"
+        read_only_fields = ("id", "created_at")
+
+    def to_internal_value(self, data):
+        data = data.copy()
+        for f in PROMOITEM_TEXT_FIELDS:
+            if f in data and data[f] is None:
+                data[f] = ""
+        for f in PROMOITEM_SKIP_IF_EMPTY:
+            if f in data and data[f] in (None, ""):
+                del data[f]
+        for f in PROMOITEM_DATE_FIELDS:
+            if f in data and data[f] in (None, ""):
+                data[f] = None
+        if "image" in data and data["image"] == "":
+            data["image"] = None
+        return super().to_internal_value(data)
+
+    def validate_link(self, value):
+        value = (value or "").strip()
+        if not value:
+            return ""
+        if value.startswith("/") and not value.startswith("//"):
+            return value
+        if re.match(r"^https?://\S+$", value, re.IGNORECASE):
+            return value
+        raise serializers.ValidationError(
+            "Link harus diawali '/' (halaman sendiri) atau 'http://' / 'https://' (link luar)."
+        )
+
+    def validate(self, attrs):
+        def get(k):
+            return attrs.get(k, getattr(self.instance, k, None))
+        if not (get("title") or get("text") or get("image")):
+            raise serializers.ValidationError({"title": "Isi minimal judul, keterangan, atau gambar."})
+        start, end = get("show_from"), get("show_until")
+        if start and end and start > end:
+            raise serializers.ValidationError(
+                {"show_until": "Tanggal selesai tidak boleh sebelum tanggal mulai."}
             )
         return attrs
 
