@@ -1,5 +1,6 @@
 import calendar
 import datetime
+import re
 from datetime import timedelta
 from decimal import Decimal
 
@@ -165,6 +166,27 @@ def _parse_backdate(raw):
     return dt, None
 
 
+# Nomor WhatsApp order web: hanya angka, diawali 08, 10-13 digit.
+# Aturan yang sama dipakai di frontend (src/utils/phone.js); di sini dicek ulang karena
+# request bisa dikirim langsung tanpa lewat form. Order POS (kasir) tidak dibatasi.
+WEB_PHONE_RE = re.compile(r'^08\d{8,11}$')
+CUSTOMER_NAME_MAX = 100   # = max_length Order.customer_name
+
+# Nama order web: hanya huruf dan spasi, 3-50 karakter (aturan sama dengan src/utils/name.js).
+WEB_NAME_RE = re.compile(r'^[^\W\d_]+(?: [^\W\d_]+)*$')
+WEB_NAME_MIN, WEB_NAME_MAX = 3, 50
+
+
+def _web_name_error(name):
+    """Pesan error untuk nama order web, atau None kalau valid."""
+    letters = name.replace(' ', '')
+    if not WEB_NAME_RE.match(name) or not (WEB_NAME_MIN <= len(letters) and len(name) <= WEB_NAME_MAX):
+        return "Nama harus 3-50 karakter, hanya huruf dan spasi"
+    if re.search(r'(.)\1\1', name, re.IGNORECASE) or not re.search(r'[aiueo]', name, re.IGNORECASE):
+        return "Nama tidak valid"
+    return None
+
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @transaction.atomic
@@ -181,7 +203,7 @@ def create_order(request):
 
     customer_data = data.get('customer') or {}
     phone = (customer_data.get('phone') or data.get('customer_phone', '') or '').strip()
-    name  = (customer_data.get('name')  or data.get('customer_name',  '') or '').strip()
+    name  = ' '.join((customer_data.get('name') or data.get('customer_name', '') or '').split())
 
     source         = data.get('source', 'pos')
     payment_method = data.get('payment_method', 'cash')
@@ -192,6 +214,18 @@ def create_order(request):
     # ke-mark 'paid'+'completed' di bawah — bypass total alur web/QRIS.
     if source == 'pos' and not (request.user and request.user.is_authenticated and request.user.is_staff):
         source = 'web'
+
+    if source == 'web':
+        name_error = _web_name_error(name)
+        if name_error:
+            return Response({"error": name_error}, status=400)
+    name = name[:CUSTOMER_NAME_MAX]
+
+    if source == 'web' and not WEB_PHONE_RE.match(phone):
+        return Response(
+            {"error": "Nomor WhatsApp harus diawali 08 dan terdiri dari 10-13 digit angka"},
+            status=400,
+        )
 
     # Gateway (Midtrans) hanya untuk order web.
     if payment_method == 'gateway' and source != 'web':

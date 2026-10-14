@@ -2,8 +2,10 @@
   <div class="w-full min-h-screen bg-[color:var(--bg)]">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 pb-24">
 
-      <!-- ═══ STICKY HEADER ═════════════════════════════════════════════ -->
-      <div class="lg:sticky lg:top-0 z-30 -mx-4 sm:-mx-6 px-4 sm:px-6 pt-6 pb-4 bg-[color:color-mix(in_srgb,var(--bg)_85%,transparent)] backdrop-blur-xl border-b border-[color:rgb(var(--ink)/0.06)]">
+      <!-- ═══ HEADER ════════════════════════════════════════════════════
+           Sengaja TIDAK sticky: judul + tab + filter + badge periode tingginya ±330px,
+           jadi kalau menempel di atas ia menutup grafik dan tabel saat halaman di-scroll. -->
+      <div class="pt-6 pb-4">
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
           <div>
             <div class="flex items-center gap-2 mb-2">
@@ -32,7 +34,7 @@
             <!-- Export dropdown -->
             <div class="relative" ref="exportMenuRef">
               <button
-                v-if="activeTab === 'ringkasan' && activeGroup !== 'lifetime'"
+                v-if="activeTab === 'ringkasan' && canExport"
                 @click="exportOpen = !exportOpen"
                 aria-haspopup="menu"
                 :aria-expanded="exportOpen"
@@ -124,7 +126,7 @@
               <button
                 v-for="w in weekOptions"
                 :key="w.value"
-                @click="activeWeek = w.value; fetch()"
+                @click="activeWeek = w.value; fetchReport()"
                 :class="[
                   'px-4 py-3 rounded-xl text-[10px] font-oswald uppercase tracking-widest transition-all whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/60',
                   activeWeek === w.value ? 'bg-[color:rgb(var(--ink)/0.1)] text-[color:var(--text)]' : 'text-[color:var(--text-faint)] hover:text-[color:var(--text-dim)]'
@@ -140,14 +142,14 @@
             <div class="flex items-center gap-2 px-1 sm:px-2">
               <select
                 v-model.number="activeMonth"
-                @change="fetch()"
+                @change="fetchReport()"
                 class="flex-1 sm:flex-none bg-transparent border border-[color:rgb(var(--ink)/0.1)] rounded-lg px-3 py-2.5 text-[11px] font-oswald uppercase tracking-widest outline-none focus:border-red-600 text-[color:var(--text)] cursor-pointer"
               >
                 <option v-for="m in 12" :key="m" :value="m" class="bg-[color:var(--surface)]">{{ monthName(m) }}</option>
               </select>
               <select
                 v-model.number="activeYear"
-                @change="fetch()"
+                @change="fetchReport()"
                 class="flex-1 sm:flex-none bg-transparent border border-[color:rgb(var(--ink)/0.1)] rounded-lg px-3 py-2.5 text-[11px] font-oswald uppercase tracking-widest outline-none focus:border-red-600 text-[color:var(--text)] cursor-pointer"
               >
                 <option v-for="y in yearOptions" :key="y" :value="y" class="bg-[color:var(--surface)]">{{ y }}</option>
@@ -161,7 +163,7 @@
               <button
                 v-for="y in yearOptions"
                 :key="y"
-                @click="activeYear = y; fetch()"
+                @click="activeYear = y; fetchReport()"
                 :class="[
                   'px-4 py-3 rounded-xl text-[11px] font-oswald uppercase tracking-widest transition-all whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/60',
                   activeYear === y ? 'bg-[color:rgb(var(--ink)/0.1)] text-[color:var(--text)]' : 'text-[color:var(--text-faint)] hover:text-[color:var(--text-dim)]'
@@ -391,7 +393,7 @@
           <p class="text-[color:var(--text)] text-sm font-oswald uppercase tracking-wide mb-1">Gagal memuat data</p>
           <p class="text-[color:var(--text-faint)] text-xs mb-5">Periksa koneksi atau coba lagi beberapa saat.</p>
           <button
-            @click="fetch()"
+            @click="fetchReport()"
             class="flex items-center gap-2 bg-red-600 hover:bg-red-500 text-white text-[11px] font-oswald uppercase tracking-widest px-5 py-3 rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
           >
             <RefreshCw :size="13" /> Muat ulang
@@ -413,7 +415,7 @@ import {
 import {
   TrendingUp, Award, Download, ShoppingBag, DollarSign, Utensils,
   AlertTriangle, CreditCard, Clock, Users, Gem, Calendar,
-  CalendarDays, CalendarRange, Infinity, RefreshCw, ChevronDown,
+  CalendarDays, CalendarRange, Infinity as InfinityIcon, RefreshCw, ChevronDown,
   FileText, Sheet,
 } from "lucide-vue-next";
 import apiClient from "@/api/client";
@@ -443,7 +445,7 @@ const pageTabs  = [
   { label: "Jam Sibuk",     value: "jam",       sub: "Pola jam dan hari tersibuk dari data pesanan" },
 ];
 const activeTabSubtitle = computed(() => pageTabs.find((t) => t.value === activeTab.value)?.sub || "");
-const refresh = () => (activeTab.value === "ringkasan" ? fetch() : tabRef.value?.reload());
+const refresh = () => (activeTab.value === "ringkasan" ? fetchReport() : tabRef.value?.reload());
 
 const activeGroup = ref("lifetime");   // lifetime | weekly | monthly | yearly
 const activeWeek  = ref("this");       // this | last
@@ -451,7 +453,7 @@ const activeMonth = ref(now.getMonth() + 1);
 const activeYear  = ref(now.getFullYear());
 
 const groups = [
-  { label: "Lifetime",  value: "lifetime", icon: Infinity },
+  { label: "Lifetime",  value: "lifetime", icon: InfinityIcon },
   { label: "Mingguan",  value: "weekly",   icon: CalendarDays },
   { label: "Bulanan",   value: "monthly",  icon: Calendar },
   { label: "Tahunan",   value: "yearly",   icon: CalendarRange },
@@ -498,7 +500,7 @@ const buildParams = () => {
   const g = activeGroup.value;
   if (g === "lifetime") return { period: "lifetime" };
   if (g === "weekly") {
-    const daysMap = { this: 7, last: 14, "2w": 14, "4w": 28 };
+    const daysMap = { this: 7, last: 7, "2w": 14, "4w": 28 };
     const offset  = { this: 0, last: 7, "2w": 0, "4w": 0 };
     return { period: "week", days: daysMap[activeWeek.value], offset: offset[activeWeek.value] };
   }
@@ -507,27 +509,33 @@ const buildParams = () => {
 };
 
 // ── Fetch ─────────────────────────────────────────────────────────────────
-const fetch = async () => {
+// Klik filter berturut-turut menjalankan beberapa request sekaligus. Hanya request TERAKHIR yang
+// boleh mengisi layar, supaya jawaban lambat dari filter lama tidak menimpa filter yang aktif.
+let reportRequestId = 0;
+const fetchReport = async () => {
   // Tab lain memuat datanya sendiri dan memantau periodParams. Ringkasan dimuat ulang saat tab dibuka lagi.
   if (activeTab.value !== "ringkasan") return;
+  const requestId = ++reportRequestId;
   loading.value = true;
   try {
     const { data } = await apiClient.get("/orders/reports/full/", { params: buildParams() });
+    if (requestId !== reportRequestId) return;
     report.value = data;
   } catch (e) {
+    if (requestId !== reportRequestId) return;
     console.error("Gagal load report:", e);
     report.value = null;
   } finally {
-    loading.value = false;
+    if (requestId === reportRequestId) loading.value = false;
   }
 };
 
 const periodParams = computed(() => buildParams());
-watch(activeTab, (t) => { if (t === "ringkasan") fetch(); });
+watch(activeTab, (t) => { if (t === "ringkasan") fetchReport(); });
 
 const selectGroup = (g) => {
   activeGroup.value = g;
-  fetch();
+  fetchReport();
 };
 
 // ── Chart data ────────────────────────────────────────────────────────────
@@ -628,13 +636,16 @@ const pieOpts = computed(() => {
 const formatRp = (v) => "Rp " + Math.round(v || 0).toLocaleString("id-ID");
 
 // ── Export ────────────────────────────────────────────────────────────────
+// Endpoint export hanya mengenal laporan bulanan dan tahunan. Mingguan/lifetime tidak diekspor:
+// dulu keduanya diam-diam mengunduh laporan BULAN INI, tidak sesuai dengan angka di layar.
+const canExport = computed(() => activeGroup.value === "monthly" || activeGroup.value === "yearly");
+
 const exportDocument = (type) => {
   exportOpen.value = false;
-  const g = activeGroup.value;
-  let params = "";
-  if (g === "monthly") params = `mode=monthly&month=${activeMonth.value}&year=${activeYear.value}`;
-  else if (g === "yearly") params = `mode=yearly&year=${activeYear.value}`;
-  else params = `mode=monthly&month=${activeMonth.value}&year=${activeYear.value}`;
+  if (!canExport.value) return;
+  const params = activeGroup.value === "yearly"
+    ? `mode=yearly&year=${activeYear.value}`
+    : `mode=monthly&month=${activeMonth.value}&year=${activeYear.value}`;
   window.open(`${apiClient.defaults.baseURL}/orders/export/finance-${type === "pdf" ? "pdf" : "excel"}/?${params}`, "_blank");
 };
 
@@ -681,7 +692,7 @@ const EmptyState = (props) =>
     h("p", null, props.text),
   ]);
 
-onMounted(fetch);
+onMounted(fetchReport);
 </script>
 
 <style scoped>

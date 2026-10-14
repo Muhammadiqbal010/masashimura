@@ -274,26 +274,58 @@
               <label for="co-name" class="block text-sm font-medium text-[#C9C1B9]">Nama</label>
               <input
                 id="co-name"
-                v-model="name"
+                :value="name"
                 type="text"
                 autocomplete="name"
+                :maxlength="NAME_MAX"
+                :aria-invalid="nameErrorText ? 'true' : 'false'"
+                aria-describedby="co-name-help"
                 class="field"
+                :class="{ 'field-invalid': nameErrorText }"
                 placeholder="Nama kamu"
+                @input="onNameInput"
+                @blur="nameTouched = true"
               />
+              <p
+                id="co-name-help"
+                class="text-xs leading-relaxed"
+                :class="nameErrorText ? 'text-[#F2707A]' : 'text-[#6F6761]'"
+                :role="nameErrorText ? 'alert' : undefined"
+              >
+                {{ nameErrorText || `Huruf saja, ${NAME_MIN}-${NAME_MAX} karakter, tanpa angka atau tanda.` }}
+              </p>
             </div>
 
             <!-- Nomor WA -->
             <div class="space-y-2">
               <label for="co-phone" class="block text-sm font-medium text-[#C9C1B9]">Nomor WhatsApp</label>
+              <!-- type="tel" + inputmode="numeric": keypad angka di HP, tapi nilainya tetap string.
+                   type="number" sengaja tidak dipakai: Vue mengubahnya jadi Number sehingga angka 0 di depan
+                   hilang ("0812..." jadi 812...), dan browser masih menerima huruf "e", "+", "-" serta ".". -->
               <input
                 id="co-phone"
-                v-model="phone"
+                :value="phone"
                 type="tel"
-                inputmode="tel"
-                autocomplete="tel"
+                inputmode="numeric"
+                autocomplete="tel-national"
+                :maxlength="PHONE_MAX"
+                :aria-invalid="phoneErrorText ? 'true' : 'false'"
+                aria-describedby="co-phone-help"
                 class="field tabular-nums"
-                placeholder="08123456789"
+                :class="{ 'field-invalid': phoneErrorText }"
+                placeholder="081234567890"
+                @input="onPhoneInput"
+                @paste="onPhonePaste"
+                @blur="phoneTouched = true"
               />
+              <p
+                id="co-phone-help"
+                class="text-xs leading-relaxed"
+                :class="phoneErrorText ? 'text-[#F2707A]' : 'text-[#6F6761]'"
+                :role="phoneErrorText ? 'alert' : undefined"
+              >
+                {{ phoneErrorText || `Diawali 08, ${PHONE_MIN}-${PHONE_MAX} digit angka.` }}
+              </p>
 
               <!-- PIN member: terlihat oleh semua pelanggan supaya status member nomor lain tidak bocor -->
               <div class="mt-3 rounded-2xl border border-white/[0.07] bg-[#0F0D0C] p-3.5">
@@ -431,6 +463,11 @@ import PointRedeemBox from "@/components/ui/PointRedeemBox.vue"
 import MemberPinBox from "@/components/ui/MemberPinBox.vue"
 import StoreBanner from "@/components/ui/StoreBanner.vue"
 import { unlockPaymentAudio, playPaymentSuccess } from "@/utils/paymentSuccessSound.js"
+import {
+  PHONE_MIN, PHONE_MAX,
+  sanitizePhone, normalizePastedPhone, isValidPhone, hasValidPhonePrefix, phoneError,
+} from "@/utils/phone"
+import { NAME_MIN, NAME_MAX, sanitizeName, cleanName, nameError, isValidName } from "@/utils/name"
 
 const cartStore = useCartStore()
 const router    = useRouter()
@@ -443,6 +480,44 @@ const name            = ref("")
 const phone           = ref("")
 const paymentMethod   = ref("cash")   // "cash" | "gateway" (Midtrans)
 const isProcessing    = ref(false)
+
+// ── Nama pemesan ─────────────────────────────────────────────────────────────
+// Hanya huruf dan spasi. Angka dan tanda baca langsung dibuang saat diketik.
+const nameTouched = ref(false)
+const isNameValid = computed(() => isValidName(name.value))
+// Error baru tampil setelah kolom ditinggalkan, supaya tidak menegur saat masih mengetik.
+const nameErrorText = computed(() => (nameTouched.value ? nameError(name.value) : ""))
+
+const onNameInput = (e) => {
+  const clean = sanitizeName(e.target.value)
+  name.value = clean
+  e.target.value = clean   // paksa tampilan ikut bersih walau nilai ref tidak berubah
+}
+
+// ── Nomor WhatsApp ───────────────────────────────────────────────────────────
+// Hanya angka, diawali 08, 10-13 digit. Ketikan non-angka langsung dibuang.
+const phoneTouched = ref(false)
+const isPhoneValid = computed(() => isValidPhone(phone.value))
+
+// Awalan salah ditegur langsung; aturan panjang baru muncul setelah kolom ditinggalkan,
+// supaya pelanggan tidak ditegur saat masih mengetik.
+const phoneErrorText = computed(() => {
+  const message = phoneError(phone.value)
+  if (!message) return ""
+  const prefixWrong = phone.value.length > 0 && !hasValidPhonePrefix(phone.value)
+  return phoneTouched.value || prefixWrong ? message : ""
+})
+
+const onPhoneInput = (e) => {
+  const clean = sanitizePhone(e.target.value)
+  phone.value = clean
+  e.target.value = clean   // paksa tampilan ikut bersih walau nilai ref tidak berubah
+}
+
+const onPhonePaste = (e) => {
+  e.preventDefault()
+  phone.value = normalizePastedPhone(e.clipboardData?.getData("text"))
+}
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -795,7 +870,7 @@ const phaseIconClass = computed(() => ({
 // ══════════════════════════════════════════════════════════════════════════════
 const isCheckoutDisabled = computed(() => {
   if (!isStoreOpen.value) return true
-  if (cartStore.isEmpty || !phone.value || !name.value || isProcessing.value) return true
+  if (cartStore.isEmpty || !isNameValid.value || !isPhoneValid.value || isProcessing.value) return true
   if (paymentMethod.value === "gateway" && gatewayUnavailable.value) return true
   return false
 })
@@ -888,6 +963,8 @@ const resetForm = () => {
   cartStore.clearCart()
   name.value  = ""
   phone.value = ""
+  nameTouched.value  = false
+  phoneTouched.value = false
   promoBoxRef.value?.removePromo()
   resetMember()
 }
@@ -898,26 +975,36 @@ const checkout = async () => {
   // await, suara sukses nanti diblok browser.
   unlockPaymentAudio()
 
-  if (!name.value)  return toast.error("Mohon isi nama kamu")
-  if (!phone.value) return toast.error("Mohon isi nomor WhatsApp")
+  // Dobel klik / ketuk cepat tidak boleh membuat dua order.
+  if (isProcessing.value) return
+
+  if (!isNameValid.value) {
+    nameTouched.value = true
+    return toast.error(nameError(name.value))
+  }
+  if (!isPhoneValid.value) {
+    phoneTouched.value = true
+    return toast.error(phoneError(phone.value))
+  }
 
   const isGateway = paymentMethod.value === "gateway"
   if (isGateway && finalTotal.value <= 0) {
     return toast.error("Total Rp0, pakai metode Cash.")
   }
 
-  // Guard nomor admin hanya untuk Cash (tombol WhatsApp di panel butuh nomor ini).
-  // Untuk online, WA cuma tombol opsional setelah bayar, jadi tidak memblokir.
-  if (!isGateway && !adminWhatsapp.value) {
-    await fetchSettings()
-    if (!adminWhatsapp.value) {
-      toast.error("Nomor WhatsApp admin belum dikonfigurasi. Hubungi admin.")
-      return
-    }
-  }
-
+  // Dikunci SEBELUM await pertama (fetchSettings di bawah), bukan sesudahnya.
   isProcessing.value = true
   try {
+    // Guard nomor admin hanya untuk Cash (tombol WhatsApp di panel butuh nomor ini).
+    // Untuk online, WA cuma tombol opsional setelah bayar, jadi tidak memblokir.
+    if (!isGateway && !adminWhatsapp.value) {
+      await fetchSettings()
+      if (!adminWhatsapp.value) {
+        toast.error("Nomor WhatsApp admin belum dikonfigurasi. Hubungi admin.")
+        return
+      }
+    }
+
     // Pastikan Snap bisa dimuat SEBELUM order dibuat, supaya tidak ada
     // order "nyangkut" yang tidak bisa dibayar karena script gagal dimuat.
     if (isGateway) {
@@ -931,7 +1018,7 @@ const checkout = async () => {
 
     const orderData = {
       source:         "web",
-      customer:       { phone: phone.value, name: name.value },
+      customer:       { phone: phone.value, name: cleanName(name.value) },
       payment_method: paymentMethod.value,
       promo_id:          appliedPromo.value?.promo_id || null,
       redeem_reward_ids: selectedRewardIds.value,
@@ -953,6 +1040,8 @@ const checkout = async () => {
     // ── QRIS Online ──
     if (isGateway) {
       if (!res.data?.order_number) {
+        // Order sudah ada di server: kosongkan form supaya klik ulang tidak membuat order ganda.
+        resetForm()
         toast.error("Order dibuat, tapi nomor order tidak diterima. Hubungi admin.")
         return
       }
@@ -1010,7 +1099,6 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  clearTimeout(debounceTimer)
   stopPolling()
 })
 </script>
@@ -1134,6 +1222,14 @@ input:focus-visible {
   outline-offset: 3px;
 }
 .field:focus-visible { outline: none; }
+.field-invalid,
+.field-invalid:hover,
+.field-invalid:focus {
+  border-color: rgba(242, 112, 122, 0.7);
+}
+.field-invalid:focus {
+  box-shadow: 0 0 0 3px rgba(242, 112, 122, 0.14);
+}
 
 @media (prefers-reduced-motion: reduce) {
   .animate-spin { animation-duration: 2s; }

@@ -40,7 +40,7 @@
       <div class="pin-row">
         <input
           id="co-pin"
-          v-model="pin"
+          :value="pin"
           type="password"
           inputmode="numeric"
           autocomplete="off"
@@ -49,6 +49,7 @@
           class="field pin-input tabular-nums"
           placeholder="••••"
           aria-describedby="co-pin-help"
+          @input="onPinInput"
           @keyup.enter="submit"
         />
         <button type="button" class="pin-btn" :disabled="!canSubmit" @click="submit">
@@ -57,6 +58,7 @@
         </button>
       </div>
       <p v-if="error" class="pin-error" role="alert">{{ error }}</p>
+      <p v-else-if="hint" class="pin-hint">{{ hint }}</p>
       <p id="co-pin-help" class="pin-help">
         Setelah 5 kali salah, PIN dikunci 15 menit.
         <a v-if="waLink" :href="waLink" target="_blank" rel="noopener" class="pin-wa">Lupa PIN atau ingin menggantinya? Hubungi admin</a>
@@ -69,6 +71,7 @@
 import { ref, computed, watch } from 'vue'
 import { Gift } from 'lucide-vue-next'
 import { orderAPI } from '@/api'
+import { isValidPhone } from '@/utils/phone'
 
 const props = defineProps({
   phone: { type: String, default: '' },
@@ -83,24 +86,47 @@ const error = ref('')
 
 const NEUTRAL = 'Nomor atau PIN salah, atau minta PIN ke kasir.'
 
-const canSubmit = computed(() => !loading.value && (props.phone || '').length >= 9 && /^\d{4}$/.test(pin.value))
+const phoneOk = computed(() => isValidPhone(props.phone))
+const pinOk   = computed(() => /^\d{4}$/.test(pin.value))
+const canSubmit = computed(() => !loading.value && phoneOk.value && pinOk.value)
 
-// Ganti nomor = hasil verifikasi nomor sebelumnya tidak berlaku lagi.
+// Alasan tombol belum aktif, supaya pelanggan tidak bingung. Kosong saat form masih bersih.
+const hint = computed(() => {
+  if (loading.value || (!props.phone && !pin.value)) return ''
+  if (!phoneOk.value) return 'Isi nomor WhatsApp yang valid dulu.'
+  if (!pinOk.value) return 'Masukkan 4 digit PIN.'
+  return ''
+})
+
+// PIN hanya angka (inputmode numeric tidak menahan ketikan di keyboard desktop).
+const onPinInput = (e) => {
+  const clean = e.target.value.replace(/\D/g, '').slice(0, 4)
+  pin.value = clean
+  e.target.value = clean
+}
+
+// Ganti nomor = PIN yang sudah diketik dan pesan error lama dibuang.
+// Pembuangan hasil verifikasi (info) dilakukan oleh Checkout lewat watch nomor-nya sendiri.
 watch(() => props.phone, () => {
   pin.value = ''
   error.value = ''
-  if (props.info) emit('reset')
 })
 
 const submit = async () => {
   if (!canSubmit.value) return
+  const phoneAtSubmit = props.phone
+  const pinAtSubmit   = pin.value
+
   loading.value = true
   error.value = ''
   try {
-    const { data } = await orderAPI.verifyMember(props.phone, pin.value)
-    emit('verified', { info: data, pin: pin.value })
+    const { data } = await orderAPI.verifyMember(phoneAtSubmit, pinAtSubmit)
+    // Nomor diganti saat request berjalan: hasilnya milik nomor lama, buang.
+    if (props.phone !== phoneAtSubmit) return
+    emit('verified', { info: data, pin: pinAtSubmit })
     pin.value = ''
   } catch {
+    if (props.phone !== phoneAtSubmit) return
     // Semua kegagalan (termasuk jaringan) memakai pesan yang sama.
     error.value = NEUTRAL
   } finally {
@@ -156,6 +182,7 @@ const waLink = computed(() => {
 @keyframes pin-rot { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .pin-spin { animation: none; } }
 .pin-error { margin: 0; font-size: .8125rem; color: #F2707A; }
+.pin-hint { margin: 0; font-size: .8125rem; color: #D4B483; }
 .pin-help { margin: 0; font-size: .75rem; line-height: 1.5; color: #A39A93; }
 .pin-wa { display: block; margin-top: .25rem; color: #D4B483; text-decoration: underline; text-underline-offset: 2px; }
 
