@@ -14,25 +14,25 @@
               Order Reports
             </h1>
             <p class="text-[color:var(--text-faint)] text-xs sm:text-sm font-light mt-2">
-              Analisis omzet, performa menu, dan pelanggan
+              {{ activeTabSubtitle }}
             </p>
           </div>
 
           <div class="flex items-center gap-2 shrink-0">
             <!-- Refresh -->
             <button
-              @click="fetch()"
-              :disabled="loading"
+              @click="refresh"
+              :disabled="loading || tabRef?.loading"
               aria-label="Muat ulang data"
               class="flex items-center justify-center w-11 h-11 bg-[color:rgb(var(--ink)/0.04)] border border-[color:rgb(var(--ink)/0.1)] rounded-xl text-[color:var(--text-dim)] hover:text-[color:var(--text)] hover:bg-[color:rgb(var(--ink)/0.08)] transition-all disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/60"
             >
-              <RefreshCw :size="14" :class="{ 'animate-spin': loading }" />
+              <RefreshCw :size="14" :class="{ 'animate-spin': loading || tabRef?.loading }" />
             </button>
 
             <!-- Export dropdown -->
             <div class="relative" ref="exportMenuRef">
               <button
-                v-if="activeGroup !== 'lifetime'"
+                v-if="activeTab === 'ringkasan' && activeGroup !== 'lifetime'"
                 @click="exportOpen = !exportOpen"
                 aria-haspopup="menu"
                 :aria-expanded="exportOpen"
@@ -74,6 +74,25 @@
           </div>
         </div>
 
+        <!-- ═══ TAB HALAMAN ═════════════════════════════════════════════ -->
+        <div class="flex gap-1 mt-5 border-b border-[color:rgb(var(--ink)/0.06)] overflow-x-auto no-scrollbar" role="tablist" aria-label="Bagian laporan">
+          <button
+            v-for="t in pageTabs"
+            :key="t.value"
+            type="button"
+            role="tab"
+            :aria-selected="activeTab === t.value"
+            @click="activeTab = t.value"
+            :class="[
+              'px-4 min-h-[44px] -mb-px shrink-0 whitespace-nowrap text-[11px] font-oswald uppercase tracking-widest border-b-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/60 rounded-t-lg',
+              activeTab === t.value
+                ? 'border-red-600 text-[color:var(--text)]'
+                : 'border-transparent text-[color:var(--text-faint)] hover:text-[color:var(--text-dim)]'
+            ]"
+          >{{ t.label }}</button>
+        </div>
+
+        <template v-if="activeTab !== 'jam'">
         <!-- ═══ FILTER BAR ══════════════════════════════════════════════ -->
         <div class="bg-[color:var(--surface)] border border-[color:rgb(var(--ink)/0.08)] rounded-2xl p-1.5 mt-5 flex flex-col sm:flex-row gap-1.5 sm:gap-1">
 
@@ -169,12 +188,21 @@
           </span>
           <div class="h-px flex-1 bg-[color:rgb(var(--ink)/0.05)]"></div>
         </div>
+        </template>
       </div>
 
       <div class="pt-6">
 
+        <!-- ═══ TAB LAIN (dimuat saat dibuka; mengikuti filter periode di atas) ═══ -->
+        <template v-if="activeTab !== 'ringkasan'">
+          <BusyHoursTab v-if="activeTab === 'jam'" ref="tabRef" />
+          <MenuPerformanceTab v-else-if="activeTab === 'performa'" ref="tabRef" :params="periodParams" />
+          <MenuPairsTab v-else-if="activeTab === 'pasangan'" ref="tabRef" :params="periodParams" />
+          <ChannelTab v-else-if="activeTab === 'channel'" ref="tabRef" :params="periodParams" />
+        </template>
+
         <!-- ═══ LOADING SKELETON ═══════════════════════════════════════ -->
-        <div v-if="loading" class="space-y-5 animate-pulse">
+        <div v-else-if="loading" class="space-y-5 animate-pulse">
           <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <div v-for="i in 4" :key="i" class="bg-[color:var(--surface)] border border-[color:rgb(var(--ink)/0.05)] rounded-2xl p-5 h-[112px]">
               <div class="w-10 h-10 rounded-xl bg-[color:rgb(var(--ink)/0.05)] mb-4"></div>
@@ -376,7 +404,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, h } from "vue";
+import { ref, computed, watch, onMounted, onBeforeUnmount, h } from "vue";
 import { Bar, Pie } from "vue-chartjs";
 import {
   Chart as ChartJS, BarElement, CategoryScale, LinearScale,
@@ -389,6 +417,10 @@ import {
   FileText, Sheet,
 } from "lucide-vue-next";
 import apiClient from "@/api/client";
+import BusyHoursTab from "@/components/ui/admin/BusyHoursTab.vue";
+import MenuPerformanceTab from "@/components/ui/admin/MenuPerformanceTab.vue";
+import MenuPairsTab from "@/components/ui/admin/MenuPairsTab.vue";
+import ChannelTab from "@/components/ui/admin/ChannelTab.vue";
 import { useTheme } from "@/composables/useTheme";
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, ArcElement, Tooltip, Legend);
@@ -399,6 +431,19 @@ const loading    = ref(true);
 const report     = ref(null);
 const exportOpen = ref(false);
 const exportMenuRef = ref(null);
+
+// Tab halaman: Ringkasan (laporan yang sudah ada) | Jam Sibuk (dimuat saat dibuka)
+const activeTab = ref("ringkasan");
+const tabRef    = ref(null);
+const pageTabs  = [
+  { label: "Ringkasan",    value: "ringkasan", sub: "Analisis omzet, performa menu, dan pelanggan" },
+  { label: "Performa Menu", value: "performa",  sub: "Volume, kontribusi omzet, dan kelompok tiap menu" },
+  { label: "Pasangan Menu", value: "pasangan",  sub: "Menu yang sering dipesan bersamaan, dasar ide paket" },
+  { label: "Channel",       value: "channel",   sub: "Perbandingan pesanan web pelanggan dan POS kasir" },
+  { label: "Jam Sibuk",     value: "jam",       sub: "Pola jam dan hari tersibuk dari data pesanan" },
+];
+const activeTabSubtitle = computed(() => pageTabs.find((t) => t.value === activeTab.value)?.sub || "");
+const refresh = () => (activeTab.value === "ringkasan" ? fetch() : tabRef.value?.reload());
 
 const activeGroup = ref("lifetime");   // lifetime | weekly | monthly | yearly
 const activeWeek  = ref("this");       // this | last
@@ -463,6 +508,8 @@ const buildParams = () => {
 
 // ── Fetch ─────────────────────────────────────────────────────────────────
 const fetch = async () => {
+  // Tab lain memuat datanya sendiri dan memantau periodParams. Ringkasan dimuat ulang saat tab dibuka lagi.
+  if (activeTab.value !== "ringkasan") return;
   loading.value = true;
   try {
     const { data } = await apiClient.get("/orders/reports/full/", { params: buildParams() });
@@ -474,6 +521,9 @@ const fetch = async () => {
     loading.value = false;
   }
 };
+
+const periodParams = computed(() => buildParams());
+watch(activeTab, (t) => { if (t === "ringkasan") fetch(); });
 
 const selectGroup = (g) => {
   activeGroup.value = g;

@@ -4,6 +4,7 @@ from accounts.permissions import IsAdminLevel
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from . import snapshots
 from .ml.predict import ModelNotTrainedError, forecast
 from .ml.train import train_and_select_best
 
@@ -35,6 +36,21 @@ class RevenuePredictionView(APIView):
             result = forecast(n_days=n_days, history_days=history_days)
         except ModelNotTrainedError as e:
             return Response({'error': str(e), 'model_trained': False}, status=409)
+
+        # Simpan prediksi ini (tanpa cron, jadi disimpan tiap kali dibuka) dan
+        # sertakan garis "prediksi tersimpan" untuk tanggal histori di grafik.
+        # Gagal menyimpan/membaca snapshot tidak boleh merusak prediksinya.
+        try:
+            snapshots.save_forecast(result['forecast'], method=result.get('method', ''))
+            history = result.get('history') or []
+            actual = {h['date']: h['revenue'] for h in history}
+            pairs = snapshots.saved_vs_actual(actual, history[0]['date'], history[-1]['date']) if history else []
+            result['saved_history'] = pairs
+            result['saved_accuracy'] = snapshots.summarize(pairs)
+        except Exception:
+            logger.exception('Snapshot prediksi gagal diproses')
+            result['saved_history'] = []
+            result['saved_accuracy'] = None
 
         return Response(result)
 

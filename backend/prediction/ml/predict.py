@@ -268,3 +268,77 @@ def forecast(n_days: int = 30, history_days: int = 30) -> dict:
         'average_daily_revenue': round(forecast_avg, 2),
         'history': history_list,
     }
+
+
+def predict_dates(dates) -> dict:
+    """
+    Prediksi omzet untuk daftar tanggal TERTENTU (boleh termasuk hari ini),
+    memakai metode yang sama dengan forecast(): baseline, atau Random Forest
+    kalau terbukti lebih akurat di backtest.
+
+    Dipakai Strip Briefing: prediksi hari ini dan sisa hari di bulan berjalan,
+    yang tidak bisa diambil dari forecast() karena forecast() mulai dari besok.
+    Data historis berhenti di kemarin, jadi prediksi hari ini tidak memakai
+    omzet hari ini yang belum tuntas.
+
+    Return dict:
+        method, confidence (level terendah dari hari buka), days (list per tanggal,
+        kunci sama dengan item forecast()).
+    Raises ModelNotTrainedError kalau belum ada data revenue historis.
+    """
+    ts = [pd.Timestamp(d).normalize() for d in dates]
+    if not ts:
+        return {'method': 'baseline', 'confidence': 'rendah', 'days': []}
+
+    daily = get_daily_revenue_df()
+    if daily.empty:
+        raise ModelNotTrainedError('Belum ada data revenue historis untuk dasar forecast.')
+
+    closed = get_regular_closed_weekdays()
+    metadata = _load_metadata()
+    ml_model = _load_ml_model(metadata)
+    method = 'random_forest' if ml_model is not None else 'baseline'
+    baseline = fit_baseline(daily, closed)
+
+    ml_preds, ml_rmse, ml_confidence = None, None, None
+    if ml_model is not None:
+        X = build_calendar_features(ts, closed)
+        ml_preds = np.clip(ml_model.predict(X), a_min=0, a_max=None) * SCALE_FACTOR
+        ml_preds = np.clip(ml_preds, 0, ml_upper_bound(daily))
+        ml_rmse = (metadata.get('metrics') or {}).get('random_forest', {}).get('rmse')
+        ml_confidence = 'tinggi' if len(daily) >= ML_HIGH_CONFIDENCE_DAYS else 'sedang'
+
+    days, open_confidences = [], []
+    for i, d in enumerate(ts):
+        if d.dayofweek in closed:
+            pred = lower = upper = 0.0
+            confidence, n_samples, is_closed = 'tinggi', None, True
+        else:
+            is_closed = False
+            if method == 'baseline':
+                pred, n_samples, spread = predict_baseline(baseline, d)
+                half = spread if spread is not None else pred * UNCERTAIN_BAND_RATIO
+                confidence = confidence_for_samples(n_samples)
+            else:
+                pred, n_samples = float(ml_preds[i]), None
+                half = float(ml_rmse) if ml_rmse else pred * UNCERTAIN_BAND_RATIO
+                confidence = ml_confidence
+            lower, upper = max(CI_FLOOR, pred - half), pred + half
+            open_confidences.append(confidence)
+        days.append({
+            'date': d.strftime('%Y-%m-%d'),
+            'day_name': HARI_INDONESIA[d.dayofweek],
+            'is_weekend': bool(d.dayofweek >= 5),
+            'is_regular_closed_day': is_closed,
+            'predicted_revenue': float(pred),
+            'lower_bound': float(lower),
+            'upper_bound': float(upper),
+            'confidence': confidence,
+            'n_samples': n_samples,
+        })
+
+    return {
+        'method': method,
+        'confidence': lowest_confidence(open_confidences) if open_confidences else 'tinggi',
+        'days': days,
+    }

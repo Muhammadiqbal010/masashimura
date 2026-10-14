@@ -225,6 +225,9 @@
     </AdminModal>
 
     <AdminConfirm :state="confirmState" @confirm="acceptConfirm" @cancel="cancelConfirm" />
+
+    <!-- ── Efektivitas promo (#15) ─────────────────────────────────── -->
+    <PromoEffectiveness />
   </div>
 </template>
 
@@ -235,6 +238,7 @@ import { toast } from 'vue-sonner'
 import apiClient from '@/api/client'
 import AdminModal from '@/components/ui/admin/Adminmodal.vue'
 import AdminConfirm from '@/components/ui/admin/Adminconfirm.vue'
+import PromoEffectiveness from '@/components/ui/admin/PromoEffectiveness.vue'
 import { useAdminConfirm } from '@/composables/useAdminConfirm'
 
 const { state: confirmState, ask, accept: acceptConfirm, cancel: cancelConfirm } = useAdminConfirm()

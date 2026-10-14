@@ -1,0 +1,175 @@
+<!--
+  MemberPinBox.vue — kotak PIN member di Checkout (selalu terlihat oleh semua pelanggan).
+  Sebelum PIN benar tidak ada angka poin yang tampil. Pesan gagal dibuat sama untuk semua
+  kemungkinan (bukan member, belum punya PIN, PIN salah, terkunci) supaya nomor orang lain
+  tidak bisa ditebak statusnya.
+-->
+<template>
+  <div class="pin-box">
+    <!-- Sudah terverifikasi -->
+    <template v-if="info">
+      <div class="pin-head">
+        <span class="pin-tile"><Gift :size="15" /></span>
+        <div class="pin-head-text">
+          <p class="pin-title">Poin kamu</p>
+          <p class="pin-balance">{{ info.points.toLocaleString('id-ID') }}</p>
+        </div>
+        <button type="button" class="pin-link" @click="$emit('reset')">Tutup</button>
+      </div>
+
+      <div v-if="info.progress" class="pin-progress">
+        <div class="pin-bar" role="progressbar" :aria-valuenow="Math.min(info.points, info.progress.target_cost)" aria-valuemin="0" :aria-valuemax="info.progress.target_cost" :aria-label="'Progres menuju ' + info.progress.target_name">
+          <span class="pin-bar-fill" :style="{ width: pct + '%' }"></span>
+        </div>
+        <p class="pin-progress-text">
+          <template v-if="info.points >= info.progress.target_cost">
+            Cukup untuk menukar <strong>{{ info.progress.target_name }}</strong> ({{ info.progress.target_cost }} poin).
+          </template>
+          <template v-else>
+            {{ info.points }} dari {{ info.progress.target_cost }} poin untuk <strong>{{ info.progress.target_name }}</strong>. Kurang {{ info.progress.target_cost - info.points }} poin lagi.
+          </template>
+        </p>
+      </div>
+
+      <p v-if="expiryText" class="pin-expiry" :class="{ 'is-soon': soon }">{{ expiryText }}</p>
+    </template>
+
+    <!-- Belum terverifikasi -->
+    <template v-else>
+      <label for="co-pin" class="pin-label">PIN member <span class="pin-opt">(opsional, untuk lihat dan tukar poin)</span></label>
+      <div class="pin-row">
+        <input
+          id="co-pin"
+          v-model="pin"
+          type="password"
+          inputmode="numeric"
+          autocomplete="off"
+          maxlength="4"
+          pattern="[0-9]*"
+          class="field pin-input tabular-nums"
+          placeholder="••••"
+          aria-describedby="co-pin-help"
+          @keyup.enter="submit"
+        />
+        <button type="button" class="pin-btn" :disabled="!canSubmit" @click="submit">
+          <span v-if="loading" class="pin-spin" aria-hidden="true"></span>
+          {{ loading ? 'Mengecek…' : 'Lihat poin saya' }}
+        </button>
+      </div>
+      <p v-if="error" class="pin-error" role="alert">{{ error }}</p>
+      <p id="co-pin-help" class="pin-help">
+        Setelah 5 kali salah, PIN dikunci 15 menit.
+        <a v-if="waLink" :href="waLink" target="_blank" rel="noopener" class="pin-wa">Lupa PIN atau ingin menggantinya? Hubungi admin</a>
+      </p>
+    </template>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, watch } from 'vue'
+import { Gift } from 'lucide-vue-next'
+import { orderAPI } from '@/api'
+
+const props = defineProps({
+  phone: { type: String, default: '' },
+  info: { type: Object, default: null },        // hasil verifikasi dari server
+  adminWhatsapp: { type: String, default: '' },
+})
+const emit = defineEmits(['verified', 'reset'])
+
+const pin = ref('')
+const loading = ref(false)
+const error = ref('')
+
+const NEUTRAL = 'Nomor atau PIN salah, atau minta PIN ke kasir.'
+
+const canSubmit = computed(() => !loading.value && (props.phone || '').length >= 9 && /^\d{4}$/.test(pin.value))
+
+// Ganti nomor = hasil verifikasi nomor sebelumnya tidak berlaku lagi.
+watch(() => props.phone, () => {
+  pin.value = ''
+  error.value = ''
+  if (props.info) emit('reset')
+})
+
+const submit = async () => {
+  if (!canSubmit.value) return
+  loading.value = true
+  error.value = ''
+  try {
+    const { data } = await orderAPI.verifyMember(props.phone, pin.value)
+    emit('verified', { info: data, pin: pin.value })
+    pin.value = ''
+  } catch {
+    // Semua kegagalan (termasuk jaringan) memakai pesan yang sama.
+    error.value = NEUTRAL
+  } finally {
+    loading.value = false
+  }
+}
+
+const pct = computed(() => {
+  const p = props.info?.progress
+  if (!p || !p.target_cost) return 0
+  return Math.min(100, Math.round((p.points / p.target_cost) * 100))
+})
+
+const soon = computed(() => {
+  const d = props.info?.days_until_expiry
+  return d !== null && d !== undefined && d <= 14
+})
+
+const fmtDate = (iso) => new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+
+const expiryText = computed(() => {
+  const i = props.info
+  if (!i) return ''
+  if (i.points_expiring_note && !i.expiry_date) return i.points_expiring_note   // mis. poin baru saja hangus
+  if (!i.expiry_months || !i.expiry_date || i.points <= 0) return ''
+  const sisa = i.days_until_expiry
+  const kapan = sisa !== null && sisa >= 0 ? `${fmtDate(i.expiry_date)} (${sisa} hari lagi)` : fmtDate(i.expiry_date)
+  return `Poin hangus ${kapan} kalau kamu tidak belanja selama ${i.expiry_months} bulan. Setiap belanja memulai hitungan dari awal.`
+})
+
+const waLink = computed(() => {
+  const number = (props.adminWhatsapp || '').replace(/\D/g, '')
+  if (!number) return ''
+  const text = `Halo admin, saya lupa PIN member untuk nomor ${props.phone || ''}`.trim()
+  return `https://wa.me/${number}?text=${encodeURIComponent(text)}`
+})
+</script>
+
+<style scoped>
+.pin-box { display: flex; flex-direction: column; gap: .6rem; }
+.pin-label { font-size: .875rem; font-weight: 500; color: #C9C1B9; }
+.pin-opt { font-weight: 400; color: #6F6761; font-size: .75rem; }
+.pin-row { display: flex; gap: .6rem; }
+.pin-input { max-width: 7.5rem; text-align: center; letter-spacing: .4em; }
+.pin-btn {
+  min-height: 48px; flex: 1; padding: 0 1rem; border-radius: .875rem; cursor: pointer;
+  border: 1px solid rgba(212,180,131,.35); background: rgba(212,180,131,.1); color: #D4B483;
+  font-size: .875rem; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+}
+.pin-btn:disabled { opacity: .45; cursor: not-allowed; }
+.pin-btn:focus-visible, .pin-link:focus-visible, .pin-wa:focus-visible { outline: 2px solid #D4B483; outline-offset: 2px; }
+.pin-spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid currentColor; border-top-color: transparent; animation: pin-rot .7s linear infinite; }
+@keyframes pin-rot { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .pin-spin { animation: none; } }
+.pin-error { margin: 0; font-size: .8125rem; color: #F2707A; }
+.pin-help { margin: 0; font-size: .75rem; line-height: 1.5; color: #A39A93; }
+.pin-wa { display: block; margin-top: .25rem; color: #D4B483; text-decoration: underline; text-underline-offset: 2px; }
+
+.pin-head { display: flex; align-items: center; gap: .625rem; }
+.pin-tile { display: flex; height: 2rem; width: 2rem; align-items: center; justify-content: center; border-radius: .625rem; border: 1px solid rgba(212,180,131,.25); background: rgba(212,180,131,.1); color: #D4B483; flex-shrink: 0; }
+.pin-head-text { flex: 1; min-width: 0; }
+.pin-title { margin: 0; font-size: .75rem; color: #A39A93; }
+.pin-balance { margin: 0; font-family: "Sora", ui-sans-serif, system-ui, sans-serif; font-size: 1.375rem; font-weight: 600; color: #D4B483; font-variant-numeric: tabular-nums; }
+.pin-link { min-height: 40px; padding: 0 .5rem; background: none; border: 0; color: #A39A93; font-size: .8125rem; cursor: pointer; text-decoration: underline; }
+.pin-progress { display: flex; flex-direction: column; gap: .4rem; }
+.pin-bar { height: 8px; border-radius: 999px; background: rgba(255,255,255,.08); overflow: hidden; }
+.pin-bar-fill { display: block; height: 100%; border-radius: 999px; background: #D4B483; transition: width .4s ease; }
+@media (prefers-reduced-motion: reduce) { .pin-bar-fill { transition: none; } }
+.pin-progress-text { margin: 0; font-size: .8125rem; line-height: 1.5; color: #C9C1B9; }
+.pin-expiry { margin: 0; font-size: .8125rem; line-height: 1.5; color: #A39A93; }
+.pin-expiry.is-soon { color: #D4B483; font-weight: 500; }
+</style>

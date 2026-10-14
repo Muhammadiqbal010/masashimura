@@ -12,6 +12,9 @@
         </div>
         <div class="header-actions">
 
+          <!-- Kontrol cepat keramaian: kasir yang melihat langsung kedai ramai atau santai. -->
+          <CrowdQuickControl />
+
           <!-- Waktu order: default "Sekarang"; "Atur Manual" buat input susulan hari/jam lain. -->
           <div class="time-chip-wrap">
             <button
@@ -97,6 +100,30 @@
         </button>
       </div>
 
+      <!-- Paket (hanya untuk order baru; tambah item ke tagihan lama tetap per menu) -->
+      <div v-if="!addTarget && !searchQuery.trim() && posBundles.length" class="bundle-strip">
+        <p class="bundle-strip-title">Paket</p>
+        <div class="bundle-strip-list">
+          <button
+            v-for="b in posBundles"
+            :key="b.id"
+            type="button"
+            class="bundle-chip"
+            :disabled="!!b.unavailable_reason"
+            @click="addBundleToCart(b)"
+          >
+            <span v-if="bundleCounts[b.id]" class="bundle-chip-count">×{{ bundleCounts[b.id] }}</span>
+            <span class="bundle-chip-name">{{ b.name }}</span>
+            <span class="bundle-chip-items">{{ b.contents.map((c) => c.quantity + '× ' + c.name).join(' · ') }}</span>
+            <span class="bundle-chip-price">
+              {{ formatPrice(b.pos.price) }}
+              <s v-if="!b.pos.not_cheaper" class="bundle-chip-normal">{{ formatPrice(b.pos.normal_price) }}</s>
+            </span>
+            <span v-if="b.unavailable_reason" class="bundle-chip-off">{{ b.unavailable_reason }}</span>
+          </button>
+        </div>
+      </div>
+
       <div v-if="isLoadingMenus" class="menu-grid">
         <div v-for="n in 6" :key="n" class="menu-skeleton"></div>
       </div>
@@ -165,7 +192,7 @@
 
         <!-- Cart -->
         <div class="order-section">
-          <div v-if="orderItems.length === 0" class="cart-empty">
+          <div v-if="orderItems.length === 0 && orderBundles.length === 0" class="cart-empty">
             <div class="cart-empty-icon">🛒</div>
             <p>Keranjang masih kosong</p>
             <p class="cart-empty-hint">Tap menu di kiri untuk menambah item</p>
@@ -177,6 +204,25 @@
               <button type="button" class="cart-clear" @click="clearCart">Kosongkan</button>
             </div>
             <div class="cart-list">
+              <div v-for="line in orderBundles" :key="'bundle-' + line.id" class="cart-item cart-item-bundle">
+                <div class="cart-item-top">
+                  <div class="cart-item-info">
+                    <p class="cart-item-name"><span class="cart-bundle-tag">PAKET</span> {{ line.name }}</p>
+                    <p class="cart-item-price">{{ formatPrice(line.price) }} <span class="cart-item-sub">· {{ formatPrice(Number(line.price) * line.quantity) }}</span></p>
+                    <p class="cart-item-opts">{{ line.contents.map((c) => c.quantity * line.quantity + '× ' + c.name).join(' · ') }}</p>
+                  </div>
+                  <div class="qty-control">
+                    <button @click="updateBundleQty(line.id, -1)" class="qty-btn" aria-label="Kurangi paket">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    </button>
+                    <span class="qty-val">{{ line.quantity }}</span>
+                    <button @click="updateBundleQty(line.id, 1)" class="qty-btn" aria-label="Tambah paket">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               <div v-for="(item, index) in orderItems" :key="index" class="cart-item">
                 <div class="cart-item-top">
                   <div class="cart-item-info">
@@ -702,11 +748,12 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
-import { menuAPI, orderAPI, apiClient } from "@/api";
+import { menuAPI, orderAPI, bundleAPI, apiClient } from "@/api";
 import { toast } from "vue-sonner";
 import { useAuthStore } from "@/stores/auth";
 import PromoCodeBox from "@/components/ui/PromoCodeBox.vue";
 import PointRedeemBox from "@/components/ui/PointRedeemBox.vue";
+import CrowdQuickControl from "@/components/ui/admin/CrowdQuickControl.vue";
 
 const authStore = useAuthStore();
 const kasirName = computed(() => authStore.user?.name || authStore.user?.username || "Staff");
@@ -717,6 +764,8 @@ const isLoadingMenus = ref(false);
 const menuLoadError  = ref(false);
 const searchQuery    = ref("");
 const orderItems     = ref([]);
+const orderBundles   = ref([]);   // paket di keranjang: [{ id, name, contents, price (harga POS), quantity }]
+const posBundles     = ref([]);   // katalog paket (GET /bundles/, tampilan staf)
 const showMobileCart = ref(false);
 
 // ── State: picker opsi menu (pedas, add-on, dll) ─────────────────────
@@ -859,9 +908,20 @@ const customerInitial = computed(() =>
   customerPhone.value ? customerPhone.value.trim().charAt(0).toUpperCase() : "?"
 );
 
-const cartItemCount = computed(() =>
-  orderItems.value.reduce((acc, i) => acc + i.quantity, 0)
+const cartItemCount = computed(
+  () =>
+    orderItems.value.reduce((acc, i) => acc + i.quantity, 0) +
+    orderBundles.value.reduce(
+      (acc, b) => acc + b.quantity * b.contents.reduce((s, c) => s + c.quantity, 0),
+      0
+    )
 );
+
+const bundleCounts = computed(() => {
+  const out = {};
+  for (const b of orderBundles.value) out[b.id] = b.quantity;
+  return out;
+});
 
 // Jumlah per menu di keranjang (untuk badge di kartu menu)
 const cartCounts = computed(() => {
@@ -878,8 +938,10 @@ const filteredMenus = computed(() => {
 });
 
 // subtotal → diskon promo → total (diskon member % sudah dihapus; reward poin = item gratis)
-const subtotal = computed(() =>
-  orderItems.value.reduce((acc, item) => acc + Number(item.price) * item.quantity, 0)
+const subtotal = computed(
+  () =>
+    orderItems.value.reduce((acc, item) => acc + Number(item.price) * item.quantity, 0) +
+    orderBundles.value.reduce((acc, b) => acc + Number(b.price) * b.quantity, 0)
 );
 const totalPrice = computed(() =>
   Math.max(subtotal.value - (appliedPromo.value?.discount_amount || 0), 0)
@@ -1070,10 +1132,50 @@ const addToOrder = (menu, selection = {}, quantity = 1) => {
   });
 };
 
+// ── Paket ────────────────────────────────────────────────────────────
+const fetchBundles = async () => {
+  try {
+    const { data } = await bundleAPI.getAll();
+    const list = Array.isArray(data) ? data : data?.results || [];
+    posBundles.value = list;
+    // Buang paket di keranjang yang sudah dihapus / habis; harga POS selalu dari server.
+    const byId = new Map(list.map((b) => [b.id, b]));
+    orderBundles.value = orderBundles.value
+      .filter((l) => byId.get(l.id) && !byId.get(l.id).unavailable_reason)
+      .map((l) => ({ ...l, price: byId.get(l.id).pos.price, contents: byId.get(l.id).contents.map((c) => ({ menu: c.menu, name: c.name, quantity: c.quantity })) }));
+  } catch {
+    posBundles.value = [];   // paket gagal dimuat tidak boleh mengganggu POS
+  }
+};
+
+const addBundleToCart = (b) => {
+  if (b.unavailable_reason) return toast.error(b.unavailable_reason);
+  const existing = orderBundles.value.find((l) => l.id === b.id);
+  if (existing) {
+    existing.quantity = Math.min(50, existing.quantity + 1);
+    return;
+  }
+  orderBundles.value.push({
+    id: b.id,
+    name: b.name,
+    price: b.pos.price,   // hanya tampilan; server menghitung ulang
+    contents: b.contents.map((c) => ({ menu: c.menu, name: c.name, quantity: c.quantity })),
+    quantity: 1,
+  });
+};
+
+const updateBundleQty = (id, delta) => {
+  const line = orderBundles.value.find((l) => l.id === id);
+  if (!line) return;
+  line.quantity = Math.min(50, line.quantity + delta);
+  if (line.quantity <= 0) orderBundles.value = orderBundles.value.filter((l) => l.id !== id);
+};
+
 const clearCart = () => {
-  if (!orderItems.value.length) return;
+  if (!orderItems.value.length && !orderBundles.value.length) return;
   if (!confirm("Kosongkan semua item di keranjang?")) return;
   orderItems.value = [];
+  orderBundles.value = [];
   selectedRewardIds.value = [];
   amountPaid.value = 0;
   promoBoxRef.value?.removePromo?.();
@@ -1160,6 +1262,7 @@ const selectPaymentMethod = (method) => {
 // ── Submit order baru ────────────────────────────────────────────────
 const resetForm = () => {
   orderItems.value = [];
+  orderBundles.value = [];
   customerPhone.value = "";
   customerName.value = "";
   resetLoyalty();
@@ -1172,7 +1275,7 @@ const resetForm = () => {
 };
 
 const submitOrder = async () => {
-  if (orderItems.value.length === 0) return toast.error("Keranjang kosong!");
+  if (orderItems.value.length === 0 && orderBundles.value.length === 0) return toast.error("Keranjang kosong!");
   if (isCashNow.value && amountPaid.value > 0 && amountPaid.value < totalPrice.value) {
     return toast.error("Uang diterima kurang dari total tagihan");
   }
@@ -1197,6 +1300,7 @@ const submitOrder = async () => {
     kasir_name: kasirName.value,
     promo_id: appliedPromo.value?.promo_id || null,
     redeem_reward_ids: selectedRewardIds.value,
+    bundles: orderBundles.value.map((l) => ({ bundle_id: l.id, quantity: l.quantity })),
     items: orderItems.value.map((item) => ({
       menu_id: item.id,
       quantity: item.quantity,
@@ -1399,7 +1503,7 @@ watch(showUnpaidDrawer, (open) => { if (open) fetchUnpaidOrders(); });
 // Metode/alur berubah → nominal uang diterima lama tidak relevan lagi
 watch(isCashNow, (v) => { if (!v) amountPaid.value = 0; });
 
-onMounted(() => { fetchMenus(); fetchUnpaidOrders(); });
+onMounted(() => { fetchMenus(); fetchBundles(); fetchUnpaidOrders(); });
 onBeforeUnmount(() => clearTimeout(debounceTimeout));
 </script>
 
@@ -1723,6 +1827,25 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* Cart */
+/* ── Paket (POS) ───────────────────────────────────────────────────── */
+.bundle-strip { margin-bottom: 0.9rem; }
+.bundle-strip-title { margin: 0 0 0.45rem; font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-faint); }
+.bundle-strip-list { display: flex; gap: 0.6rem; overflow-x: auto; padding-bottom: 0.25rem; -webkit-overflow-scrolling: touch; }
+.bundle-chip {
+  position: relative; flex: 0 0 auto; min-width: 190px; max-width: 240px; min-height: 44px; text-align: left;
+  display: flex; flex-direction: column; gap: 0.2rem; padding: 0.7rem 0.85rem; border-radius: 14px; cursor: pointer;
+  background: var(--surface); border: 1px solid color-mix(in srgb, var(--amber) 30%, transparent); color: var(--text-2); font: inherit;
+}
+.bundle-chip:disabled { opacity: 0.5; cursor: not-allowed; }
+.bundle-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.bundle-chip-name { font-size: 0.82rem; font-weight: 600; }
+.bundle-chip-items { font-size: 0.68rem; color: var(--text-faint); }
+.bundle-chip-price { font-family: monospace; font-size: 0.78rem; color: var(--amber-soft); }
+.bundle-chip-normal { margin-left: 0.4rem; font-size: 0.68rem; color: var(--text-faint); }
+.bundle-chip-off { font-size: 0.68rem; color: var(--red-soft); }
+.bundle-chip-count { position: absolute; top: 6px; right: 8px; font-size: 0.7rem; font-weight: 700; color: var(--accent); }
+.cart-bundle-tag { display: inline-block; padding: 0 0.35rem; margin-right: 0.2rem; border-radius: 4px; font-size: 0.55rem; letter-spacing: 0.12em; background: color-mix(in srgb, var(--amber) 18%, transparent); color: var(--amber-soft); vertical-align: middle; }
+
 .cart-empty {
   padding: 1.5rem 0; text-align: center;
   color: var(--text-faint); font-size: 0.78rem;

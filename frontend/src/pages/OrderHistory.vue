@@ -125,7 +125,7 @@
           >
             <div class="space-y-1.5 pt-3">
               <div v-for="item in order.items" :key="item.id" class="flex justify-between text-xs text-[color:var(--text-dim)]">
-                <span class="truncate pr-3">{{ item.quantity }}x {{ item.menu_name }}</span>
+                <span class="truncate pr-3">{{ item.quantity }}x {{ item.menu_name }}<small v-if="item.bundle_name" style="opacity:.65;font-size:.85em"> · Paket {{ item.bundle_name }}</small></span>
                 <span class="shrink-0">{{ formatPrice(item.price * item.quantity) }}</span>
               </div>
             </div>

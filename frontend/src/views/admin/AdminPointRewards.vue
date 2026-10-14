@@ -269,6 +269,9 @@
         </div>
       </div>
     </transition>
+
+    <!-- ── Efektivitas poin (#15) ──────────────────────────────────── -->
+    <PointEffectiveness />
   </div>
 </template>
 
@@ -277,6 +280,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { Plus, Pencil, Trash2, X, ChevronDown, Check, Gift, CheckCircle2, Coins, Settings2, Search } from 'lucide-vue-next';
 import { pointRewardAPI, loyaltySettingsAPI, menuAPI } from '@/api';
 import { toast } from 'vue-sonner';
+import PointEffectiveness from '@/components/ui/admin/PointEffectiveness.vue';
 
 const rewards    = ref([]);
 const menus      = ref([]);

@@ -182,6 +182,30 @@
               </router-link>
             </div>
 
+            <!-- Paket -->
+            <div
+              v-for="line in cartStore.bundleLines"
+              :key="line.cartKey"
+              class="card-item flex flex-col gap-2"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="text-[11px] font-semibold uppercase tracking-wider text-[#D4B483]">Paket</p>
+                  <h4 class="font-sora text-base font-semibold leading-snug text-[#F5F0EA]">{{ line.name }}</h4>
+                </div>
+                <button
+                  type="button"
+                  :aria-label="'Hapus ' + line.name + ' dari keranjang'"
+                  @click="cartStore.removeBundle(line.id)"
+                  class="-mr-2 -mt-1.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#6F6761] transition-colors duration-150 hover:bg-[#D7263D]/10 hover:text-[#F2707A]"
+                >
+                  <X :size="16" />
+                </button>
+              </div>
+              <p class="text-sm text-[#A39A93]">{{ line.quantity }} × {{ formatPrice(line.price) }}</p>
+              <p class="text-xs text-[#A39A93]">{{ line.contents.map((c) => c.quantity * line.quantity + '× ' + c.name).join(' · ') }}</p>
+            </div>
+
             <!-- Items -->
             <div
               v-for="item in Object.values(cartStore.cart)"
@@ -270,15 +294,16 @@
                 class="field tabular-nums"
                 placeholder="08123456789"
               />
-              <p v-if="checkingLoyalty" class="text-xs text-[#6F6761]">Mengecek status member...</p>
-              <div
-                v-else-if="cartStore.isMember"
-                class="flex items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-2"
-              >
-                <span class="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-emerald-400"></span>
-                <p class="text-xs font-medium text-emerald-300">
-                  Member aktif · Poin saat ini: {{ cartStore.points }}
-                </p>
+
+              <!-- PIN member: terlihat oleh semua pelanggan supaya status member nomor lain tidak bocor -->
+              <div class="mt-3 rounded-2xl border border-white/[0.07] bg-[#0F0D0C] p-3.5">
+                <MemberPinBox
+                  :phone="phone"
+                  :info="memberInfo"
+                  :admin-whatsapp="adminWhatsapp"
+                  @verified="onMemberVerified"
+                  @reset="resetMember"
+                />
               </div>
             </div>
 
@@ -403,6 +428,7 @@ import { X, Check, Clock, ShoppingCart, ArrowRight } from "lucide-vue-next"
 import { useStoreSettings } from "@/composables/useStoreSettings"
 import PromoCodeBox from "@/components/ui/PromoCodeBox.vue"
 import PointRedeemBox from "@/components/ui/PointRedeemBox.vue"
+import MemberPinBox from "@/components/ui/MemberPinBox.vue"
 import StoreBanner from "@/components/ui/StoreBanner.vue"
 import { unlockPaymentAudio, playPaymentSuccess } from "@/utils/paymentSuccessSound.js"
 
@@ -417,7 +443,6 @@ const name            = ref("")
 const phone           = ref("")
 const paymentMethod   = ref("cash")   // "cash" | "gateway" (Midtrans)
 const isProcessing    = ref(false)
-const checkingLoyalty = ref(false)
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -443,18 +468,24 @@ const selectedRewards = computed(() =>
   affordableRewards.value.filter((r) => selectedRewardIds.value.includes(r.id))
 )
 
-const fetchPointRewards = async (phoneNumber) => {
-  try {
-    const { data } = await orderAPI.getAvailablePointRewards(phoneNumber)
-    pointsBalance.value     = data.points ?? 0
-    affordableRewards.value = data.affordable ?? []
-    lockedRewards.value     = data.locked ?? []
-  } catch (err) {
-    console.error(err)
-    pointsBalance.value     = 0
-    affordableRewards.value = []
-    lockedRewards.value     = []
-  }
+// Hasil verifikasi PIN (kosong sampai PIN benar). PIN hanya disimpan di memori halaman ini,
+// tidak pernah ke localStorage, dan dikirim ulang ke server saat membuat order yang menukar poin.
+const memberInfo = ref(null)
+const memberPin  = ref("")
+
+const onMemberVerified = ({ info, pin }) => {
+  memberInfo.value        = info
+  memberPin.value         = pin
+  pointsBalance.value     = info.points ?? 0
+  affordableRewards.value = info.affordable ?? []
+  lockedRewards.value     = info.locked ?? []
+  selectedRewardIds.value = []
+}
+
+const resetMember = () => {
+  memberInfo.value = null
+  memberPin.value  = ""
+  resetPointRewards()
 }
 
 const resetPointRewards = () => {
@@ -471,29 +502,9 @@ const finalTotal = computed(() => {
   return Math.max(cartStore.totalPrice - promoDiscount, 0)
 })
 
-// ── Cek status member saat nomor HP diisi ────────────────────────────────────
-let debounceTimer = null
-watch(phone, (newPhone) => {
-  clearTimeout(debounceTimer)
-
-  if (!newPhone || newPhone.length < 9) {
-    cartStore.resetLoyalty()
-    resetPointRewards()
-    checkingLoyalty.value = false   // timer yang dibatalkan tadi tidak akan mematikan indikator ini
-    return
-  }
-
-  checkingLoyalty.value = true
-  debounceTimer = setTimeout(async () => {
-    try {
-      await Promise.all([
-        cartStore.checkLoyalty(newPhone),
-        fetchPointRewards(newPhone),
-      ])
-    } finally {
-      checkingLoyalty.value = false
-    }
-  }, 600)
+// Ganti nomor HP = verifikasi PIN nomor sebelumnya dibuang (MemberPinBox ikut mereset dirinya).
+watch(phone, () => {
+  if (memberInfo.value) resetMember()
 })
 
 // ── Metode pembayaran ────────────────────────────────────────────────────────
@@ -801,12 +812,16 @@ const ctaLabel = computed(() => {
 const optionTextOf = (item) => (item.optionDetails || []).map((d) => d.label).join(" · ")
 
 const buildWaMessage = (orderNumber, paymentLabel) => {
-  const itemsText = Object.values(cartStore.cart)
+  const bundleText = cartStore.bundleLines.map((line) => {
+    const inside = line.contents.map((c) => `${c.quantity * line.quantity}× ${c.name}`).join(", ")
+    return `   • Paket ${line.name} x${line.quantity} — Rp ${(Number(line.price) * line.quantity).toLocaleString("id-ID")}\n     🔸 ${inside}`
+  })
+  const itemsText = [...bundleText, ...Object.values(cartStore.cart)
     .map((item) => {
       const line = `   • ${item.name} x${item.quantity} — Rp ${(Number(item.price) * item.quantity).toLocaleString("id-ID")}`
       const optionText = optionTextOf(item)
       return line + (optionText ? `\n     🔸 ${optionText}` : "") + (item.notes ? `\n     📋 ${item.notes}` : "")
-    })
+    })]
     .join("\n")
 
   const promoLine = appliedPromo.value
@@ -853,13 +868,20 @@ const openWhatsApp = (message) => {
 }
 
 // Ringkasan item untuk panel pembayaran (diambil SEBELUM keranjang dikosongkan).
-const snapshotItems = () =>
-  Object.values(cartStore.cart).map((item) => ({
+const snapshotItems = () => [
+  ...cartStore.bundleLines.map((line) => ({
+    name:       `Paket ${line.name}`,
+    quantity:   line.quantity,
+    price:      Number(line.price) || 0,   // harga satuan paket
+    optionText: line.contents.map((c) => `${c.quantity}× ${c.name}`).join(" · "),
+  })),
+  ...Object.values(cartStore.cart).map((item) => ({
     name:       item.name,
     quantity:   item.quantity,
     price:      Number(item.price) || 0,   // harga satuan termasuk add-on
     optionText: optionTextOf(item),
-  }))
+  })),
+]
 
 // ── Reset form setelah order berhasil dibuat ─────────────────────────────────
 const resetForm = () => {
@@ -867,7 +889,7 @@ const resetForm = () => {
   name.value  = ""
   phone.value = ""
   promoBoxRef.value?.removePromo()
-  resetPointRewards()
+  resetMember()
 }
 
 const checkout = async () => {
@@ -913,7 +935,10 @@ const checkout = async () => {
       payment_method: paymentMethod.value,
       promo_id:          appliedPromo.value?.promo_id || null,
       redeem_reward_ids: selectedRewardIds.value,
+      // PIN hanya dikirim saat menukar poin; server memverifikasi ulang (kunci 5x salah).
+      ...(selectedRewardIds.value.length ? { member_pin: memberPin.value } : {}),
       // Harga tidak dikirim: backend selalu pakai harga dari database.
+      bundles: cartStore.bundleLines.map((line) => ({ bundle_id: line.id, quantity: line.quantity })),
       items: Object.values(cartStore.cart).map((item) => ({
         menu_id:  item.id,
         quantity: item.quantity,
@@ -960,6 +985,8 @@ const checkout = async () => {
     window.scrollTo({ top: 0, behavior: "smooth" })
   } catch (error) {
     const message = error.response?.data?.detail || error.response?.data?.error || "Koneksi terputus"
+    // PIN ditolak server (mis. PIN diganti admin): verifikasi lama tidak berlaku, minta masukkan ulang.
+    if (error.response?.data?.pin_error) resetMember()
 
     // Keranjang tersimpan di localStorage, jadi bisa berisi menu yang belakangan jadi
     // secret/nonaktif/habis atau opsinya sudah diubah admin. Server menolak dengan 400 —

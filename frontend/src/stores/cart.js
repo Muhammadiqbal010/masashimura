@@ -5,6 +5,18 @@ import { ref, computed, watch } from "vue"
 import { orderAPI } from "@/api"
 
 const STORAGE_KEY = "cart"
+const BUNDLE_STORAGE_KEY = "cartBundles"
+const MAX_BUNDLE_QTY = 20
+
+// Paket di keranjang disimpan terpisah dari menu biasa (tidak bercampur dengan logika opsi/catatan).
+const loadBundles = () => {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(BUNDLE_STORAGE_KEY) || "{}")
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {}
+  } catch {
+    return {}
+  }
+}
 
 // Baca keranjang tersimpan. Kalau isinya rusak (JSON tidak valid atau bukan object),
 // mulai dari keranjang kosong supaya seluruh aplikasi tidak error saat dibuka.
@@ -74,6 +86,9 @@ const selectionStillValid = (menu, selection) => {
 export const useCartStore = defineStore("cart", () => {
   // ── State ───────────────────────────────────────────────────────────────────
   const cart = ref(loadCart())
+  // Paket: { [bundleId]: { id, cartKey, name, contents, price, normal_price, savings, quantity } }
+  // Harga di sini hanya untuk tampilan; server menghitung ulang harga paket.
+  const bundleCart = ref(loadBundles())
 
   // Diskon member % SUDAH DIHAPUS: sistem loyalty sekarang murni poin
   // (tukar menu gratis, ditangani terpisah lewat PointRedeemBox di Checkout.vue).
@@ -95,25 +110,43 @@ export const useCartStore = defineStore("cart", () => {
     { deep: true }
   )
 
-  // ── Getters ─────────────────────────────────────────────────────────────────
-  const cartItems = computed(() => Object.values(cart.value))
-
-  const cartItemCount = computed(() =>
-    cartItems.value.reduce((sum, item) => sum + item.quantity, 0)
+  watch(
+    bundleCart,
+    (value) => {
+      try {
+        localStorage.setItem(BUNDLE_STORAGE_KEY, JSON.stringify(value))
+      } catch {
+        /* abaikan: sama seperti keranjang menu */
+      }
+    },
+    { deep: true }
   )
 
-  const subtotal = computed(() =>
-    cartItems.value.reduce(
-      (sum, item) => sum + (Number(item.price) || 0) * item.quantity,
-      0
-    )
+  // ── Getters ─────────────────────────────────────────────────────────────────
+  const cartItems = computed(() => Object.values(cart.value))
+  const bundleLines = computed(() => Object.values(bundleCart.value))
+
+  // Jumlah porsi: tiap paket dihitung isinya (mis. 1 paket katsu + teh = 2 porsi).
+  const bundlePortions = (line) =>
+    (line.contents || []).reduce((s, c) => s + (Number(c.quantity) || 0), 0) * line.quantity
+
+  const cartItemCount = computed(
+    () =>
+      cartItems.value.reduce((sum, item) => sum + item.quantity, 0) +
+      bundleLines.value.reduce((sum, line) => sum + bundlePortions(line), 0)
+  )
+
+  const subtotal = computed(
+    () =>
+      cartItems.value.reduce((sum, item) => sum + (Number(item.price) || 0) * item.quantity, 0) +
+      bundleLines.value.reduce((sum, line) => sum + (Number(line.price) || 0) * line.quantity, 0)
   )
 
   // Total murni subtotal: diskon member % sudah tidak ada. Potongan harga hanya dari
   // promo code dan tukar poin, dua-duanya ditangani terpisah di Checkout.vue.
   const totalPrice = computed(() => subtotal.value)
 
-  const isEmpty = computed(() => cartItems.value.length === 0)
+  const isEmpty = computed(() => cartItems.value.length === 0 && bundleLines.value.length === 0)
 
   // ── Actions: keranjang ──────────────────────────────────────────────────────
   // Tambah menu ke keranjang. `selection` = pilihan opsi (lihat format di atas).
@@ -164,6 +197,73 @@ export const useCartStore = defineStore("cart", () => {
       price_web: priceWeb,             // harga dasar menu tanpa add-on
     }
     return { ok: true, merged: false }
+  }
+
+  // ── Actions: paket ──────────────────────────────────────────────────────────
+  // `bundle` = objek dari GET /bundles/ (publik). Return { ok, error? }.
+  const addBundle = (bundle, quantity = 1) => {
+    if (!bundle || bundle.unavailable_reason) {
+      return { ok: false, error: bundle?.unavailable_reason || "Paket tidak tersedia." }
+    }
+    const qty = Math.max(1, Math.floor(Number(quantity) || 1))
+    const existing = bundleCart.value[bundle.id]
+    if (existing) {
+      existing.quantity = Math.min(MAX_BUNDLE_QTY, existing.quantity + qty)
+      return { ok: true, merged: true }
+    }
+    bundleCart.value[bundle.id] = {
+      id: bundle.id,
+      cartKey: `bundle-${bundle.id}`,
+      name: bundle.name,
+      contents: bundle.contents || [],
+      price: Number(bundle.price) || 0,
+      normal_price: bundle.normal_price == null ? null : Number(bundle.normal_price),
+      savings: Number(bundle.savings) || 0,
+      quantity: Math.min(MAX_BUNDLE_QTY, qty),
+    }
+    return { ok: true, merged: false }
+  }
+
+  const quantityOfBundle = (bundleId) => bundleCart.value[bundleId]?.quantity || 0
+
+  const updateBundleQuantity = (bundleId, delta) => {
+    const line = bundleCart.value[bundleId]
+    if (!line) return
+    line.quantity = Math.min(MAX_BUNDLE_QTY, line.quantity + delta)
+    if (line.quantity <= 0) delete bundleCart.value[bundleId]
+  }
+
+  const removeBundle = (bundleId) => {
+    delete bundleCart.value[bundleId]
+  }
+
+  // Samakan paket di keranjang dengan daftar paket TERBARU dari server.
+  // Dibuang bila paket dihapus / habis / tidak tersedia; harga & isi diperbarui bila berubah.
+  const reconcileBundles = (bundles) => {
+    const result = { removed: [], soldOut: [], repriced: [] }
+    if (!Array.isArray(bundles)) return result
+    const byId = new Map(bundles.map((b) => [b.id, b]))
+    for (const key of Object.keys(bundleCart.value)) {
+      const line = bundleCart.value[key]
+      const fresh = byId.get(line.id)
+      if (!fresh) {
+        result.removed.push(line.name)
+        delete bundleCart.value[key]
+        continue
+      }
+      if (fresh.unavailable_reason) {
+        result.soldOut.push(line.name)
+        delete bundleCart.value[key]
+        continue
+      }
+      if (Number(fresh.price) !== Number(line.price)) result.repriced.push(line.name)
+      line.name = fresh.name
+      line.contents = fresh.contents || []
+      line.price = Number(fresh.price) || 0
+      line.normal_price = fresh.normal_price == null ? null : Number(fresh.normal_price)
+      line.savings = Number(fresh.savings) || 0
+    }
+    return result
   }
 
   // Jumlah total satu menu di keranjang (semua variasi opsi), untuk badge/stepper di kartu menu.
@@ -276,11 +376,14 @@ export const useCartStore = defineStore("cart", () => {
 
   const clearCart = () => {
     cart.value = {}
+    bundleCart.value = {}
     resetLoyalty()
   }
 
   return {
     cart,
+    bundleCart,
+    bundleLines,
 
     isMember,
     points,
@@ -294,6 +397,11 @@ export const useCartStore = defineStore("cart", () => {
     isEmpty,
 
     addToCart,
+    addBundle,
+    quantityOfBundle,
+    updateBundleQuantity,
+    removeBundle,
+    reconcileBundles,
     quantityOfMenu,
     decrementMenu,
     updateQuantity,

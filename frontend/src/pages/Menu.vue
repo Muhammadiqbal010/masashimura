@@ -11,6 +11,7 @@
       <p class="mt-4 max-w-md text-base leading-relaxed text-[#A39A93] sm:text-lg">
         Rasa dijamin enak, harga ramah di kantong. Fresh tiap hari.
       </p>
+      <CrowdBadge class="mt-5" />
     </header>
 
     <!-- ── STICKY SEARCH + FILTER BAR ─────────────────────────────────────────── -->
@@ -118,6 +119,9 @@
           <span v-if="nextOpenText" class="mt-1 block font-semibold text-[#FBD5D8]">{{ nextOpenText }}</span>
         </p>
       </div>
+
+      <!-- Paket (hanya di tampilan semua menu tanpa pencarian) -->
+      <BundleSection v-if="selectedCategory === 'all' && !searchQuery.trim()" />
 
       <!-- Info hasil + toggle habis + reset filter -->
       <div v-if="!loading && menus.length > 0" class="mb-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
@@ -463,6 +467,8 @@ import {
 import Cart from "@/components/ui/Cart.vue"
 import MenuDetailModal from "@/components/ui/MenuDetailModal.vue"
 import MenuOptionPicker from "@/components/ui/MenuOptionPicker.vue"
+import CrowdBadge from "@/components/ui/CrowdBadge.vue"
+import BundleSection from "@/components/ui/BundleSection.vue"
 import { useStoreSettings } from "@/composables/useStoreSettings"
 import { shareMenuToWhatsApp } from "@/composables/useShareMenu"
 

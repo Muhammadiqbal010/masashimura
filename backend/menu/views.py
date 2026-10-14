@@ -6,8 +6,12 @@ from django.db.models import Sum, Q, Count
 from django.db.models.deletion import ProtectedError
 from django.db.models.functions import Coalesce
 
-from .models import Menu, Category
-from .serializers import MenuSerializer, PublicMenuSerializer, CategorySerializer
+from accounts.permissions import IsAdminLevel, IsStaffLevel
+from .models import Menu, Category, MenuBundle
+from .serializers import (
+    MenuSerializer, PublicMenuSerializer, CategorySerializer,
+    BundleSerializer, PublicBundleSerializer,
+)
 from order.permissions import PublicReadStaffWrite
 
 
@@ -42,6 +46,17 @@ class MenuViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
+        # Menu yang masih ada di paket tidak boleh dihapus diam-diam: admin harus
+        # mengeluarkannya dari paket (atau menghapus paketnya) dulu.
+        in_bundles = list(
+            MenuBundle.objects.filter(items__menu=instance).values_list("name", flat=True).distinct()
+        )
+        if in_bundles:
+            return Response(
+                {"detail": f"Menu ini ada di paket: {', '.join(in_bundles)}. Keluarkan dari paket atau hapus paketnya dulu.",
+                 "bundles": in_bundles},
+                status=status.HTTP_409_CONFLICT,
+            )
         try:
             instance.delete()
             return Response(
@@ -84,3 +99,28 @@ class TopBestSellersMenuView(APIView):
         )
 
         return Response(PublicMenuSerializer(top_menus, many=True).data)
+
+
+class BundleViewSet(viewsets.ModelViewSet):
+    """
+    Menu Paket. Publik hanya membaca (angka web, tanpa paket berisi menu nonaktif/secret).
+    Staf (kasir termasuk, untuk POS) membaca lengkap; menulis hanya owner/admin.
+    """
+    queryset = MenuBundle.objects.prefetch_related("items__menu").all()
+
+    def _staff_view(self):
+        return IsStaffLevel().has_permission(self.request, self)
+
+    def get_permissions(self):
+        if self.request.method in ("GET", "HEAD", "OPTIONS"):
+            return [AllowAny()]
+        return [IsAdminLevel()]
+
+    def get_serializer_class(self):
+        return BundleSerializer if self._staff_view() else PublicBundleSerializer
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if self._staff_view():
+            return qs
+        return qs.exclude(items__menu__is_active=False).exclude(items__menu__is_secret=True).distinct()

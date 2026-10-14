@@ -48,7 +48,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OrderItem
-        fields = ["id", "menu_name", "quantity", "price", "notes", "selected_options", "is_point_redemption"]
+        fields = ["id", "menu_name", "quantity", "price", "notes", "selected_options", "is_point_redemption", "bundle_name"]
 
 
 class OrderPaymentSerializer(serializers.ModelSerializer):
@@ -168,6 +168,16 @@ class StoreSettingsSerializer(serializers.ModelSerializer):
             "is_open_override",
             "closed_message",
             "operating_hours",
+            "crowd_indicator_enabled",
+            "monthly_revenue_target",
             "updated_at",
         ]
         read_only_fields = ["updated_at"]
+
+    def validate_monthly_revenue_target(self, value):
+        # 0 dan kosong sama-sama berarti "belum ada target".
+        if not value:
+            return None
+        if value > 100_000_000_000:
+            raise serializers.ValidationError("Target terlalu besar. Maksimal Rp 100.000.000.000.")
+        return value

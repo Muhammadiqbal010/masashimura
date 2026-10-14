@@ -207,6 +207,10 @@ class OrderItem(models.Model):
     # dipakai buat nampilin badge "Reward" di struk/admin, bukan cuma nebak dari price=0.
     is_point_redemption = models.BooleanField(default=False)
 
+    # Nama paket kalau baris ini berasal dari Menu Paket (snapshot teks, bukan FK:
+    # paket boleh dihapus tanpa mengubah riwayat). Kosong = item biasa.
+    bundle_name = models.CharField(max_length=100, blank=True, default='')
+
     class Meta:
         ordering = ['id']
 
@@ -365,6 +369,12 @@ class CustomerLoyalty(models.Model):
     # serentak buat semua orang. Diupdate tiap kali order customer ini completed.
     last_order_at = models.DateTimeField(null=True, blank=True)
 
+    # PIN member (lihat order/member_pin.py). Hash saja, PIN asli tidak pernah disimpan.
+    pin_hash            = models.CharField(max_length=128, blank=True, default='')
+    pin_set_at          = models.DateTimeField(null=True, blank=True)
+    pin_failed_attempts = models.PositiveSmallIntegerField(default=0)
+    pin_locked_until    = models.DateTimeField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -375,6 +385,10 @@ class CustomerLoyalty(models.Model):
 
     def __str__(self):
         return f"{self.name or 'Unknown'} ({self.phone})"
+
+    @property
+    def has_pin(self):
+        return bool(self.pin_hash)
 
     def expiry_months_setting(self):
         return LoyaltySettings.get_settings().points_expiry_months
@@ -600,6 +614,32 @@ class StoreSettings(models.Model):
         help_text="Jadwal per hari. Key 0-6 (0=Senin), value: {open, close} atau null"
     )
  
+    # ── Indikator keramaian (badge Santai / Sedang / Ramai di halaman Menu) ──
+    # Saklar utama: False = badge disembunyikan total, apa pun mode-nya.
+    crowd_indicator_enabled = models.BooleanField(
+        default=True,
+        help_text="False = badge keramaian tidak ditampilkan ke pelanggan",
+    )
+    # Mode manual: level yang dipilih kasir/owner + batas waktunya. Masa berlaku
+    # disimpan sebagai "berlaku sampai jam X" dan dicek saat dibaca (tanpa cron,
+    # cocok untuk serverless). Lewat waktunya -> otomatis kembali ke mode otomatis.
+    crowd_manual_level = models.CharField(
+        max_length=10, blank=True, default="",
+        choices=(("santai", "Santai"), ("sedang", "Sedang"), ("ramai", "Ramai")),
+        help_text="Kosong = mode otomatis",
+    )
+    crowd_manual_until = models.DateTimeField(
+        null=True, blank=True,
+        help_text="Level manual berlaku sampai waktu ini",
+    )
+
+    # ── Target omzet bulanan (Strip Briefing & Target vs Realisasi di Dashboard) ──
+    # Kosong/0 = belum ada target. Rupiah utuh, tanpa desimal.
+    monthly_revenue_target = models.PositiveBigIntegerField(
+        null=True, blank=True,
+        help_text="Target omzet per bulan (Rp). Kosong = belum diatur",
+    )
+
     updated_at = models.DateTimeField(auto_now=True)
  
     class Meta:

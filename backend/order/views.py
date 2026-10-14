@@ -20,11 +20,15 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from finance.models import Expense
-from menu.models import Menu
+from menu import bundles as bundle_logic
+from menu.models import Menu, MenuBundle
 from menu.options import resolve_selection, OptionError
 from promotions.models import Promo  # validasi & kunci kuota server-side saat create_order
 from payments.services import cancel_midtrans_transaction
 from .pricing import web_price
+from . import member_pin
+from .crowd import to_wib
+from .segmentation import segment_overview
 from .models import (
     CANCEL_REASON_CHOICES,
     PAYMENT_METHOD_CHOICES,
@@ -166,10 +170,14 @@ def _parse_backdate(raw):
 @transaction.atomic
 def create_order(request):
     data       = request.data
-    items_data = data.get('items', [])
+    items_data = data.get('items') or []
+    # Menu Paket: [{"bundle_id": 3, "quantity": 2}]. Harga dihitung server (menu/bundles.py).
+    bundles_data = data.get('bundles') or []
 
-    if not items_data:
+    if not items_data and not bundles_data:
         return Response({"error": "Items kosong"}, status=400)
+    if not isinstance(bundles_data, list) or not isinstance(items_data, list):
+        return Response({"error": "Format items/bundles tidak valid"}, status=400)
 
     customer_data = data.get('customer') or {}
     phone = (customer_data.get('phone') or data.get('customer_phone', '') or '').strip()
@@ -221,6 +229,13 @@ def create_order(request):
     # Poin yang mau ditukar (list of PointReward id, bisa ada duplikat kalau
     # customer nuker reward yang sama lebih dari 1x)
     redeem_reward_ids = data.get('redeem_reward_ids') or []
+
+    # Tukar poin dari WEB wajib PIN member (dicek di server, bukan hanya di frontend). Kasir (POS)
+    # tidak memakai PIN. Dicek SEBELUM ada data ditulis dan tanpa set_rollback, supaya hitungan
+    # salah/kunci tetap tersimpan.
+    if redeem_reward_ids and source == 'web':
+        if not member_pin.verify_pin(phone, data.get('member_pin')):
+            return Response({"error": member_pin.NEUTRAL_ERROR, "pin_error": True}, status=403)
 
     raw_payment_status = data.get('payment_status', '')
 
@@ -311,6 +326,33 @@ def create_order(request):
             selected_options=chosen,
         )
         subtotal += price * quantity
+
+    # ── Menu Paket: dipecah jadi item biasa, total = harga paket ─────
+    for entry in bundles_data:
+        try:
+            bundle_id = int(entry.get('bundle_id'))
+            bundle_qty = int(entry.get('quantity', 1) or 1)
+        except (TypeError, ValueError, AttributeError):
+            transaction.set_rollback(True)
+            return Response({"error": "Data paket tidak valid (bundle_id/quantity)"}, status=400)
+        if bundle_qty <= 0 or bundle_qty > 50:
+            transaction.set_rollback(True)
+            return Response({"error": "Jumlah paket tidak valid"}, status=400)
+
+        bundle = MenuBundle.objects.prefetch_related('items__menu').filter(pk=bundle_id).first()
+        if not bundle:
+            transaction.set_rollback(True)
+            return Response({"error": "Ada paket di keranjang yang sudah tidak tersedia. Kosongkan keranjang lalu pilih ulang."}, status=400)
+        problem = bundle_logic.unavailable_reason(bundle, source)
+        if problem:
+            transaction.set_rollback(True)
+            return Response({"error": f"Paket {bundle.name}: {problem}"}, status=400)
+
+        for menu, unit, qty in bundle_logic.order_rows(bundle, bundle_qty, source):
+            OrderItem.objects.create(
+                order=order, menu=menu, quantity=qty, price=unit, bundle_name=bundle.name,
+            )
+            subtotal += unit * qty
 
     # ── Redeem poin (kalau ada) ──────────────────────────────────────
     total_point_cost = 0
@@ -588,44 +630,59 @@ def active_orders_per_day(request):
 # LOYALTY — PUBLIK
 # ─────────────────────────────────────────────
 
+def _is_pos_staff(request):
+    """Staf yang login: sama dengan syarat create_order mempercayai source='pos'. Tidak perlu PIN."""
+    user = getattr(request, "user", None)
+    return bool(user and user.is_authenticated and user.is_staff)
+
+
+def _days_until(dt, now=None):
+    """Selisih hari kalender (WIB) dari sekarang ke dt. Negatif = sudah lewat."""
+    if not dt:
+        return None
+    return (to_wib(dt).date() - to_wib(now or timezone.now()).date()).days
+
+
+def _expiry_note(loyalty, just_expired):
+    if just_expired:
+        if not loyalty.last_order_at:
+            return "Poin hangus otomatis"
+        return (
+            f"Poin hangus karena tidak ada pesanan selama "
+            f"{loyalty.expiry_months_setting()} bulan (order terakhir {loyalty.last_order_at:%d %b %Y})"
+        )
+    expiry_date = loyalty.expiry_estimate_date()
+    if expiry_date:
+        return f"Poin akan hangus sekitar {expiry_date:%d %b %Y} kalau tidak ada pesanan lagi"
+    return None
+
+
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def check_loyalty_status(request):
     """
     GET /api/orders/check_loyalty_status/?phone=08xxx
 
-    Response (poin, BUKAN diskon lagi):
-      - is_member            → True kalau nomor ini udah tercatat di CustomerLoyalty
-      - points               → saldo poin aktif saat ini (udah lewat cek hangus)
-      - points_expiring_note → pesan kalau poin baru aja hangus / estimasi hangusnya
+    - Staf login (POS): status member + saldo poin, seperti sebelumnya.
+    - Publik (web): SELALU jawaban kosong yang sama untuk semua nomor. Saldo poin dan status
+      member hanya keluar lewat POST /orders/member/verify/ dengan PIN yang benar, supaya
+      nomor HP orang lain tidak bisa diintip.
     """
-    phone = request.query_params.get("phone", "").strip()
-    if not phone:
-        return Response({"is_member": False, "points": 0, "points_expiring_note": None})
+    empty = {"is_member": False, "points": 0, "points_expiring_note": None}
+    if not _is_pos_staff(request):
+        return Response(empty)
 
-    loyalty = CustomerLoyalty.objects.filter(phone=phone).first()
+    phone = request.query_params.get("phone", "").strip()
+    loyalty = CustomerLoyalty.objects.filter(phone=phone).first() if phone else None
     if not loyalty:
-        return Response({"is_member": False, "points": 0, "points_expiring_note": None})
+        return Response(empty)
 
     # Cek hangus SEBELUM ditampilkan, biar saldo selalu akurat real-time.
     just_expired = loyalty.check_and_expire_points()
-
-    note = None
-    if just_expired:
-        note = (
-            f"Poin hangus karena tidak ada pesanan selama "
-            f"{loyalty.expiry_months_setting()} bulan (order terakhir "
-            f"{loyalty.last_order_at:%d %b %Y})" if loyalty.last_order_at else "Poin hangus otomatis"
-        )
-    else:
-        expiry_date = loyalty.expiry_estimate_date()
-        if expiry_date:
-            note = f"Poin akan hangus sekitar {expiry_date:%d %b %Y} kalau tidak ada pesanan lagi"
-
     return Response({
         "is_member":            True,
         "points":               loyalty.points,
-        "points_expiring_note": note,
+        "points_expiring_note": _expiry_note(loyalty, just_expired),
     })
 
 
@@ -636,30 +693,10 @@ def check_loyalty_status(request):
 LOCKED_RECOMMENDATION_LIMIT = 5
 
 
-@api_view(["GET"])
-@permission_classes([AllowAny])
-def available_point_rewards(request):
-    """
-    GET /api/orders/point-rewards/available/?phone=08xxx
-
-    Response:
-      - points: saldo poin customer saat ini (0 kalau belum punya akun loyalty)
-      - affordable: reward yang poinnya cukup, diurutkan dari yang paling MAHAL.
-      - locked: reward yang paling DEKAT ke saldo poin (missing_points paling
-        kecil), max 5 — biar rekomendasinya kerasa achievable.
-    """
-    phone  = request.query_params.get("phone", "").strip()
-    points = 0
-    if phone:
-        loyalty = CustomerLoyalty.objects.filter(phone=phone).first()
-        points = loyalty.points if loyalty else 0
-
+def _reward_lists(points, staff):
+    """(affordable, locked) untuk saldo `points`. Publik tidak melihat reward secret/nonaktif."""
     rewards = PointReward.objects.filter(is_active=True).select_related('menu')
-
-    # Endpoint ini publik: reward dari secret menu / menu nonaktif tidak boleh bocor.
-    # Kasir (staff) tetap lihat semuanya.
-    user = getattr(request, "user", None)
-    if not (user and user.is_authenticated and user.is_staff):
+    if not staff:
         rewards = rewards.filter(menu__is_secret=False, menu__is_active=True)
 
     affordable, locked = [], []
@@ -673,12 +710,72 @@ def available_point_rewards(request):
 
     affordable.sort(key=lambda pair: pair[0], reverse=True)
     locked.sort(key=lambda pair: pair[0])
+    return [d for _, d in affordable], [d for _, d in locked[:LOCKED_RECOMMENDATION_LIMIT]]
 
-    return Response({
-        "points": points,
-        "affordable": [data for _, data in affordable],
-        "locked": [data for _, data in locked[:LOCKED_RECOMMENDATION_LIMIT]],
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def available_point_rewards(request):
+    """
+    GET /api/orders/point-rewards/available/?phone=08xxx
+
+    Staf (POS): saldo poin nomor itu + reward yang bisa ditukar / paling dekat.
+    Publik: saldo SELALU dianggap 0 (tidak ada angka poin yang bocor); web memakai
+    POST /orders/member/verify/ untuk melihat saldo setelah PIN benar.
+    """
+    staff = _is_pos_staff(request)
+    points = 0
+    if staff:
+        phone = request.query_params.get("phone", "").strip()
+        loyalty = CustomerLoyalty.objects.filter(phone=phone).first() if phone else None
+        points = loyalty.points if loyalty else 0
+
+    affordable, locked = _reward_lists(points, staff)
+    return Response({"points": points, "affordable": affordable, "locked": locked})
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def member_verify(request):
+    """
+    POST /api/orders/member/verify/   { "phone": "08..", "pin": "1234" }
+
+    PIN benar → saldo poin, kapan poin hangus, bar menuju reward termurah, dan daftar reward.
+    Apa pun yang salah → 403 dengan pesan yang sama (tidak membedakan alasan).
+    """
+    loyalty = member_pin.verify_pin(request.data.get("phone"), request.data.get("pin"))
+    if not loyalty:
+        return Response({"detail": member_pin.NEUTRAL_ERROR}, status=403)
+
+    just_expired = loyalty.check_and_expire_points()
+    now = timezone.now()
+    affordable, locked = _reward_lists(loyalty.points, False)
+
+    cheapest = (
+        PointReward.objects.filter(is_active=True, menu__is_secret=False, menu__is_active=True)
+        .select_related("menu").order_by("point_cost").first()
+    )
+    expiry_date = loyalty.expiry_estimate_date() if loyalty.points > 0 else None
+
+    response = Response({
+        "verified": True,
+        "name": loyalty.name,
+        "points": loyalty.points,
+        "total_orders": loyalty.total_orders,
+        "last_order_at": loyalty.last_order_at,
+        "expiry_months": loyalty.expiry_months_setting(),
+        "expiry_date": expiry_date,
+        "days_until_expiry": _days_until(expiry_date, now),
+        "points_expiring_note": _expiry_note(loyalty, just_expired),
+        "progress": (
+            {"target_name": cheapest.menu.name, "target_cost": cheapest.point_cost, "points": loyalty.points}
+            if cheapest else None
+        ),
+        "affordable": affordable,
+        "locked": locked,
     })
+    response["Cache-Control"] = "no-store"
+    return response
 
 
 # ─────────────────────────────────────────────
@@ -952,6 +1049,9 @@ class LoyalCustomersView(APIView):
 
     def get(self, request):
         settings  = LoyaltySettings.get_settings()
+        loyalties = list(CustomerLoyalty.objects.all().order_by('-points'))
+        now       = timezone.now()
+        assigned, segment_summary = segment_overview(loyalties)
         customers = [
             {
                 "phone":           cl.phone,
@@ -962,14 +1062,124 @@ class LoyalCustomersView(APIView):
                 "last_order_at":   cl.last_order_at,
                 "expiry_estimate": cl.expiry_estimate_date(),
                 "points_expired":  cl.points_expired(),
+                "segment":         assigned[cl.phone][0],
+                "days_since_last_order": assigned[cl.phone][1],
+                "has_pin":         cl.has_pin,
+                "pin_set_at":      cl.pin_set_at,
+                "pin_locked":      bool(cl.pin_locked_until and cl.pin_locked_until > now),
+                "days_until_expiry": _days_until(cl.expiry_estimate_date(), now) if cl.points > 0 else None,
+                "expiry_state":    _expiry_state(cl, settings.points_expiry_months, now),
             }
-            for cl in CustomerLoyalty.objects.all().order_by('-points')
+            for cl in loyalties
         ]
 
         return Response({
             "settings":  LoyaltySettingsSerializer(settings).data,
             "customers": customers,
+            "segments":  segment_summary,
         })
+
+
+EXPIRY_SOON_DAYS = 14
+
+
+def _expiry_state(loyalty, months, now):
+    """off = fitur hangus dimatikan, none = tidak ada poin, expired / soon / ok."""
+    if not months:
+        return "off"
+    if loyalty.points <= 0:
+        return "none"
+    if loyalty.points_expired():
+        return "expired"
+    days = _days_until(loyalty.expiry_estimate_date(), now)
+    return "soon" if days is not None and days <= EXPIRY_SOON_DAYS else "ok"
+
+
+BULK_DELETE_CONFIRM_TEXT = "HAPUS"
+
+
+class LoyalCustomerDetailView(APIView):
+    """
+    DELETE /orders/loyal-customers/<phone>/ — hapus permanen satu member.
+
+    Hard delete: riwayat penyesuaian poin (PointAdjustment, CASCADE) ikut terhapus,
+    termasuk jejak audit-nya. Order lama TIDAK dihapus (hanya menyimpan nomor HP), jadi
+    data omzet, Jam Sibuk, Performa Menu, dan prediksi tidak berubah. Bila nomor yang sama
+    order lagi, member baru dibuat dari nol.
+    """
+    permission_classes = [IsAdminLevel]
+
+    @transaction.atomic
+    def delete(self, request, phone):
+        loyalty = CustomerLoyalty.objects.select_for_update().filter(phone=phone).first()
+        if not loyalty:
+            return Response({'detail': 'Member tidak ditemukan'}, status=404)
+        adjustments = loyalty.adjustments.count()
+        loyalty.delete()
+        return Response({'deleted': 1, 'adjustments_deleted': adjustments})
+
+
+class LoyalCustomerPinView(APIView):
+    """
+    POST /orders/loyal-customers/<phone>/pin/   { "pin": "1234" }   ("pin" opsional)
+
+    Atur PIN pertama kali atau ganti PIN (sekaligus membuka kunci). Tanpa "pin", sistem
+    membuat 4 digit acak. PIN asli dikembalikan SEKALI di respons ini; di database hanya hash.
+    Hanya admin/owner, supaya pelanggan tidak bisa mengklaim nomor orang lain.
+    """
+    permission_classes = [IsAdminLevel]
+
+    @transaction.atomic
+    def post(self, request, phone):
+        loyalty = CustomerLoyalty.objects.select_for_update().filter(phone=phone).first()
+        if not loyalty:
+            return Response({'detail': 'Member tidak ditemukan'}, status=404)
+
+        raw = request.data.get('pin')
+        if raw in (None, ''):
+            raw = member_pin.generate_pin()
+        elif not member_pin.is_valid_format(str(raw)):
+            return Response({'detail': f'PIN harus {member_pin.PIN_LENGTH} digit angka'}, status=400)
+        raw = str(raw)
+
+        had_pin = loyalty.has_pin
+        member_pin.set_pin(loyalty, raw)
+        response = Response({'pin': raw, 'had_pin': had_pin, 'pin_set_at': loyalty.pin_set_at})
+        response['Cache-Control'] = 'no-store'
+        return response
+
+
+class LoyalCustomersBulkDeleteView(APIView):
+    """
+    POST /orders/loyal-customers/bulk-delete/
+      { "phones": ["0812...", "0813..."], "confirm": "HAPUS" }   → hapus yang dipilih
+      { "all": true,                       "confirm": "HAPUS" }   → hapus SEMUA member
+
+    Konfirmasi kuat dicek di server (bukan hanya di dialog frontend), supaya endpoint ini
+    tidak bisa terpanggil tanpa sengaja. Hard delete, sama seperti hapus satu member.
+    """
+    permission_classes = [IsAdminLevel]
+
+    @transaction.atomic
+    def post(self, request):
+        if str(request.data.get('confirm') or '').strip() != BULK_DELETE_CONFIRM_TEXT:
+            return Response(
+                {'detail': f'Ketik {BULK_DELETE_CONFIRM_TEXT} untuk mengonfirmasi penghapusan'},
+                status=400,
+            )
+
+        if request.data.get('all') is True:
+            qs = CustomerLoyalty.objects.all()
+        else:
+            phones = request.data.get('phones')
+            if not isinstance(phones, list) or not phones:
+                return Response({'detail': 'phones wajib berupa daftar nomor HP yang tidak kosong'}, status=400)
+            qs = CustomerLoyalty.objects.filter(phone__in=[str(p) for p in phones])
+
+        ids = list(qs.values_list('id', flat=True))
+        adjustments = PointAdjustment.objects.filter(customer_id__in=ids).count()
+        CustomerLoyalty.objects.filter(id__in=ids).delete()
+        return Response({'deleted': len(ids), 'adjustments_deleted': adjustments})
 
 
 class AdjustPointsView(APIView):
@@ -1642,7 +1852,7 @@ def add_order_item(request, pk):
 
     existing = next(
         (
-            i for i in order.items.filter(menu=menu, notes=notes, is_point_redemption=False)
+            i for i in order.items.filter(menu=menu, notes=notes, is_point_redemption=False, bundle_name="")
             if i.selected_options == chosen and i.price == unit_price
         ),
         None,
@@ -1783,6 +1993,7 @@ def split_order(request, pk):
                 order=new_order, menu=item.menu, quantity=qty,
                 price=item.price, notes=item.notes,
                 selected_options=item.selected_options,
+                bundle_name=item.bundle_name,
             )
 
     _refresh_totals(order)      # promo (kalau ada) tetap menempel di nota asal

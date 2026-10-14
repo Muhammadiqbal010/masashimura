@@ -13,6 +13,9 @@ export const orderAPI = {
   getAvailablePointRewards: (phone) =>
     apiClient.get("/orders/point-rewards/available/", { params: { phone } }),
 
+  // Lihat poin & tukar poin di web wajib PIN member. Gagal = 403 dengan pesan yang sama untuk semua sebab.
+  verifyMember: (phone, pin) => apiClient.post("/orders/member/verify/", { phone, pin }),
+
   getOrderReports: (params = {}) =>
     apiClient.get("/orders/reports/", { params }),
 

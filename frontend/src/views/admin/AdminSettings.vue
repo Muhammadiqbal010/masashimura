@@ -132,6 +132,87 @@
       </div>
     </section>
 
+    <!-- ── CARD — Indikator keramaian ─────────────────────────────────────── -->
+    <section class="adm-card">
+      <div class="adm-card-head">
+        <div class="adm-card-icon tone-blue"><Users :size="18" /></div>
+        <div class="adm-card-head-main">
+          <h2 class="adm-card-title">Indikator Keramaian</h2>
+          <p class="adm-card-desc">Badge Santai / Sedang / Ramai di halaman Menu pelanggan.</p>
+        </div>
+        <div class="adm-card-head-actions">
+          <button
+            type="button"
+            class="adm-switch"
+            role="switch"
+            :aria-checked="form.crowd_indicator_enabled"
+            aria-label="Tampilkan indikator keramaian ke pelanggan"
+            @click="form.crowd_indicator_enabled = !form.crowd_indicator_enabled"
+          ></button>
+        </div>
+      </div>
+
+      <div class="adm-card-body">
+        <p class="adm-hint">
+          Status: <strong>{{ form.crowd_indicator_enabled ? 'Ditampilkan' : 'Dimatikan' }}</strong>.
+          Badge dihitung otomatis dari jumlah pesanan 60 menit terakhir dan hilang sendiri saat toko tutup.
+        </p>
+        <div class="set-note">
+          <Info :size="15" class="set-note-icon" />
+          <p>
+            Kasir bisa mengatur level secara manual (mis. "Ramai selama 60 menit") lewat chip <strong>Keramaian</strong>
+            di halaman POS dan Active Orders. Setelah waktunya lewat, badge kembali otomatis.
+            Perubahan saklar ini baru berlaku setelah klik "Simpan Perubahan".
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── CARD — Target omzet bulanan ────────────────────────────────────── -->
+    <section class="adm-card">
+      <div class="adm-card-head">
+        <div class="adm-card-icon tone-green"><Target :size="18" /></div>
+        <div class="adm-card-head-main">
+          <h2 class="adm-card-title">Target Omzet Bulanan</h2>
+          <p class="adm-card-desc">Dipakai Dashboard untuk membandingkan proyeksi omzet bulan berjalan.</p>
+        </div>
+      </div>
+
+      <div class="adm-card-body">
+        <div class="adm-field">
+          <label class="adm-label" for="monthly-target">Target per bulan</label>
+          <div class="adm-affix">
+            <span class="adm-affix-pre" aria-hidden="true">Rp</span>
+            <input
+              id="monthly-target"
+              :value="targetDisplay"
+              type="text"
+              inputmode="numeric"
+              autocomplete="off"
+              class="adm-input adm-input--mono has-pre"
+              placeholder="Kosongkan bila belum ada target"
+              :aria-invalid="!!errors.target"
+              aria-describedby="target-help"
+              @input="onTargetInput"
+              @blur="validateTarget"
+            />
+          </div>
+          <p v-if="errors.target" id="target-help" class="adm-error">{{ errors.target }}</p>
+          <p v-else id="target-help" class="adm-hint">
+            Angka rupiah utuh, contoh <code class="set-code">25000000</code>. Kosong berarti belum ada target.
+          </p>
+        </div>
+
+        <div class="set-note">
+          <Info :size="15" class="set-note-icon" />
+          <p>
+            Proyeksi bulan ini = omzet transaksi lunas sejauh ini + prediksi omzet hari-hari yang tersisa.
+            Kalau data historis masih sedikit, proyeksinya masih kasar. Perubahan baru berlaku setelah klik "Simpan Perubahan".
+          </p>
+        </div>
+      </div>
+    </section>
+
     <!-- ── CARD 3 — Jam operasional ───────────────────────────────────────── -->
     <section class="adm-card">
       <div class="adm-card-head">
@@ -222,7 +303,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { toast } from 'vue-sonner'
 import {
   MessageCircle, Power, Clock, Info, AlertTriangle, WifiOff, Check, Copy, Save,
-  CalendarClock, Store, Lock,
+  CalendarClock, Store, Lock, Users, Target,
 } from 'lucide-vue-next'
 import apiClient from '@/api/client'
 import { useStoreSettings } from '@/composables/useStoreSettings'
@@ -257,7 +338,7 @@ const WHATSAPP_REGEX = /^62[0-9]{8,13}$/ // kode negara 62 + 8-13 digit
 
 const loading     = ref(false)
 const isOffline   = ref(false) // true hanya jika data yang tampil BUKAN dari server
-const errors      = ref({ whatsapp: '' })
+const errors      = ref({ whatsapp: '', target: '' })
 const hoursErrors = ref({})
 
 const defaultForm = () => ({
@@ -265,6 +346,8 @@ const defaultForm = () => ({
   is_open_override: null,
   closed_message:   'Maaf, kami sedang tidak beroperasi. Silakan kembali sesuai jam operasional kami.',
   operating_hours:  {},
+  crowd_indicator_enabled: true,
+  monthly_revenue_target: null,   // null = belum ada target
 })
 
 const form      = ref(defaultForm())
@@ -356,6 +439,24 @@ const onWhatsappInput = () => {
   errors.value.whatsapp = ''
 }
 
+// ── Target omzet bulanan ───────────────────────────────────────────
+const MAX_TARGET = 100_000_000_000 // sama dengan batas di server
+const targetDisplay = computed(() => {
+  const v = form.value.monthly_revenue_target
+  return v ? new Intl.NumberFormat('id-ID').format(v) : ''
+})
+const onTargetInput = (e) => {
+  const digits = e.target.value.replace(/\D/g, '').slice(0, 12)
+  form.value.monthly_revenue_target = digits ? Number(digits) : null
+  errors.value.target = ''
+  e.target.value = targetDisplay.value // rapikan tampilan (titik ribuan) saat mengetik
+}
+const validateTarget = () => {
+  const v = form.value.monthly_revenue_target
+  errors.value.target = v && v > MAX_TARGET ? 'Target terlalu besar. Maksimal Rp 100.000.000.000.' : ''
+  return !errors.value.target
+}
+
 const validateHours = () => {
   const next = {}
   for (const [idx, range] of Object.entries(form.value.operating_hours)) {
@@ -370,7 +471,8 @@ const validateHours = () => {
 const validate = () => {
   const okWa = validateWhatsapp()
   const okHours = validateHours()
-  return okWa && okHours
+  const okTarget = validateTarget()
+  return okWa && okHours && okTarget
 }
 
 // ── Data ───────────────────────────────────────────────────────────
@@ -380,6 +482,8 @@ const applyFetchedData = (data, offline) => {
     is_open_override: data.is_open_override ?? null,
     closed_message:   data.closed_message   || defaultForm().closed_message,
     operating_hours:  data.operating_hours  || {},
+    crowd_indicator_enabled: data.crowd_indicator_enabled ?? true,
+    monthly_revenue_target: data.monthly_revenue_target || null,
   }
   form.value      = clone(f)
   savedForm.value = clone(f)
@@ -414,6 +518,8 @@ const saveAll = async () => {
       is_open_override: form.value.is_open_override,
       closed_message:   form.value.closed_message,
       operating_hours:  form.value.operating_hours,
+      crowd_indicator_enabled: form.value.crowd_indicator_enabled,
+      monthly_revenue_target: form.value.monthly_revenue_target,
     }
     await apiClient.put('/orders/settings/', payload)
 
@@ -434,7 +540,7 @@ const saveAll = async () => {
 
 const resetForm = () => {
   form.value        = clone(savedForm.value)
-  errors.value      = { whatsapp: '' }
+  errors.value      = { whatsapp: '', target: '' }
   hoursErrors.value = {}
 }
 

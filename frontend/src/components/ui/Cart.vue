@@ -18,7 +18,7 @@
             v-if="!cartStore.isEmpty"
             class="rounded-full border border-[#D4B483]/25 bg-[#D4B483]/10 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-[#D4B483]"
           >
-            {{ Object.values(cartStore.cart).length }} item
+            {{ Object.values(cartStore.cart).length + cartStore.bundleLines.length }} item
           </span>
         </div>
         <button
@@ -54,6 +54,39 @@
 
         <!-- Items -->
         <template v-else>
+          <!-- Paket -->
+          <div
+            v-for="line in cartStore.bundleLines"
+            :key="line.cartKey"
+            class="item-card group flex flex-col gap-2.5"
+          >
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0 flex-1">
+                <p class="text-[11px] font-semibold uppercase tracking-wider text-[#D4B483]">Paket</p>
+                <h4 class="line-clamp-2 font-sora text-[15px] font-semibold leading-snug text-[#F5F0EA]">{{ line.name }}</h4>
+              </div>
+              <button
+                type="button"
+                :aria-label="'Hapus ' + line.name + ' dari keranjang'"
+                @click="cartStore.removeBundle(line.id)"
+                class="-mr-2 -mt-1.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#6F6761] transition-colors hover:bg-[#D7263D]/10 hover:text-[#F2707A]"
+              >
+                <X :size="16" />
+              </button>
+            </div>
+            <p class="text-xs text-[#A39A93]">{{ line.contents.map((c) => c.quantity + '× ' + c.name).join(' · ') }}</p>
+            <div class="flex items-center justify-between gap-3">
+              <div class="flex items-center rounded-full border border-white/10 bg-white/[0.03] p-1">
+                <button type="button" :aria-label="'Kurangi ' + line.name" @click="cartStore.updateBundleQuantity(line.id, -1)"
+                  class="flex h-8 w-8 items-center justify-center rounded-full text-[#F5F0EA] transition-colors hover:bg-white/10"><Minus :size="14" /></button>
+                <span class="min-w-[1.75rem] text-center text-sm font-semibold tabular-nums text-[#F5F0EA]">{{ line.quantity }}</span>
+                <button type="button" :aria-label="'Tambah ' + line.name" @click="cartStore.updateBundleQuantity(line.id, 1)"
+                  class="flex h-8 w-8 items-center justify-center rounded-full bg-[#D7263D] text-white transition-colors hover:bg-[#B91C32]"><Plus :size="14" /></button>
+              </div>
+              <span class="font-sora text-base font-semibold tracking-tight text-[#F5F0EA]">{{ formatPrice(line.price * line.quantity) }}</span>
+            </div>
+          </div>
+
           <div
             v-for="item in Object.values(cartStore.cart)"
             :key="item.cartKey"

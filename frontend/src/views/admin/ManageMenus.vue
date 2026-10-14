@@ -9,11 +9,21 @@
         <p class="adm-sub">Atur daftar menu, harga, kategori, dan ketersediaan stok.</p>
       </div>
       <div class="adm-header-actions mm-head-actions">
-        <button type="button" class="adm-btn adm-btn--primary" @click="openAddModal">
+        <button v-if="pageTab === 'menu'" type="button" class="adm-btn adm-btn--primary" @click="openAddModal">
           <Plus :size="15" /> Tambah Menu
         </button>
       </div>
     </header>
+
+    <!-- ── Tab: Menu | Paket ───────────────────────────────────────── -->
+    <div class="adm-seg mm-tabs" role="tablist" aria-label="Bagian kelola menu">
+      <button type="button" role="tab" class="adm-seg-btn" :aria-selected="pageTab === 'menu'" :aria-pressed="pageTab === 'menu'" @click="pageTab = 'menu'">Menu</button>
+      <button type="button" role="tab" class="adm-seg-btn" :aria-selected="pageTab === 'paket'" :aria-pressed="pageTab === 'paket'" @click="pageTab = 'paket'">Paket</button>
+    </div>
+
+    <BundleManager v-if="pageTab === 'paket'" :menus="menus" />
+
+    <template v-else>
 
     <!-- ── Stat ────────────────────────────────────────────────────── -->
     <div class="adm-stats">
@@ -164,6 +174,8 @@
         </div>
       </section>
     </div>
+
+    </template>
 
     <!-- ══ Modal: tambah / edit menu ═════════════════════════════════
          Disembunyikan sementara saat cropper terbuka; isi form tetap aman. -->
@@ -399,11 +411,13 @@ import apiClient from '@/api/client'
 import { getMediaUrl } from '@/api'
 import ImageCropper from '@/components/ui/ImageCropper.vue'
 import AdminModal from '@/components/ui/admin/Adminmodal.vue'
+import BundleManager from '@/components/ui/admin/BundleManager.vue'
 
 const router = useRouter()
 
 // ── State ───────────────────────────────────────────────────────────
 const menus          = ref([])
+const pageTab        = ref('menu')   // 'menu' | 'paket'
 const loading        = ref(true)
 const isDialogOpen   = ref(false)
 const editingMenu    = ref(null)
@@ -728,15 +742,20 @@ const confirmDelete = async () => {
   const target = deleteTarget.value
   if (!target) return
   saving.value = true
+  let conflict = ''
   try {
     await apiClient.delete(`/menus/${target.id}/`)
-  } catch {
-    // Server kadang membalas error padahal data sudah terhapus: cek kenyataannya di bawah.
+  } catch (err) {
+    // 409 = menu masih ada di paket: tampilkan alasannya. Error lain: server kadang membalas
+    // error padahal data sudah terhapus, jadi kenyataannya dicek di bawah.
+    if (err?.response?.status === 409) conflict = err.response.data?.detail || 'Menu masih ada di paket.'
   }
   await fetchMenus({ silent: true })
 
   const still = menus.value.find((m) => m.id === target.id)
-  if (!still) {
+  if (conflict) {
+    toast.error(conflict)
+  } else if (!still) {
     toast.success('Menu berhasil dihapus')
   } else if (!isActive(still)) {
     toast.info(
@@ -790,6 +809,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.mm-tabs { margin-bottom: 1rem; align-self: flex-start; }
 /* Filter */
 .mm-filters { display: flex; gap: 0.5rem; }
 .mm-filters .adm-input { width: auto; min-width: 9.5rem; }

@@ -6,6 +6,9 @@ export { menuAPI } from "./menu";
 export { orderAPI, pointRewardAPI, loyaltySettingsAPI } from "./order";
 export { paymentAPI } from "./payments";
 export { statsAPI } from "./stats";
+export { crowdAPI } from "./crowd";
+export { analyticsAPI } from "./analytics";
+export { bundleAPI } from "./bundles";
 export { API_ORIGIN };
 
 // Origin untuk path media relatif (mis. "/media/..."). Foto Cloudinary sudah berupa

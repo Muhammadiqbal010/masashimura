@@ -6,6 +6,7 @@ import { statsAPI } from "@/api";
 export const useLoyaltyStore = defineStore("loyalty", () => {
   const loyalCustomers = ref([]);
   const expiryMonths = ref(0);
+  const segments = ref([]);
   const loading = ref(false);
   const error = ref("");
 
@@ -20,6 +21,7 @@ export const useLoyaltyStore = defineStore("loyalty", () => {
         // Bentuk respons saat ini: { settings, customers }
         loyalCustomers.value = data.customers;
         expiryMonths.value = data.settings?.points_expiry_months ?? 0;
+        segments.value = Array.isArray(data.segments) ? data.segments : [];
       } else if (Array.isArray(data)) {
         loyalCustomers.value = data;
       } else {
@@ -29,6 +31,7 @@ export const useLoyaltyStore = defineStore("loyalty", () => {
       // JANGAN pernah mengisi data dummy di sini: admin bisa mengira itu pelanggan
       // asli dan menyesuaikan poinnya. Cukup kosongkan dan tampilkan error yang jujur.
       loyalCustomers.value = [];
+      segments.value = [];
       const status = err?.response?.status;
       if (!err?.response) {
         error.value = "Tidak dapat terhubung ke server. Periksa koneksi lalu coba lagi.";
@@ -46,6 +49,7 @@ export const useLoyaltyStore = defineStore("loyalty", () => {
   return {
     loyalCustomers,
     expiryMonths,
+    segments,
     loading,
     error,
     fetchLoyalCustomers,

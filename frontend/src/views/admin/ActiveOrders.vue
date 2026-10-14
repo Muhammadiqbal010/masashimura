@@ -787,6 +787,7 @@ const searchInput = ref(null)
 const now = ref(Date.now())
 const paused = ref(false)
 const pageLimit = ref(PAGE_SIZE)
+const followToday = ref(true)   // true = ikut berganti hari otomatis saat lewat tengah malam
 
 const num = (v) => parseFloat(v) || 0
 
@@ -798,7 +799,7 @@ const toDateString = (d) => {
   return `${yyyy}-${mm}-${dd}`
 }
 const targetDateString = computed(() => toDateString(currentDate.value))
-const isToday = computed(() => targetDateString.value === toDateString(new Date()))
+const isToday = computed(() => targetDateString.value === toDateString(new Date(now.value)))
 const formattedCurrentDate = computed(() =>
   currentDate.value.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 )
@@ -818,6 +819,7 @@ const changeDate = (days) => {
   const d = new Date(currentDate.value)
   d.setDate(d.getDate() + days)
   currentDate.value = d
+  followToday.value = toDateString(d) === toDateString(new Date())
   resetForNewDate()
   fetchActiveOrders({ force: true })
 }
@@ -825,11 +827,13 @@ const jumpToDate = (value) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return
   const [y, m, d] = value.split('-').map(Number)
   currentDate.value = new Date(y, m - 1, d)
+  followToday.value = toDateString(currentDate.value) === toDateString(new Date())
   resetForNewDate()
   fetchActiveOrders({ force: true })
 }
 const goToday = () => {
   currentDate.value = new Date()
+  followToday.value = true
   resetForNewDate()
   fetchActiveOrders({ force: true })
 }
@@ -955,7 +959,11 @@ onMounted(() => {
   // Tab yang tidak dilihat atau sedang dijeda tidak perlu menembak server tiap 5 detik.
   pollingTimer = setInterval(() => { if (!document.hidden && !paused.value) fetchActiveOrders() }, POLL_MS)
   // Label "x mnt lalu" tetap berjalan walau polling dijeda.
-  clockTimer = setInterval(() => { now.value = Date.now() }, 30000)
+  clockTimer = setInterval(() => {
+    now.value = Date.now()
+    // Lewat tengah malam: pindah ke hari baru, jangan terus menampilkan kemarin.
+    if (followToday.value && toDateString(new Date()) !== targetDateString.value) goToday()
+  }, 30000)
   document.addEventListener('visibilitychange', onVisibility)
   window.addEventListener('keydown', onKeydown)
 })
@@ -1108,9 +1116,9 @@ const orderBadge = (o) =>
 const payBadge = (o) =>
   o.payment_status === 'paid' ? { cls: 'adm-badge--green', label: 'Lunas' }
   : o.payment_status === 'void' ? { cls: '', label: 'Batal' }
-  : { cls: 'adm-badge--amber', label: 'Pending' }
+  : { cls: 'adm-badge--amber', label: 'Belum bayar' }
 const payStatusText = (o) =>
-  o?.payment_status === 'paid' ? 'LUNAS' : (o?.payment_status === 'void' ? 'BATAL' : 'PENDING')
+  o?.payment_status === 'paid' ? 'LUNAS' : (o?.payment_status === 'void' ? 'BATAL' : 'BELUM BAYAR')
 
 const canPay = (o) => o.payment_status !== 'paid' && o.status !== 'cancelled' && o.payment_method !== 'gateway'
 
@@ -1666,7 +1674,7 @@ const confirmDelete = async () => {
   .ao-row--unpaid { border-color: var(--line-accent); }
   .ao-a-time { flex-direction: row; align-items: baseline; gap: 0.5rem; justify-self: end; }
   .ao-age, .ao-late { margin-top: 0; }
-  .ao-bill { align-items: flex-start; flex-direction: row; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+  .ao-bill { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
   .ao-status { flex-direction: row; justify-self: end; }
   .ao-a-status { justify-content: flex-end; }
   .ao-items-name { white-space: normal; }
@@ -1688,6 +1696,7 @@ const confirmDelete = async () => {
 }
 .ao-btn-wa { background: var(--green); border-color: var(--green); color: #fff; }
 .ao-btn-wa:hover:not(:disabled) { filter: brightness(0.92); }
+
 
 /* ── Struk di dalam modal (ikut tema) ────────────────────────────── */
 .rcpt { font-family: var(--font-mono); font-size: 0.78rem; line-height: 1.5; color: var(--text-2); }

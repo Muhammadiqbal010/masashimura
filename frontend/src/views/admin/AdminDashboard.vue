@@ -15,6 +15,9 @@
       </div>
     </div>
 
+    <!-- BRIEFING HARI INI (independen dari filter tanggal; dimuat sendiri) -->
+    <BriefingStrip ref="briefingRef" />
+
     <!-- FILTER BAR -->
     <div class="filter-bar">
       <div class="date-inputs">
@@ -138,6 +141,15 @@
 
         <p v-if="retrainNotice" class="predict-notice" role="status">{{ retrainNotice }}</p>
 
+        <!-- Tab kecil: Prediksi | Simulasi (data tab Simulasi baru dimuat saat dibuka) -->
+        <div class="predict-tabs" role="tablist" aria-label="Bagian prediksi">
+          <button type="button" role="tab" class="predict-tab" :aria-selected="predictTab === 'prediksi'" @click="predictTab = 'prediksi'">Prediksi</button>
+          <button type="button" role="tab" class="predict-tab" :aria-selected="predictTab === 'simulasi'" @click="predictTab = 'simulasi'">Simulasi</button>
+        </div>
+
+        <SimulationPanel v-if="predictTab === 'simulasi'" />
+
+        <template v-else>
         <div v-if="predictionLoading" class="empty-state">
           <p class="empty-text">Memuat prediksi…</p>
         </div>
@@ -152,6 +164,7 @@
         <div class="chart-grid">
           <div class="chart-card">
             <h4 class="chart-title">Tren Penjualan Historis vs Prediksi</h4>
+            <p v-if="savedAccuracyText" class="chart-caption">{{ savedAccuracyText }}</p>
             <div class="chart-wrap">
               <Line :data="trendChartData" :options="trendChartOptions" />
             </div>
@@ -165,18 +178,98 @@
         </div>
         <PredictionInsights :prediction="prediction" />
         </template>
+        </template>
       </div>
 
       <!-- TOP MENU TABLE -->
       <div v-if="!loadError" class="table-card">
         <div class="table-header">
           <div>
-            <h3 class="table-title">Top 5 Menu Terlaris</h3>
-            <p class="table-sub">Berdasarkan transaksi lunas · {{ activeDateLabel }}</p>
+            <h3 class="table-title">{{ menuView === 'tomorrow' ? `Perkiraan Menu Besok${tomorrow ? ' · ' + tomorrow.day_name : ''}` : 'Top 5 Menu Terlaris' }}</h3>
+            <p v-if="menuView === 'period'" class="table-sub">Berdasarkan transaksi lunas · {{ activeDateLabel }}</p>
+            <p v-else class="table-sub">Pola penjualan hari yang sama pada beberapa minggu terakhir, minggu terbaru berbobot lebih besar</p>
+          </div>
+          <div class="view-toggle" role="group" aria-label="Pilih tampilan menu">
+            <button
+              type="button"
+              class="view-toggle-btn"
+              :class="{ active: menuView === 'period' }"
+              :aria-pressed="menuView === 'period'"
+              @click="setMenuView('period')"
+            >Periode ini</button>
+            <button
+              type="button"
+              class="view-toggle-btn"
+              :class="{ active: menuView === 'tomorrow' }"
+              :aria-pressed="menuView === 'tomorrow'"
+              @click="setMenuView('tomorrow')"
+            >Perkiraan besok</button>
           </div>
         </div>
 
-        <div v-if="stats.top_menus.length === 0" class="empty-state">
+        <!-- PERKIRAAN BESOK -->
+        <template v-if="menuView === 'tomorrow'">
+          <div v-if="tomorrowLoading && !tomorrow" class="empty-state">
+            <p class="empty-text">Memuat perkiraan…</p>
+          </div>
+
+          <div v-else-if="tomorrowError && !tomorrow" class="empty-state">
+            <p class="empty-text">Perkiraan menu besok gagal dimuat</p>
+            <p class="empty-hint">Periksa koneksi lalu coba lagi.</p>
+            <button type="button" class="retry-btn" @click="fetchTomorrow">Coba lagi</button>
+          </div>
+
+          <div v-else-if="tomorrow && tomorrow.closed" class="empty-state">
+            <div class="empty-icon">🌙</div>
+            <p class="empty-text">Besok ({{ tomorrow.day_name }}) toko libur</p>
+            <p class="empty-hint">Tidak ada perkiraan menu untuk hari libur.</p>
+          </div>
+
+          <div v-else-if="tomorrow && tomorrow.menus.length === 0" class="empty-state">
+            <div class="empty-icon">🍱</div>
+            <p class="empty-text">Belum ada riwayat penjualan hari {{ tomorrow.day_name }}</p>
+            <p class="empty-hint">Perkiraan muncul setelah ada penjualan di hari {{ tomorrow.day_name }} sebelumnya.</p>
+          </div>
+
+          <template v-else-if="tomorrow">
+            <p v-if="!tomorrow.enough_data" class="tomorrow-warn" role="status">
+              Baru ada {{ tomorrow.sample_days }} hari {{ tomorrow.day_name }} dengan penjualan (butuh minimal
+              {{ tomorrow.min_sample_days }}), jadi urutan ini masih kasar.
+            </p>
+            <div class="table-wrap">
+              <table class="menu-table">
+                <thead>
+                  <tr>
+                    <th class="th-rank">#</th>
+                    <th>Nama Menu</th>
+                    <th class="th-center">Perkiraan permintaan</th>
+                    <th class="th-right">Konsistensi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="menu in tomorrow.menus" :key="menu.id" class="menu-row">
+                    <td class="td-rank">
+                      <span :class="['rank-badge', menu.rank === 1 ? 'rank-gold' : menu.rank === 2 ? 'rank-silver' : menu.rank === 3 ? 'rank-bronze' : 'rank-default']">
+                        {{ menu.rank }}
+                      </span>
+                    </td>
+                    <td class="td-name">{{ menu.name }}</td>
+                    <td class="td-center">
+                      <span class="level-chip" :class="`is-${menu.level}`">{{ menu.level_label }}</span>
+                    </td>
+                    <td class="td-right td-muted">Terjual di {{ menu.sold_days }} dari {{ tomorrow.sample_days }} hari</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="tomorrow-note">
+              Ini pola penjualan historis, bukan keluaran model prediksi omzet. Pesanan yang belum lunas ikut dihitung
+              karena dapur tetap menyiapkannya.
+            </p>
+          </template>
+        </template>
+
+        <div v-else-if="stats.top_menus.length === 0" class="empty-state">
           <div class="empty-icon">🍱</div>
           <p class="empty-text">Belum ada data penjualan di periode ini</p>
           <p class="empty-hint">Coba ubah rentang tanggal di atas</p>
@@ -234,6 +327,9 @@ import {
 import apiClient from '@/api/client';
 import { useTheme } from '@/composables/useTheme';
 import PredictionInsights from '@/components/ui/admin/PredictionInsights.vue';
+import BriefingStrip from '@/components/ui/admin/BriefingStrip.vue';
+import SimulationPanel from '@/components/ui/admin/SimulationPanel.vue';
+import { analyticsAPI } from '@/api/analytics';
 
 ChartJS.register(LineElement, PointElement, BarElement, CategoryScale, LinearScale, Filler, Tooltip, Legend);
 
@@ -318,6 +414,7 @@ onMounted(fetchStats);
 
 // ── Prediksi Penjualan (ML) ───────────────────────────────────────────────
 const prediction          = ref(null);
+const predictTab          = ref('prediksi');   // 'prediksi' | 'simulasi'
 const predictionLoading   = ref(true);
 const predictionError     = ref('');
 const predictionErrorHint = ref('');
@@ -404,7 +501,41 @@ const retrainModel = async () => {
 
 onMounted(fetchPrediction);
 
-const refreshAll = () => Promise.all([fetchStats(), fetchPrediction()]);
+// ── Strip Briefing (dimuat sendiri; di sini hanya ikut "Muat ulang") ──────
+const briefingRef = ref(null);
+
+// ── Menu: periode ini / perkiraan besok ───────────────────────────────────
+// Data besok dimuat saat toggle pertama kali dibuka, bukan di awal, supaya dashboard tetap ringan.
+const menuView        = ref('period');
+const tomorrow        = ref(null);
+const tomorrowLoading = ref(false);
+const tomorrowError   = ref(false);
+
+const fetchTomorrow = async () => {
+  tomorrowLoading.value = true;
+  tomorrowError.value = false;
+  try {
+    const { data } = await analyticsAPI.getMenuTomorrow();
+    tomorrow.value = data;
+  } catch (err) {
+    console.error('Gagal load perkiraan menu besok:', err);
+    tomorrowError.value = true;
+  } finally {
+    tomorrowLoading.value = false;
+  }
+};
+
+const setMenuView = (view) => {
+  menuView.value = view;
+  if (view === 'tomorrow' && !tomorrow.value && !tomorrowLoading.value) fetchTomorrow();
+};
+
+const refreshAll = () => Promise.all([
+  fetchStats(),
+  fetchPrediction(),
+  briefingRef.value?.reload?.(),
+  menuView.value === 'tomorrow' ? fetchTomorrow() : null,
+]);
 
 function formatDateTime(iso) {
   if (!iso) return '';
@@ -413,6 +544,31 @@ function formatDateTime(iso) {
 function shortDateLabel(iso) {
   return new Date(iso + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
 }
+
+// ── Prediksi tersimpan vs aktual ──────────────────────────────────────────
+// Prediksi yang dulu pernah ditampilkan (snapshot) untuk tanggal yang sudah lewat,
+// digaris di atas data historis supaya kelihatan seberapa meleset.
+const savedByDate = computed(() => {
+  const map = {};
+  for (const r of prediction.value?.saved_history || []) map[r.date] = r.predicted_revenue;
+  return map;
+});
+const hasSavedPoints = computed(() => Object.keys(savedByDate.value).length > 0);
+
+const savedAccuracyText = computed(() => {
+  const acc = prediction.value?.saved_accuracy;
+  if (!acc) return '';
+  if (acc.n_days > 0) {
+    const parts = [`Prediksi tersimpan vs aktual (${acc.n_days} hari): selisih rata-rata ${formatPrice(acc.mae)}`];
+    if (acc.mape !== null) parts[0] += ` (${acc.mape}%)`;
+    if (acc.within_band_pct !== null) parts.push(`${acc.within_band_pct}% hari masuk rentang prediksi`);
+    return parts.join(' · ');
+  }
+  if (acc.saved_since) {
+    return `Prediksi mulai disimpan sejak ${formatDate(acc.saved_since)}. Perbandingan dengan omzet sebenarnya muncul setelah ada hari yang sudah lewat.`;
+  }
+  return '';
+});
 
 // Chart "Tren Historis vs Prediksi" — garis historis (solid) nyambung ke
 // garis prediksi (putus-putus) di titik terakhir data aktual, plus band
@@ -434,6 +590,7 @@ const trendChartData = computed(() => {
     bridgeValue,
     ...preds.map(p => p.predicted_revenue),
   ];
+  const savedData = [...history.map(h => savedByDate.value[h.date] ?? null), ...preds.map(() => null)];
   const upperData = [...history.map(() => null).slice(0, -1), bridgeValue, ...preds.map(p => p.upper_bound)];
   const lowerData = [...history.map(() => null).slice(0, -1), bridgeValue, ...preds.map(p => p.lower_bound)];
 
@@ -466,6 +623,19 @@ const trendChartData = computed(() => {
         borderDash: [6, 4],
         pointRadius: 2,
         tension: 0.3,
+        fill: false,
+      },
+      {
+        label: 'Prediksi Tersimpan',
+        data: savedData,
+        borderColor: '#f59e0b',
+        backgroundColor: '#f59e0b',
+        borderDash: [2, 3],
+        borderWidth: 1.5,
+        pointRadius: 3,
+        pointStyle: 'rectRot',
+        tension: 0,
+        spanGaps: false,
         fill: false,
       },
       {
@@ -503,12 +673,14 @@ const trendChartOptions = computed(() => {
           color: t.legend,
           font: { family: 'Inter', size: 11 },
           boxWidth: 12,
-          filter: (item) => item.text === 'Data Historis' || item.text === 'Prediksi',
+          filter: (item) => item.text === 'Data Historis' || item.text === 'Prediksi'
+            || (item.text === 'Prediksi Tersimpan' && hasSavedPoints.value),
         },
       },
       tooltip: {
         ...tooltipBase(t),
-        filter: (item) => item.dataset.label === 'Data Historis' || item.dataset.label === 'Prediksi',
+        filter: (item) => item.dataset.label === 'Data Historis' || item.dataset.label === 'Prediksi'
+          || (item.dataset.label === 'Prediksi Tersimpan' && item.parsed.y !== null),
         callbacks: {
           label: (ctx) => `${ctx.dataset.label}: ${formatPrice(ctx.parsed.y)}`,
         },
@@ -879,6 +1051,8 @@ const formatPrice = (value) =>
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
   padding: 1.5rem 1.75rem;
   border-bottom: 1px solid rgb(var(--ink) / 0.05);
 }
@@ -1000,6 +1174,10 @@ const formatPrice = (value) =>
 }
 
 /* ── Predict Section ─────────────────────────────────────────────── */
+.predict-tabs { display: inline-flex; gap: 4px; padding: 3px; margin-bottom: 1.1rem; border-radius: 10px; background: rgb(var(--ink) / 0.06); }
+.predict-tab { min-height: 36px; padding: 0 1rem; border: 0; border-radius: 8px; background: transparent; color: var(--text-dim); font-size: .75rem; cursor: pointer; }
+.predict-tab[aria-selected="true"] { background: var(--surface); color: var(--text); font-weight: 600; }
+.predict-tab:focus-visible { outline: 2px solid var(--red-soft); outline-offset: 2px; }
 .predict-section {
   background: var(--surface);
   border: 1px solid rgb(var(--ink) / 0.05);
@@ -1224,4 +1402,67 @@ const formatPrice = (value) =>
   .shortcut-btn, .refresh-btn, .retrain-btn { min-height: 44px; }
 }
 
+
+/* ── Prediksi tersimpan: keterangan akurasi di bawah judul grafik ───── */
+.chart-caption {
+  margin: -0.2rem 0 0.7rem;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--text-dim);
+}
+
+/* ── Toggle Top 5: Periode ini / Perkiraan besok ───────────────────── */
+.view-toggle {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border: 1px solid rgb(var(--ink) / 0.1);
+  border-radius: 10px;
+  background: rgb(var(--ink) / 0.03);
+}
+.view-toggle-btn {
+  padding: 0.3rem 0.8rem;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-dim);
+  font-family: 'Oswald', sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+.view-toggle-btn:hover { color: var(--text-2); }
+.view-toggle-btn.active { background: #dc2626; color: var(--on-accent); }
+
+.level-chip {
+  display: inline-block;
+  padding: 0.12rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid rgb(var(--ink) / 0.14);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-2);
+}
+.level-chip.is-tinggi {
+  color: var(--green-soft);
+  border-color: color-mix(in srgb, var(--green-soft) 45%, transparent);
+}
+.td-muted { font-size: 0.75rem; color: var(--text-dim); }
+.tomorrow-warn {
+  margin: 0 0 0.9rem;
+  padding: 0.55rem 0.8rem;
+  font-size: 0.76rem;
+  color: var(--amber-soft);
+  background: color-mix(in srgb, var(--amber-soft) 9%, transparent);
+  border: 1px solid color-mix(in srgb, var(--amber-soft) 28%, transparent);
+  border-radius: 10px;
+}
+.tomorrow-note {
+  margin: 0.9rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: var(--text-faint);
+}
 </style>

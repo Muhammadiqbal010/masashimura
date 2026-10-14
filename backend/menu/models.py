@@ -70,3 +70,44 @@ def delete_cloudinary_image_on_delete(sender, instance, **kwargs):
             cloudinary.uploader.destroy(instance.image.public_id)
         except Exception as e:
             print(f"[Cloudinary] Gagal hapus gambar Menu id={instance.pk}: {e}")
+
+
+# ─────────────────────────────────────────────
+# MENU PAKET (BUNDLING)
+# ─────────────────────────────────────────────
+# Admin hanya mengisi HARGA PAKET. Harga normal & potongan dihitung sistem dari harga
+# menu saat ini (jadi ikut berubah kalau harga menu berubah). Saat dipesan, paket
+# "dipecah" jadi OrderItem biasa (lihat menu/bundles.py), jadi riwayat order tidak
+# bergantung pada paket ini dan paket aman dihapus kapan saja.
+class MenuBundle(models.Model):
+    name        = models.CharField(max_length=100)
+    description = models.TextField(blank=True, default="")
+    price       = models.DecimalField(
+        max_digits=10, decimal_places=0, validators=[MinValueValidator(1)],
+        help_text="Harga paket di POS. Harga web mengikuti aturan markup yang sama dengan menu.",
+    )
+    is_available = models.BooleanField(default=True, help_text="Saklar manual tersedia/habis")
+    created_at   = models.DateTimeField(auto_now_add=True)
+    updated_at   = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
+class MenuBundleItem(models.Model):
+    bundle   = models.ForeignKey(MenuBundle, on_delete=models.CASCADE, related_name="items")
+    # PROTECT: menu yang masih ada di paket tidak boleh terhapus diam-diam.
+    menu     = models.ForeignKey(Menu, on_delete=models.PROTECT, related_name="bundle_items")
+    quantity = models.PositiveSmallIntegerField(default=1, validators=[MinValueValidator(1)])
+
+    class Meta:
+        ordering = ["id"]
+        constraints = [
+            models.UniqueConstraint(fields=["bundle", "menu"], name="uniq_bundle_menu"),
+        ]
+
+    def __str__(self):
+        return f"{self.bundle.name}: {self.menu.name} x{self.quantity}"
