@@ -178,7 +178,7 @@
         <button
           type="submit"
           :disabled="loading || !canSubmit"
-          class="w-full bg-red-600 hover:bg-red-500 text-white font-oswald uppercase tracking-widest h-14 rounded-xl font-bold transition-all flex justify-center items-center gap-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-red-600 shadow-[0_4px_20px_rgba(238,0,0,0.15)] text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+          class="w-full bg-red-600 hover:bg-red-500 text-white font-oswald uppercase tracking-widest h-14 rounded-xl font-bold transition-all flex justify-center items-center gap-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-red-600 shadow-lg shadow-black/20 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
         >
           <span
             v-if="loading"

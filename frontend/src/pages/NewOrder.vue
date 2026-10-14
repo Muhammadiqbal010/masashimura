@@ -1525,7 +1525,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 
 /* ── Shared tokens ───────────────────────────────────────────────── */
 .pos-eyebrow {
-  font-family: 'Oswald', sans-serif; font-size: 0.72rem;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
   letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent-text);
   margin: 0 0 0.2rem;
 }
@@ -1543,7 +1543,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
   border-bottom: 1px solid rgb(var(--ink) / 0.06);
 }
 .pos-title {
-  font-family: 'Oswald', sans-serif; font-size: 1.6rem; font-weight: 600;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 1.6rem; font-weight: 600;
   text-transform: uppercase; letter-spacing: 0.04em; margin: 0 0 0.2rem;
   color: var(--text);
 }
@@ -1554,7 +1554,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
   padding: 0.55rem 1rem;
   background: var(--surface); border: 1px solid rgb(var(--ink) / 0.08);
   border-radius: 10px; color: var(--text-dim);
-  font-family: 'Oswald', sans-serif; font-size: 0.72rem;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
   letter-spacing: 0.1em; text-transform: uppercase;
   cursor: pointer; transition: all 0.15s; position: relative;
   white-space: nowrap;
@@ -1569,7 +1569,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
   padding: 0.55rem 1rem;
   background: var(--surface); border: 1px solid rgb(var(--ink) / 0.08);
   border-radius: 10px; color: var(--text-dim);
-  font-family: 'Oswald', sans-serif; font-size: 0.72rem;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
   letter-spacing: 0.1em; text-transform: uppercase;
   cursor: pointer; transition: all 0.15s; white-space: nowrap;
 }
@@ -1601,7 +1601,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .unpaid-badge {
   display: inline-flex; align-items: center; justify-content: center;
   width: 18px; height: 18px; border-radius: 50%;
-  background: #ee0000; color: #fff; font-size: 0.72rem; font-weight: 700;
+  background: #D71920; color: #fff; font-size: 0.72rem; font-weight: 700;
 }
 
 /* ── Banner mode tambah ke tagihan ───────────────────────────────── */
@@ -1670,12 +1670,12 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .empty-hint { color: var(--text-faint); margin: 0; font-size: 0.7rem; }
 .retry-btn {
   padding: 0.5rem 1.25rem; border-radius: 8px;
-  background: #ee0000; border: none; color: #fff;
-  font-family: 'Oswald', sans-serif; font-size: 0.72rem;
+  background: #D71920; border: none; color: #fff;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
   letter-spacing: 0.1em; text-transform: uppercase;
   cursor: pointer; transition: background 0.15s;
 }
-.retry-btn:hover { background: #c20000; }
+.retry-btn:hover { background: #B5121B; }
 
 .menu-card {
   position: relative; background: var(--surface);
@@ -1695,7 +1695,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .menu-count-badge {
   position: absolute; top: 0.5rem; right: 0.5rem; z-index: 2;
   min-width: 1.6rem; padding: 0.1rem 0.4rem; text-align: center;
-  background: #ee0000; color: #fff; border-radius: 999px;
+  background: #D71920; color: #fff; border-radius: 999px;
   font-family: monospace; font-size: 0.72rem; font-weight: 700;
 }
 .menu-count-added { background: #16a34a; }
@@ -1706,7 +1706,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
   display: flex; align-items: center; justify-content: center;
 }
 .habis-badge {
-  font-family: 'Oswald', sans-serif; font-size: 0.72rem; font-weight: 600;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; font-weight: 600;
   letter-spacing: 0.15em; text-transform: uppercase;
   color: var(--red-soft); border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
   padding: 0.2rem 0.65rem; border-radius: 100px;
@@ -1749,14 +1749,14 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 }
 .order-panel-title {
   display: flex; align-items: center; gap: 0.5rem;
-  font-family: 'Oswald', sans-serif; font-size: 1rem; font-weight: 500;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 1rem; font-weight: 500;
   text-transform: uppercase; letter-spacing: 0.08em; margin: 0;
   color: var(--text);
 }
 .order-panel-count {
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 20px; height: 20px; padding: 0 0.35rem; border-radius: 999px;
-  background: #ee0000; color: #fff; font-family: monospace; font-size: 0.72rem; font-weight: 700;
+  background: #D71920; color: #fff; font-family: monospace; font-size: 0.72rem; font-weight: 700;
   letter-spacing: 0;
 }
 .order-panel-close { display: none; }
@@ -1787,7 +1787,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 
 .field { display: flex; flex-direction: column; gap: 0.35rem; }
 .field-label {
-  font-family: 'Oswald', sans-serif; font-size: 0.72rem;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
   letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-faint);
 }
 .field-optional { font-size: 0.72rem; color: var(--text-faint); }
@@ -1916,13 +1916,13 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .toggle-btn {
   display: flex; align-items: center; justify-content: center; gap: 0.35rem;
   padding: 0.65rem 0.6rem; border-radius: 9px; border: 1px solid;
-  font-family: 'Oswald', sans-serif; font-size: 0.72rem;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
   letter-spacing: 0.08em; text-transform: uppercase;
   cursor: pointer; transition: all 0.15s;
 }
 .toggle-inactive { background: transparent; border-color: rgb(var(--ink) / 0.08); color: var(--text-faint); }
 .toggle-inactive:hover { border-color: rgb(var(--ink) / 0.2); color: var(--text-2); }
-.toggle-active-red   { background: color-mix(in srgb, var(--accent) 12%, transparent); border-color: #ee0000; color: var(--text); }
+.toggle-active-red   { background: color-mix(in srgb, var(--accent) 12%, transparent); border-color: #D71920; color: var(--text); }
 .toggle-active-amber { background: color-mix(in srgb, var(--amber) 12%, transparent); border-color: #d97706; color: var(--amber-soft); }
 .toggle-active-white { background: rgb(var(--ink) / 0.08); border-color: rgb(var(--ink) / 0.2); color: var(--text); }
 .toggle-disabled { background: transparent; border-color: rgb(var(--ink) / 0.04); color: var(--text-faint); cursor: not-allowed; opacity: 0.6; }
@@ -1938,7 +1938,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .quick-cash-btn:hover { border-color: rgb(var(--ink) / 0.25); color: var(--text); }
 .quick-cash-btn.is-active {
   background: color-mix(in srgb, var(--accent) 12%, transparent);
-  border-color: #ee0000; color: var(--text);
+  border-color: #D71920; color: var(--text);
 }
 
 /* Change box */
@@ -1988,18 +1988,18 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .promo-slot :deep(input::placeholder) { color: var(--text-faint) !important; opacity: 1; }
 .promo-slot :deep(input:focus) { border-color: color-mix(in srgb, var(--accent) 45%, transparent) !important; }
 .promo-slot :deep(button) {
-  background: #ee0000 !important;
+  background: #D71920 !important;
   color: #fff !important;
   border: none !important;
   border-radius: 10px !important;
-  font-family: 'Oswald', sans-serif !important;
+  font-family: 'Manrope', system-ui, sans-serif !important;
   font-size: 0.72rem !important;
   letter-spacing: 0.1em !important;
   text-transform: uppercase !important;
   cursor: pointer;
   opacity: 1 !important;
 }
-.promo-slot :deep(button:hover:not(:disabled)) { background: #c20000 !important; }
+.promo-slot :deep(button:hover:not(:disabled)) { background: #B5121B !important; }
 .promo-slot :deep(button:disabled) {
   background: rgb(var(--ink) / 0.06) !important;
   color: var(--text-faint) !important;
@@ -2014,7 +2014,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .price-discount { color: var(--green-soft); }
 .price-total {
   display: flex; justify-content: space-between; align-items: baseline;
-  font-family: 'Oswald', sans-serif; font-size: 0.8rem;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.8rem;
   letter-spacing: 0.08em; text-transform: uppercase;
   color: var(--text-2); font-weight: 500;
 }
@@ -2024,13 +2024,13 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .submit-btn {
   display: flex; align-items: center; justify-content: center; gap: 0.45rem;
   padding: 0.85rem; border-radius: 12px; border: none;
-  background: #ee0000; color: #fff;
-  font-family: 'Oswald', sans-serif; font-size: 0.8rem;
+  background: #D71920; color: #fff;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.8rem;
   letter-spacing: 0.12em; text-transform: uppercase;
   cursor: pointer; transition: background 0.15s;
   box-shadow: 0 4px 20px color-mix(in srgb, var(--accent) 20%, transparent);
 }
-.submit-btn:hover:not(:disabled) { background: #c20000; }
+.submit-btn:hover:not(:disabled) { background: #B5121B; }
 .submit-btn:disabled { background: rgb(var(--ink) / 0.06); color: var(--text-faint); cursor: not-allowed; box-shadow: none; }
 .btn-spinner {
   width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
@@ -2065,7 +2065,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
   border-bottom: 1px solid rgb(var(--ink) / 0.06);
 }
 .drawer-title {
-  font-family: 'Oswald', sans-serif; font-size: 1.05rem; font-weight: 500;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 1.05rem; font-weight: 500;
   text-transform: uppercase; letter-spacing: 0.06em; margin: 0;
   color: var(--text);
 }
@@ -2177,12 +2177,12 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .drawer-pay-btn {
   display: flex; align-items: center; justify-content: center; gap: 0.4rem;
   width: 100%; padding: 0.6rem; border-radius: 9px; border: none;
-  background: #ee0000; color: #fff;
-  font-family: 'Oswald', sans-serif; font-size: 0.72rem;
+  background: #D71920; color: #fff;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
   letter-spacing: 0.1em; text-transform: uppercase;
   cursor: pointer; transition: background 0.15s;
 }
-.drawer-pay-btn:hover:not(:disabled) { background: #c20000; }
+.drawer-pay-btn:hover:not(:disabled) { background: #B5121B; }
 .drawer-pay-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .drawer-actions .drawer-pay-btn { flex: 1; width: auto; min-height: 2.4rem; padding: 0 0.75rem; }
 
@@ -2209,7 +2209,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
   padding: 1.5rem 1.5rem 1rem; border-bottom: 1px solid rgb(var(--ink) / 0.05);
 }
 .modal-title {
-  font-family: 'Oswald', sans-serif; font-size: 1.05rem; font-weight: 500;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 1.05rem; font-weight: 500;
   text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 0.2rem;
   color: var(--text);
 }
@@ -2246,7 +2246,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .modal-total-final {
   display: flex; justify-content: space-between;
   padding-top: 0.5rem; border-top: 1px solid rgb(var(--ink) / 0.07);
-  font-family: 'Oswald', sans-serif; font-size: 0.82rem; letter-spacing: 0.06em;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.82rem; letter-spacing: 0.06em;
   text-transform: uppercase; color: var(--text-2); font-weight: 500;
 }
 .modal-total-final span:last-child { font-family: monospace; font-size: 1.05rem; font-weight: 800; color: var(--accent-text); }
@@ -2290,7 +2290,7 @@ input[type="number"] { -moz-appearance: textfield; }
     display: flex; align-items: center; gap: 0.65rem;
     position: fixed; left: 1rem; right: 1rem; bottom: 1rem;
     z-index: 55; padding: 0.85rem 1.1rem;
-    background: #ee0000; border: none; border-radius: 14px;
+    background: #D71920; border: none; border-radius: 14px;
     box-shadow: 0 8px 28px color-mix(in srgb, var(--accent) 40%, transparent);
     cursor: pointer; color: #fff;
   }
@@ -2300,7 +2300,7 @@ input[type="number"] { -moz-appearance: textfield; }
     justify-content: center; font-size: 0.7rem; font-weight: 800;
   }
   .mcf-label {
-    flex: 1; text-align: left; font-family: 'Oswald', sans-serif;
+    flex: 1; text-align: left; font-family: 'Manrope', system-ui, sans-serif;
     font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase;
   }
   .mcf-total { font-family: monospace; font-weight: 800; font-size: 0.85rem; }

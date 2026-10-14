@@ -504,9 +504,9 @@
 
       <div style="font-size:13px; margin-bottom:12px;">
         <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>Subtotal</span><span>{{ formatPrice(computedSubtotal) }}</span></div>
-        <div v-if="num(selectedOrder?.promo_discount_amount) > 0" style="display:flex; justify-content:space-between; color:#c20000; margin-bottom:4px;"><span>Diskon Promo</span><span>-{{ formatPrice(selectedOrder?.promo_discount_amount) }}</span></div>
+        <div v-if="num(selectedOrder?.promo_discount_amount) > 0" style="display:flex; justify-content:space-between; color:#B5121B; margin-bottom:4px;"><span>Diskon Promo</span><span>-{{ formatPrice(selectedOrder?.promo_discount_amount) }}</span></div>
         <div style="border-top:1px dashed #000; margin:8px 0;"></div>
-        <div style="display:flex; justify-content:space-between; font-size:16px; font-weight:900; margin-bottom:6px;"><span>TOTAL AKHIR</span><span style="color:#c20000;">{{ formatPrice(selectedOrder?.total_price) }}</span></div>
+        <div style="display:flex; justify-content:space-between; font-size:16px; font-weight:900; margin-bottom:6px;"><span>TOTAL AKHIR</span><span style="color:#B5121B;">{{ formatPrice(selectedOrder?.total_price) }}</span></div>
         <div v-if="num(selectedOrder?.amount_paid) > 0" style="display:flex; justify-content:space-between; margin-bottom:2px;"><span>Bayar</span><span>{{ formatPrice(selectedOrder?.amount_paid) }}</span></div>
         <div v-if="num(selectedOrder?.change_amount) > 0" style="display:flex; justify-content:space-between;"><span>Kembalian</span><span style="color:#047857; font-weight:900;">{{ formatPrice(selectedOrder?.change_amount) }}</span></div>
       </div>

@@ -24,7 +24,7 @@
           <div class="modal-sheet flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-[2rem] border border-white/[0.08] sm:max-w-lg sm:rounded-[2rem]">
 
             <!-- Foto (16:9, sama dengan hasil crop di admin) -->
-            <div class="relative aspect-video w-full flex-shrink-0 bg-[#1A1A1A]">
+            <div class="relative aspect-video w-full flex-shrink-0 bg-[#1B1B1B]">
               <img
                 v-if="menu.image_url"
                 :src="getMediaUrl(menu.image_url, 900)"
@@ -36,7 +36,7 @@
                 <span class="text-xs text-[#737373]">Belum ada foto</span>
               </div>
 
-              <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-black/30"></div>
+              <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#1B1B1B] via-transparent to-black/30"></div>
 
               <!-- Aksi kanan atas: favorit, bagikan, tutup -->
               <div class="absolute right-3 top-3 z-10 flex items-center gap-2">
@@ -47,7 +47,7 @@
                   class="icon-btn"
                   @click="$emit('toggle-favorite', menu.id)"
                 >
-                  <Heart :size="16" :class="isFavorite ? 'fill-[#EE0000] text-[#EE0000]' : 'text-white'" />
+                  <Heart :size="16" :class="isFavorite ? 'fill-[#D71920] text-[#D71920]' : 'text-white'" />
                 </button>
                 <button
                   type="button"
@@ -75,11 +75,11 @@
                 >
                   <span class="text-[11px] font-semibold text-[#FAFAFA]">Habis</span>
                 </div>
-                <div v-if="menu.is_recommended" class="flex items-center gap-1.5 rounded-full bg-[#EE0000] px-2.5 py-1 text-white">
+                <div v-if="menu.is_recommended" class="flex items-center gap-1.5 rounded-full bg-[#D71920] px-2.5 py-1 text-white">
                   <ThumbsUp :size="11" />
                   <span class="text-[11px] font-semibold">Rekomendasi</span>
                 </div>
-                <div v-if="isBestSeller" class="flex items-center gap-1.5 rounded-full bg-[#FFF500] px-2.5 py-1 text-[#1A1700]">
+                <div v-if="isBestSeller" class="flex items-center gap-1.5 rounded-full bg-[#FFD400] px-2.5 py-1 text-[#1A1700]">
                   <Flame :size="11" />
                   <span class="text-[11px] font-semibold">Terlaris</span>
                 </div>
@@ -89,7 +89,7 @@
             <!-- Info -->
             <div class="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 pb-2 pt-4 sm:px-7">
               <div class="space-y-2.5">
-                <span class="block text-xs font-medium text-[#FFF500]">
+                <span class="block text-xs font-medium text-[#FFD400]">
                   {{ menu.category_name }}
                 </span>
                 <h2 class="font-sora text-2xl font-semibold leading-tight tracking-tight text-[#FAFAFA]">
@@ -109,7 +109,7 @@
                     :key="group.name"
                     class="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-medium text-[#C8C8C8]"
                   >
-                    {{ group.name }}<span v-if="group.required" class="text-[#FF5C5C]" title="Wajib dipilih"> *</span>
+                    {{ group.name }}<span v-if="group.required" class="text-[#FF6A70]" title="Wajib dipilih"> *</span>
                   </span>
                 </div>
               </div>
@@ -131,8 +131,8 @@
                 :class="[
                   'flex min-h-[48px] flex-shrink-0 items-center gap-2 rounded-full px-6 text-sm font-semibold transition-all duration-200',
                   menu.is_available && isStoreOpen
-                    ? 'bg-[#EE0000] text-white hover:bg-[#C20000] hover:shadow-[0_8px_24px_-8px_rgba(238,0,0,0.6)] active:scale-95'
-                    : 'cursor-not-allowed border border-white/5 bg-[#1A1A1A] text-[#737373]'
+                    ? 'bg-[#D71920] text-white hover:bg-[#B5121B] hover:shadow-lg shadow-black/20 active:scale-95'
+                    : 'cursor-not-allowed border border-white/5 bg-[#1B1B1B] text-[#737373]'
                 ]"
               >
                 <Plus :size="16" />
@@ -167,10 +167,10 @@ const handleAdd = () => {
 </script>
 
 <style scoped>
-/* Palet: Surface #141414 · Washi #FAFAFA · Crimson #EE0000 · Champagne #FFF500 */
+/* Palet: Surface #1B1B1B · Washi #FAFAFA · Crimson #D71920 · Champagne #FFD400 */
 
 .modal-sheet {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)), #141414;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)), #1B1B1B;
   box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.7);
 }
 
@@ -196,7 +196,7 @@ const handleAdd = () => {
 }
 
 button:focus-visible {
-  outline: 2px solid #FFF500;
+  outline: 2px solid #FFD400;
   outline-offset: 3px;
 }
 </style>

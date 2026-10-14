@@ -657,8 +657,8 @@ const FOCUS_OPTIONS = [
   { value: 'bottom-right', label: 'Kanan bawah', css: '100% 100%' },
 ]
 const THEME_OPTIONS = [
-  { value: 'red',     label: 'Merah',  accent: '#EE0000', ink: '#ffffff' },
-  { value: 'amber',   label: 'Kuning', accent: '#FFF500', ink: '#1c1300' },
+  { value: 'red',     label: 'Merah',  accent: '#D71920', ink: '#ffffff' },
+  { value: 'amber',   label: 'Kuning', accent: '#FFD400', ink: '#1c1300' },
   { value: 'emerald', label: 'Hijau',  accent: '#10B981', ink: '#03150d' },
   { value: 'sky',     label: 'Biru',   accent: '#0EA5E9', ink: '#02131c' },
   { value: 'violet',  label: 'Ungu',   accent: '#8B5CF6', ink: '#ffffff' },
@@ -1246,7 +1246,7 @@ span.eh-ptab { cursor: default; }
 .pv { border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-2); padding: 0.85rem; }
 .pv-cap { margin: 0 0 0.6rem; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); }
 .pv-empty { padding: 1.2rem; text-align: center; font-size: 0.78rem; color: var(--text-faint); border: 1px dashed var(--border); border-radius: var(--r-sm); }
-.pv-stage { padding: 1rem; border-radius: var(--r-sm); background: #0a0a0a; color: #fff; overflow: hidden; }
+.pv-stage { padding: 1rem; border-radius: var(--r-sm); background: #111111; color: #fff; overflow: hidden; }
 .pv-wrap { display: flex; gap: 1rem; align-items: center; }
 .pv-wrap--split.is-right { flex-direction: row-reverse; }
 .pv-wrap--overlay { position: relative; overflow: hidden; border: 1px solid rgb(255 255 255 / 0.1); background: #18181b; align-items: stretch; }

@@ -664,8 +664,8 @@ onBeforeUnmount(() => {
   width: 44px;
   height: 24px;
   border-radius: 99px;
-  background: #fcd34d;
-  border: 1px solid #fff500;
+  background: #FFD400;
+  border: 1px solid #FFD400;
   transition: background 0.2s, border-color 0.2s;
 }
 .sb-switch.is-on { background: #3f3f46; border-color: #52525b; }
@@ -744,7 +744,7 @@ onBeforeUnmount(() => {
 .sb-modal-title {
   margin: 0 0 0.4rem;
   text-align: center;
-  font-family: 'Oswald', sans-serif;
+  font-family: 'Manrope', system-ui, sans-serif;
   font-size: 1.05rem;
   font-weight: 500;
   letter-spacing: 0.05em;

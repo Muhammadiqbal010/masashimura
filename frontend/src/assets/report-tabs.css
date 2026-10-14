@@ -1,12 +1,12 @@
 /* Gaya bersama tab laporan (Performa Menu, Pasangan Menu, Channel). Prefix rt- */
 .rt { display: flex; flex-direction: column; gap: 1rem; }
 .rt-card { background: var(--surface); border: 1px solid rgb(var(--ink) / 0.05); border-radius: 16px; padding: 1rem 1.1rem; }
-.rt-title { margin: 0 0 0.9rem; font-family: 'Oswald', sans-serif; font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-faint); font-weight: 400; }
+.rt-title { margin: 0 0 0.9rem; font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-faint); font-weight: 400; }
 .rt-lead { margin: 0; font-size: 0.8rem; line-height: 1.5; color: var(--text-faint); }
 .rt-lead strong { color: var(--text-dim); font-weight: 600; }
 .rt-banner { padding: 0.8rem 1rem; border-radius: 12px; font-size: 0.8rem; line-height: 1.5; background: color-mix(in srgb, var(--amber) 10%, transparent); border: 1px solid color-mix(in srgb, var(--amber) 35%, transparent); color: var(--amber-soft); }
 .rt-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem; }
-.rt-kpi-value { margin: 0; font-family: 'Oswald', sans-serif; font-size: 1.25rem; font-weight: 700; color: var(--text); }
+.rt-kpi-value { margin: 0; font-family: 'Manrope', system-ui, sans-serif; font-size: 1.25rem; font-weight: 700; color: var(--text); }
 .rt-kpi-label { margin: 0.25rem 0 0; font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-faint); }
 .rt-kpi-sub { margin: 0.4rem 0 0; font-size: 0.7rem; color: var(--text-faint); }
 .rt-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -24,7 +24,7 @@
 .rt-bar { display: block; height: 6px; min-width: 60px; border-radius: 3px; background: rgb(var(--ink) / 0.06); overflow: hidden; }
 .rt-bar > span { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
 .rt-empty { padding: 3rem 1rem; text-align: center; }
-.rt-empty-title { margin: 0 0 0.25rem; font-family: 'Oswald', sans-serif; font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text); }
+.rt-empty-title { margin: 0 0 0.25rem; font-family: 'Manrope', system-ui, sans-serif; font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text); }
 .rt-empty-sub { margin: 0 0 1rem; font-size: 0.75rem; color: var(--text-faint); }
 .rt-btn { min-height: 44px; padding: 0.6rem 1.2rem; border: 0; border-radius: 12px; cursor: pointer; background: var(--accent); color: #fff; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; }
 .rt-btn:focus-visible, .rt-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

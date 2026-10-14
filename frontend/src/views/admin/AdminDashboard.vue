@@ -601,7 +601,7 @@ const trendChartData = computed(() => {
         label: 'Batas Atas',
         data: upperData,
         borderColor: 'transparent',
-        backgroundColor: 'rgba(238,0,0,0.12)',
+        backgroundColor: 'rgba(215,25,32,0.12)',
         pointRadius: 0,
         fill: '+1',
         tension: 0.3,
@@ -610,7 +610,7 @@ const trendChartData = computed(() => {
         label: 'Batas Bawah',
         data: lowerData,
         borderColor: 'transparent',
-        backgroundColor: 'rgba(238,0,0,0.12)',
+        backgroundColor: 'rgba(215,25,32,0.12)',
         pointRadius: 0,
         fill: false,
         tension: 0.3,
@@ -618,8 +618,8 @@ const trendChartData = computed(() => {
       {
         label: 'Prediksi',
         data: predData,
-        borderColor: '#ee0000',
-        backgroundColor: '#ee0000',
+        borderColor: '#D71920',
+        backgroundColor: '#D71920',
         borderDash: [6, 4],
         pointRadius: 2,
         tension: 0.3,
@@ -628,8 +628,8 @@ const trendChartData = computed(() => {
       {
         label: 'Prediksi Tersimpan',
         data: savedData,
-        borderColor: '#fff500',
-        backgroundColor: '#fff500',
+        borderColor: '#FFD400',
+        backgroundColor: '#FFD400',
         borderDash: [2, 3],
         borderWidth: 1.5,
         pointRadius: 3,
@@ -701,7 +701,7 @@ const forecastBarData = computed(() => {
     datasets: [{
       label: 'Prediksi Revenue',
       data: preds.map(p => p.predicted_revenue),
-      backgroundColor: '#ee0000',
+      backgroundColor: '#D71920',
       borderRadius: 4,
       maxBarThickness: 36,
     }],
@@ -769,7 +769,7 @@ const formatPrice = (value) =>
   border-bottom: 1px solid rgb(var(--ink) / 0.06);
 }
 .dash-eyebrow {
-  font-family: 'Oswald', sans-serif;
+  font-family: 'Manrope', system-ui, sans-serif;
   font-size: 0.72rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -777,7 +777,7 @@ const formatPrice = (value) =>
   margin-bottom: 0.3rem;
 }
 .dash-title {
-  font-family: 'Oswald', sans-serif;
+  font-family: 'Manrope', system-ui, sans-serif;
   font-size: 1.75rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -810,7 +810,7 @@ const formatPrice = (value) =>
 }
 .date-label {
   font-size: 0.72rem;
-  font-family: 'Oswald', sans-serif;
+  font-family: 'Manrope', system-ui, sans-serif;
   letter-spacing: 0.15em;
   text-transform: uppercase;
   color: var(--text-faint);
@@ -841,7 +841,7 @@ const formatPrice = (value) =>
   border: 1px solid rgb(var(--ink) / 0.1);
   background: transparent;
   color: var(--text-dim);
-  font-family: 'Oswald', sans-serif;
+  font-family: 'Manrope', system-ui, sans-serif;
   font-size: 0.7rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -853,8 +853,8 @@ const formatPrice = (value) =>
   color: var(--text-2);
 }
 .shortcut-btn.active {
-  background: #ee0000;
-  border-color: #ee0000;
+  background: #D71920;
+  border-color: #D71920;
   color: var(--on-accent);
 }
 
@@ -868,14 +868,14 @@ const formatPrice = (value) =>
   padding: 6rem 2rem;
   color: var(--text-faint);
   font-size: 0.75rem;
-  font-family: 'Oswald', sans-serif;
+  font-family: 'Manrope', system-ui, sans-serif;
   letter-spacing: 0.15em;
   text-transform: uppercase;
 }
 .spinner {
   width: 32px; height: 32px;
   border: 2px solid rgb(var(--ink) / 0.08);
-  border-top-color: #ee0000;
+  border-top-color: #D71920;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -889,7 +889,7 @@ const formatPrice = (value) =>
 }
 .stat-hero {
   background: linear-gradient(135deg, var(--hero-from) 0%, var(--surface) 65%);
-  border: 1px solid rgba(238,0,0,0.25);
+  border: 1px solid rgba(215,25,32,0.25);
   border-radius: 18px;
   padding: clamp(1.25rem, 3vw, 2rem) clamp(1.25rem, 3vw, 2.25rem);
   position: relative;
@@ -900,7 +900,7 @@ const formatPrice = (value) =>
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 3px;
-  background: #ee0000;
+  background: #D71920;
 }
 .stat-hero-top {
   display: flex;
@@ -909,7 +909,7 @@ const formatPrice = (value) =>
   margin-bottom: 0.75rem;
 }
 .stat-hero-label {
-  font-family: 'Oswald', sans-serif;
+  font-family: 'Manrope', system-ui, sans-serif;
   font-size: 0.75rem;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -955,7 +955,7 @@ const formatPrice = (value) =>
 
 .stat-badge {
   font-size: 0.72rem;
-  font-family: 'Oswald', sans-serif;
+  font-family: 'Manrope', system-ui, sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   padding: 0.15rem 0.5rem;
@@ -1004,7 +1004,7 @@ const formatPrice = (value) =>
   margin-bottom: 0.6rem;
 }
 .stat-label {
-  font-family: 'Oswald', sans-serif;
+  font-family: 'Manrope', system-ui, sans-serif;
   font-size: 0.72rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1057,7 +1057,7 @@ const formatPrice = (value) =>
   border-bottom: 1px solid rgb(var(--ink) / 0.05);
 }
 .table-title {
-  font-family: 'Oswald', sans-serif;
+  font-family: 'Manrope', system-ui, sans-serif;
   font-size: 1rem;
   font-weight: 500;
   text-transform: uppercase;
@@ -1101,7 +1101,7 @@ const formatPrice = (value) =>
 }
 .menu-table th {
   padding: 0.75rem 1.5rem;
-  font-family: 'Oswald', sans-serif;
+  font-family: 'Manrope', system-ui, sans-serif;
   font-size: 0.72rem;
   font-weight: 400;
   letter-spacing: 0.15em;
@@ -1136,7 +1136,7 @@ const formatPrice = (value) =>
   font-weight: 700;
   font-family: 'Inter', monospace;
 }
-.rank-gold   { background: rgba(255,245,0,0.15); color: var(--amber-soft); }
+.rank-gold   { background: rgba(255,212,0,0.15); color: var(--amber-soft); }
 .rank-silver { background: rgba(156,163,175,0.12); color: var(--text-dim); }
 .rank-bronze { background: rgba(180,83,9,0.15);  color: var(--amber-soft); }
 .rank-default{ background: rgb(var(--ink) / 0.04); color: var(--text-faint); }
@@ -1161,7 +1161,7 @@ const formatPrice = (value) =>
 }
 .bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #ee0000, #ff2a2a);
+  background: linear-gradient(90deg, #D71920, #FF343B);
   border-radius: 99px;
   transition: width 0.7s ease;
 }
@@ -1215,7 +1215,7 @@ const formatPrice = (value) =>
   gap: 0.1rem;
 }
 .predict-inline-label {
-  font-family: 'Oswald', sans-serif;
+  font-family: 'Manrope', system-ui, sans-serif;
   font-size: 0.72rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1236,10 +1236,10 @@ const formatPrice = (value) =>
 .retrain-btn {
   padding: 0.45rem 1rem;
   border-radius: 8px;
-  border: 1px solid rgba(238,0,0,0.3);
-  background: rgba(238,0,0,0.08);
+  border: 1px solid rgba(215,25,32,0.3);
+  background: rgba(215,25,32,0.08);
   color: var(--red-soft);
-  font-family: 'Oswald', sans-serif;
+  font-family: 'Manrope', system-ui, sans-serif;
   font-size: 0.72rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1247,7 +1247,7 @@ const formatPrice = (value) =>
   transition: all 0.18s ease;
   white-space: nowrap;
 }
-.retrain-btn:hover:not(:disabled) { background: rgba(238,0,0,0.18); }
+.retrain-btn:hover:not(:disabled) { background: rgba(215,25,32,0.18); }
 .retrain-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .predict-notice {
   margin: -0.75rem 0 1.25rem;
@@ -1276,7 +1276,7 @@ const formatPrice = (value) =>
   overflow: hidden;
 }
 .chart-title {
-  font-family: 'Oswald', sans-serif;
+  font-family: 'Manrope', system-ui, sans-serif;
   font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1316,7 +1316,7 @@ const formatPrice = (value) =>
   min-height: 36px; padding: 0.4rem 0.85rem;
   border-radius: 10px; border: 1px solid var(--border-strong);
   background: transparent; color: var(--text-2);
-  font-family: 'Oswald', sans-serif; font-size: 0.7rem;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.7rem;
   letter-spacing: 0.1em; text-transform: uppercase;
   cursor: pointer; transition: all 0.15s;
 }
@@ -1336,7 +1336,7 @@ const formatPrice = (value) =>
 .retry-btn {
   min-height: 36px; padding: 0.45rem 1rem; border-radius: 8px; flex-shrink: 0;
   background: transparent; border: 1px solid rgb(239 68 68 / 0.5); color: var(--red-soft);
-  font-family: 'Oswald', sans-serif; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
   cursor: pointer; transition: background 0.15s;
 }
 .retry-btn:hover { background: rgb(239 68 68 / 0.12); }
@@ -1426,7 +1426,7 @@ const formatPrice = (value) =>
   border-radius: 7px;
   background: transparent;
   color: var(--text-dim);
-  font-family: 'Oswald', sans-serif;
+  font-family: 'Manrope', system-ui, sans-serif;
   font-size: 0.72rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1434,7 +1434,7 @@ const formatPrice = (value) =>
   transition: background 0.18s ease, color 0.18s ease;
 }
 .view-toggle-btn:hover { color: var(--text-2); }
-.view-toggle-btn.active { background: #ee0000; color: var(--on-accent); }
+.view-toggle-btn.active { background: #D71920; color: var(--on-accent); }
 
 .level-chip {
   display: inline-block;

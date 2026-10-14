@@ -74,16 +74,16 @@ const totalPointsUsed = computed(() =>
 </script>
 
 <style scoped>
-/* Palet: Surface #141414 · Washi #FAFAFA · Champagne #FFF500 (poin & reward) */
+/* Palet: Surface #1B1B1B · Washi #FAFAFA · Champagne #FFD400 (poin & reward) */
 
 .point-box {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
   background:
-    radial-gradient(80% 100% at 100% 0%, rgba(255,245,0, 0.08), transparent 70%),
-    #0D0D0D;
-  border: 1px solid rgba(255,245,0, 0.18);
+    radial-gradient(80% 100% at 100% 0%, rgba(255,212,0, 0.08), transparent 70%),
+    #111111;
+  border: 1px solid rgba(255,212,0, 0.18);
   border-radius: 1rem;
   padding: 1rem;
 }
@@ -101,9 +101,9 @@ const totalPointsUsed = computed(() =>
   align-items: center;
   justify-content: center;
   border-radius: 0.625rem;
-  border: 1px solid rgba(255,245,0, 0.25);
-  background: rgba(255,245,0, 0.1);
-  color: #FFF500;
+  border: 1px solid rgba(255,212,0, 0.25);
+  background: rgba(255,212,0, 0.1);
+  color: #FFD400;
 }
 .point-label {
   flex: 1;
@@ -116,7 +116,7 @@ const totalPointsUsed = computed(() =>
   font-weight: 600;
   font-size: 1.125rem;
   font-variant-numeric: tabular-nums;
-  color: #FFF500;
+  color: #FFD400;
 }
 
 .point-list {
@@ -139,29 +139,29 @@ const totalPointsUsed = computed(() =>
 }
 
 .point-item--affordable {
-  background: rgba(255,245,0, 0.05);
-  border: 1px solid rgba(255,245,0, 0.2);
+  background: rgba(255,212,0, 0.05);
+  border: 1px solid rgba(255,212,0, 0.2);
   cursor: pointer;
   transition: all 0.15s;
 }
-.point-item--affordable:hover { border-color: rgba(255,245,0, 0.45); }
+.point-item--affordable:hover { border-color: rgba(255,212,0, 0.45); }
 .point-item--selected {
-  background: rgba(255,245,0, 0.14);
-  border-color: rgba(255,245,0, 0.7);
+  background: rgba(255,212,0, 0.14);
+  border-color: rgba(255,212,0, 0.7);
 }
 
 .point-item-check {
   width: 20px; height: 20px;
   border-radius: 6px;
-  border: 1px solid rgba(255,245,0, 0.5);
+  border: 1px solid rgba(255,212,0, 0.5);
   display: flex; align-items: center; justify-content: center;
   color: #1A1700;
   flex-shrink: 0;
   transition: all 0.15s;
 }
 .point-item--selected .point-item-check {
-  background: #FFF500;
-  border-color: #FFF500;
+  background: #FFD400;
+  border-color: #FFD400;
 }
 
 .point-item-name {
@@ -175,7 +175,7 @@ const totalPointsUsed = computed(() =>
   font-size: 0.8125rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  color: #FFF500;
+  color: #FFD400;
   white-space: nowrap;
 }
 
@@ -196,13 +196,13 @@ const totalPointsUsed = computed(() =>
 .point-summary {
   font-size: 0.8125rem;
   font-weight: 500;
-  color: #FFF500;
+  color: #FFD400;
   margin: 0;
   padding-left: 0.125rem;
 }
 
 .point-item--affordable:focus-visible {
-  outline: 2px solid #FFF500;
+  outline: 2px solid #FFD400;
   outline-offset: 2px;
 }
 </style>

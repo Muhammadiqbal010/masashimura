@@ -107,7 +107,7 @@ defineExpose({ removePromo });
 </script>
 
 <style scoped>
-/* Palet: Surface #0D0D0D · Washi #FAFAFA · Crimson #EE0000 · Champagne #FFF500 */
+/* Palet: Surface #111111 · Washi #FAFAFA · Crimson #D71920 · Champagne #FFD400 */
 
 .promo-box { display: flex; flex-direction: column; gap: 0.5rem; }
 
@@ -130,7 +130,7 @@ defineExpose({ removePromo });
 .promo-input {
   width: 100%;
   height: 3rem;
-  background: #0D0D0D;
+  background: #111111;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0.75rem;
   padding: 0 1rem 0 2.5rem;
@@ -152,15 +152,15 @@ defineExpose({ removePromo });
 }
 .promo-input:hover:not(:disabled) { border-color: rgba(255, 255, 255, 0.2); }
 .promo-input:focus {
-  border-color: rgba(255,245,0, 0.6);
-  box-shadow: 0 0 0 3px rgba(255,245,0, 0.12);
+  border-color: rgba(255,212,0, 0.6);
+  box-shadow: 0 0 0 3px rgba(255,212,0, 0.12);
 }
 .promo-input:disabled { opacity: 0.5; }
 
 .promo-apply-btn {
   min-width: 5rem;
   padding: 0 1.25rem;
-  background: #EE0000;
+  background: #D71920;
   border: none;
   border-radius: 0.75rem;
   color: #fff;
@@ -171,7 +171,7 @@ defineExpose({ removePromo });
   transition: background 0.15s, transform 0.15s;
   white-space: nowrap;
 }
-.promo-apply-btn:hover:not(:disabled) { background: #C20000; }
+.promo-apply-btn:hover:not(:disabled) { background: #B5121B; }
 .promo-apply-btn:active:not(:disabled) { transform: scale(0.97); }
 .promo-apply-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
@@ -225,18 +225,18 @@ defineExpose({ removePromo });
   cursor: pointer;
   transition: all 0.15s;
 }
-.promo-remove-btn:hover { background: rgba(238,0,0, 0.15); color: #FF5C5C; }
+.promo-remove-btn:hover { background: rgba(215,25,32, 0.15); color: #FF6A70; }
 
 .promo-error {
   font-size: 0.8125rem;
-  color: #FF5C5C;
+  color: #FF6A70;
   margin: 0;
   padding-left: 0.25rem;
 }
 
 .promo-apply-btn:focus-visible,
 .promo-remove-btn:focus-visible {
-  outline: 2px solid #FFF500;
+  outline: 2px solid #FFD400;
   outline-offset: 2px;
 }
 </style>

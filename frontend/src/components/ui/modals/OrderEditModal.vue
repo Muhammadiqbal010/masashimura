@@ -4,7 +4,7 @@
     class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 backdrop-blur-sm p-4"
   >
     <div
-      class="bg-[#0a0a0a] border border-white/10 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl"
+      class="bg-[#111111] border border-white/10 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl"
     >
       <div
         class="px-8 py-5 border-b border-white/5 flex justify-between items-center bg-white/5"

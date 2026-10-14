@@ -1,55 +1,58 @@
 /* src/index.css */
 
-/* 1. CORE TAILWIND V4 & FONTS */
-@import url("https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&family=Caveat:wght@400;700&display=swap");
+/* 1. CORE TAILWIND V4 & FONTS — satu keluarga font (Manrope) */
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
 @import "tailwindcss";
 
-/* 2. TOKEN BRAND — diambil dari logo "M" (merah #FE0000 + kuning #FFF500 di atas hitam)
-   Satu sumber kebenaran: ubah di sini, seluruh situs ikut berubah. */
+/* 2. TOKEN BRAND — sesuai MASASHIMURA Design Specification v1.0
+   Satu sumber kebenaran: ubah di sini, seluruh situs ikut berubah.
+   Merah = aksi utama. Kuning = highlight kecil (selalu dengan teks gelap). */
 @theme {
   /* Brand */
-  --color-brand-red: #ee0000;
-  --color-brand-red-hover: #c20000;
-  --color-brand-red-deep: #8f0000;
-  --color-brand-red-glow: #ff2a2a;
-  --color-brand-yellow: #fff500;
-  --color-brand-yellow-deep: #e0d100;
-  --color-ink: #050505;
-  --color-ink-1: #0d0d0d;
-  --color-ink-2: #141414;
-  --color-ink-3: #1a1a1a;
+  --color-brand-red: #d71920;
+  --color-brand-red-hover: #b5121b;
+  --color-brand-red-deep: #8e1016;
+  --color-brand-red-glow: #ff343b; /* nama lama dipertahankan; kini aksen merah dark mode */
+  --color-brand-yellow: #ffd400;
+  --color-brand-yellow-deep: #d9b500;
+
+  /* Netral gelap (canvas → surface → surface 2) */
+  --color-ink: #111111;
+  --color-ink-1: #151515;
+  --color-ink-2: #1b1b1b;
+  --color-ink-3: #242424;
 
   /* Alias lama (dipertahankan agar kelas yang sudah ada tetap jalan) */
   --color-primary: var(--color-brand-red);
   --color-accent: var(--color-brand-yellow);
   --color-background: var(--color-ink);
-  --color-foreground: #fafafa;
+  --color-foreground: #f5f5f5;
   --color-border: rgba(255, 255, 255, 0.1);
   --color-card: rgba(255, 255, 255, 0.04);
   --color-secondary: rgba(255, 255, 255, 0.06);
 
-  /* Palet bawaan Tailwind yang dipakai di kode -> diarahkan ke warna logo,
-     jadi semua class text-red-600, bg-amber-500, dst otomatis ikut tema. */
-  --color-red-400: #ff5c5c;
-  --color-red-500: #ff2a2a;
-  --color-red-600: #ee0000;
-  --color-red-700: #c20000;
-  --color-red-900: #5c0000;
-  --color-amber-300: #fff98a;
-  --color-amber-400: #fff500;
-  --color-amber-500: #fff500;
-  --color-amber-600: #e0d100;
+  /* Palet bawaan Tailwind yang dipakai di kode → diarahkan ke warna brand */
+  --color-red-400: #ff6a70;
+  --color-red-500: #ff343b;
+  --color-red-600: #d71920;
+  --color-red-700: #b5121b;
+  --color-red-900: #4a0a0d;
+  --color-amber-300: #ffe76a;
+  --color-amber-400: #ffd400;
+  --color-amber-500: #ffd400;
+  --color-amber-600: #d9b500;
 
-  /* Typography */
-  --font-oswald: "Oswald", sans-serif;
-  --font-manrope: "Manrope", sans-serif;
-  --font-sora: "Manrope", sans-serif;
-  --font-caveat: "Caveat", cursive;
+  /* Typography — hanya Manrope; alias lama menunjuk ke Manrope */
+  --font-manrope: "Manrope", system-ui, sans-serif;
+  --font-oswald: var(--font-manrope);
+  --font-sora: var(--font-manrope);
+  --font-inter: var(--font-manrope);
+  --font-caveat: var(--font-manrope);
 
-  /* Bentuk & kedalaman */
-  --radius-card: 1.25rem;
-  --shadow-glow-red: 0 10px 40px -10px rgba(238, 0, 0, 0.55);
-  --shadow-glow-yellow: 0 10px 40px -10px rgba(255, 245, 0, 0.35);
+  /* Bentuk & kedalaman: tombol 10–14px, kartu 14–18px, shadow tipis */
+  --radius-card: 1.125rem;
+  --shadow-glow-red: 0 8px 24px -12px rgba(0, 0, 0, 0.5);
+  --shadow-glow-yellow: 0 8px 24px -12px rgba(0, 0, 0, 0.5);
 }
 
 /* 3. ATURAN DASAR (Base) */
@@ -64,6 +67,7 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: "Manrope", system-ui, sans-serif;
+    font-size: 15px;
     line-height: 1.6;
     overflow-x: hidden;
     text-rendering: optimizeLegibility;
@@ -74,9 +78,10 @@
   h4,
   h5,
   h6 {
-    font-family: "Oswald", sans-serif;
-    line-height: 1.12;
-    letter-spacing: 0.01em;
+    font-family: "Manrope", system-ui, sans-serif;
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.015em;
     text-wrap: balance;
   }
   p {
@@ -84,13 +89,13 @@
   }
   ::selection {
     background: var(--color-brand-yellow);
-    color: #000;
+    color: #171717;
   }
-  /* Fokus keyboard konsisten di seluruh situs publik */
+  /* Fokus keyboard konsisten (kuning terang terbaca di tema gelap) */
   :focus-visible {
     outline: 2px solid var(--color-brand-yellow);
     outline-offset: 3px;
-    border-radius: 6px;
+    border-radius: 8px;
   }
   button,
   a,
@@ -100,6 +105,11 @@
   button:not(:disabled),
   [role="button"] {
     cursor: pointer;
+  }
+  /* Angka nominal sejajar */
+  table,
+  .tabular {
+    font-variant-numeric: tabular-nums;
   }
 }
 
@@ -116,28 +126,33 @@
   }
 }
 
+/* Judul: tidak uppercase/italic, tanpa tracking lebar (hierarki lewat ukuran & bobot).
+   Ditulis di luar @layer agar menang atas utility .uppercase / .italic / tracking-*. */
+:is(h1, h2, h3, h4, h5, h6) {
+  text-transform: none !important;
+  font-style: normal !important;
+  letter-spacing: -0.015em !important;
+}
+.font-oswald,
+.font-sora {
+  text-transform: none !important;
+  letter-spacing: normal;
+}
+
 /* 4. CUSTOM UTILITIES (Tailwind v4 Syntax) */
 @layer utilities {
-  .bg-noise {
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
-  }
-
-  /* Shadow Neo-Brutalism */
-  .shadow-neo-red {
-    box-shadow: 4px 4px 0px #8f0000;
-  }
-  .shadow-neo-red-hover {
-    box-shadow: 2px 2px 0px #8f0000;
-  }
+  /* Dipertahankan agar kelas lama tidak error — kini shadow lembut, bukan neo-brutalist */
+  .shadow-neo-red,
+  .shadow-neo-red-hover,
   .shadow-neo-yellow {
-    box-shadow: 4px 4px 0px #fff500;
+    box-shadow: 0 6px 18px -8px rgba(0, 0, 0, 0.5);
   }
 }
 
-/* Utility Khusus: Scrollbar Tipis Transparan (Ex-Main.css) */
+/* Scrollbar tipis transparan */
 @utility custom-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
 
   &::-webkit-scrollbar {
     width: 6px;
@@ -151,77 +166,70 @@
   }
 }
 
-/* Utility Khusus: Sembunyikan Scrollbar Total */
+/* Sembunyikan scrollbar total */
 @utility custom-scroll-hide {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE & Edge */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 
   &::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Edge */
+    display: none;
   }
 }
 
-/* src/index.css - Tambahkan di baris paling bawah */
-
-/* Toast (Sonner): kartu hitam dengan garis aksen sesuai tipe, tampil di atas layar */
+/* ==========================================================================
+   Toast (Sonner) — permukaan mengikuti tema aktif
+   ========================================================================== */
 [data-sonner-toaster] {
   z-index: 9999 !important;
   font-family: "Manrope", sans-serif !important;
 }
 
 [data-sonner-toast] {
-  background: #111 !important;
-  color: #fafafa !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  border-left: 4px solid #fff500 !important;
+  background: #1b1b1b !important;
+  color: #f5f5f5 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
   border-radius: 14px !important;
   padding: 14px 18px !important;
   font-weight: 600 !important;
   font-size: 0.875rem !important;
-  box-shadow: 0 18px 40px -12px rgba(0, 0, 0, 0.7) !important;
+  box-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.6) !important;
 }
+/* Status ditandai warna ikon + teks pesan (bukan garis tebal di tepi) */
+[data-sonner-toast][data-type="success"] [data-icon] { color: #4ade80 !important; }
+[data-sonner-toast][data-type="error"] [data-icon] { color: #ff6a70 !important; }
+[data-sonner-toast][data-type="warning"] [data-icon] { color: #ffd400 !important; }
 
-[data-sonner-toast][data-type="success"] {
-  border-left-color: #22c55e !important;
+/* Area admin terang: toast ikut terang */
+html[data-admin-theme="light"] [data-sonner-toast] {
+  background: #ffffff !important;
+  color: #171717 !important;
+  border-color: rgba(23, 23, 23, 0.1) !important;
+  box-shadow: 0 12px 32px -14px rgba(23, 23, 23, 0.25) !important;
 }
-[data-sonner-toast][data-type="error"] {
-  border-left-color: #ee0000 !important;
-}
-[data-sonner-toast][data-type="warning"] {
-  border-left-color: #fff500 !important;
-}
+html[data-admin-theme="light"] [data-sonner-toast][data-type="success"] [data-icon] { color: #15803d !important; }
+html[data-admin-theme="light"] [data-sonner-toast][data-type="error"] [data-icon] { color: #b5121b !important; }
+html[data-admin-theme="light"] [data-sonner-toast][data-type="warning"] [data-icon] { color: #7a5c00 !important; }
 
 /* ==========================================================================
-   ✨ PREMIUM MINIMALIST CUSTOM SCROLLBAR FOR MASASHIMURA ERP
+   Scrollbar global — minimal
    ========================================================================== */
-
-/* 1. Mengatur ukuran lebar scrollbar global */
 ::-webkit-scrollbar {
-  width: 6px;  /* Bikin scrollbar vertikal jadi tipis dan elegan */
-  height: 6px; /* Bikin scrollbar horizontal jadi tipis */
+  width: 6px;
+  height: 6px;
 }
-
-/* 2. Mengatur area rel/jalur tempat scrollbar berjalan (Track) */
 ::-webkit-scrollbar-track {
-  background: transparent; /* Biar menyatu sama background gelap dashboard */
+  background: transparent;
 }
-
-/* 3. Mengatur warna batang scrollbar yang digeser (Thumb) */
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1); /* Warna putih transparan tipis */
-  border-radius: 10px; /* Bikin ujungnya membulat (capsule style) */
-  transition: background 0.3s ease;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
 }
-
-/* 4. Efek saat kursor kasir mengarah ke scrollbar (Hover) */
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255,42,42, 0.4); /* Merah transparan khas Masashimura */
+  background: rgba(255, 255, 255, 0.28);
 }
-
-/* Khusus untuk Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
 }
 
 .no-spinner::-webkit-outer-spin-button,

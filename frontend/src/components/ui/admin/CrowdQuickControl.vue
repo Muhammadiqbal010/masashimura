@@ -195,7 +195,7 @@ onBeforeUnmount(() => {
   min-height: 40px; padding: 0.5rem 0.9rem;
   background: var(--surface); border: 1px solid rgb(var(--ink) / 0.08);
   border-radius: 10px; color: var(--text-dim); cursor: pointer;
-  font-family: 'Oswald', sans-serif; font-size: 0.72rem;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
   letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap;
   transition: border-color 0.15s, color 0.15s;
 }

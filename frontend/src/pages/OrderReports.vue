@@ -544,7 +544,7 @@ const omzetData = computed(() => ({
   datasets: [{
     label: "Omzet",
     data: report.value?.trend.omzet || [],
-    backgroundColor: "#ee0000",
+    backgroundColor: "#D71920",
     borderRadius: 6,
     borderSkipped: false,
     maxBarThickness: 36,
@@ -556,7 +556,7 @@ const transaksiData = computed(() => ({
   datasets: [{
     label: "Transaksi",
     data: report.value?.trend.transaksi || [],
-    backgroundColor: "#fff500",
+    backgroundColor: "#FFD400",
     borderRadius: 6,
     borderSkipped: false,
     maxBarThickness: 36,

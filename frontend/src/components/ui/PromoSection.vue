@@ -83,11 +83,11 @@ const rows = computed(() => buildRows(visible.value))
 </script>
 
 <style scoped>
-/* Latar sama dengan halaman (#080808), ditambah sorot halus supaya promo terasa menonjol */
+/* Latar sama dengan halaman (#111111), ditambah sorot halus supaya promo terasa menonjol */
 .promo-section {
   background:
-    radial-gradient(50% 80% at 50% 0%, rgba(238,0,0, 0.07), transparent 70%),
-    #080808;
+    radial-gradient(50% 80% at 50% 0%, rgba(215,25,32, 0.07), transparent 70%),
+    #111111;
 }
 
 .promo-rows { display: flex; flex-direction: column; gap: 1.25rem; }

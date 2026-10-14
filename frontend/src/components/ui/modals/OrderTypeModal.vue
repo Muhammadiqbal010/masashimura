@@ -4,7 +4,7 @@
     class="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 backdrop-blur-md"
   >
     <div
-      class="bg-[#0a0a0a] w-full max-w-md rounded-3xl p-8 border border-white/5"
+      class="bg-[#111111] w-full max-w-md rounded-3xl p-8 border border-white/5"
     >
       <h2 class="text-2xl font-oswald text-center mb-8 uppercase tracking-wide">
         Konfirmasi Pesanan

@@ -265,14 +265,14 @@ const metricsMismatch = computed(
 }
 
 .pi-label {
-  font-family: 'Oswald', sans-serif;
+  font-family: 'Manrope', system-ui, sans-serif;
   font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-2);
 }
 .pi-title {
-  font-family: 'Oswald', sans-serif;
+  font-family: 'Manrope', system-ui, sans-serif;
   font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -396,7 +396,7 @@ const metricsMismatch = computed(
 .pi-details summary {
   cursor: pointer;
   list-style: none;
-  font-family: 'Oswald', sans-serif;
+  font-family: 'Manrope', system-ui, sans-serif;
   font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;

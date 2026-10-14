@@ -1,5 +1,5 @@
 <template>
-  <div class="page relative min-h-screen bg-[#080808] pb-24 pt-28 font-inter text-[#FAFAFA] sm:pt-32">
+  <div class="page relative min-h-screen bg-[#111111] pb-24 pt-28 font-inter text-[#FAFAFA] sm:pt-32">
     <div class="page-glow pointer-events-none absolute inset-x-0 top-0 h-[420px]" aria-hidden="true"></div>
 
     <div class="relative mx-auto max-w-6xl px-5 sm:px-8 lg:px-10">
@@ -24,11 +24,11 @@
         >
           <div
             v-if="payment.phase === 'starting' || payment.phase === 'waiting'"
-            class="h-7 w-7 animate-spin rounded-full border-2 border-white/20 border-t-[#FFF500]"
+            class="h-7 w-7 animate-spin rounded-full border-2 border-white/20 border-t-[#FFD400]"
           ></div>
           <Check v-else-if="payment.phase === 'paid'" :size="26" class="text-emerald-400" />
-          <X v-else-if="payment.phase === 'failed'" :size="26" class="text-[#FF5C5C]" />
-          <Clock v-else :size="26" class="text-[#FFF500]" />
+          <X v-else-if="payment.phase === 'failed'" :size="26" class="text-[#FF6A70]" />
+          <Clock v-else :size="26" class="text-[#FFD400]" />
         </div>
 
         <div class="space-y-2">
@@ -172,7 +172,7 @@
               v-if="cartStore.isEmpty"
               class="space-y-4 rounded-3xl border border-dashed border-white/10 px-6 py-20 text-center"
             >
-              <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-[#141414]">
+              <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-[#1B1B1B]">
                 <ShoppingCart :size="22" class="text-[#A3A3A3]" />
               </div>
               <p class="font-sora text-lg font-semibold text-[#FAFAFA]">Keranjang masih kosong</p>
@@ -190,14 +190,14 @@
             >
               <div class="flex items-start justify-between gap-3">
                 <div class="min-w-0">
-                  <p class="text-[11px] font-semibold uppercase tracking-wider text-[#FFF500]">Paket</p>
+                  <p class="text-[11px] font-semibold uppercase tracking-wider text-[#FFD400]">Paket</p>
                   <h4 class="font-sora text-base font-semibold leading-snug text-[#FAFAFA]">{{ line.name }}</h4>
                 </div>
                 <button
                   type="button"
                   :aria-label="'Hapus ' + line.name + ' dari keranjang'"
                   @click="cartStore.removeBundle(line.id)"
-                  class="-mr-2 -mt-1.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#737373] transition-colors duration-150 hover:bg-[#EE0000]/10 hover:text-[#FF5C5C]"
+                  class="-mr-2 -mt-1.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#737373] transition-colors duration-150 hover:bg-[#D71920]/10 hover:text-[#FF6A70]"
                 >
                   <X :size="16" />
                 </button>
@@ -206,7 +206,7 @@
                 {{ line.quantity }} × {{ formatPrice(line.price) }}
                 <span v-if="line.normal_price && line.savings > 0" class="ml-1 text-xs text-[#737373] line-through">{{ formatPrice(line.normal_price) }}</span>
               </p>
-              <p v-if="line.savings > 0" class="text-xs font-semibold text-[#FFF500]">Kamu hemat {{ formatPrice(line.savings * line.quantity) }}</p>
+              <p v-if="line.savings > 0" class="text-xs font-semibold text-[#FFD400]">Kamu hemat {{ formatPrice(line.savings * line.quantity) }}</p>
               <p class="text-xs text-[#A3A3A3]">{{ line.contents.map((c) => c.quantity * line.quantity + '× ' + c.name).join(' · ') }}</p>
             </div>
 
@@ -217,7 +217,7 @@
               class="card-item flex gap-4"
             >
               <!-- Thumbnail -->
-              <div class="h-[72px] w-[72px] flex-shrink-0 overflow-hidden rounded-2xl border border-white/[0.07] bg-[#1A1A1A] sm:h-20 sm:w-20">
+              <div class="h-[72px] w-[72px] flex-shrink-0 overflow-hidden rounded-2xl border border-white/[0.07] bg-[#1B1B1B] sm:h-20 sm:w-20">
                 <img
                   v-if="item.image_url"
                   :src="getMediaUrl(item.image_url, 160)"
@@ -237,7 +237,7 @@
                     type="button"
                     :aria-label="'Hapus ' + item.name + ' dari keranjang'"
                     @click="cartStore.removeFromCart(item.cartKey)"
-                    class="-mr-2 -mt-1.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#737373] transition-colors duration-150 hover:bg-[#EE0000]/10 hover:text-[#FF5C5C]"
+                    class="-mr-2 -mt-1.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#737373] transition-colors duration-150 hover:bg-[#D71920]/10 hover:text-[#FF6A70]"
                   >
                     <X :size="16" />
                   </button>
@@ -257,7 +257,7 @@
                   </span>
                 </div>
 
-                <p v-if="item.notes" class="mt-2 text-xs italic text-[#FFF500]">
+                <p v-if="item.notes" class="mt-2 text-xs italic text-[#FFD400]">
                   "{{ item.notes }}"
                 </p>
 
@@ -293,7 +293,7 @@
               <p
                 id="co-name-help"
                 class="text-xs leading-relaxed"
-                :class="nameErrorText ? 'text-[#FF5C5C]' : 'text-[#737373]'"
+                :class="nameErrorText ? 'text-[#FF6A70]' : 'text-[#737373]'"
                 :role="nameErrorText ? 'alert' : undefined"
               >
                 {{ nameErrorText || `Huruf saja, ${NAME_MIN}-${NAME_MAX} karakter, tanpa angka atau tanda.` }}
@@ -325,14 +325,14 @@
               <p
                 id="co-phone-help"
                 class="text-xs leading-relaxed"
-                :class="phoneErrorText ? 'text-[#FF5C5C]' : 'text-[#737373]'"
+                :class="phoneErrorText ? 'text-[#FF6A70]' : 'text-[#737373]'"
                 :role="phoneErrorText ? 'alert' : undefined"
               >
                 {{ phoneErrorText || `Diawali 08, ${PHONE_MIN}-${PHONE_MAX} digit angka.` }}
               </p>
 
               <!-- PIN member: terlihat oleh semua pelanggan supaya status member nomor lain tidak bocor -->
-              <div class="mt-3 rounded-2xl border border-white/[0.07] bg-[#0D0D0D] p-3.5">
+              <div class="mt-3 rounded-2xl border border-white/[0.07] bg-[#111111] p-3.5">
                 <MemberPinBox
                   :phone="phone"
                   :info="memberInfo"
@@ -354,7 +354,7 @@
                   :class="[
                     'rounded-2xl border px-4 py-3 text-left transition-all duration-150',
                     paymentMethod === 'cash'
-                      ? 'border-[#EE0000] bg-[#EE0000]/10'
+                      ? 'border-[#D71920] bg-[#D71920]/10'
                       : 'border-white/10 bg-white/[0.03] hover:border-white/25'
                   ]"
                 >
@@ -369,7 +369,7 @@
                   :class="[
                     'rounded-2xl border px-4 py-3 text-left transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-35',
                     paymentMethod === 'gateway'
-                      ? 'border-[#EE0000] bg-[#EE0000]/10'
+                      ? 'border-[#D71920] bg-[#D71920]/10'
                       : 'border-white/10 bg-white/[0.03] hover:border-white/25'
                   ]"
                 >
@@ -385,7 +385,7 @@
                   Bayar lewat QRIS di popup. Pesanan diproses setelah pembayaran terkonfirmasi otomatis.
                 </template>
               </p>
-              <p v-if="gatewayUnavailable && !cartStore.isEmpty" class="text-xs text-[#FFF500]">
+              <p v-if="gatewayUnavailable && !cartStore.isEmpty" class="text-xs text-[#FFD400]">
                 Total Rp0 (semua item tukar poin), pembayaran online tidak diperlukan. Pakai Cash.
               </p>
             </div>
@@ -425,7 +425,7 @@
                 :key="`reward-${reward.id}`"
                 class="flex items-center justify-between gap-3 text-sm"
               >
-                <span class="text-[#FFF500]">🎁 {{ reward.menu_name }} (gratis)</span>
+                <span class="text-[#FFD400]">🎁 {{ reward.menu_name }} (gratis)</span>
                 <span class="flex-shrink-0 tabular-nums text-[#737373]">−{{ reward.point_cost.toLocaleString("id-ID") }} poin</span>
               </div>
 
@@ -865,8 +865,8 @@ const phaseDescription = computed(() => {
 
 const phaseIconClass = computed(() => ({
   paid:    "bg-emerald-400/10 border-emerald-400/30",
-  failed:  "bg-[#EE0000]/10 border-[#EE0000]/30",
-  pending: "bg-[#FFF500]/10 border-[#FFF500]/30",
+  failed:  "bg-[#D71920]/10 border-[#D71920]/30",
+  pending: "bg-[#FFD400]/10 border-[#FFD400]/30",
 }[payment.value?.phase] || "bg-white/[0.04] border-white/[0.08]"))
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1110,21 +1110,21 @@ onBeforeUnmount(() => {
 <style scoped>
 /*
   Palet (sama dengan Home, Menu, dan Lokasi & Kontak)
-  Warm black #080808 · Surface #141414 · Washi #FAFAFA
-  Crimson #EE0000 (aksi) · Champagne #FFF500 (detail premium)
+  Warm black #111111 · Surface #1B1B1B · Washi #FAFAFA
+  Crimson #D71920 (aksi) · Champagne #FFD400 (detail premium)
   Hijau hanya untuk status sukses dan tombol WhatsApp.
 */
 
 .page-glow {
   background:
-    radial-gradient(60% 70% at 15% 0%, rgba(238,0,0, 0.14), transparent 70%),
-    radial-gradient(40% 50% at 90% 10%, rgba(255,245,0, 0.06), transparent 70%);
+    radial-gradient(60% 70% at 15% 0%, rgba(215,25,32, 0.14), transparent 70%),
+    radial-gradient(40% 50% at 90% 10%, rgba(255,212,0, 0.06), transparent 70%);
 }
 
 .card {
   border-radius: 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.07);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012)), #141414;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012)), #1B1B1B;
   padding: 1.5rem;
 }
 @media (min-width: 640px) {
@@ -1134,7 +1134,7 @@ onBeforeUnmount(() => {
 .card-item {
   border-radius: 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.07);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)), #141414;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)), #1B1B1B;
   padding: 1rem;
 }
 @media (min-width: 640px) {
@@ -1154,7 +1154,7 @@ onBeforeUnmount(() => {
   height: 3rem;
   border-radius: 0.75rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background: #0D0D0D;
+  background: #111111;
   padding: 0 1rem;
   font-size: 1rem;
   color: #FAFAFA;
@@ -1167,8 +1167,8 @@ onBeforeUnmount(() => {
 .field::placeholder { color: #737373; }
 .field:hover { border-color: rgba(255, 255, 255, 0.2); }
 .field:focus {
-  border-color: rgba(255,245,0, 0.6);
-  box-shadow: 0 0 0 3px rgba(255,245,0, 0.12);
+  border-color: rgba(255,212,0, 0.6);
+  box-shadow: 0 0 0 3px rgba(255,212,0, 0.12);
 }
 
 .btn-primary,
@@ -1187,12 +1187,12 @@ onBeforeUnmount(() => {
   transition: all 0.2s ease;
 }
 .btn-primary {
-  background: #EE0000;
+  background: #D71920;
   color: #fff;
 }
 .btn-primary:hover:not(:disabled) {
-  background: #C20000;
-  box-shadow: 0 8px 24px -8px rgba(238,0,0, 0.6);
+  background: #B5121B;
+  box-shadow: 0 8px 24px -8px rgba(215,25,32, 0.6);
 }
 .btn-primary:disabled {
   cursor: not-allowed;
@@ -1222,7 +1222,7 @@ onBeforeUnmount(() => {
 a:focus-visible,
 button:focus-visible,
 input:focus-visible {
-  outline: 2px solid #FFF500;
+  outline: 2px solid #FFD400;
   outline-offset: 3px;
 }
 .field:focus-visible { outline: none; }

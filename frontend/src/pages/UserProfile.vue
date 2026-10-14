@@ -410,7 +410,7 @@ const handleUpdateProfile = async () => {
   padding: 0.6rem; border-radius: 10px;
   background: rgb(var(--ink) / 0.03); border: 1px solid rgb(var(--ink) / 0.08);
   color: var(--text-dim);
-  font-family: 'Oswald', sans-serif; font-size: 0.72rem;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
   letter-spacing: 0.08em; text-transform: uppercase;
   cursor: pointer; transition: all 0.15s;
 }

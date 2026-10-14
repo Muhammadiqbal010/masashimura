@@ -271,7 +271,7 @@ const handleSelfResetPassword = async () => {
 .login-root {
   min-height: 100vh;
   display: flex;
-  background: #050505;
+  background: #111111;
   font-family: 'Inter', sans-serif;
   color: #fff;
 }
@@ -315,15 +315,15 @@ const handleSelfResetPassword = async () => {
 .hero-badge {
   display: inline-flex; align-items: center; gap: 0.5rem;
   padding: 0.35rem 0.85rem;
-  background: rgba(238,0,0,0.12);
-  border: 1px solid rgba(238,0,0,0.25);
+  background: rgba(215,25,32,0.12);
+  border: 1px solid rgba(215,25,32,0.25);
   border-radius: 100px;
-  font-family: 'Oswald', sans-serif;
+  font-family: 'Manrope', system-ui, sans-serif;
   font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase;
   color: #ff9a9a;
 }
 .hero-badge-dot {
-  width: 5px; height: 5px; border-radius: 50%; background: #ff2a2a;
+  width: 5px; height: 5px; border-radius: 50%; background: #FF343B;
   animation: pulse 2s infinite;
 }
 @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
@@ -335,7 +335,7 @@ const handleSelfResetPassword = async () => {
   user-select: none;
 }
 .hero-tagline {
-  font-family: 'Oswald', sans-serif;
+  font-family: 'Manrope', system-ui, sans-serif;
   font-size: 1.1rem; font-weight: 500;
   text-transform: uppercase; letter-spacing: 0.2em;
   color: rgba(255,255,255,0.7); margin: 0;
@@ -350,7 +350,7 @@ const handleSelfResetPassword = async () => {
 }
 .hero-stat { display: flex; flex-direction: column; gap: 0.15rem; }
 .stat-num {
-  font-family: 'Oswald', sans-serif; font-size: 1rem;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 1rem;
   font-weight: 600; letter-spacing: 0.08em; color: #fff;
 }
 .stat-lbl { font-size: 0.72rem; color: rgba(255,255,255,0.6); letter-spacing: 0.1em; text-transform: uppercase; }
@@ -363,7 +363,7 @@ const handleSelfResetPassword = async () => {
   flex: 1;
   display: flex; align-items: center; justify-content: center;
   padding: 3rem 1.5rem;
-  background: linear-gradient(160deg, #0d0d0d 0%, #050505 100%);
+  background: linear-gradient(160deg, #111111 0%, #111111 100%);
 }
 .form-inner {
   width: 100%; max-width: 380px;
@@ -372,11 +372,11 @@ const handleSelfResetPassword = async () => {
 
 .form-header { display: flex; flex-direction: column; gap: 0.5rem; }
 .form-eyebrow {
-  font-family: 'Oswald', sans-serif; font-size: 0.72rem;
-  letter-spacing: 0.2em; text-transform: uppercase; color: #ee0000;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
+  letter-spacing: 0.2em; text-transform: uppercase; color: #D71920;
 }
 .form-title {
-  font-family: 'Oswald', sans-serif; font-size: 2rem;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 2rem;
   font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
   margin: 0; color: #fff;
 }
@@ -388,7 +388,7 @@ const handleSelfResetPassword = async () => {
 
 .field { display: flex; flex-direction: column; gap: 0.4rem; }
 .field-label {
-  font-family: 'Oswald', sans-serif; font-size: 0.72rem;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
   letter-spacing: 0.15em; text-transform: uppercase;
   color: rgba(255,255,255,0.6);
 }
@@ -408,7 +408,7 @@ const handleSelfResetPassword = async () => {
   -webkit-appearance: none;
 }
 .text-input::placeholder { color: rgba(255,255,255,0.5); }
-.text-input:focus { border-color: rgba(238,0,0,0.5); background: rgba(255,255,255,0.06); }
+.text-input:focus { border-color: rgba(215,25,32,0.5); background: rgba(255,255,255,0.06); }
 .text-input:disabled { opacity: 0.45; cursor: not-allowed; }
 .pr-input { padding-right: 2.75rem; }
 
@@ -424,14 +424,14 @@ const handleSelfResetPassword = async () => {
 .submit-btn {
   width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
   padding: 0.9rem; border-radius: 12px; border: none;
-  background: #ee0000; color: #fff;
-  font-family: 'Oswald', sans-serif; font-size: 0.78rem;
+  background: #D71920; color: #fff;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.78rem;
   letter-spacing: 0.12em; text-transform: uppercase;
   cursor: pointer; transition: background 0.15s, opacity 0.15s;
-  box-shadow: 0 4px 20px rgba(238,0,0,0.2);
+  box-shadow: 0 4px 20px rgba(215,25,32,0.2);
   margin-top: 0.25rem;
 }
-.submit-btn:hover:not(:disabled) { background: #c20000; }
+.submit-btn:hover:not(:disabled) { background: #B5121B; }
 .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .btn-spinner {
@@ -451,7 +451,7 @@ const handleSelfResetPassword = async () => {
   text-decoration: underline; text-underline-offset: 3px;
   text-decoration-color: rgba(255,255,255,0.1);
 }
-.forgot-btn:hover { color: #ff9a9a; text-decoration-color: rgba(238,0,0,0.4); }
+.forgot-btn:hover { color: #ff9a9a; text-decoration-color: rgba(215,25,32,0.4); }
 
 .form-footer {
   text-align: center; font-size: 0.72rem;
@@ -485,12 +485,12 @@ const handleSelfResetPassword = async () => {
   display: flex; align-items: flex-start; justify-content: space-between;
 }
 .modal-eyebrow {
-  font-family: 'Oswald', sans-serif; font-size: 0.72rem;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
   letter-spacing: 0.18em; text-transform: uppercase;
-  color: #ee0000; margin: 0 0 0.25rem;
+  color: #D71920; margin: 0 0 0.25rem;
 }
 .modal-title {
-  font-family: 'Oswald', sans-serif; font-size: 1.15rem;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 1.15rem;
   font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; margin: 0;
 }
 .modal-close {
@@ -509,7 +509,7 @@ const handleSelfResetPassword = async () => {
   padding: 0.85rem; border-radius: 12px;
   background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
   color: rgba(255,255,255,0.6);
-  font-family: 'Oswald', sans-serif; font-size: 0.72rem;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
   letter-spacing: 0.1em; text-transform: uppercase;
   cursor: pointer; transition: all 0.15s;
 }
@@ -519,7 +519,7 @@ const handleSelfResetPassword = async () => {
 @media (max-width: 1023px) {
   .form-panel {
     background:
-      linear-gradient(160deg, #0d0d0d 0%, #050505 100%);
+      linear-gradient(160deg, #111111 0%, #111111 100%);
     min-height: 100vh;
   }
   .form-inner { max-width: 420px; }
