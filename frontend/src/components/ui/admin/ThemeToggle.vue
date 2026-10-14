@@ -75,7 +75,7 @@ const { isDark, toggleTheme } = useTheme()
 }
 .tt.is-dark .tt-icon { color: var(--blue-soft); }
 .tt-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
-.tt-label { font-size: 0.66rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); }
+.tt-label { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); }
 .tt-value { font-size: 0.8125rem; font-weight: 600; color: var(--text); white-space: nowrap; }
 
 /* switch track: ikon matahari (kiri) & bulan (kanan), thumb geser */

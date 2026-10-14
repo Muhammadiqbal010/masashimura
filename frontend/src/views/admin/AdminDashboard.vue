@@ -601,7 +601,7 @@ const trendChartData = computed(() => {
         label: 'Batas Atas',
         data: upperData,
         borderColor: 'transparent',
-        backgroundColor: 'rgba(220,38,38,0.12)',
+        backgroundColor: 'rgba(238,0,0,0.12)',
         pointRadius: 0,
         fill: '+1',
         tension: 0.3,
@@ -610,7 +610,7 @@ const trendChartData = computed(() => {
         label: 'Batas Bawah',
         data: lowerData,
         borderColor: 'transparent',
-        backgroundColor: 'rgba(220,38,38,0.12)',
+        backgroundColor: 'rgba(238,0,0,0.12)',
         pointRadius: 0,
         fill: false,
         tension: 0.3,
@@ -618,8 +618,8 @@ const trendChartData = computed(() => {
       {
         label: 'Prediksi',
         data: predData,
-        borderColor: '#dc2626',
-        backgroundColor: '#dc2626',
+        borderColor: '#ee0000',
+        backgroundColor: '#ee0000',
         borderDash: [6, 4],
         pointRadius: 2,
         tension: 0.3,
@@ -628,8 +628,8 @@ const trendChartData = computed(() => {
       {
         label: 'Prediksi Tersimpan',
         data: savedData,
-        borderColor: '#f59e0b',
-        backgroundColor: '#f59e0b',
+        borderColor: '#fff500',
+        backgroundColor: '#fff500',
         borderDash: [2, 3],
         borderWidth: 1.5,
         pointRadius: 3,
@@ -701,7 +701,7 @@ const forecastBarData = computed(() => {
     datasets: [{
       label: 'Prediksi Revenue',
       data: preds.map(p => p.predicted_revenue),
-      backgroundColor: '#dc2626',
+      backgroundColor: '#ee0000',
       borderRadius: 4,
       maxBarThickness: 36,
     }],
@@ -770,7 +770,7 @@ const formatPrice = (value) =>
 }
 .dash-eyebrow {
   font-family: 'Oswald', sans-serif;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--accent-text);
@@ -809,7 +809,7 @@ const formatPrice = (value) =>
   gap: 0.2rem;
 }
 .date-label {
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-family: 'Oswald', sans-serif;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -853,8 +853,8 @@ const formatPrice = (value) =>
   color: var(--text-2);
 }
 .shortcut-btn.active {
-  background: #dc2626;
-  border-color: #dc2626;
+  background: #ee0000;
+  border-color: #ee0000;
   color: var(--on-accent);
 }
 
@@ -875,7 +875,7 @@ const formatPrice = (value) =>
 .spinner {
   width: 32px; height: 32px;
   border: 2px solid rgb(var(--ink) / 0.08);
-  border-top-color: #dc2626;
+  border-top-color: #ee0000;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -889,7 +889,7 @@ const formatPrice = (value) =>
 }
 .stat-hero {
   background: linear-gradient(135deg, var(--hero-from) 0%, var(--surface) 65%);
-  border: 1px solid rgba(220,38,38,0.25);
+  border: 1px solid rgba(238,0,0,0.25);
   border-radius: 18px;
   padding: clamp(1.25rem, 3vw, 2rem) clamp(1.25rem, 3vw, 2.25rem);
   position: relative;
@@ -900,7 +900,7 @@ const formatPrice = (value) =>
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 3px;
-  background: #dc2626;
+  background: #ee0000;
 }
 .stat-hero-top {
   display: flex;
@@ -949,12 +949,12 @@ const formatPrice = (value) =>
 .trend-pill-note {
   font-family: 'Inter', sans-serif;
   font-weight: 400;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   opacity: 0.7;
 }
 
 .stat-badge {
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-family: 'Oswald', sans-serif;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1005,7 +1005,7 @@ const formatPrice = (value) =>
 }
 .stat-label {
   font-family: 'Oswald', sans-serif;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-dim);
@@ -1102,7 +1102,7 @@ const formatPrice = (value) =>
 .menu-table th {
   padding: 0.75rem 1.5rem;
   font-family: 'Oswald', sans-serif;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-weight: 400;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -1136,7 +1136,7 @@ const formatPrice = (value) =>
   font-weight: 700;
   font-family: 'Inter', monospace;
 }
-.rank-gold   { background: rgba(251,191,36,0.15); color: var(--amber-soft); }
+.rank-gold   { background: rgba(255,245,0,0.15); color: var(--amber-soft); }
 .rank-silver { background: rgba(156,163,175,0.12); color: var(--text-dim); }
 .rank-bronze { background: rgba(180,83,9,0.15);  color: var(--amber-soft); }
 .rank-default{ background: rgb(var(--ink) / 0.04); color: var(--text-faint); }
@@ -1161,12 +1161,12 @@ const formatPrice = (value) =>
 }
 .bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #dc2626, #ef4444);
+  background: linear-gradient(90deg, #ee0000, #ff2a2a);
   border-radius: 99px;
   transition: width 0.7s ease;
 }
 .bar-pct {
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-family: monospace;
   color: var(--text-faint);
   min-width: 2.5rem;
@@ -1216,7 +1216,7 @@ const formatPrice = (value) =>
 }
 .predict-inline-label {
   font-family: 'Oswald', sans-serif;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-faint);
@@ -1236,18 +1236,18 @@ const formatPrice = (value) =>
 .retrain-btn {
   padding: 0.45rem 1rem;
   border-radius: 8px;
-  border: 1px solid rgba(220,38,38,0.3);
-  background: rgba(220,38,38,0.08);
+  border: 1px solid rgba(238,0,0,0.3);
+  background: rgba(238,0,0,0.08);
   color: var(--red-soft);
   font-family: 'Oswald', sans-serif;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   cursor: pointer;
   transition: all 0.18s ease;
   white-space: nowrap;
 }
-.retrain-btn:hover:not(:disabled) { background: rgba(220,38,38,0.18); }
+.retrain-btn:hover:not(:disabled) { background: rgba(238,0,0,0.18); }
 .retrain-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .predict-notice {
   margin: -0.75rem 0 1.25rem;
@@ -1427,14 +1427,14 @@ const formatPrice = (value) =>
   background: transparent;
   color: var(--text-dim);
   font-family: 'Oswald', sans-serif;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   cursor: pointer;
   transition: background 0.18s ease, color 0.18s ease;
 }
 .view-toggle-btn:hover { color: var(--text-2); }
-.view-toggle-btn.active { background: #dc2626; color: var(--on-accent); }
+.view-toggle-btn.active { background: #ee0000; color: var(--on-accent); }
 
 .level-chip {
   display: inline-block;

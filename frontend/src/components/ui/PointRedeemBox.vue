@@ -74,16 +74,16 @@ const totalPointsUsed = computed(() =>
 </script>
 
 <style scoped>
-/* Palet: Surface #141211 · Washi #F5F0EA · Champagne #D4B483 (poin & reward) */
+/* Palet: Surface #141414 · Washi #FAFAFA · Champagne #FFF500 (poin & reward) */
 
 .point-box {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
   background:
-    radial-gradient(80% 100% at 100% 0%, rgba(212, 180, 131, 0.08), transparent 70%),
-    #0F0D0C;
-  border: 1px solid rgba(212, 180, 131, 0.18);
+    radial-gradient(80% 100% at 100% 0%, rgba(255,245,0, 0.08), transparent 70%),
+    #0D0D0D;
+  border: 1px solid rgba(255,245,0, 0.18);
   border-radius: 1rem;
   padding: 1rem;
 }
@@ -101,22 +101,22 @@ const totalPointsUsed = computed(() =>
   align-items: center;
   justify-content: center;
   border-radius: 0.625rem;
-  border: 1px solid rgba(212, 180, 131, 0.25);
-  background: rgba(212, 180, 131, 0.1);
-  color: #D4B483;
+  border: 1px solid rgba(255,245,0, 0.25);
+  background: rgba(255,245,0, 0.1);
+  color: #FFF500;
 }
 .point-label {
   flex: 1;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #A39A93;
+  color: #A3A3A3;
 }
 .point-balance {
   font-family: "Sora", ui-sans-serif, system-ui, sans-serif;
   font-weight: 600;
   font-size: 1.125rem;
   font-variant-numeric: tabular-nums;
-  color: #D4B483;
+  color: #FFF500;
 }
 
 .point-list {
@@ -139,43 +139,43 @@ const totalPointsUsed = computed(() =>
 }
 
 .point-item--affordable {
-  background: rgba(212, 180, 131, 0.05);
-  border: 1px solid rgba(212, 180, 131, 0.2);
+  background: rgba(255,245,0, 0.05);
+  border: 1px solid rgba(255,245,0, 0.2);
   cursor: pointer;
   transition: all 0.15s;
 }
-.point-item--affordable:hover { border-color: rgba(212, 180, 131, 0.45); }
+.point-item--affordable:hover { border-color: rgba(255,245,0, 0.45); }
 .point-item--selected {
-  background: rgba(212, 180, 131, 0.14);
-  border-color: rgba(212, 180, 131, 0.7);
+  background: rgba(255,245,0, 0.14);
+  border-color: rgba(255,245,0, 0.7);
 }
 
 .point-item-check {
   width: 20px; height: 20px;
   border-radius: 6px;
-  border: 1px solid rgba(212, 180, 131, 0.5);
+  border: 1px solid rgba(255,245,0, 0.5);
   display: flex; align-items: center; justify-content: center;
-  color: #2A1D08;
+  color: #1A1700;
   flex-shrink: 0;
   transition: all 0.15s;
 }
 .point-item--selected .point-item-check {
-  background: #D4B483;
-  border-color: #D4B483;
+  background: #FFF500;
+  border-color: #FFF500;
 }
 
 .point-item-name {
   flex: 1;
   min-width: 0;
   font-size: 0.875rem;
-  color: #F5F0EA;
+  color: #FAFAFA;
   font-weight: 600;
 }
 .point-item-cost {
   font-size: 0.8125rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  color: #D4B483;
+  color: #FFF500;
   white-space: nowrap;
 }
 
@@ -184,25 +184,25 @@ const totalPointsUsed = computed(() =>
   border: 1px solid rgba(255, 255, 255, 0.06);
   opacity: 0.65;
 }
-.point-item-lock { color: #6F6761; flex-shrink: 0; }
-.point-item--locked .point-item-name { color: #A39A93; font-weight: 500; }
+.point-item-lock { color: #737373; flex-shrink: 0; }
+.point-item--locked .point-item-name { color: #A3A3A3; font-weight: 500; }
 .point-item-missing {
   font-size: 0.8125rem;
   font-variant-numeric: tabular-nums;
-  color: #6F6761;
+  color: #737373;
   white-space: nowrap;
 }
 
 .point-summary {
   font-size: 0.8125rem;
   font-weight: 500;
-  color: #D4B483;
+  color: #FFF500;
   margin: 0;
   padding-left: 0.125rem;
 }
 
 .point-item--affordable:focus-visible {
-  outline: 2px solid #D4B483;
+  outline: 2px solid #FFF500;
   outline-offset: 2px;
 }
 </style>

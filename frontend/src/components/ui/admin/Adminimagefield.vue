@@ -89,7 +89,7 @@ const onChange = (e) => {
 .imgf-empty {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.3rem;
   width: 100%; height: 100%; padding: 0.5rem;
-  font-size: 0.68rem; line-height: 1.3; text-align: center;
+  font-size: 0.72rem; line-height: 1.3; text-align: center;
 }
 .imgf-overlay {
   position: absolute; inset: 0;

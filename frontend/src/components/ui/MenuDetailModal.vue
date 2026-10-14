@@ -24,7 +24,7 @@
           <div class="modal-sheet flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-[2rem] border border-white/[0.08] sm:max-w-lg sm:rounded-[2rem]">
 
             <!-- Foto (16:9, sama dengan hasil crop di admin) -->
-            <div class="relative aspect-video w-full flex-shrink-0 bg-[#1A1716]">
+            <div class="relative aspect-video w-full flex-shrink-0 bg-[#1A1A1A]">
               <img
                 v-if="menu.image_url"
                 :src="getMediaUrl(menu.image_url, 900)"
@@ -33,10 +33,10 @@
               />
               <div v-else class="flex h-full w-full flex-col items-center justify-center gap-2">
                 <span class="text-4xl opacity-25">🍜</span>
-                <span class="text-xs text-[#6F6761]">Belum ada foto</span>
+                <span class="text-xs text-[#737373]">Belum ada foto</span>
               </div>
 
-              <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#141211] via-transparent to-black/30"></div>
+              <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-black/30"></div>
 
               <!-- Aksi kanan atas: favorit, bagikan, tutup -->
               <div class="absolute right-3 top-3 z-10 flex items-center gap-2">
@@ -47,7 +47,7 @@
                   class="icon-btn"
                   @click="$emit('toggle-favorite', menu.id)"
                 >
-                  <Heart :size="16" :class="isFavorite ? 'fill-[#D7263D] text-[#D7263D]' : 'text-white'" />
+                  <Heart :size="16" :class="isFavorite ? 'fill-[#EE0000] text-[#EE0000]' : 'text-white'" />
                 </button>
                 <button
                   type="button"
@@ -73,13 +73,13 @@
                   v-if="!menu.is_available"
                   class="rounded-full border border-white/10 bg-black/70 px-2.5 py-1 backdrop-blur-md"
                 >
-                  <span class="text-[11px] font-semibold text-[#F5F0EA]">Habis</span>
+                  <span class="text-[11px] font-semibold text-[#FAFAFA]">Habis</span>
                 </div>
-                <div v-if="menu.is_recommended" class="flex items-center gap-1.5 rounded-full bg-[#D7263D] px-2.5 py-1 text-white">
+                <div v-if="menu.is_recommended" class="flex items-center gap-1.5 rounded-full bg-[#EE0000] px-2.5 py-1 text-white">
                   <ThumbsUp :size="11" />
                   <span class="text-[11px] font-semibold">Rekomendasi</span>
                 </div>
-                <div v-if="isBestSeller" class="flex items-center gap-1.5 rounded-full bg-[#D4B483] px-2.5 py-1 text-[#2A1D08]">
+                <div v-if="isBestSeller" class="flex items-center gap-1.5 rounded-full bg-[#FFF500] px-2.5 py-1 text-[#1A1700]">
                   <Flame :size="11" />
                   <span class="text-[11px] font-semibold">Terlaris</span>
                 </div>
@@ -89,27 +89,27 @@
             <!-- Info -->
             <div class="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 pb-2 pt-4 sm:px-7">
               <div class="space-y-2.5">
-                <span class="block text-xs font-medium text-[#D4B483]">
+                <span class="block text-xs font-medium text-[#FFF500]">
                   {{ menu.category_name }}
                 </span>
-                <h2 class="font-sora text-2xl font-semibold leading-tight tracking-tight text-[#F5F0EA]">
+                <h2 class="font-sora text-2xl font-semibold leading-tight tracking-tight text-[#FAFAFA]">
                   {{ menu.name }}
                 </h2>
-                <p class="text-sm leading-relaxed text-[#A39A93]">
+                <p class="text-sm leading-relaxed text-[#A3A3A3]">
                   {{ menu.description || "Menu andalan spesial Masashimura." }}
                 </p>
               </div>
 
               <!-- Ringkasan opsi yang bisa dipilih -->
               <div v-if="menu.options?.length" class="space-y-2">
-                <span class="block text-xs font-medium text-[#6F6761]">Pilihan yang tersedia</span>
+                <span class="block text-xs font-medium text-[#737373]">Pilihan yang tersedia</span>
                 <div class="flex flex-wrap items-center gap-2">
                   <span
                     v-for="group in menu.options"
                     :key="group.name"
-                    class="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-medium text-[#C9C1B9]"
+                    class="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-medium text-[#C8C8C8]"
                   >
-                    {{ group.name }}<span v-if="group.required" class="text-[#F2707A]" title="Wajib dipilih"> *</span>
+                    {{ group.name }}<span v-if="group.required" class="text-[#FF5C5C]" title="Wajib dipilih"> *</span>
                   </span>
                 </div>
               </div>
@@ -118,8 +118,8 @@
             <!-- Footer: harga + aksi -->
             <div class="footer-safe flex flex-shrink-0 items-center justify-between gap-4 border-t border-white/[0.07] bg-black/20 px-6 pt-4 sm:px-7">
               <div class="min-w-0">
-                <span class="block text-xs text-[#6F6761]">Harga</span>
-                <span class="block font-sora text-2xl font-semibold leading-none tracking-tight text-[#F5F0EA]">
+                <span class="block text-xs text-[#737373]">Harga</span>
+                <span class="block font-sora text-2xl font-semibold leading-none tracking-tight text-[#FAFAFA]">
                   {{ formatPrice(menu.price_web) }}
                 </span>
               </div>
@@ -131,8 +131,8 @@
                 :class="[
                   'flex min-h-[48px] flex-shrink-0 items-center gap-2 rounded-full px-6 text-sm font-semibold transition-all duration-200',
                   menu.is_available && isStoreOpen
-                    ? 'bg-[#D7263D] text-white hover:bg-[#B91C32] hover:shadow-[0_8px_24px_-8px_rgba(215,38,61,0.6)] active:scale-95'
-                    : 'cursor-not-allowed border border-white/5 bg-[#1A1716] text-[#6F6761]'
+                    ? 'bg-[#EE0000] text-white hover:bg-[#C20000] hover:shadow-[0_8px_24px_-8px_rgba(238,0,0,0.6)] active:scale-95'
+                    : 'cursor-not-allowed border border-white/5 bg-[#1A1A1A] text-[#737373]'
                 ]"
               >
                 <Plus :size="16" />
@@ -167,10 +167,10 @@ const handleAdd = () => {
 </script>
 
 <style scoped>
-/* Palet: Surface #141211 · Washi #F5F0EA · Crimson #D7263D · Champagne #D4B483 */
+/* Palet: Surface #141414 · Washi #FAFAFA · Crimson #EE0000 · Champagne #FFF500 */
 
 .modal-sheet {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)), #141211;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)), #141414;
   box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.7);
 }
 
@@ -196,7 +196,7 @@ const handleAdd = () => {
 }
 
 button:focus-visible {
-  outline: 2px solid #D4B483;
+  outline: 2px solid #FFF500;
   outline-offset: 3px;
 }
 </style>

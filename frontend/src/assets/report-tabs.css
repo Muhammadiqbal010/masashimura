@@ -1,22 +1,22 @@
 /* Gaya bersama tab laporan (Performa Menu, Pasangan Menu, Channel). Prefix rt- */
 .rt { display: flex; flex-direction: column; gap: 1rem; }
 .rt-card { background: var(--surface); border: 1px solid rgb(var(--ink) / 0.05); border-radius: 16px; padding: 1rem 1.1rem; }
-.rt-title { margin: 0 0 0.9rem; font-family: 'Oswald', sans-serif; font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-faint); font-weight: 400; }
+.rt-title { margin: 0 0 0.9rem; font-family: 'Oswald', sans-serif; font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-faint); font-weight: 400; }
 .rt-lead { margin: 0; font-size: 0.8rem; line-height: 1.5; color: var(--text-faint); }
 .rt-lead strong { color: var(--text-dim); font-weight: 600; }
 .rt-banner { padding: 0.8rem 1rem; border-radius: 12px; font-size: 0.8rem; line-height: 1.5; background: color-mix(in srgb, var(--amber) 10%, transparent); border: 1px solid color-mix(in srgb, var(--amber) 35%, transparent); color: var(--amber-soft); }
 .rt-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem; }
 .rt-kpi-value { margin: 0; font-family: 'Oswald', sans-serif; font-size: 1.25rem; font-weight: 700; color: var(--text); }
-.rt-kpi-label { margin: 0.25rem 0 0; font-size: 0.62rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-faint); }
+.rt-kpi-label { margin: 0.25rem 0 0; font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-faint); }
 .rt-kpi-sub { margin: 0.4rem 0 0; font-size: 0.7rem; color: var(--text-faint); }
 .rt-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .rt-scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .rt-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-.rt-table th { padding: 0 0.6rem 0.7rem; text-align: left; font-size: 0.62rem; font-weight: 400; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-faint); white-space: nowrap; }
+.rt-table th { padding: 0 0.6rem 0.7rem; text-align: left; font-size: 0.72rem; font-weight: 400; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-faint); white-space: nowrap; }
 .rt-table td { padding: 0.65rem 0.6rem; border-top: 1px solid rgb(var(--ink) / 0.05); color: var(--text-dim); vertical-align: middle; }
 .rt-table .num { text-align: right; font-variant-numeric: tabular-nums; }
 .rt-table td.name { color: var(--text); font-weight: 500; }
-.rt-badge { display: inline-block; padding: 0.15rem 0.55rem; border-radius: 999px; font-size: 0.68rem; white-space: nowrap; background: rgb(var(--ink) / 0.07); color: var(--text-dim); }
+.rt-badge { display: inline-block; padding: 0.15rem 0.55rem; border-radius: 999px; font-size: 0.72rem; white-space: nowrap; background: rgb(var(--ink) / 0.07); color: var(--text-dim); }
 .rt-badge.is-green { background: color-mix(in srgb, var(--green) 14%, transparent); color: var(--green-soft); }
 .rt-badge.is-amber { background: color-mix(in srgb, var(--amber) 14%, transparent); color: var(--amber-soft); }
 .rt-badge.is-red   { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--red-soft); }

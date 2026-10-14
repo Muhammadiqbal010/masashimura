@@ -10,7 +10,7 @@
           <div>
             <div class="flex items-center gap-2 mb-2">
               <span class="w-1 h-1 rounded-full bg-red-600"></span>
-              <p class="text-[color:var(--text-faint)] text-[10px] font-oswald uppercase tracking-[0.25em]">Masashimura · Admin</p>
+              <p class="text-[color:var(--text-faint)] text-[11px] font-oswald uppercase tracking-[0.25em]">Masashimura · Admin</p>
             </div>
             <h1 class="font-oswald text-3xl sm:text-4xl lg:text-5xl uppercase italic tracking-tighter text-[color:var(--accent-text)] leading-none">
               Order Reports
@@ -39,7 +39,7 @@
                 aria-haspopup="menu"
                 :aria-expanded="exportOpen"
                 :disabled="loading"
-                class="flex items-center gap-2 bg-[color:rgb(var(--ink)/0.04)] border border-[color:rgb(var(--ink)/0.1)] px-4 sm:px-5 h-11 rounded-xl text-[10px] font-oswald uppercase tracking-widest hover:bg-[color:rgb(var(--ink)/0.08)] transition-all text-[color:var(--text)] disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/60"
+                class="flex items-center gap-2 bg-[color:rgb(var(--ink)/0.04)] border border-[color:rgb(var(--ink)/0.1)] px-4 sm:px-5 h-11 rounded-xl text-[11px] font-oswald uppercase tracking-widest hover:bg-[color:rgb(var(--ink)/0.08)] transition-all text-[color:var(--text)] disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/60"
               >
                 <Download :size="13" class="text-[color:var(--accent-text)]" />
                 <span class="hidden sm:inline">Export</span>
@@ -128,7 +128,7 @@
                 :key="w.value"
                 @click="activeWeek = w.value; fetchReport()"
                 :class="[
-                  'px-4 py-3 rounded-xl text-[10px] font-oswald uppercase tracking-widest transition-all whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/60',
+                  'px-4 py-3 rounded-xl text-[11px] font-oswald uppercase tracking-widest transition-all whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/60',
                   activeWeek === w.value ? 'bg-[color:rgb(var(--ink)/0.1)] text-[color:var(--text)]' : 'text-[color:var(--text-faint)] hover:text-[color:var(--text-dim)]'
                 ]"
               >
@@ -177,7 +177,7 @@
           <!-- Sub-filter: Lifetime — just a label -->
           <template v-if="activeGroup === 'lifetime'">
             <div class="flex items-center px-4 py-2 sm:py-0">
-              <span class="text-[color:var(--text-faint)] text-[10px] font-oswald uppercase tracking-widest">Semua waktu</span>
+              <span class="text-[color:var(--text-faint)] text-[11px] font-oswald uppercase tracking-widest">Semua waktu</span>
             </div>
           </template>
         </div>
@@ -185,7 +185,7 @@
         <!-- ═══ PERIOD BADGE ════════════════════════════════════════════ -->
         <div class="flex items-center gap-3 mt-5">
           <div class="h-px flex-1 bg-[color:rgb(var(--ink)/0.05)]"></div>
-          <span class="text-[color:var(--text-faint)] text-[10px] font-oswald uppercase tracking-[0.25em] whitespace-nowrap">
+          <span class="text-[color:var(--text-faint)] text-[11px] font-oswald uppercase tracking-[0.25em] whitespace-nowrap">
             {{ periodLabel }}
           </span>
           <div class="h-px flex-1 bg-[color:rgb(var(--ink)/0.05)]"></div>
@@ -216,7 +216,7 @@
             <div class="bg-[color:var(--surface)] border border-[color:rgb(var(--ink)/0.05)] rounded-2xl p-6 h-64"></div>
             <div class="bg-[color:var(--surface)] border border-[color:rgb(var(--ink)/0.05)] rounded-2xl p-6 h-64"></div>
           </div>
-          <p class="text-center text-[color:var(--text-faint)] text-[10px] font-oswald uppercase tracking-widest pt-2">
+          <p class="text-center text-[color:var(--text-faint)] text-[11px] font-oswald uppercase tracking-widest pt-2">
             Memuat data laporan...
           </p>
         </div>
@@ -252,7 +252,7 @@
               <!-- Desktop table -->
               <table class="w-full text-sm hidden sm:table">
                 <thead>
-                  <tr class="text-[color:var(--text-faint)] text-[10px] uppercase tracking-[0.15em]">
+                  <tr class="text-[color:var(--text-faint)] text-[11px] uppercase tracking-[0.15em]">
                     <th class="pb-4 text-left font-normal w-8">#</th>
                     <th class="pb-4 text-left font-normal">Menu</th>
                     <th class="pb-4 text-right font-normal">Qty</th>
@@ -286,7 +286,7 @@
                     <span class="text-[color:var(--text-faint)] text-[11px] font-oswald shrink-0">{{ String(i+1).padStart(2,'0') }}</span>
                     <div class="min-w-0">
                       <p class="text-[color:var(--text)] font-oswald uppercase tracking-tight text-xs truncate">{{ m.name }}</p>
-                      <p class="text-[color:var(--text-faint)] text-[10px] font-mono mt-0.5">{{ formatRp(m.omzet) }}</p>
+                      <p class="text-[color:var(--text-faint)] text-[11px] font-mono mt-0.5">{{ formatRp(m.omzet) }}</p>
                     </div>
                   </div>
                   <span class="bg-amber-500/10 text-[color:var(--amber-soft)] font-bold text-[11px] px-2 py-1 rounded-lg shrink-0 ml-2">{{ m.qty }}</span>
@@ -327,7 +327,7 @@
                   class="flex justify-between items-center bg-[color:var(--tint-accent)] border border-red-500/8 rounded-xl px-4 py-3"
                 >
                   <span class="text-[color:var(--text)] text-xs font-oswald uppercase tracking-tight truncate mr-2">{{ m.name }}</span>
-                  <span class="text-[color:color-mix(in_srgb,var(--red-soft)_70%,transparent)] text-[10px] font-bold uppercase tracking-wider shrink-0">
+                  <span class="text-[color:color-mix(in_srgb,var(--red-soft)_70%,transparent)] text-[11px] font-bold uppercase tracking-wider shrink-0">
                     {{ m.transaksi }}×
                   </span>
                 </div>
@@ -371,15 +371,15 @@
             <div class="grid grid-cols-3 gap-3 sm:gap-6 text-center">
               <div class="py-3 sm:py-4">
                 <p class="font-oswald text-2xl sm:text-4xl font-bold text-[color:var(--text)] mb-1">{{ report.pelanggan.baru }}</p>
-                <p class="text-[10px] sm:text-[10px] text-[color:var(--text-faint)] uppercase tracking-[0.15em] sm:tracking-[0.2em]">Pelanggan Baru</p>
+                <p class="text-[11px] sm:text-[11px] text-[color:var(--text-faint)] uppercase tracking-[0.15em] sm:tracking-[0.2em]">Pelanggan Baru</p>
               </div>
               <div class="py-3 sm:py-4 border-x border-[color:rgb(var(--ink)/0.05)]">
                 <p class="font-oswald text-2xl sm:text-4xl font-bold text-[color:var(--text)] mb-1">{{ report.pelanggan.lama }}</p>
-                <p class="text-[10px] sm:text-[10px] text-[color:var(--text-faint)] uppercase tracking-[0.15em] sm:tracking-[0.2em]">Pelanggan Lama</p>
+                <p class="text-[11px] sm:text-[11px] text-[color:var(--text-faint)] uppercase tracking-[0.15em] sm:tracking-[0.2em]">Pelanggan Lama</p>
               </div>
               <div class="py-3 sm:py-4">
                 <p class="font-oswald text-2xl sm:text-4xl font-bold text-[color:var(--amber-soft)] mb-1">{{ report.pelanggan.loyal_member }}</p>
-                <p class="text-[10px] sm:text-[10px] text-[color:var(--text-faint)] uppercase tracking-[0.15em] sm:tracking-[0.2em]">Member Loyal</p>
+                <p class="text-[11px] sm:text-[11px] text-[color:var(--text-faint)] uppercase tracking-[0.15em] sm:tracking-[0.2em]">Member Loyal</p>
               </div>
             </div>
           </RCard>
@@ -544,7 +544,7 @@ const omzetData = computed(() => ({
   datasets: [{
     label: "Omzet",
     data: report.value?.trend.omzet || [],
-    backgroundColor: "#dc2626",
+    backgroundColor: "#ee0000",
     borderRadius: 6,
     borderSkipped: false,
     maxBarThickness: 36,
@@ -556,7 +556,7 @@ const transaksiData = computed(() => ({
   datasets: [{
     label: "Transaksi",
     data: report.value?.trend.transaksi || [],
-    backgroundColor: "#f59e0b",
+    backgroundColor: "#fff500",
     borderRadius: 6,
     borderSkipped: false,
     maxBarThickness: 36,
@@ -663,9 +663,9 @@ const RCard = (props, { slots }) =>
       props.icon && iconMap[props.icon]
         ? h(iconMap[props.icon], { size: 13, class: accentText[props.accent] || "text-[color:var(--red-soft)]" })
         : null,
-      h("h3", { class: "font-oswald uppercase text-[color:var(--text-faint)] text-[10px] tracking-[0.18em]" }, props.title),
+      h("h3", { class: "font-oswald uppercase text-[color:var(--text-faint)] text-[11px] tracking-[0.18em]" }, props.title),
       props.subtitle
-        ? h("span", { class: "text-[color:var(--text-faint)] text-[10px] font-light ml-1" }, `· ${props.subtitle}`)
+        ? h("span", { class: "text-[color:var(--text-faint)] text-[11px] font-light ml-1" }, `· ${props.subtitle}`)
         : null,
     ]),
     slots.default ? slots.default() : null,
@@ -679,9 +679,9 @@ const StatCard = (props) => {
       iconMap[props.icon] ? h(iconMap[props.icon], { size: 17, class: txtMap[props.color] }) : null,
     ]),
     h("p", { class: "font-oswald text-lg sm:text-xl font-bold text-[color:var(--text)] leading-tight truncate" }, String(props.value)),
-    h("p", { class: "text-[10px] sm:text-[10px] text-[color:var(--text-faint)] uppercase tracking-[0.15em] sm:tracking-[0.18em] mt-1" }, props.label),
+    h("p", { class: "text-[11px] sm:text-[11px] text-[color:var(--text-faint)] uppercase tracking-[0.15em] sm:tracking-[0.18em] mt-1" }, props.label),
     props.sub
-      ? h("p", { class: "text-[10px] text-[color:var(--text-faint)] mt-1.5" }, props.sub)
+      ? h("p", { class: "text-[11px] text-[color:var(--text-faint)] mt-1.5" }, props.sub)
       : null,
   ]);
 };

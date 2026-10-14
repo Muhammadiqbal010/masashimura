@@ -239,7 +239,7 @@ defineExpose({ reload: load })
   gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem;
 }
 .bf-eyebrow {
-  margin: 0 0 0.2rem; font-family: 'Oswald', sans-serif; font-size: 0.68rem;
+  margin: 0 0 0.2rem; font-family: 'Oswald', sans-serif; font-size: 0.72rem;
   letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent-text);
 }
 .bf-title { margin: 0; font-size: 1.15rem; font-weight: 600; color: var(--text); }
@@ -258,7 +258,7 @@ defineExpose({ reload: load })
   border-radius: 12px;
 }
 .bf-label {
-  font-family: 'Oswald', sans-serif; font-size: 0.68rem; letter-spacing: 0.14em;
+  font-family: 'Oswald', sans-serif; font-size: 0.72rem; letter-spacing: 0.14em;
   text-transform: uppercase; color: var(--text-dim);
 }
 .bf-label-note { margin-left: 0.4rem; letter-spacing: 0.02em; text-transform: none; font-family: 'Inter', sans-serif; color: var(--text-faint); }
@@ -273,7 +273,7 @@ defineExpose({ reload: load })
 
 .bf-chip {
   margin-top: 0.15rem; padding: 0.12rem 0.55rem; border-radius: 999px;
-  font-size: 0.68rem; font-weight: 600; letter-spacing: 0.02em;
+  font-size: 0.72rem; font-weight: 600; letter-spacing: 0.02em;
   border: 1px solid rgb(var(--ink) / 0.14); color: var(--text-dim);
 }
 .bf-chip.is-good { color: var(--green-soft); border-color: color-mix(in srgb, var(--green-soft) 45%, transparent); }

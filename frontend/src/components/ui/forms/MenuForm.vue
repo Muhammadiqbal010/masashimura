@@ -14,7 +14,7 @@
           <h2 class="text-xl font-oswald uppercase tracking-widest text-white">
             {{ editingMenu ? "Edit Menu" : "Tambah Menu Baru" }}
           </h2>
-          <p class="text-xs text-white/40 mt-1">Lengkapi data menu di bawah ini.</p>
+          <p class="text-xs text-white/60 mt-1">Lengkapi data menu di bawah ini.</p>
         </div>
         <button type="button" @click="emit('close')" class="text-white/50 hover:text-white text-xl transition">
           ✕
@@ -29,7 +29,7 @@
 
           <!-- Nama -->
           <div>
-            <label class="block mb-2 text-[10px] uppercase tracking-widest text-white/40 font-oswald">
+            <label class="block mb-2 text-[11px] uppercase tracking-widest text-white/60 font-oswald">
               Nama Menu
             </label>
             <input
@@ -43,7 +43,7 @@
 
           <!-- Deskripsi -->
           <div>
-            <label class="block mb-2 text-[10px] uppercase tracking-widest text-white/40 font-oswald">
+            <label class="block mb-2 text-[11px] uppercase tracking-widest text-white/60 font-oswald">
               Deskripsi
             </label>
             <textarea
@@ -59,7 +59,7 @@
 
             <!-- Category -->
             <div class="relative">
-              <label class="block mb-2 text-[10px] uppercase tracking-widest text-white/40 font-oswald">
+              <label class="block mb-2 text-[11px] uppercase tracking-widest text-white/60 font-oswald">
                 Kategori
               </label>
               <button
@@ -94,7 +94,7 @@
 
             <!-- Price -->
             <div>
-              <label class="block mb-2 text-[10px] uppercase tracking-widest text-white/40 font-oswald">
+              <label class="block mb-2 text-[11px] uppercase tracking-widest text-white/60 font-oswald">
                 Harga (Rp)
               </label>
               <input
@@ -111,7 +111,7 @@
 
           <!-- Foto Menu -->
           <div>
-            <label class="block mb-3 text-[10px] uppercase tracking-widest text-white/40 font-oswald">
+            <label class="block mb-3 text-[11px] uppercase tracking-widest text-white/60 font-oswald">
               Foto Menu
             </label>
 
@@ -144,11 +144,11 @@
               v-if="!previewImage"
               type="button"
               @click="openFilePicker"
-              class="w-full rounded-xl border border-dashed border-white/20 py-8 flex flex-col items-center gap-2 text-xs uppercase tracking-widest text-white/40 transition hover:border-red-600 hover:text-white"
+              class="w-full rounded-xl border border-dashed border-white/20 py-8 flex flex-col items-center gap-2 text-xs uppercase tracking-widest text-white/60 transition hover:border-red-600 hover:text-white"
             >
               <span class="text-2xl">📷</span>
               <span>Unggah Foto Menu</span>
-              <span class="text-[10px] normal-case text-white/20 tracking-normal">Klik untuk pilih gambar · Akan dicrop otomatis</span>
+              <span class="text-[11px] normal-case text-white/60 tracking-normal">Klik untuk pilih gambar · Akan dicrop otomatis</span>
             </button>
 
             <!-- Tombol ganti — muncul jika sudah ada foto, sebagai alternatif klik gambar -->
@@ -156,7 +156,7 @@
               v-if="previewImage"
               type="button"
               @click="openFilePicker"
-              class="mt-2 w-full rounded-xl border border-white/10 py-2.5 text-[10px] uppercase tracking-widest text-white/40 transition hover:border-red-600 hover:text-white"
+              class="mt-2 w-full rounded-xl border border-white/10 py-2.5 text-[11px] uppercase tracking-widest text-white/60 transition hover:border-red-600 hover:text-white"
             >
               Ganti Foto
             </button>

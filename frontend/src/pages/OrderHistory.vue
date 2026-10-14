@@ -84,7 +84,7 @@
                 <div class="flex items-center gap-2">
                   <p class="font-bold truncate">{{ order.order_number }}</p>
                   <span
-                    class="px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide rounded-full shrink-0"
+                    class="px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide rounded-full shrink-0"
                     :class="statusStyle(order.payment_status).badge"
                   >
                     {{ statusStyle(order.payment_status).label }}

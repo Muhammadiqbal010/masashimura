@@ -102,7 +102,7 @@ const badgeTone = { bintang: "is-green", andalan: "is-blue", potensial: "is-ambe
 .mp-class-n { font-family: 'Oswald', sans-serif; font-size: 1.6rem; font-weight: 700; color: var(--text); line-height: 1; }
 .mp-class-label { font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); }
 .mp-class-hint { font-size: 0.72rem; line-height: 1.45; color: var(--text-faint); }
-.mp-cat { margin-left: 0.5rem; font-size: 0.68rem; font-weight: 400; color: var(--text-faint); }
+.mp-cat { margin-left: 0.5rem; font-size: 0.72rem; font-weight: 400; color: var(--text-faint); }
 .mp-share { display: flex; align-items: center; gap: 0.6rem; min-width: 130px; }
 .mp-share .rt-bar { flex: 1; }
 .mp-share-n { font-size: 0.72rem; font-variant-numeric: tabular-nums; color: var(--text-faint); min-width: 36px; text-align: right; }

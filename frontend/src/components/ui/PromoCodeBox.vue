@@ -107,7 +107,7 @@ defineExpose({ removePromo });
 </script>
 
 <style scoped>
-/* Palet: Surface #0F0D0C · Washi #F5F0EA · Crimson #D7263D · Champagne #D4B483 */
+/* Palet: Surface #0D0D0D · Washi #FAFAFA · Crimson #EE0000 · Champagne #FFF500 */
 
 .promo-box { display: flex; flex-direction: column; gap: 0.5rem; }
 
@@ -122,7 +122,7 @@ defineExpose({ removePromo });
 .promo-icon {
   position: absolute;
   left: 0.875rem;
-  color: #6F6761;
+  color: #737373;
   pointer-events: none;
 }
 
@@ -130,11 +130,11 @@ defineExpose({ removePromo });
 .promo-input {
   width: 100%;
   height: 3rem;
-  background: #0F0D0C;
+  background: #0D0D0D;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0.75rem;
   padding: 0 1rem 0 2.5rem;
-  color: #F5F0EA;
+  color: #FAFAFA;
   font-family: "Inter", sans-serif;
   font-size: 1rem;
   font-weight: 600;
@@ -146,21 +146,21 @@ defineExpose({ removePromo });
   .promo-input { font-size: 0.875rem; }
 }
 .promo-input::placeholder {
-  color: #6F6761;
+  color: #737373;
   font-weight: 400;
   letter-spacing: normal;
 }
 .promo-input:hover:not(:disabled) { border-color: rgba(255, 255, 255, 0.2); }
 .promo-input:focus {
-  border-color: rgba(212, 180, 131, 0.6);
-  box-shadow: 0 0 0 3px rgba(212, 180, 131, 0.12);
+  border-color: rgba(255,245,0, 0.6);
+  box-shadow: 0 0 0 3px rgba(255,245,0, 0.12);
 }
 .promo-input:disabled { opacity: 0.5; }
 
 .promo-apply-btn {
   min-width: 5rem;
   padding: 0 1.25rem;
-  background: #D7263D;
+  background: #EE0000;
   border: none;
   border-radius: 0.75rem;
   color: #fff;
@@ -171,7 +171,7 @@ defineExpose({ removePromo });
   transition: background 0.15s, transform 0.15s;
   white-space: nowrap;
 }
-.promo-apply-btn:hover:not(:disabled) { background: #B91C32; }
+.promo-apply-btn:hover:not(:disabled) { background: #C20000; }
 .promo-apply-btn:active:not(:disabled) { transform: scale(0.97); }
 .promo-apply-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
@@ -205,7 +205,7 @@ defineExpose({ removePromo });
 .promo-applied-code {
   font-weight: 700;
   font-size: 0.875rem;
-  color: #F5F0EA;
+  color: #FAFAFA;
   letter-spacing: 0.06em;
 }
 .promo-applied-amount {
@@ -221,22 +221,22 @@ defineExpose({ removePromo });
   display: flex; align-items: center; justify-content: center;
   background: rgba(255, 255, 255, 0.06);
   border: none; border-radius: 9999px;
-  color: #A39A93;
+  color: #A3A3A3;
   cursor: pointer;
   transition: all 0.15s;
 }
-.promo-remove-btn:hover { background: rgba(215, 38, 61, 0.15); color: #F2707A; }
+.promo-remove-btn:hover { background: rgba(238,0,0, 0.15); color: #FF5C5C; }
 
 .promo-error {
   font-size: 0.8125rem;
-  color: #F2707A;
+  color: #FF5C5C;
   margin: 0;
   padding-left: 0.25rem;
 }
 
 .promo-apply-btn:focus-visible,
 .promo-remove-btn:focus-visible {
-  outline: 2px solid #D4B483;
+  outline: 2px solid #FFF500;
   outline-offset: 2px;
 }
 </style>

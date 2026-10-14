@@ -32,7 +32,7 @@ import logo from "../assets/masashimura-logo.png";
 .not-found h1 {
   font-size: 5rem;
   margin: 0;
-  color: #dc2626;
+  color: #ee0000;
   font-family: 'Oswald', sans-serif;
   letter-spacing: 2px;
 }
@@ -43,7 +43,7 @@ import logo from "../assets/masashimura-logo.png";
 .not-found__link {
   margin-top: 0.5rem;
   padding: 0.6rem 1.5rem;
-  background: #dc2626;
+  background: #ee0000;
   color: #fff;
   border-radius: 6px;
   text-decoration: none;

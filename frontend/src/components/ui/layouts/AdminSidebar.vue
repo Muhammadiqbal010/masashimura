@@ -420,7 +420,7 @@ onBeforeUnmount(() => {
 .sb-eyebrow {
   margin: 0.55rem 0 0;
   font-family: var(--font-mono);
-  font-size: 0.66rem;
+  font-size: 0.72rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--text-faint);
@@ -486,7 +486,7 @@ onBeforeUnmount(() => {
   padding: 0.12rem 0.45rem;
   border-radius: 6px;
   font-family: var(--font-mono);
-  font-size: 0.65rem;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -514,7 +514,7 @@ onBeforeUnmount(() => {
   margin: 0.6rem 0 0.2rem;
   padding: 0 0.75rem;
   font-family: var(--font-mono);
-  font-size: 0.65rem;
+  font-size: 0.72rem;
   letter-spacing: 0.24em;
   text-transform: uppercase;
   color: var(--text-faint);
@@ -562,7 +562,7 @@ onBeforeUnmount(() => {
   background: var(--accent);
   color: var(--on-accent);
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-weight: 700;
 }
 
@@ -665,7 +665,7 @@ onBeforeUnmount(() => {
   height: 24px;
   border-radius: 99px;
   background: #fcd34d;
-  border: 1px solid #f59e0b;
+  border: 1px solid #fff500;
   transition: background 0.2s, border-color 0.2s;
 }
 .sb-switch.is-on { background: #3f3f46; border-color: #52525b; }

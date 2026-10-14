@@ -593,7 +593,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', onBeforeUnload)
   border: 1px solid var(--border); border-radius: var(--r-md);
   background: rgb(var(--ink) / 0.03);
 }
-.set-preview-label { flex-shrink: 0; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); }
+.set-preview-label { flex-shrink: 0; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); }
 .set-preview-link { min-width: 0; font-size: 0.78rem; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .set-preview-link strong { color: var(--green-soft); font-weight: 600; }
 
@@ -644,7 +644,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', onBeforeUnload)
 
 .time-fields { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 0.5rem 1.25rem; }
 .time-group { display: flex; flex-direction: column; gap: 0.2rem; }
-.time-label { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); }
+.time-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); }
 .time-inputs { display: flex; align-items: center; gap: 0.25rem; }
 .time-sep { font-weight: 700; color: var(--text-faint); }
 .time-select {

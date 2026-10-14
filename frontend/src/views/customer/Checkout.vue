@@ -1,5 +1,5 @@
 <template>
-  <div class="page relative min-h-screen bg-[#0B0A0A] pb-24 pt-28 font-inter text-[#F5F0EA] sm:pt-32">
+  <div class="page relative min-h-screen bg-[#080808] pb-24 pt-28 font-inter text-[#FAFAFA] sm:pt-32">
     <div class="page-glow pointer-events-none absolute inset-x-0 top-0 h-[420px]" aria-hidden="true"></div>
 
     <div class="relative mx-auto max-w-6xl px-5 sm:px-8 lg:px-10">
@@ -9,7 +9,7 @@
         <h1 class="font-sora text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl">
           Pesanan Kamu
         </h1>
-        <p class="mt-3 text-base text-[#A39A93]">Cek item, isi data, lalu pilih cara bayar.</p>
+        <p class="mt-3 text-base text-[#A3A3A3]">Cek item, isi data, lalu pilih cara bayar.</p>
       </header>
 
       <!-- ══ PANEL STATUS PEMBAYARAN ONLINE (muncul setelah order gateway dibuat) ══ -->
@@ -24,26 +24,26 @@
         >
           <div
             v-if="payment.phase === 'starting' || payment.phase === 'waiting'"
-            class="h-7 w-7 animate-spin rounded-full border-2 border-white/20 border-t-[#D4B483]"
+            class="h-7 w-7 animate-spin rounded-full border-2 border-white/20 border-t-[#FFF500]"
           ></div>
           <Check v-else-if="payment.phase === 'paid'" :size="26" class="text-emerald-400" />
-          <X v-else-if="payment.phase === 'failed'" :size="26" class="text-[#F2707A]" />
-          <Clock v-else :size="26" class="text-[#D4B483]" />
+          <X v-else-if="payment.phase === 'failed'" :size="26" class="text-[#FF5C5C]" />
+          <Clock v-else :size="26" class="text-[#FFF500]" />
         </div>
 
         <div class="space-y-2">
-          <h2 class="font-sora text-2xl font-semibold tracking-tight text-[#F5F0EA]">{{ phaseTitle }}</h2>
-          <p class="text-sm leading-relaxed text-[#A39A93]">{{ phaseDescription }}</p>
+          <h2 class="font-sora text-2xl font-semibold tracking-tight text-[#FAFAFA]">{{ phaseTitle }}</h2>
+          <p class="text-sm leading-relaxed text-[#A3A3A3]">{{ phaseDescription }}</p>
         </div>
 
         <div class="summary-box space-y-2.5 text-left">
           <div class="flex items-center justify-between">
-            <span class="text-sm text-[#A39A93]">No. order</span>
-            <span class="text-sm font-semibold tabular-nums text-[#F5F0EA]">#{{ payment.orderNumber }}</span>
+            <span class="text-sm text-[#A3A3A3]">No. order</span>
+            <span class="text-sm font-semibold tabular-nums text-[#FAFAFA]">#{{ payment.orderNumber }}</span>
           </div>
           <div class="flex items-center justify-between">
-            <span class="text-sm text-[#A39A93]">Total</span>
-            <span class="font-sora text-lg font-semibold text-[#F5F0EA]">{{ formatPrice(payment.total) }}</span>
+            <span class="text-sm text-[#A3A3A3]">Total</span>
+            <span class="font-sora text-lg font-semibold text-[#FAFAFA]">{{ formatPrice(payment.total) }}</span>
           </div>
 
           <!-- Ringkasan pesanan (tetap tampil setelah refresh) -->
@@ -56,10 +56,10 @@
               :key="i"
               class="flex justify-between gap-3 text-sm"
             >
-              <span class="truncate text-[#A39A93]">
+              <span class="truncate text-[#A3A3A3]">
                 {{ it.quantity }}x {{ it.name }}<template v-if="it.optionText"> ({{ it.optionText }})</template>
               </span>
-              <span class="flex-shrink-0 tabular-nums text-[#6F6761]">{{ formatPrice(it.price * it.quantity) }}</span>
+              <span class="flex-shrink-0 tabular-nums text-[#737373]">{{ formatPrice(it.price * it.quantity) }}</span>
             </div>
           </div>
         </div>
@@ -95,7 +95,7 @@
             <button type="button" class="btn-ghost" @click="onCheckStatusClick">
               Cek status
             </button>
-            <p class="pt-1 text-xs text-[#6F6761]">
+            <p class="pt-1 text-xs text-[#737373]">
               Order otomatis dibatalkan kalau tidak dibayar dalam 30 menit.
             </p>
           </template>
@@ -114,20 +114,20 @@
         </div>
 
         <div class="space-y-2">
-          <h2 class="font-sora text-2xl font-semibold tracking-tight text-[#F5F0EA]">Pesanan dibuat</h2>
-          <p class="text-sm leading-relaxed text-[#A39A93]">
+          <h2 class="font-sora text-2xl font-semibold tracking-tight text-[#FAFAFA]">Pesanan dibuat</h2>
+          <p class="text-sm leading-relaxed text-[#A3A3A3]">
             Bayar langsung di toko, kasir yang mengonfirmasi pembayaranmu. Kabari admin lewat WhatsApp supaya pesananmu cepat diproses.
           </p>
         </div>
 
         <div class="summary-box space-y-2.5 text-left">
           <div class="flex items-center justify-between">
-            <span class="text-sm text-[#A39A93]">No. order</span>
-            <span class="text-sm font-semibold tabular-nums text-[#F5F0EA]">#{{ cashDone.orderNumber }}</span>
+            <span class="text-sm text-[#A3A3A3]">No. order</span>
+            <span class="text-sm font-semibold tabular-nums text-[#FAFAFA]">#{{ cashDone.orderNumber }}</span>
           </div>
           <div class="flex items-center justify-between">
-            <span class="text-sm text-[#A39A93]">Total</span>
-            <span class="font-sora text-lg font-semibold text-[#F5F0EA]">{{ formatPrice(cashDone.total) }}</span>
+            <span class="text-sm text-[#A3A3A3]">Total</span>
+            <span class="font-sora text-lg font-semibold text-[#FAFAFA]">{{ formatPrice(cashDone.total) }}</span>
           </div>
 
           <div
@@ -139,10 +139,10 @@
               :key="i"
               class="flex justify-between gap-3 text-sm"
             >
-              <span class="truncate text-[#A39A93]">
+              <span class="truncate text-[#A3A3A3]">
                 {{ it.quantity }}x {{ it.name }}<template v-if="it.optionText"> ({{ it.optionText }})</template>
               </span>
-              <span class="flex-shrink-0 tabular-nums text-[#6F6761]">{{ formatPrice(it.price * it.quantity) }}</span>
+              <span class="flex-shrink-0 tabular-nums text-[#737373]">{{ formatPrice(it.price * it.quantity) }}</span>
             </div>
           </div>
         </div>
@@ -172,11 +172,11 @@
               v-if="cartStore.isEmpty"
               class="space-y-4 rounded-3xl border border-dashed border-white/10 px-6 py-20 text-center"
             >
-              <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-[#141211]">
-                <ShoppingCart :size="22" class="text-[#A39A93]" />
+              <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-[#141414]">
+                <ShoppingCart :size="22" class="text-[#A3A3A3]" />
               </div>
-              <p class="font-sora text-lg font-semibold text-[#F5F0EA]">Keranjang masih kosong</p>
-              <p class="text-sm text-[#A39A93]">Pilih menu favoritmu dulu, lalu balik ke sini.</p>
+              <p class="font-sora text-lg font-semibold text-[#FAFAFA]">Keranjang masih kosong</p>
+              <p class="text-sm text-[#A3A3A3]">Pilih menu favoritmu dulu, lalu balik ke sini.</p>
               <router-link to="/menu" class="btn-primary !inline-flex !w-auto px-7">
                 Lihat menu
               </router-link>
@@ -190,24 +190,24 @@
             >
               <div class="flex items-start justify-between gap-3">
                 <div class="min-w-0">
-                  <p class="text-[11px] font-semibold uppercase tracking-wider text-[#D4B483]">Paket</p>
-                  <h4 class="font-sora text-base font-semibold leading-snug text-[#F5F0EA]">{{ line.name }}</h4>
+                  <p class="text-[11px] font-semibold uppercase tracking-wider text-[#FFF500]">Paket</p>
+                  <h4 class="font-sora text-base font-semibold leading-snug text-[#FAFAFA]">{{ line.name }}</h4>
                 </div>
                 <button
                   type="button"
                   :aria-label="'Hapus ' + line.name + ' dari keranjang'"
                   @click="cartStore.removeBundle(line.id)"
-                  class="-mr-2 -mt-1.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#6F6761] transition-colors duration-150 hover:bg-[#D7263D]/10 hover:text-[#F2707A]"
+                  class="-mr-2 -mt-1.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#737373] transition-colors duration-150 hover:bg-[#EE0000]/10 hover:text-[#FF5C5C]"
                 >
                   <X :size="16" />
                 </button>
               </div>
-              <p class="text-sm text-[#A39A93]">
+              <p class="text-sm text-[#A3A3A3]">
                 {{ line.quantity }} × {{ formatPrice(line.price) }}
-                <span v-if="line.normal_price && line.savings > 0" class="ml-1 text-xs text-[#6F6761] line-through">{{ formatPrice(line.normal_price) }}</span>
+                <span v-if="line.normal_price && line.savings > 0" class="ml-1 text-xs text-[#737373] line-through">{{ formatPrice(line.normal_price) }}</span>
               </p>
-              <p v-if="line.savings > 0" class="text-xs font-semibold text-[#D4B483]">Kamu hemat {{ formatPrice(line.savings * line.quantity) }}</p>
-              <p class="text-xs text-[#A39A93]">{{ line.contents.map((c) => c.quantity * line.quantity + '× ' + c.name).join(' · ') }}</p>
+              <p v-if="line.savings > 0" class="text-xs font-semibold text-[#FFF500]">Kamu hemat {{ formatPrice(line.savings * line.quantity) }}</p>
+              <p class="text-xs text-[#A3A3A3]">{{ line.contents.map((c) => c.quantity * line.quantity + '× ' + c.name).join(' · ') }}</p>
             </div>
 
             <!-- Items -->
@@ -217,7 +217,7 @@
               class="card-item flex gap-4"
             >
               <!-- Thumbnail -->
-              <div class="h-[72px] w-[72px] flex-shrink-0 overflow-hidden rounded-2xl border border-white/[0.07] bg-[#1A1716] sm:h-20 sm:w-20">
+              <div class="h-[72px] w-[72px] flex-shrink-0 overflow-hidden rounded-2xl border border-white/[0.07] bg-[#1A1A1A] sm:h-20 sm:w-20">
                 <img
                   v-if="item.image_url"
                   :src="getMediaUrl(item.image_url, 160)"
@@ -230,20 +230,20 @@
               <!-- Detail -->
               <div class="min-w-0 flex-1">
                 <div class="flex items-start justify-between gap-3">
-                  <h4 class="font-sora text-base font-semibold leading-snug text-[#F5F0EA]">
+                  <h4 class="font-sora text-base font-semibold leading-snug text-[#FAFAFA]">
                     {{ item.name }}
                   </h4>
                   <button
                     type="button"
                     :aria-label="'Hapus ' + item.name + ' dari keranjang'"
                     @click="cartStore.removeFromCart(item.cartKey)"
-                    class="-mr-2 -mt-1.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#6F6761] transition-colors duration-150 hover:bg-[#D7263D]/10 hover:text-[#F2707A]"
+                    class="-mr-2 -mt-1.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#737373] transition-colors duration-150 hover:bg-[#EE0000]/10 hover:text-[#FF5C5C]"
                   >
                     <X :size="16" />
                   </button>
                 </div>
 
-                <p class="mt-1 text-sm text-[#A39A93]">
+                <p class="mt-1 text-sm text-[#A3A3A3]">
                   {{ item.quantity }} × {{ formatPrice(item.price) }}
                 </p>
 
@@ -251,17 +251,17 @@
                   <span
                     v-for="opt in item.optionDetails"
                     :key="opt.group + opt.label"
-                    class="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-xs font-medium text-[#C9C1B9]"
+                    class="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-xs font-medium text-[#C8C8C8]"
                   >
                     {{ opt.label }}<template v-if="opt.price"> +{{ formatPrice(opt.price) }}</template>
                   </span>
                 </div>
 
-                <p v-if="item.notes" class="mt-2 text-xs italic text-[#D4B483]">
+                <p v-if="item.notes" class="mt-2 text-xs italic text-[#FFF500]">
                   "{{ item.notes }}"
                 </p>
 
-                <p class="mt-3 font-sora text-base font-semibold tracking-tight text-[#F5F0EA]">
+                <p class="mt-3 font-sora text-base font-semibold tracking-tight text-[#FAFAFA]">
                   {{ formatPrice(item.price * item.quantity) }}
                 </p>
               </div>
@@ -271,11 +271,11 @@
           <!-- ── KANAN: Form & Payment ────────────────────────────── -->
           <aside class="card space-y-6 lg:sticky lg:top-24">
 
-            <h2 class="font-sora text-xl font-semibold tracking-tight text-[#F5F0EA]">Data pemesan</h2>
+            <h2 class="font-sora text-xl font-semibold tracking-tight text-[#FAFAFA]">Data pemesan</h2>
 
             <!-- Nama -->
             <div class="space-y-2">
-              <label for="co-name" class="block text-sm font-medium text-[#C9C1B9]">Nama</label>
+              <label for="co-name" class="block text-sm font-medium text-[#C8C8C8]">Nama</label>
               <input
                 id="co-name"
                 :value="name"
@@ -293,7 +293,7 @@
               <p
                 id="co-name-help"
                 class="text-xs leading-relaxed"
-                :class="nameErrorText ? 'text-[#F2707A]' : 'text-[#6F6761]'"
+                :class="nameErrorText ? 'text-[#FF5C5C]' : 'text-[#737373]'"
                 :role="nameErrorText ? 'alert' : undefined"
               >
                 {{ nameErrorText || `Huruf saja, ${NAME_MIN}-${NAME_MAX} karakter, tanpa angka atau tanda.` }}
@@ -302,7 +302,7 @@
 
             <!-- Nomor WA -->
             <div class="space-y-2">
-              <label for="co-phone" class="block text-sm font-medium text-[#C9C1B9]">Nomor WhatsApp</label>
+              <label for="co-phone" class="block text-sm font-medium text-[#C8C8C8]">Nomor WhatsApp</label>
               <!-- type="tel" + inputmode="numeric": keypad angka di HP, tapi nilainya tetap string.
                    type="number" sengaja tidak dipakai: Vue mengubahnya jadi Number sehingga angka 0 di depan
                    hilang ("0812..." jadi 812...), dan browser masih menerima huruf "e", "+", "-" serta ".". -->
@@ -325,14 +325,14 @@
               <p
                 id="co-phone-help"
                 class="text-xs leading-relaxed"
-                :class="phoneErrorText ? 'text-[#F2707A]' : 'text-[#6F6761]'"
+                :class="phoneErrorText ? 'text-[#FF5C5C]' : 'text-[#737373]'"
                 :role="phoneErrorText ? 'alert' : undefined"
               >
                 {{ phoneErrorText || `Diawali 08, ${PHONE_MIN}-${PHONE_MAX} digit angka.` }}
               </p>
 
               <!-- PIN member: terlihat oleh semua pelanggan supaya status member nomor lain tidak bocor -->
-              <div class="mt-3 rounded-2xl border border-white/[0.07] bg-[#0F0D0C] p-3.5">
+              <div class="mt-3 rounded-2xl border border-white/[0.07] bg-[#0D0D0D] p-3.5">
                 <MemberPinBox
                   :phone="phone"
                   :info="memberInfo"
@@ -345,7 +345,7 @@
 
             <!-- Metode Pembayaran -->
             <div class="space-y-2">
-              <span class="block text-sm font-medium text-[#C9C1B9]">Pembayaran</span>
+              <span class="block text-sm font-medium text-[#C8C8C8]">Pembayaran</span>
               <div class="grid grid-cols-2 gap-2.5">
                 <button
                   type="button"
@@ -354,12 +354,12 @@
                   :class="[
                     'rounded-2xl border px-4 py-3 text-left transition-all duration-150',
                     paymentMethod === 'cash'
-                      ? 'border-[#D7263D] bg-[#D7263D]/10'
+                      ? 'border-[#EE0000] bg-[#EE0000]/10'
                       : 'border-white/10 bg-white/[0.03] hover:border-white/25'
                   ]"
                 >
-                  <span class="block font-sora text-sm font-semibold text-[#F5F0EA]">Cash</span>
-                  <span class="block text-xs text-[#A39A93]">Bayar di toko</span>
+                  <span class="block font-sora text-sm font-semibold text-[#FAFAFA]">Cash</span>
+                  <span class="block text-xs text-[#A3A3A3]">Bayar di toko</span>
                 </button>
                 <button
                   type="button"
@@ -369,15 +369,15 @@
                   :class="[
                     'rounded-2xl border px-4 py-3 text-left transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-35',
                     paymentMethod === 'gateway'
-                      ? 'border-[#D7263D] bg-[#D7263D]/10'
+                      ? 'border-[#EE0000] bg-[#EE0000]/10'
                       : 'border-white/10 bg-white/[0.03] hover:border-white/25'
                   ]"
                 >
-                  <span class="block font-sora text-sm font-semibold text-[#F5F0EA]">QRIS</span>
-                  <span class="block text-xs text-[#A39A93]">Bayar online</span>
+                  <span class="block font-sora text-sm font-semibold text-[#FAFAFA]">QRIS</span>
+                  <span class="block text-xs text-[#A3A3A3]">Bayar online</span>
                 </button>
               </div>
-              <p class="pt-0.5 text-xs leading-relaxed text-[#6F6761]">
+              <p class="pt-0.5 text-xs leading-relaxed text-[#737373]">
                 <template v-if="paymentMethod === 'cash'">
                   Bayar langsung di toko. Kasir yang mengonfirmasi pembayaranmu.
                 </template>
@@ -385,7 +385,7 @@
                   Bayar lewat QRIS di popup. Pesanan diproses setelah pembayaran terkonfirmasi otomatis.
                 </template>
               </p>
-              <p v-if="gatewayUnavailable && !cartStore.isEmpty" class="text-xs text-[#D4B483]">
+              <p v-if="gatewayUnavailable && !cartStore.isEmpty" class="text-xs text-[#FFF500]">
                 Total Rp0 (semua item tukar poin), pembayaran online tidak diperlukan. Pakai Cash.
               </p>
             </div>
@@ -395,8 +395,8 @@
             <!-- Ringkasan Harga -->
             <div class="space-y-3">
               <div class="flex items-center justify-between text-sm">
-                <span class="text-[#A39A93]">Subtotal</span>
-                <span class="tabular-nums text-[#F5F0EA]">{{ formatPrice(cartStore.subtotal) }}</span>
+                <span class="text-[#A3A3A3]">Subtotal</span>
+                <span class="tabular-nums text-[#FAFAFA]">{{ formatPrice(cartStore.subtotal) }}</span>
               </div>
 
               <!-- Kode Promo -->
@@ -425,13 +425,13 @@
                 :key="`reward-${reward.id}`"
                 class="flex items-center justify-between gap-3 text-sm"
               >
-                <span class="text-[#D4B483]">🎁 {{ reward.menu_name }} (gratis)</span>
-                <span class="flex-shrink-0 tabular-nums text-[#6F6761]">−{{ reward.point_cost.toLocaleString("id-ID") }} poin</span>
+                <span class="text-[#FFF500]">🎁 {{ reward.menu_name }} (gratis)</span>
+                <span class="flex-shrink-0 tabular-nums text-[#737373]">−{{ reward.point_cost.toLocaleString("id-ID") }} poin</span>
               </div>
 
               <div class="flex items-end justify-between border-t border-white/[0.07] pt-4">
-                <span class="text-sm font-medium text-[#A39A93]">Total bayar</span>
-                <span class="font-sora text-3xl font-semibold leading-none tracking-tight text-[#F5F0EA]">
+                <span class="text-sm font-medium text-[#A3A3A3]">Total bayar</span>
+                <span class="font-sora text-3xl font-semibold leading-none tracking-tight text-[#FAFAFA]">
                   {{ formatPrice(finalTotal) }}
                 </span>
               </div>
@@ -865,8 +865,8 @@ const phaseDescription = computed(() => {
 
 const phaseIconClass = computed(() => ({
   paid:    "bg-emerald-400/10 border-emerald-400/30",
-  failed:  "bg-[#D7263D]/10 border-[#D7263D]/30",
-  pending: "bg-[#D4B483]/10 border-[#D4B483]/30",
+  failed:  "bg-[#EE0000]/10 border-[#EE0000]/30",
+  pending: "bg-[#FFF500]/10 border-[#FFF500]/30",
 }[payment.value?.phase] || "bg-white/[0.04] border-white/[0.08]"))
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1110,21 +1110,21 @@ onBeforeUnmount(() => {
 <style scoped>
 /*
   Palet (sama dengan Home, Menu, dan Lokasi & Kontak)
-  Warm black #0B0A0A · Surface #141211 · Washi #F5F0EA
-  Crimson #D7263D (aksi) · Champagne #D4B483 (detail premium)
+  Warm black #080808 · Surface #141414 · Washi #FAFAFA
+  Crimson #EE0000 (aksi) · Champagne #FFF500 (detail premium)
   Hijau hanya untuk status sukses dan tombol WhatsApp.
 */
 
 .page-glow {
   background:
-    radial-gradient(60% 70% at 15% 0%, rgba(215, 38, 61, 0.14), transparent 70%),
-    radial-gradient(40% 50% at 90% 10%, rgba(212, 180, 131, 0.06), transparent 70%);
+    radial-gradient(60% 70% at 15% 0%, rgba(238,0,0, 0.14), transparent 70%),
+    radial-gradient(40% 50% at 90% 10%, rgba(255,245,0, 0.06), transparent 70%);
 }
 
 .card {
   border-radius: 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.07);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012)), #141211;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012)), #141414;
   padding: 1.5rem;
 }
 @media (min-width: 640px) {
@@ -1134,7 +1134,7 @@ onBeforeUnmount(() => {
 .card-item {
   border-radius: 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.07);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)), #141211;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)), #141414;
   padding: 1rem;
 }
 @media (min-width: 640px) {
@@ -1154,21 +1154,21 @@ onBeforeUnmount(() => {
   height: 3rem;
   border-radius: 0.75rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background: #0F0D0C;
+  background: #0D0D0D;
   padding: 0 1rem;
   font-size: 1rem;
-  color: #F5F0EA;
+  color: #FAFAFA;
   outline: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 @media (min-width: 640px) {
   .field { font-size: 0.875rem; }
 }
-.field::placeholder { color: #6F6761; }
+.field::placeholder { color: #737373; }
 .field:hover { border-color: rgba(255, 255, 255, 0.2); }
 .field:focus {
-  border-color: rgba(212, 180, 131, 0.6);
-  box-shadow: 0 0 0 3px rgba(212, 180, 131, 0.12);
+  border-color: rgba(255,245,0, 0.6);
+  box-shadow: 0 0 0 3px rgba(255,245,0, 0.12);
 }
 
 .btn-primary,
@@ -1187,12 +1187,12 @@ onBeforeUnmount(() => {
   transition: all 0.2s ease;
 }
 .btn-primary {
-  background: #D7263D;
+  background: #EE0000;
   color: #fff;
 }
 .btn-primary:hover:not(:disabled) {
-  background: #B91C32;
-  box-shadow: 0 8px 24px -8px rgba(215, 38, 61, 0.6);
+  background: #C20000;
+  box-shadow: 0 8px 24px -8px rgba(238,0,0, 0.6);
 }
 .btn-primary:disabled {
   cursor: not-allowed;
@@ -1200,7 +1200,7 @@ onBeforeUnmount(() => {
 }
 .btn-ghost {
   border: 1px solid rgba(255, 255, 255, 0.16);
-  color: #F5F0EA;
+  color: #FAFAFA;
 }
 .btn-ghost:hover {
   border-color: rgba(255, 255, 255, 0.4);
@@ -1222,7 +1222,7 @@ onBeforeUnmount(() => {
 a:focus-visible,
 button:focus-visible,
 input:focus-visible {
-  outline: 2px solid #D4B483;
+  outline: 2px solid #FFF500;
   outline-offset: 3px;
 }
 .field:focus-visible { outline: none; }

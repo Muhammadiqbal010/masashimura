@@ -13,15 +13,15 @@
         <!-- Header -->
         <div class="flex items-start justify-between gap-3 border-b border-white/[0.07] px-6 pb-4 pt-6 sm:px-7">
           <div class="min-w-0">
-            <p class="text-xs font-medium text-[#D4B483]">Pilih opsi</p>
-            <h3 class="mt-1 font-sora text-xl font-semibold leading-tight tracking-tight text-[#F5F0EA]">
+            <p class="text-xs font-medium text-[#FFF500]">Pilih opsi</p>
+            <h3 class="mt-1 font-sora text-xl font-semibold leading-tight tracking-tight text-[#FAFAFA]">
               {{ menu.name }}
             </h3>
           </div>
           <button
             type="button"
             aria-label="Tutup"
-            class="-mr-2 -mt-1 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-[#A39A93] transition-colors hover:bg-white/5 hover:text-[#F5F0EA]"
+            class="-mr-2 -mt-1 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-[#A3A3A3] transition-colors hover:bg-white/5 hover:text-[#FAFAFA]"
             @click="$emit('close')"
           >
             <X :size="18" />
@@ -32,8 +32,8 @@
         <div class="flex-1 space-y-7 overflow-y-auto px-6 py-6 sm:px-7">
           <fieldset v-for="group in menu.options" :key="group.name" class="space-y-3">
             <legend class="flex w-full flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-              <span class="font-sora text-base font-semibold text-[#F5F0EA]">{{ group.name }}</span>
-              <span class="text-xs font-medium" :class="group.required ? 'text-[#F2707A]' : 'text-[#6F6761]'">
+              <span class="font-sora text-base font-semibold text-[#FAFAFA]">{{ group.name }}</span>
+              <span class="text-xs font-medium" :class="group.required ? 'text-[#FF5C5C]' : 'text-[#737373]'">
                 {{ group.required ? "Wajib" : "Opsional" }} · {{ group.multiple ? "boleh lebih dari satu" : "pilih satu" }}
               </span>
             </legend>
@@ -48,7 +48,7 @@
                 :class="[
                   'flex min-h-[52px] w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition-all duration-150',
                   isPicked(group, choice)
-                    ? 'border-[#D7263D] bg-[#D7263D]/10'
+                    ? 'border-[#EE0000] bg-[#EE0000]/10'
                     : 'border-white/10 bg-white/[0.03] hover:border-white/25'
                 ]"
                 @click="toggle(group, choice)"
@@ -58,14 +58,14 @@
                     :class="[
                       'flex h-5 w-5 flex-shrink-0 items-center justify-center border transition-colors',
                       group.multiple ? 'rounded-md' : 'rounded-full',
-                      isPicked(group, choice) ? 'border-[#D7263D] bg-[#D7263D]' : 'border-white/25'
+                      isPicked(group, choice) ? 'border-[#EE0000] bg-[#EE0000]' : 'border-white/25'
                     ]"
                   >
                     <Check v-if="isPicked(group, choice)" :size="12" class="text-white" />
                   </span>
-                  <span class="truncate text-[15px] text-[#F5F0EA]">{{ choice.label }}</span>
+                  <span class="truncate text-[15px] text-[#FAFAFA]">{{ choice.label }}</span>
                 </span>
-                <span v-if="Number(choice.price) > 0" class="flex-shrink-0 text-sm font-semibold tabular-nums text-[#D4B483]">
+                <span v-if="Number(choice.price) > 0" class="flex-shrink-0 text-sm font-semibold tabular-nums text-[#FFF500]">
                   +{{ formatPrice(choice.price) }}
                 </span>
               </button>
@@ -75,7 +75,7 @@
 
         <!-- Footer: jumlah + konfirmasi -->
         <div class="footer-safe space-y-3 border-t border-white/[0.07] bg-black/25 px-6 pt-4 sm:px-7">
-          <p v-if="missingGroup" class="text-sm text-[#D4B483]">
+          <p v-if="missingGroup" class="text-sm text-[#FFF500]">
             Pilih "{{ missingGroup }}" dulu.
           </p>
           <div class="flex items-center gap-3">
@@ -84,17 +84,17 @@
                 type="button"
                 aria-label="Kurangi jumlah"
                 :disabled="quantity <= 1"
-                class="flex h-11 w-11 items-center justify-center rounded-full text-[#F5F0EA] transition-colors hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent"
+                class="flex h-11 w-11 items-center justify-center rounded-full text-[#FAFAFA] transition-colors hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent"
                 @click="quantity--"
               >
                 <Minus :size="16" />
               </button>
-              <span class="min-w-[2rem] text-center text-base font-semibold tabular-nums text-[#F5F0EA]">{{ quantity }}</span>
+              <span class="min-w-[2rem] text-center text-base font-semibold tabular-nums text-[#FAFAFA]">{{ quantity }}</span>
               <button
                 type="button"
                 aria-label="Tambah jumlah"
                 :disabled="quantity >= 99"
-                class="flex h-11 w-11 items-center justify-center rounded-full text-[#F5F0EA] transition-colors hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent"
+                class="flex h-11 w-11 items-center justify-center rounded-full text-[#FAFAFA] transition-colors hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent"
                 @click="quantity++"
               >
                 <Plus :size="16" />
@@ -107,8 +107,8 @@
               :class="[
                 'flex h-[52px] flex-1 items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold transition-all duration-200',
                 missingGroup
-                  ? 'cursor-not-allowed border border-white/5 bg-[#1A1716] text-[#6F6761]'
-                  : 'bg-[#D7263D] text-white hover:bg-[#B91C32] hover:shadow-[0_8px_24px_-8px_rgba(215,38,61,0.6)] active:scale-[0.98]'
+                  ? 'cursor-not-allowed border border-white/5 bg-[#1A1A1A] text-[#737373]'
+                  : 'bg-[#EE0000] text-white hover:bg-[#C20000] hover:shadow-[0_8px_24px_-8px_rgba(238,0,0,0.6)] active:scale-[0.98]'
               ]"
               @click="confirm"
             >
@@ -181,10 +181,10 @@ onUnmounted(() => document.removeEventListener("keydown", onKey))
 </script>
 
 <style scoped>
-/* Palet: Surface #141211 · Washi #F5F0EA · Crimson #D7263D · Champagne #D4B483 */
+/* Palet: Surface #141414 · Washi #FAFAFA · Crimson #EE0000 · Champagne #FFF500 */
 
 .picker-sheet {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)), #141211;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)), #141414;
   box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.7);
 }
 
@@ -192,7 +192,7 @@ onUnmounted(() => document.removeEventListener("keydown", onKey))
 .footer-safe { padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px)); }
 
 button:focus-visible {
-  outline: 2px solid #D4B483;
+  outline: 2px solid #FFF500;
   outline-offset: 3px;
 }
 </style>

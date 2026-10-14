@@ -561,7 +561,7 @@ const confirmDelete = async () => {
 }
 .dash-eyebrow {
   font-family: 'Oswald', sans-serif;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--accent-text);
@@ -608,11 +608,11 @@ const confirmDelete = async () => {
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
-.ic-red   { background: rgba(220,38,38,0.1);  color: var(--red-soft); }
+.ic-red   { background: rgba(238,0,0,0.1);  color: var(--red-soft); }
 .ic-green { background: rgba(34,197,94,0.1);  color: var(--green-soft); }
-.ic-amber { background: rgba(245,158,11,0.1); color: var(--amber-soft); }
+.ic-amber { background: rgba(255,245,0,0.1); color: var(--amber-soft); }
 .stat-value { font-family: monospace; font-size: 1.25rem; font-weight: 700; color: var(--text); margin: 0 0 0.15rem; line-height: 1; }
-.stat-label { font-family: 'Oswald', sans-serif; font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); margin: 0; }
+.stat-label { font-family: 'Oswald', sans-serif; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); margin: 0; }
 
 /* ── Pengaturan rate poin ────────────────────────────────────────── */
 .settings-card {
@@ -689,7 +689,7 @@ const confirmDelete = async () => {
   outline: none; transition: border-color 0.15s;
 }
 .search-input::placeholder { color: var(--text-faint); }
-.search-input:focus { border-color: rgba(220,38,38,0.45); }
+.search-input:focus { border-color: rgba(238,0,0,0.45); }
 
 .filter-chips {
   display: flex; background: var(--surface);
@@ -699,7 +699,7 @@ const confirmDelete = async () => {
 .chip-btn {
   padding: 0.42rem 0.85rem; border-radius: 8px; border: none; background: transparent;
   color: var(--text-faint);
-  font-family: 'Oswald', sans-serif; font-size: 0.68rem;
+  font-family: 'Oswald', sans-serif; font-size: 0.72rem;
   letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: all 0.15s;
 }
 .chip-btn:hover { color: var(--text-2); }
@@ -717,7 +717,7 @@ const confirmDelete = async () => {
   text-align: left;
   padding: 0.9rem 1.25rem;
   font-family: 'Oswald', sans-serif;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--text-faint);
@@ -749,11 +749,11 @@ const confirmDelete = async () => {
   cursor: pointer; transition: all 0.15s;
 }
 .icon-btn:hover { background: rgb(var(--ink) / 0.1); color: var(--text); }
-.icon-btn-danger:hover { background: rgba(239,68,68,0.15); color: var(--red-soft); border-color: rgba(239,68,68,0.3); }
+.icon-btn-danger:hover { background: rgba(255,42,42,0.15); color: var(--red-soft); border-color: rgba(255,42,42,0.3); }
 
 .status-badge {
   padding: 0.3rem 0.7rem; border-radius: 100px; border: 1px solid;
-  font-family: 'Oswald', sans-serif; font-size: 0.68rem;
+  font-family: 'Oswald', sans-serif; font-size: 0.72rem;
   letter-spacing: 0.08em; text-transform: uppercase;
   cursor: pointer; transition: opacity 0.15s; white-space: nowrap;
 }
@@ -773,7 +773,7 @@ const confirmDelete = async () => {
 .retry-btn {
   margin-top: 0.5rem; padding: 0.5rem 1.25rem; border-radius: 8px;
   background: var(--accent); border: none; color: var(--on-accent);
-  font-family: 'Oswald', sans-serif; font-size: 0.68rem;
+  font-family: 'Oswald', sans-serif; font-size: 0.72rem;
   letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer;
 }
 .retry-btn:hover { background: var(--accent-hover); }
@@ -815,10 +815,10 @@ const confirmDelete = async () => {
 
 .field { display: flex; flex-direction: column; gap: 0.4rem; }
 .field-label {
-  font-family: 'Oswald', sans-serif; font-size: 0.68rem;
+  font-family: 'Oswald', sans-serif; font-size: 0.72rem;
   letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim);
 }
-.field-hint { font-size: 0.68rem; color: var(--text-faint); margin: 0.1rem 0 0; }
+.field-hint { font-size: 0.72rem; color: var(--text-faint); margin: 0.1rem 0 0; }
 
 .form-input {
   background: rgb(var(--ink) / 0.04); border: 1px solid rgb(var(--ink) / 0.1);
@@ -828,7 +828,7 @@ const confirmDelete = async () => {
 
 }
 .form-input.mono { font-family: monospace; }
-.form-input:focus { border-color: rgba(220,38,38,0.5); }
+.form-input:focus { border-color: rgba(238,0,0,0.5); }
 .form-input::placeholder { color: var(--text-faint); }
 
 .form-input[type="number"]::-webkit-inner-spin-button,
@@ -871,7 +871,7 @@ const confirmDelete = async () => {
 
 .form-error {
   font-size: 0.75rem; color: var(--red-soft); margin: 0;
-  background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2);
+  background: rgba(255,42,42,0.08); border: 1px solid rgba(255,42,42,0.2);
   padding: 0.6rem 0.8rem; border-radius: 8px;
 }
 
@@ -974,7 +974,7 @@ const confirmDelete = async () => {
   .promo-table tbody td[data-label]::before {
     content: attr(data-label);
     display: block; margin-bottom: 0.15rem;
-    font-family: 'Oswald', sans-serif; font-size: 0.68rem;
+    font-family: 'Oswald', sans-serif; font-size: 0.72rem;
     letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint);
   }
   .promo-table { font-size: 0.8rem; }

@@ -5,7 +5,7 @@
     <div>
       <div class="flex items-center gap-2 mb-2">
         <span class="w-1 h-1 rounded-full bg-red-600"></span>
-        <p class="text-[color:var(--text-faint)] text-[10px] font-oswald uppercase tracking-[0.25em]">Masashimura · Akun</p>
+        <p class="text-[color:var(--text-faint)] text-[11px] font-oswald uppercase tracking-[0.25em]">Masashimura · Akun</p>
       </div>
       <h1 class="font-oswald text-3xl sm:text-4xl uppercase tracking-tighter text-[color:var(--text)]">
         My Profile
@@ -28,7 +28,7 @@
         </div>
         <div class="pt-3 border-t border-[color:rgb(var(--ink)/0.05)] flex justify-center">
           <span
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider font-mono"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider font-mono"
             :class="roleStyle.badge"
           >
             <component :is="roleStyle.icon" :size="11" />
@@ -38,11 +38,11 @@
 
         <div class="pt-3 border-t border-[color:rgb(var(--ink)/0.05)] text-left space-y-2">
           <div class="flex items-center justify-between">
-            <span class="text-[10px] text-[color:var(--text-faint)] uppercase tracking-wider">Username</span>
+            <span class="text-[11px] text-[color:var(--text-faint)] uppercase tracking-wider">Username</span>
             <span class="text-xs text-[color:var(--text-dim)] font-mono truncate max-w-[110px]">{{ auth.user?.username || '—' }}</span>
           </div>
           <div class="flex items-center justify-between">
-            <span class="text-[10px] text-[color:var(--text-faint)] uppercase tracking-wider">Status</span>
+            <span class="text-[11px] text-[color:var(--text-faint)] uppercase tracking-wider">Status</span>
             <span class="inline-flex items-center gap-1 text-xs text-[color:var(--green-soft)]">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Aktif
             </span>
@@ -63,7 +63,7 @@
             </div>
 
             <div class="space-y-1.5">
-              <label class="text-[10px] uppercase font-bold tracking-wider text-[color:var(--text-faint)]">Alamat Email</label>
+              <label class="text-[11px] uppercase font-bold tracking-wider text-[color:var(--text-faint)]">Alamat Email</label>
               <div class="relative">
                 <input
                   :value="auth.user?.email"
@@ -80,7 +80,7 @@
             </div>
 
             <div class="space-y-1.5">
-              <label for="profile-username" class="text-[10px] uppercase font-bold tracking-wider text-[color:var(--text-faint)]">
+              <label for="profile-username" class="text-[11px] uppercase font-bold tracking-wider text-[color:var(--text-faint)]">
                 Username
               </label>
               <div class="relative">
@@ -103,7 +103,7 @@
             <div class="flex items-center gap-2 pb-3 border-b border-[color:rgb(var(--ink)/0.05)]">
               <ShieldCheck :size="14" class="text-[color:var(--accent-text)]" />
               <h2 class="font-oswald text-sm uppercase tracking-wider text-[color:var(--text-2)]">Keamanan Password</h2>
-              <span class="text-[10px] text-[color:var(--text-faint)] italic ml-auto">Opsional</span>
+              <span class="text-[11px] text-[color:var(--text-faint)] italic ml-auto">Opsional</span>
             </div>
 
             <p class="text-[11px] text-[color:var(--text-faint)] -mt-1">
@@ -126,7 +126,7 @@
 
             <!-- Password Saat Ini -->
             <div v-if="verifyMethod === 'password'" class="space-y-1.5">
-              <label for="profile-current-password" class="text-[10px] uppercase font-bold tracking-wider text-[color:var(--text-faint)]">
+              <label for="profile-current-password" class="text-[11px] uppercase font-bold tracking-wider text-[color:var(--text-faint)]">
                 Password Saat Ini
               </label>
               <div class="relative">
@@ -147,7 +147,7 @@
 
             <!-- PIN Keamanan -->
             <div v-else class="space-y-1.5">
-              <label for="profile-pin" class="text-[10px] uppercase font-bold tracking-wider text-[color:var(--text-faint)]">
+              <label for="profile-pin" class="text-[11px] uppercase font-bold tracking-wider text-[color:var(--text-faint)]">
                 PIN Keamanan
               </label>
               <div class="relative">
@@ -166,7 +166,7 @@
 
             <!-- Password Baru -->
             <div class="space-y-1.5">
-              <label for="profile-new-password" class="text-[10px] uppercase font-bold tracking-wider text-[color:var(--text-faint)]">
+              <label for="profile-new-password" class="text-[11px] uppercase font-bold tracking-wider text-[color:var(--text-faint)]">
                 Password Baru
               </label>
               <div class="relative">
@@ -192,7 +192,7 @@
                     :class="i <= passwordStrength.score ? passwordStrength.color : 'bg-[color:rgb(var(--ink)/0.08)]'"
                   ></span>
                 </div>
-                <span class="text-[10px] uppercase tracking-wider shrink-0" :class="passwordStrength.textColor">
+                <span class="text-[11px] uppercase tracking-wider shrink-0" :class="passwordStrength.textColor">
                   {{ passwordStrength.label }}
                 </span>
               </div>
@@ -200,7 +200,7 @@
 
             <!-- Konfirmasi Password -->
             <div class="space-y-1.5">
-              <label for="profile-confirm-password" class="text-[10px] uppercase font-bold tracking-wider text-[color:var(--text-faint)]">
+              <label for="profile-confirm-password" class="text-[11px] uppercase font-bold tracking-wider text-[color:var(--text-faint)]">
                 Konfirmasi Password Baru
               </label>
               <div class="relative">
@@ -410,7 +410,7 @@ const handleUpdateProfile = async () => {
   padding: 0.6rem; border-radius: 10px;
   background: rgb(var(--ink) / 0.03); border: 1px solid rgb(var(--ink) / 0.08);
   color: var(--text-dim);
-  font-family: 'Oswald', sans-serif; font-size: 0.68rem;
+  font-family: 'Oswald', sans-serif; font-size: 0.72rem;
   letter-spacing: 0.08em; text-transform: uppercase;
   cursor: pointer; transition: all 0.15s;
 }

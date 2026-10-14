@@ -53,10 +53,22 @@ html[data-admin-theme] {
   padding-bottom: 1.25rem;
   border-bottom: 1px solid var(--border);
 }
+/* Garis aksen brand di bawah judul halaman admin (merah -> kuning, mengikuti logo) */
+.adm-header { position: relative; }
+.adm-header::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 72px;
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #ee0000, #fff500);
+}
 .adm-eyebrow {
   margin: 0 0 0.35rem;
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--accent-text);
@@ -339,7 +351,7 @@ button.adm-badge:disabled { opacity: 0.5; cursor: wait; }
 .adm-table { width: 100%; border-collapse: collapse; }
 .adm-table th {
   padding: 0.75rem 1rem; text-align: left; white-space: nowrap;
-  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
   color: var(--text-dim); background: var(--surface-2); border-bottom: 1px solid var(--border);
 }
 .adm-table td {
@@ -364,7 +376,7 @@ button.adm-badge:disabled { opacity: 0.5; cursor: wait; }
   .adm-table--stack tbody tr:hover td { background: transparent; }
   .adm-table--stack td::before {
     content: attr(data-label); flex-shrink: 0;
-    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint);
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint);
   }
   .adm-table--stack td[data-label='']::before, .adm-table--stack td:not([data-label])::before { display: none; }
   .adm-table--stack td.adm-td-first { justify-content: flex-start; text-align: left; padding-top: 0.6rem; }

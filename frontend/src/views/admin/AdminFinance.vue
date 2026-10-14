@@ -827,7 +827,7 @@ onMounted(async () => {
 }
 .fr-heading { display: flex; flex-direction: column; gap: 0.25rem; }
 .fr-eyebrow {
-  font-family: 'Oswald', sans-serif; font-size: 0.68rem; letter-spacing: 0.22em;
+  font-family: 'Oswald', sans-serif; font-size: 0.72rem; letter-spacing: 0.22em;
   text-transform: uppercase; color: var(--accent-text); margin: 0;
 }
 .fr-title {
@@ -905,15 +905,15 @@ onMounted(async () => {
   width: 28px; height: 28px; border-radius: var(--r-sm); flex-shrink: 0;
 }
 .ic-green { background: rgba(34,197,94,0.1); color: var(--green-soft); }
-.ic-amber { background: rgba(245,158,11,0.1); color: var(--amber-soft); }
-.ic-red   { background: rgba(239,68,68,0.1); color: var(--red-soft); }
-.s-label { font-family: 'Oswald', sans-serif; font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); flex: 1; min-width: 0; }
+.ic-amber { background: rgba(255,245,0,0.1); color: var(--amber-soft); }
+.ic-red   { background: rgba(255,42,42,0.1); color: var(--red-soft); }
+.s-label { font-family: 'Oswald', sans-serif; font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); flex: 1; min-width: 0; }
 .s-badge {
-  font-size: 0.68rem; padding: 0.15rem 0.55rem; border-radius: 100px;
+  font-size: 0.72rem; padding: 0.15rem 0.55rem; border-radius: 100px;
   font-family: 'Oswald', sans-serif; letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap;
 }
 .badge-up   { background: rgba(34,197,94,0.1); color: var(--green-soft); border: 1px solid rgba(34,197,94,0.2); }
-.badge-down { background: rgba(239,68,68,0.1); color: var(--red-soft); border: 1px solid rgba(239,68,68,0.2); }
+.badge-down { background: rgba(255,42,42,0.1); color: var(--red-soft); border: 1px solid rgba(255,42,42,0.2); }
 .s-value {
   font-family: monospace; font-size: clamp(1.1rem, 4.2vw, 1.45rem); overflow-wrap: anywhere;
   font-weight: 700; color: var(--text); letter-spacing: -0.02em; margin-bottom: 0.4rem;
@@ -921,7 +921,7 @@ onMounted(async () => {
 }
 .val-green { color: var(--green-soft); }
 .val-red   { color: var(--red-soft); }
-.s-note    { font-size: 0.68rem; color: var(--text-faint); }
+.s-note    { font-size: 0.72rem; color: var(--text-faint); }
 
 /* ── Shell: main + aside (+ export lebar penuh) ──────────────────── */
 .fr-shell { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem; align-items: start; }
@@ -950,7 +950,7 @@ onMounted(async () => {
 .card-head.border-b { border-bottom: 1px solid var(--border); }
 .card-titles { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }   /* eyebrow di atas judul, bukan sebelahan */
 .card-eyebrow {
-  font-family: 'Oswald', sans-serif; font-size: 0.68rem; letter-spacing: 0.18em;
+  font-family: 'Oswald', sans-serif; font-size: 0.72rem; letter-spacing: 0.18em;
   text-transform: uppercase; color: var(--accent-text); margin: 0;
 }
 .card-title {
@@ -979,7 +979,7 @@ onMounted(async () => {
 .form-card.is-editing { border-color: var(--amber); box-shadow: 0 0 0 1px var(--amber), var(--shadow-sm); }
 .expense-form { padding: 1.25rem 1.4rem 1.4rem; display: flex; flex-direction: column; gap: 1.1rem; }
 .field { display: flex; flex-direction: column; gap: 0.4rem; }
-.field-label { font-family: 'Oswald', sans-serif; font-size: 0.68rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-faint); }
+.field-label { font-family: 'Oswald', sans-serif; font-size: 0.72rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-faint); }
 .field-input {
   min-height: 42px; background: rgb(var(--ink) / 0.03); border: 1px solid var(--border-strong);
   border-radius: var(--r-sm); padding: 0.7rem 1rem; color: var(--text);
@@ -1005,7 +1005,7 @@ onMounted(async () => {
 }
 .method-btn {
   flex: 1; padding: 0.5rem 0.7rem; border-radius: 6px; border: none; background: transparent;
-  color: var(--text-faint); font-family: 'Oswald', sans-serif; font-size: 0.68rem;
+  color: var(--text-faint); font-family: 'Oswald', sans-serif; font-size: 0.72rem;
   letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: all 0.15s;
 }
 .method-btn:hover { color: var(--text-2); }
@@ -1033,7 +1033,7 @@ onMounted(async () => {
 .table-scroll { overflow-x: auto; }
 .data-table { width: 100%; border-collapse: collapse; min-width: 420px; }
 .data-table th {
-  padding: 0.65rem 1.4rem; font-family: 'Oswald', sans-serif; font-size: 0.68rem; font-weight: 400;
+  padding: 0.65rem 1.4rem; font-family: 'Oswald', sans-serif; font-size: 0.72rem; font-weight: 400;
   letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-faint); text-align: left;
   background: rgb(var(--ink) / 0.015); border-bottom: 1px solid var(--border);
 }
@@ -1048,7 +1048,7 @@ onMounted(async () => {
 .data-row:hover { background: var(--surface-hover); }
 .data-row:last-child { border-bottom: none; }
 .row-empty { opacity: 0.3; }
-.row-editing, .row-editing:hover { background: rgba(251,191,36,0.08); }
+.row-editing, .row-editing:hover { background: rgba(255,245,0,0.08); }
 
 .data-table td { padding: 0.85rem 1.4rem; font-size: 0.82rem; vertical-align: middle; }
 .td-mono   { font-family: monospace; color: var(--text-2); }
@@ -1064,14 +1064,14 @@ onMounted(async () => {
 
 .total-row { background: rgb(var(--ink) / 0.03) !important; border-top: 1px solid var(--border-strong) !important; }
 .total-row td {
-  font-family: 'Oswald', sans-serif; font-size: 0.68rem; letter-spacing: 0.1em;
+  font-family: 'Oswald', sans-serif; font-size: 0.72rem; letter-spacing: 0.1em;
   text-transform: uppercase; color: var(--text-dim); padding: 0.75rem 1.4rem;
 }
 .total-row .td-rev, .total-row .td-exp, .total-row .td-pos, .total-row .td-neg { font-size: 0.82rem; }
 
 .method-badge {
   display: inline-block; padding: 0.15rem 0.6rem; border-radius: 100px; border: 1px solid;
-  font-family: 'Oswald', sans-serif; font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase;
+  font-family: 'Oswald', sans-serif; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
 }
 .mb-cash { color: var(--text-dim); background: rgb(var(--ink) / 0.04); border-color: var(--border-strong); }
 .mb-qris { color: var(--blue-soft); background: rgba(56,189,248,0.08); border-color: rgba(56,189,248,0.25); }
@@ -1079,13 +1079,13 @@ onMounted(async () => {
 .row-actions { display: inline-flex; gap: 0.4rem; }
 .edit-btn, .delete-btn {
   padding: 0.3rem 0.7rem; border-radius: 6px; border: 1px solid;
-  font-family: 'Oswald', sans-serif; font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase;
+  font-family: 'Oswald', sans-serif; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
   cursor: pointer; transition: all 0.15s;
 }
 .edit-btn { background: rgb(var(--ink) / 0.04); border-color: var(--border-strong); color: var(--text-dim); }
 .edit-btn:hover { color: var(--text); background: rgb(var(--ink) / 0.08); }
-.delete-btn { background: rgba(239,68,68,0.07); border-color: rgba(239,68,68,0.18); color: var(--red-soft); }
-.delete-btn:hover { background: rgba(239,68,68,0.15); }
+.delete-btn { background: rgba(255,42,42,0.07); border-color: rgba(255,42,42,0.18); color: var(--red-soft); }
+.delete-btn:hover { background: rgba(255,42,42,0.15); }
 
 .empty-cell { padding: 2.5rem 1.4rem !important; text-align: center; color: var(--text-faint); }
 .empty-cell .spinner-sm { margin: 0 auto 0.6rem; }
@@ -1103,7 +1103,7 @@ onMounted(async () => {
 .split-fill { height: 100%; border-radius: 99px; min-width: 0; transition: width 0.4s ease; }
 .sf-cash { background: var(--amber); }
 .sf-qris { background: var(--blue-soft); }
-.split-pct { font-size: 0.68rem; color: var(--text-faint); }
+.split-pct { font-size: 0.72rem; color: var(--text-faint); }
 
 /* ── Insight ─────────────────────────────────────────────────────── */
 .insight-body { padding: 1.1rem 1.4rem 1.3rem; display: flex; flex-direction: column; gap: 1rem; }
@@ -1119,7 +1119,7 @@ onMounted(async () => {
 }
 .toggle-btn {
   padding: 0.42rem 1rem; border-radius: 6px; border: none; background: transparent; color: var(--text-faint);
-  font-family: 'Oswald', sans-serif; font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase;
+  font-family: 'Oswald', sans-serif; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
   cursor: pointer; transition: all 0.15s;
 }
 .toggle-btn:hover { color: var(--text-2); }
@@ -1136,14 +1136,14 @@ onMounted(async () => {
 .export-btn {
   display: flex; align-items: center; justify-content: center; gap: 0.4rem; min-width: 8rem;
   padding: 0.65rem 1rem; border-radius: var(--r-sm); border: 1px solid;
-  font-family: 'Oswald', sans-serif; font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase;
+  font-family: 'Oswald', sans-serif; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
   cursor: pointer; transition: all 0.15s;
 }
 .export-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .btn-excel { background: rgba(34,197,94,0.07); border-color: rgba(34,197,94,0.25); color: var(--green-soft); }
 .btn-excel:hover:not(:disabled) { background: rgba(34,197,94,0.14); }
-.btn-pdf   { background: rgba(220,38,38,0.07); border-color: rgba(220,38,38,0.25); color: var(--red-soft); }
-.btn-pdf:hover:not(:disabled)   { background: rgba(220,38,38,0.14); }
+.btn-pdf   { background: rgba(238,0,0,0.07); border-color: rgba(238,0,0,0.25); color: var(--red-soft); }
+.btn-pdf:hover:not(:disabled)   { background: rgba(238,0,0,0.14); }
 
 /* ── Grafik ──────────────────────────────────────────────────────── */
 .chart-loading {
@@ -1158,7 +1158,7 @@ onMounted(async () => {
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .chart-area { padding: 1.25rem 1.4rem 1.1rem; }
-.chart-scale { display: flex; justify-content: flex-end; margin-bottom: 0.5rem; font-family: monospace; font-size: 0.68rem; color: var(--text-faint); }
+.chart-scale { display: flex; justify-content: flex-end; margin-bottom: 0.5rem; font-family: monospace; font-size: 0.72rem; color: var(--text-faint); }
 .bar-chart { display: flex; align-items: stretch; gap: 4px; height: 200px; overflow-x: auto; overflow-y: hidden; padding-bottom: 0.25rem; }
 .bar-chart-yearly { gap: 8px; overflow-x: visible; }
 .bar-col { display: flex; flex-direction: column; align-items: stretch; gap: 0.35rem; flex: 1 0 22px; min-width: 22px; cursor: default; }
@@ -1172,7 +1172,7 @@ onMounted(async () => {
 .bar-col:hover .bar { filter: brightness(1.18); }
 .bar-rev { background: var(--green); }
 .bar-exp { background: var(--amber); opacity: 0.75; }
-.bar-label { font-size: 0.68rem; font-family: monospace; color: var(--text-faint); white-space: nowrap; text-align: center; }
+.bar-label { font-size: 0.72rem; font-family: monospace; color: var(--text-faint); white-space: nowrap; text-align: center; }
 .chart-legend { display: flex; gap: 1.25rem; margin-top: 0.75rem; }
 .legend-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.7rem; color: var(--text-dim); }
 .legend-dot { width: 8px; height: 8px; border-radius: 2px; }
@@ -1191,7 +1191,7 @@ onMounted(async () => {
 @keyframes modal-in { from { opacity: 0; transform: translateY(6px) scale(0.98); } to { opacity: 1; transform: none; } }
 .modal-icon {
   display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;
-  border-radius: var(--r-sm); margin-bottom: 1rem; background: rgba(239,68,68,0.1); color: var(--red-soft);
+  border-radius: var(--r-sm); margin-bottom: 1rem; background: rgba(255,42,42,0.1); color: var(--red-soft);
 }
 .modal-title { font-family: 'Oswald', sans-serif; font-size: 1rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.5rem; color: var(--text); }
 .modal-text { font-size: 0.8rem; line-height: 1.55; color: var(--text-dim); margin: 0 0 1.25rem; }

@@ -357,7 +357,7 @@ const metricsMismatch = computed(
 }
 .pi-table th {
   text-align: left;
-  font-size: 0.65rem;
+  font-size: 0.72rem;
   font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -387,7 +387,7 @@ const metricsMismatch = computed(
   padding: 0.1rem 0.5rem;
   border: 1px solid var(--border-strong);
   border-radius: 999px;
-  font-size: 0.65rem;
+  font-size: 0.72rem;
   color: var(--text-dim);
 }
 .pi-chip-active { margin-left: 0.4rem; color: var(--text-2); }

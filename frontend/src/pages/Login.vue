@@ -315,15 +315,15 @@ const handleSelfResetPassword = async () => {
 .hero-badge {
   display: inline-flex; align-items: center; gap: 0.5rem;
   padding: 0.35rem 0.85rem;
-  background: rgba(220,38,38,0.12);
-  border: 1px solid rgba(220,38,38,0.25);
+  background: rgba(238,0,0,0.12);
+  border: 1px solid rgba(238,0,0,0.25);
   border-radius: 100px;
   font-family: 'Oswald', sans-serif;
-  font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase;
-  color: #fca5a5;
+  font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase;
+  color: #ff9a9a;
 }
 .hero-badge-dot {
-  width: 5px; height: 5px; border-radius: 50%; background: #ef4444;
+  width: 5px; height: 5px; border-radius: 50%; background: #ff2a2a;
   animation: pulse 2s infinite;
 }
 @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
@@ -341,7 +341,7 @@ const handleSelfResetPassword = async () => {
   color: rgba(255,255,255,0.7); margin: 0;
 }
 .hero-desc {
-  font-size: 0.78rem; color: rgba(255,255,255,0.4);
+  font-size: 0.78rem; color: rgba(255,255,255,0.6);
   line-height: 1.7; margin: 0; max-width: 340px;
 }
 .hero-stats {
@@ -353,10 +353,10 @@ const handleSelfResetPassword = async () => {
   font-family: 'Oswald', sans-serif; font-size: 1rem;
   font-weight: 600; letter-spacing: 0.08em; color: #fff;
 }
-.stat-lbl { font-size: 0.6rem; color: rgba(255,255,255,0.3); letter-spacing: 0.1em; text-transform: uppercase; }
+.stat-lbl { font-size: 0.72rem; color: rgba(255,255,255,0.6); letter-spacing: 0.1em; text-transform: uppercase; }
 .hero-stat-div { width: 1px; height: 28px; background: rgba(255,255,255,0.1); }
 
-.hero-copy { font-size: 0.62rem; color: rgba(255,255,255,0.2); font-family: monospace; }
+.hero-copy { font-size: 0.72rem; color: rgba(255,255,255,0.5); font-family: monospace; }
 
 /* ── Form Panel ────────────────────────────────────────────────────── */
 .form-panel {
@@ -372,15 +372,15 @@ const handleSelfResetPassword = async () => {
 
 .form-header { display: flex; flex-direction: column; gap: 0.5rem; }
 .form-eyebrow {
-  font-family: 'Oswald', sans-serif; font-size: 0.6rem;
-  letter-spacing: 0.2em; text-transform: uppercase; color: #dc2626;
+  font-family: 'Oswald', sans-serif; font-size: 0.72rem;
+  letter-spacing: 0.2em; text-transform: uppercase; color: #ee0000;
 }
 .form-title {
   font-family: 'Oswald', sans-serif; font-size: 2rem;
   font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
   margin: 0; color: #fff;
 }
-.form-subtitle { font-size: 0.75rem; color: rgba(255,255,255,0.35); line-height: 1.6; }
+.form-subtitle { font-size: 0.75rem; color: rgba(255,255,255,0.6); line-height: 1.6; }
 
 /* ── Form fields ───────────────────────────────────────────────────── */
 .login-form { display: flex; flex-direction: column; gap: 1rem; }
@@ -388,15 +388,15 @@ const handleSelfResetPassword = async () => {
 
 .field { display: flex; flex-direction: column; gap: 0.4rem; }
 .field-label {
-  font-family: 'Oswald', sans-serif; font-size: 0.58rem;
+  font-family: 'Oswald', sans-serif; font-size: 0.72rem;
   letter-spacing: 0.15em; text-transform: uppercase;
-  color: rgba(255,255,255,0.3);
+  color: rgba(255,255,255,0.6);
 }
 
 .input-wrap { position: relative; display: flex; align-items: center; }
 .input-icon {
   position: absolute; left: 0.9rem;
-  color: rgba(255,255,255,0.2); pointer-events: none; flex-shrink: 0;
+  color: rgba(255,255,255,0.5); pointer-events: none; flex-shrink: 0;
 }
 .text-input {
   width: 100%; background: rgba(255,255,255,0.04);
@@ -407,15 +407,15 @@ const handleSelfResetPassword = async () => {
   transition: border-color 0.15s, background 0.15s;
   -webkit-appearance: none;
 }
-.text-input::placeholder { color: rgba(255,255,255,0.15); }
-.text-input:focus { border-color: rgba(220,38,38,0.5); background: rgba(255,255,255,0.06); }
+.text-input::placeholder { color: rgba(255,255,255,0.5); }
+.text-input:focus { border-color: rgba(238,0,0,0.5); background: rgba(255,255,255,0.06); }
 .text-input:disabled { opacity: 0.45; cursor: not-allowed; }
 .pr-input { padding-right: 2.75rem; }
 
 .eye-btn {
   position: absolute; right: 0.85rem;
   background: none; border: none; padding: 0;
-  color: rgba(255,255,255,0.25); cursor: pointer;
+  color: rgba(255,255,255,0.5); cursor: pointer;
   transition: color 0.15s; display: flex; align-items: center;
 }
 .eye-btn:hover { color: rgba(255,255,255,0.7); }
@@ -424,14 +424,14 @@ const handleSelfResetPassword = async () => {
 .submit-btn {
   width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
   padding: 0.9rem; border-radius: 12px; border: none;
-  background: #dc2626; color: #fff;
+  background: #ee0000; color: #fff;
   font-family: 'Oswald', sans-serif; font-size: 0.78rem;
   letter-spacing: 0.12em; text-transform: uppercase;
   cursor: pointer; transition: background 0.15s, opacity 0.15s;
-  box-shadow: 0 4px 20px rgba(220,38,38,0.2);
+  box-shadow: 0 4px 20px rgba(238,0,0,0.2);
   margin-top: 0.25rem;
 }
-.submit-btn:hover:not(:disabled) { background: #b91c1c; }
+.submit-btn:hover:not(:disabled) { background: #c20000; }
 .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .btn-spinner {
@@ -446,16 +446,16 @@ const handleSelfResetPassword = async () => {
 .forgot-wrap { text-align: center; }
 .forgot-btn {
   background: none; border: none;
-  font-size: 0.72rem; color: rgba(255,255,255,0.25);
+  font-size: 0.72rem; color: rgba(255,255,255,0.5);
   cursor: pointer; transition: color 0.15s;
   text-decoration: underline; text-underline-offset: 3px;
   text-decoration-color: rgba(255,255,255,0.1);
 }
-.forgot-btn:hover { color: #fca5a5; text-decoration-color: rgba(220,38,38,0.4); }
+.forgot-btn:hover { color: #ff9a9a; text-decoration-color: rgba(238,0,0,0.4); }
 
 .form-footer {
-  text-align: center; font-size: 0.65rem;
-  color: rgba(255,255,255,0.15); margin: 0;
+  text-align: center; font-size: 0.72rem;
+  color: rgba(255,255,255,0.5); margin: 0;
   font-family: monospace; letter-spacing: 0.05em;
 }
 
@@ -485,9 +485,9 @@ const handleSelfResetPassword = async () => {
   display: flex; align-items: flex-start; justify-content: space-between;
 }
 .modal-eyebrow {
-  font-family: 'Oswald', sans-serif; font-size: 0.58rem;
+  font-family: 'Oswald', sans-serif; font-size: 0.72rem;
   letter-spacing: 0.18em; text-transform: uppercase;
-  color: #dc2626; margin: 0 0 0.25rem;
+  color: #ee0000; margin: 0 0 0.25rem;
 }
 .modal-title {
   font-family: 'Oswald', sans-serif; font-size: 1.15rem;
@@ -496,19 +496,19 @@ const handleSelfResetPassword = async () => {
 .modal-close {
   width: 30px; height: 30px; border-radius: 8px;
   background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
-  color: rgba(255,255,255,0.4); cursor: pointer;
+  color: rgba(255,255,255,0.6); cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: all 0.15s; flex-shrink: 0;
 }
 .modal-close:hover { background: rgba(255,255,255,0.1); color: #fff; }
 
-.modal-desc { font-size: 0.74rem; color: rgba(255,255,255,0.35); line-height: 1.65; margin: 0; }
+.modal-desc { font-size: 0.74rem; color: rgba(255,255,255,0.6); line-height: 1.65; margin: 0; }
 
 .modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-top: 0.25rem; }
 .cancel-btn {
   padding: 0.85rem; border-radius: 12px;
   background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
-  color: rgba(255,255,255,0.45);
+  color: rgba(255,255,255,0.6);
   font-family: 'Oswald', sans-serif; font-size: 0.72rem;
   letter-spacing: 0.1em; text-transform: uppercase;
   cursor: pointer; transition: all 0.15s;

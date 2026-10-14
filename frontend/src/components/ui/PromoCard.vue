@@ -156,7 +156,7 @@ const metaText = computed(() => {
 
 <style scoped>
 /*
-  Palet: Surface #141211 · Washi #F5F0EA · Muted #A39A93
+  Palet: Surface #141414 · Washi #FAFAFA · Muted #A3A3A3
   Warna aksen (--pa) dan warna teks tombol (--pa-ink) tetap diambil dari tema yang
   dipilih admin lewat THEMES, jadi pilihan tema di admin tetap berfungsi.
 */
@@ -172,7 +172,7 @@ const metaText = computed(() => {
   background:
     radial-gradient(70% 90% at 100% 0%, var(--pa-soft), transparent 70%),
     linear-gradient(180deg, rgb(255 255 255 / 0.04), rgb(255 255 255 / 0.01)),
-    #141211;
+    #141414;
   padding: 1.25rem;
 }
 @media (min-width: 640px) {
@@ -194,7 +194,7 @@ const metaText = computed(() => {
   overflow: hidden;
   border-radius: 1.75rem;
   border: 1px solid rgb(255 255 255 / 0.1);
-  background: #141211;
+  background: #141414;
 }
 
 /* Tombol tutup: selalu di dalam kartu, pojok kanan atas */
@@ -202,14 +202,14 @@ const metaText = computed(() => {
   position: absolute; top: 0.75rem; right: 0.75rem; z-index: 3;
   display: flex; align-items: center; justify-content: center;
   width: 2.5rem; height: 2.5rem;
-  color: #F5F0EA; background: rgb(0 0 0 / 0.55);
+  color: #FAFAFA; background: rgb(0 0 0 / 0.55);
   border: 1px solid rgb(255 255 255 / 0.15);
   border-radius: 9999px;
   backdrop-filter: blur(12px); cursor: pointer;
   transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
 .promo-close:hover { background: rgb(0 0 0 / 0.85); border-color: var(--pa); }
-.promo-close:focus-visible { outline: 2px solid #D4B483; outline-offset: 2px; }
+.promo-close:focus-visible { outline: 2px solid #FFF500; outline-offset: 2px; }
 
 .promo-icon {
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
@@ -223,7 +223,7 @@ const metaText = computed(() => {
   position: relative; flex-shrink: 0; overflow: hidden;
   width: var(--media-w, auto);
   border-radius: 1.25rem;
-  border: 1px solid rgb(255 255 255 / 0.1); background: #1A1716;
+  border: 1px solid rgb(255 255 255 / 0.1); background: #1A1A1A;
 }
 .promo-media img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .promo-card--overlay .promo-media { position: absolute; inset: 0; width: auto; border: none; border-radius: 0; }
@@ -263,7 +263,7 @@ const metaText = computed(() => {
   margin: 0;
   font-family: "Sora", ui-sans-serif, system-ui, sans-serif;
   font-weight: 600; letter-spacing: -0.02em;
-  line-height: 1.15; color: #F5F0EA; overflow-wrap: anywhere;
+  line-height: 1.15; color: #FAFAFA; overflow-wrap: anywhere;
   font-size: clamp(1.25rem, 1.05rem + 1vw, 1.75rem);
 }
 .promo-title--split,
@@ -272,7 +272,7 @@ const metaText = computed(() => {
 .is-compact .promo-title--split,
 .is-compact .promo-title--overlay { font-size: clamp(1.2rem, 1rem + 0.9vw, 1.6rem); }
 
-.promo-text { margin: 0; max-width: 36rem; font-size: 0.9375rem; line-height: 1.65; color: #A39A93; }
+.promo-text { margin: 0; max-width: 36rem; font-size: 0.9375rem; line-height: 1.65; color: #A3A3A3; }
 .promo-card--overlay .promo-text { color: rgb(245 240 234 / 0.82); }
 
 .promo-meta {
@@ -293,7 +293,7 @@ const metaText = computed(() => {
 .is-compact .promo-btn { padding: 0.7rem 1.4rem; }
 .promo-btn:hover { transform: translateY(-2px); filter: brightness(0.92); box-shadow: 0 10px 28px -10px var(--pa); }
 .promo-btn:active { transform: scale(0.98); }
-.promo-btn:focus-visible { outline: 2px solid #D4B483; outline-offset: 3px; }
+.promo-btn:focus-visible { outline: 2px solid #FFF500; outline-offset: 3px; }
 .promo-btn-arrow { transition: transform 0.2s; }
 .promo-btn:hover .promo-btn-arrow { transform: translateX(4px); }
 .promo-copy.is-center .promo-btn { align-self: center; }

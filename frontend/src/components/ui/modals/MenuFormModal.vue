@@ -16,7 +16,7 @@
         </h2>
         <button
           @click="$emit('update:open', false)"
-          class="text-white/40 hover:text-red-400 text-3xl"
+          class="text-white/60 hover:text-red-400 text-3xl"
         >
           ✕
         </button>

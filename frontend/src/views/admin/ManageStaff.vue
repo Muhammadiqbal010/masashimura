@@ -212,7 +212,7 @@ onMounted(fetchStaff)
 .staff-name { margin: 0; font-size: 0.875rem; font-weight: 600; color: var(--text); }
 .staff-meta { margin: 0.15rem 0 0; font-size: 0.72rem; color: var(--text-dim); }
 .staff-badges { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
-.staff-badges .adm-badge { text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.62rem; }
+.staff-badges .adm-badge { text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.72rem; }
 
 .staff-pin { font-size: 1.25rem; letter-spacing: 0.5em; text-align: center; }
 .staff-spin { animation: adm-spin 0.8s linear infinite; }

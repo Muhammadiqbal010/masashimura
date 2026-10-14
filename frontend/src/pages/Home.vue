@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen overflow-x-hidden bg-[#0B0A0A] font-inter text-[#F5F0EA] selection:bg-[#D7263D]/40 selection:text-white">
+  <div class="min-h-screen overflow-x-hidden bg-[#080808] font-inter text-[#FAFAFA] selection:bg-[#EE0000]/40 selection:text-white">
 
     <!-- ═══════════════════════════════════════════
          1. HERO (tampil langsung, bagian CMS pakai skeleton)
@@ -21,8 +21,8 @@
             class="h-full w-full object-cover"
           />
         </div>
-        <div class="absolute inset-0 bg-gradient-to-t from-[#0B0A0A] via-[#0B0A0A]/60 to-[#0B0A0A]/55"></div>
-        <div class="absolute inset-0 hidden bg-gradient-to-r from-[#0B0A0A] via-[#0B0A0A]/70 to-transparent lg:block"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-[#080808] via-[#080808]/60 to-[#080808]/55"></div>
+        <div class="absolute inset-0 hidden bg-gradient-to-r from-[#080808] via-[#080808]/70 to-transparent lg:block"></div>
         <div class="hero-glow pointer-events-none absolute inset-0"></div>
       </div>
 
@@ -42,13 +42,13 @@
                 ></span>
                 <span
                   class="relative inline-flex h-2 w-2 rounded-full"
-                  :class="openStatus.isOpen ? 'bg-emerald-400' : 'bg-[#D7263D]'"
+                  :class="openStatus.isOpen ? 'bg-emerald-400' : 'bg-[#EE0000]'"
                 ></span>
               </span>
-              <span class="text-xs font-medium text-[#F5F0EA]">{{ openStatus.label }}</span>
-              <span v-if="openStatus.detail" class="text-xs text-[#A39A93]">{{ openStatus.detail }}</span>
+              <span class="text-xs font-medium text-[#FAFAFA]">{{ openStatus.label }}</span>
+              <span v-if="openStatus.detail" class="text-xs text-[#A3A3A3]">{{ openStatus.detail }}</span>
             </div>
-            <span class="rounded-full border border-[#D4B483]/25 bg-[#D4B483]/10 px-3.5 py-1.5 text-xs font-medium text-[#D4B483]">
+            <span class="rounded-full border border-[#FFF500]/25 bg-[#FFF500]/10 px-3.5 py-1.5 text-xs font-medium text-[#FFF500]">
               Bekasi, sejak 2024
             </span>
           </div>
@@ -56,14 +56,14 @@
           <!-- Headline -->
           <h1
             v-if="!loading.cms"
-            class="hero-title hero-in break-words font-sora font-semibold leading-[1.02] tracking-tight text-[#F5F0EA]"
+            class="hero-title hero-in break-words font-sora font-semibold leading-[1.02] tracking-tight text-[#FAFAFA]"
             style="--d: 100ms"
           >
             <span
               v-for="(line, i) in headlineLines"
               :key="i"
               class="block"
-              :class="line.accent ? 'text-[#D4B483]' : ''"
+              :class="line.accent ? 'text-[#FFF500]' : ''"
             >{{ line.text }}</span>
           </h1>
           <div v-else class="space-y-3" aria-hidden="true">
@@ -74,7 +74,7 @@
           <!-- Subheadline -->
           <p
             v-if="!loading.cms"
-            class="hero-in max-w-md text-base leading-relaxed text-[#C9C1B9] sm:text-lg"
+            class="hero-in max-w-md text-base leading-relaxed text-[#C8C8C8] sm:text-lg"
             style="--d: 220ms"
           >
             {{ cms.hero_subheadline }}
@@ -98,8 +98,8 @@
         <!-- Foto makanan (desktop) -->
         <div class="hero-in hidden items-end justify-end lg:col-span-5 lg:flex" style="--d: 300ms">
           <div class="relative w-80">
-            <div class="absolute -right-3 -top-3 h-full w-full rounded-[2rem] border border-[#D4B483]/30"></div>
-            <div class="relative aspect-square overflow-hidden rounded-[2rem] border border-white/10 bg-[#141211]">
+            <div class="absolute -right-3 -top-3 h-full w-full rounded-[2rem] border border-[#FFF500]/30"></div>
+            <div class="relative aspect-square overflow-hidden rounded-[2rem] border border-white/10 bg-[#141414]">
               <img
                 v-if="!loading.cms"
                 v-blur-img
@@ -109,8 +109,8 @@
               />
               <div v-else class="skeleton h-full w-full" aria-hidden="true"></div>
               <div class="absolute inset-x-3 bottom-3 flex items-center justify-between rounded-2xl border border-white/10 bg-black/55 px-4 py-3 backdrop-blur-md">
-                <span class="text-sm font-medium text-[#F5F0EA]">Signature dish</span>
-                <span class="h-2 w-2 animate-pulse rounded-full bg-[#D7263D]"></span>
+                <span class="text-sm font-medium text-[#FAFAFA]">Signature dish</span>
+                <span class="h-2 w-2 animate-pulse rounded-full bg-[#EE0000]"></span>
               </div>
             </div>
           </div>
@@ -118,27 +118,27 @@
       </div>
 
       <div class="pointer-events-none absolute bottom-6 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-1.5 opacity-40 sm:flex">
-        <span class="text-xs text-[#A39A93]">Scroll</span>
-        <div class="h-8 w-px bg-gradient-to-b from-[#A39A93] to-transparent"></div>
+        <span class="text-xs text-[#A3A3A3]">Scroll</span>
+        <div class="h-8 w-px bg-gradient-to-b from-[#A3A3A3] to-transparent"></div>
       </div>
     </section>
 
     <!-- ═══════════════════════════════════════════
          2. MARQUEE
     ═══════════════════════════════════════════ -->
-    <div v-if="cms.marquee_text" class="marquee-wrap overflow-hidden border-y border-white/[0.06] bg-[#0F0D0C] py-5" aria-hidden="true">
+    <div v-if="cms.marquee_text" class="marquee-wrap overflow-hidden border-y border-white/[0.06] bg-[#0D0D0D] py-5" aria-hidden="true">
       <div class="animate-marquee flex">
         <div v-for="g in 2" :key="g" class="flex shrink-0 items-center">
           <template v-for="m in 4" :key="m">
-            <span class="mx-8 whitespace-nowrap font-sora text-sm font-medium tracking-[0.2em] text-[#6F6761]">
+            <span class="mx-8 whitespace-nowrap font-sora text-sm font-medium tracking-[0.2em] text-[#737373]">
               {{ cms.marquee_text }}
             </span>
-            <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-[#D4B483]"></span>
+            <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-[#FFF500]"></span>
           </template>
         </div>
       </div>
     </div>
-    <div v-else class="border-y border-white/[0.06] bg-[#0F0D0C] py-5" aria-hidden="true">
+    <div v-else class="border-y border-white/[0.06] bg-[#0D0D0D] py-5" aria-hidden="true">
       <div class="skeleton mx-auto h-3 w-1/2 rounded-full"></div>
     </div>
 
@@ -155,9 +155,9 @@
       <div class="mb-10 flex items-end justify-between gap-6 sm:mb-14">
         <div class="space-y-3">
           <h2 class="section-title">Menu terlaris</h2>
-          <p class="max-w-md text-base text-[#A39A93]">Yang paling sering dipesan pelanggan kami.</p>
+          <p class="max-w-md text-base text-[#A3A3A3]">Yang paling sering dipesan pelanggan kami.</p>
         </div>
-        <router-link to="/menu" class="group hidden items-center gap-2 text-sm font-medium text-[#D4B483] transition-colors hover:text-[#F5F0EA] sm:inline-flex">
+        <router-link to="/menu" class="group hidden items-center gap-2 text-sm font-medium text-[#FFF500] transition-colors hover:text-[#FAFAFA] sm:inline-flex">
           Lihat semua
           <ArrowRight :size="15" class="transition-transform duration-200 group-hover:translate-x-1" />
         </router-link>
@@ -165,7 +165,7 @@
 
       <!-- Skeleton -->
       <div v-if="loading.best" class="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3" aria-hidden="true">
-        <div v-for="n in 3" :key="n" class="overflow-hidden rounded-3xl border border-white/[0.07] bg-[#141211]">
+        <div v-for="n in 3" :key="n" class="overflow-hidden rounded-3xl border border-white/[0.07] bg-[#141414]">
           <div class="skeleton aspect-[4/3] w-full"></div>
           <div class="space-y-3 p-6">
             <div class="skeleton h-5 w-3/4 rounded-full"></div>
@@ -184,9 +184,9 @@
           v-for="(item, idx) in topBestSellers"
           :key="idx"
           to="/menu"
-          class="card-surface group flex flex-col overflow-hidden !p-0 transition-all duration-300 hover:-translate-y-1 hover:border-[#D4B483]/35 hover:shadow-[0_28px_48px_-30px_rgba(215,38,61,0.5)]"
+          class="card-surface group flex flex-col overflow-hidden !p-0 transition-all duration-300 hover:-translate-y-1 hover:border-[#FFF500]/35 hover:shadow-[0_28px_48px_-30px_rgba(238,0,0,0.5)]"
         >
-          <div class="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-[#1A1716]">
+          <div class="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-[#1A1A1A]">
             <div class="h-full w-full transition-transform duration-700 ease-out group-hover:scale-105">
               <img
                 v-blur-img
@@ -196,28 +196,28 @@
                 class="h-full w-full object-cover"
               />
             </div>
-            <div class="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#141211] to-transparent opacity-80"></div>
-            <span class="absolute left-3 top-3 flex h-8 min-w-8 items-center justify-center rounded-full border border-white/10 bg-black/55 px-2 text-xs font-semibold tabular-nums text-[#F5F0EA] backdrop-blur-md">
+            <div class="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#141414] to-transparent opacity-80"></div>
+            <span class="absolute left-3 top-3 flex h-8 min-w-8 items-center justify-center rounded-full border border-white/10 bg-black/55 px-2 text-xs font-semibold tabular-nums text-[#FAFAFA] backdrop-blur-md">
               {{ idx + 1 }}
             </span>
             <span
               v-if="idx === 0"
-              class="absolute right-3 top-3 rounded-full bg-[#D4B483] px-3 py-1 text-xs font-semibold text-[#2A1D08]"
+              class="absolute right-3 top-3 rounded-full bg-[#FFF500] px-3 py-1 text-xs font-semibold text-[#1A1700]"
             >
               Terlaris
             </span>
           </div>
 
           <div class="flex flex-1 flex-col gap-3 p-6">
-            <h3 class="line-clamp-2 font-sora text-lg font-semibold leading-snug text-[#F5F0EA]">
+            <h3 class="line-clamp-2 font-sora text-lg font-semibold leading-snug text-[#FAFAFA]">
               {{ item.name }}
             </h3>
-            <p class="line-clamp-2 flex-1 text-sm leading-relaxed text-[#A39A93]">{{ item.desc }}</p>
+            <p class="line-clamp-2 flex-1 text-sm leading-relaxed text-[#A3A3A3]">{{ item.desc }}</p>
             <div class="mt-1 flex items-center justify-between border-t border-white/[0.07] pt-4">
-              <span class="font-sora text-lg font-semibold tracking-tight text-[#F5F0EA]">
+              <span class="font-sora text-lg font-semibold tracking-tight text-[#FAFAFA]">
                 {{ formatRupiah(item.price) }}
               </span>
-              <span class="inline-flex items-center gap-2 rounded-full bg-[#D7263D] px-5 py-2.5 text-sm font-semibold text-white transition-colors group-hover:bg-[#B91C32]">
+              <span class="inline-flex items-center gap-2 rounded-full bg-[#EE0000] px-5 py-2.5 text-sm font-semibold text-white transition-colors group-hover:bg-[#C20000]">
                 Pesan
                 <ArrowRight :size="14" class="transition-transform duration-200 group-hover:translate-x-0.5" />
               </span>
@@ -227,7 +227,7 @@
 
         <div
           v-if="bestSellers.length === 0"
-          class="col-span-full rounded-3xl border border-dashed border-white/10 py-20 text-center text-sm text-[#6F6761]"
+          class="col-span-full rounded-3xl border border-dashed border-white/10 py-20 text-center text-sm text-[#737373]"
         >
           Menu belum tersedia saat ini.
         </div>
@@ -244,12 +244,12 @@
     <!-- ═══════════════════════════════════════════
          5. TENTANG MASASHIMURA
     ═══════════════════════════════════════════ -->
-    <section v-reveal class="border-y border-white/[0.06] bg-[#0F0D0C] py-20 sm:py-28 lg:py-32">
+    <section v-reveal class="border-y border-white/[0.06] bg-[#0D0D0D] py-20 sm:py-28 lg:py-32">
       <div class="mx-auto grid max-w-7xl grid-cols-1 items-center gap-14 px-5 sm:px-8 lg:grid-cols-2 lg:gap-20 lg:px-10">
 
         <div class="relative">
-          <div class="absolute -bottom-3 -left-3 h-full w-full rounded-[2rem] border border-[#D4B483]/25 sm:-bottom-4 sm:-left-4"></div>
-          <div class="relative aspect-square overflow-hidden rounded-[2rem] bg-[#141211]">
+          <div class="absolute -bottom-3 -left-3 h-full w-full rounded-[2rem] border border-[#FFF500]/25 sm:-bottom-4 sm:-left-4"></div>
+          <div class="relative aspect-square overflow-hidden rounded-[2rem] bg-[#141414]">
             <img
               v-if="!loading.cms"
               v-blur-img
@@ -265,7 +265,7 @@
         <div class="space-y-8 sm:space-y-10">
           <div class="space-y-4">
             <h2 class="section-title">Tentang Masashimura</h2>
-            <p v-if="!loading.cms" class="max-w-md text-base leading-[1.85] text-[#A39A93]">{{ cms.about_text }}</p>
+            <p v-if="!loading.cms" class="max-w-md text-base leading-[1.85] text-[#A3A3A3]">{{ cms.about_text }}</p>
             <div v-else class="max-w-md space-y-2.5" aria-hidden="true">
               <div class="skeleton h-4 w-full rounded-full"></div>
               <div class="skeleton h-4 w-full rounded-full"></div>
@@ -276,25 +276,25 @@
           <!-- Metrics -->
           <div ref="metricsRef" class="grid grid-cols-3 divide-x divide-white/[0.07] overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02]">
             <div class="space-y-1 px-3 py-5 sm:px-6">
-              <p class="font-sora text-2xl font-semibold leading-tight text-[#F5F0EA] sm:text-3xl">{{ metricDisplays.m1 }}</p>
-              <p class="text-xs text-[#A39A93] sm:text-sm">Berdiri</p>
+              <p class="font-sora text-2xl font-semibold leading-tight text-[#FAFAFA] sm:text-3xl">{{ metricDisplays.m1 }}</p>
+              <p class="text-xs text-[#A3A3A3] sm:text-sm">Berdiri</p>
             </div>
             <div class="space-y-1 px-3 py-5 sm:px-6">
-              <p class="font-sora text-2xl font-semibold leading-tight text-[#F5F0EA] sm:text-3xl">{{ metricDisplays.m2 }}</p>
-              <p class="text-xs text-[#A39A93] sm:text-sm">Varian menu</p>
+              <p class="font-sora text-2xl font-semibold leading-tight text-[#FAFAFA] sm:text-3xl">{{ metricDisplays.m2 }}</p>
+              <p class="text-xs text-[#A3A3A3] sm:text-sm">Varian menu</p>
             </div>
             <div class="space-y-1 px-3 py-5 sm:px-6">
               <p
-                class="whitespace-nowrap font-sora font-semibold leading-tight text-[#D4B483]"
+                class="whitespace-nowrap font-sora font-semibold leading-tight text-[#FFF500]"
                 :class="metric3IsStars ? 'pt-1 text-[0.9rem] tracking-tighter sm:pt-0 sm:text-2xl' : 'text-2xl sm:text-3xl'"
               >
                 {{ cms.metric_3 || "–" }}
               </p>
-              <p class="text-xs text-[#A39A93] sm:text-sm">Rating</p>
+              <p class="text-xs text-[#A3A3A3] sm:text-sm">Rating</p>
             </div>
           </div>
 
-          <router-link to="/menu" class="group inline-flex items-center gap-2 text-sm font-semibold text-[#D4B483] transition-colors hover:text-[#F5F0EA]">
+          <router-link to="/menu" class="group inline-flex items-center gap-2 text-sm font-semibold text-[#FFF500] transition-colors hover:text-[#FAFAFA]">
             Lihat semua menu
             <ArrowRight :size="15" class="transition-transform duration-200 group-hover:translate-x-1" />
           </router-link>
@@ -323,15 +323,15 @@
           <div
             v-for="(bento, i) in bentoLarge"
             :key="'l' + i"
-            class="bento-large group relative flex min-h-[220px] flex-1 flex-col justify-between overflow-hidden rounded-3xl border border-white/[0.07] p-8 transition-colors duration-300 hover:border-[#D4B483]/35 sm:min-h-[260px] sm:p-10"
+            class="bento-large group relative flex min-h-[220px] flex-1 flex-col justify-between overflow-hidden rounded-3xl border border-white/[0.07] p-8 transition-colors duration-300 hover:border-[#FFF500]/35 sm:min-h-[260px] sm:p-10"
           >
-            <div class="pointer-events-none absolute -bottom-10 -right-10 text-[#D4B483] opacity-[0.07] transition-opacity duration-500 group-hover:opacity-[0.14]">
+            <div class="pointer-events-none absolute -bottom-10 -right-10 text-[#FFF500] opacity-[0.07] transition-opacity duration-500 group-hover:opacity-[0.14]">
               <component :is="getIcon(bento.icon_name)" :size="220" :stroke-width="1" />
             </div>
             <div class="icon-tile relative !h-12 !w-12">
               <component :is="getIcon(bento.icon_name)" :size="22" />
             </div>
-            <span class="relative font-sora text-2xl font-semibold leading-tight tracking-tight text-[#F5F0EA] sm:text-3xl">
+            <span class="relative font-sora text-2xl font-semibold leading-tight tracking-tight text-[#FAFAFA] sm:text-3xl">
               {{ bento.title }}
             </span>
           </div>
@@ -344,13 +344,13 @@
           <div
             v-for="(bento, i) in bentoSmall"
             :key="'s' + i"
-            class="card-surface group flex min-h-[112px] flex-col justify-between gap-6 !p-5 transition-colors duration-300 hover:border-[#D4B483]/35 sm:min-h-[130px] sm:!p-6"
+            class="card-surface group flex min-h-[112px] flex-col justify-between gap-6 !p-5 transition-colors duration-300 hover:border-[#FFF500]/35 sm:min-h-[130px] sm:!p-6"
             :class="isBentoOrphan(i) ? 'col-span-2' : ''"
           >
             <div class="icon-tile">
               <component :is="getIcon(bento.icon_name)" :size="18" />
             </div>
-            <span class="font-sora text-sm font-semibold text-[#F5F0EA] sm:text-base">
+            <span class="font-sora text-sm font-semibold text-[#FAFAFA] sm:text-base">
               {{ bento.title }}
             </span>
           </div>
@@ -361,7 +361,7 @@
     <!-- ═══════════════════════════════════════════
          7. GALLERY
     ═══════════════════════════════════════════ -->
-    <section v-reveal class="border-y border-white/[0.06] bg-[#0F0D0C] py-20 sm:py-28 lg:py-32">
+    <section v-reveal class="border-y border-white/[0.06] bg-[#0D0D0D] py-20 sm:py-28 lg:py-32">
       <div class="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
         <div class="mb-8 sm:mb-10">
           <h2 class="section-title">Gallery</h2>
@@ -378,8 +378,8 @@
             @click="setCategory(cat)"
             :class="[
               activeCategory === cat
-                ? 'border-[#D7263D] bg-[#D7263D] text-white'
-                : 'border-white/10 bg-[#141211] text-[#A39A93] hover:border-white/25 hover:text-[#F5F0EA]',
+                ? 'border-[#EE0000] bg-[#EE0000] text-white'
+                : 'border-white/10 bg-[#141414] text-[#A3A3A3] hover:border-white/25 hover:text-[#FAFAFA]',
               'shrink-0 cursor-pointer whitespace-nowrap rounded-full border px-4 py-2.5 text-sm font-medium transition-all'
             ]"
           >
@@ -405,7 +405,7 @@
             @click="openLightbox(i)"
             :class="[
               isFeatured(i) ? 'col-span-2 row-span-2' : '',
-              'group relative cursor-pointer overflow-hidden rounded-2xl border-0 bg-[#141211] p-0 text-left'
+              'group relative cursor-pointer overflow-hidden rounded-2xl border-0 bg-[#141414] p-0 text-left'
             ]"
           >
             <div class="h-full w-full transition-transform duration-700 ease-out group-hover:scale-105">
@@ -420,7 +420,7 @@
             <div class="absolute inset-0 flex items-end bg-gradient-to-t from-black/80 via-black/0 to-transparent p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100 sm:p-4">
               <div class="min-w-0 space-y-0.5">
                 <p class="line-clamp-1 font-sora text-sm font-semibold text-white">{{ img.title || 'Masashimura' }}</p>
-                <p v-if="img.category" class="text-xs text-[#D4B483]">{{ img.category }}</p>
+                <p v-if="img.category" class="text-xs text-[#FFF500]">{{ img.category }}</p>
               </div>
             </div>
             <div class="absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-black/55 opacity-0 backdrop-blur-md transition-opacity duration-300 group-hover:opacity-100 sm:right-3 sm:top-3">
@@ -430,7 +430,7 @@
 
           <div
             v-if="visibleGallery.length === 0"
-            class="col-span-full row-span-2 flex items-center justify-center rounded-2xl border border-dashed border-white/10 text-center text-sm text-[#6F6761]"
+            class="col-span-full row-span-2 flex items-center justify-center rounded-2xl border border-dashed border-white/10 text-center text-sm text-[#737373]"
           >
             Belum ada foto.
           </div>
@@ -461,7 +461,7 @@
           <X :size="18" />
         </button>
 
-        <span class="absolute left-5 top-6 text-sm font-medium tabular-nums text-[#A39A93] sm:left-10 sm:top-10">
+        <span class="absolute left-5 top-6 text-sm font-medium tabular-nums text-[#A3A3A3] sm:left-10 sm:top-10">
           {{ lightboxIndex + 1 }} / {{ visibleGallery.length }}
         </span>
 
@@ -488,8 +488,8 @@
             />
           </div>
           <div class="space-y-1 text-center">
-            <p class="font-sora text-base font-semibold text-[#F5F0EA]">{{ currentLightboxImage?.title || 'Masashimura' }}</p>
-            <p v-if="currentLightboxImage?.category" class="text-sm text-[#D4B483]">{{ currentLightboxImage.category }}</p>
+            <p class="font-sora text-base font-semibold text-[#FAFAFA]">{{ currentLightboxImage?.title || 'Masashimura' }}</p>
+            <p v-if="currentLightboxImage?.category" class="text-sm text-[#FFF500]">{{ currentLightboxImage.category }}</p>
           </div>
         </div>
       </div>
@@ -534,17 +534,17 @@
             class="col-start-1 row-start-1 space-y-7 transition-all duration-500 ease-out"
             :class="i === currentReviewIndex ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-3 opacity-0'"
           >
-            <Quote :size="32" class="text-[#D4B483]/70" />
-            <blockquote class="max-w-2xl font-sora text-xl font-normal leading-relaxed text-[#F5F0EA] sm:text-2xl">
+            <Quote :size="32" class="text-[#FFF500]/70" />
+            <blockquote class="max-w-2xl font-sora text-xl font-normal leading-relaxed text-[#FAFAFA] sm:text-2xl">
               “{{ review.text }}”
             </blockquote>
             <figcaption class="flex items-center gap-3">
-              <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#D4B483]/30 bg-[#D4B483]/10 font-sora text-sm font-semibold uppercase text-[#D4B483]">
+              <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#FFF500]/30 bg-[#FFF500]/10 font-sora text-sm font-semibold uppercase text-[#FFF500]">
                 {{ (review.name || '?').trim().charAt(0) }}
               </span>
               <span class="flex min-w-0 flex-col">
-                <span class="truncate text-sm font-semibold text-[#F5F0EA]">{{ review.name }}</span>
-                <span class="text-sm text-[#6F6761]">{{ review.status }}</span>
+                <span class="truncate text-sm font-semibold text-[#FAFAFA]">{{ review.name }}</span>
+                <span class="text-sm text-[#737373]">{{ review.status }}</span>
               </span>
             </figcaption>
           </figure>
@@ -555,7 +555,7 @@
             v-for="(r, i) in reviews"
             :key="i"
             class="block h-1.5 rounded-full transition-all duration-500"
-            :class="i === currentReviewIndex ? 'w-8 bg-[#D7263D]' : 'w-1.5 bg-white/20'"
+            :class="i === currentReviewIndex ? 'w-8 bg-[#EE0000]' : 'w-1.5 bg-white/20'"
           ></span>
         </div>
       </div>
@@ -580,7 +580,7 @@
         <div class="relative flex flex-col gap-3 sm:flex-row sm:gap-4 lg:justify-end">
           <router-link
             to="/menu"
-            class="group inline-flex items-center justify-center gap-2.5 whitespace-nowrap rounded-full bg-[#F5F0EA] px-9 py-4 font-sora text-sm font-semibold text-[#2A0A0F] transition-all duration-200 hover:bg-white active:scale-[0.98]"
+            class="group inline-flex items-center justify-center gap-2.5 whitespace-nowrap rounded-full bg-[#FAFAFA] px-9 py-4 font-sora text-sm font-semibold text-[#2A0A0F] transition-all duration-200 hover:bg-white active:scale-[0.98]"
           >
             Pesan via web
             <ArrowRight :size="16" class="transition-transform duration-200 group-hover:translate-x-1" />
@@ -1003,13 +1003,13 @@ onUnmounted(() => {
 <style scoped>
 /*
   Palet (sama dengan halaman Menu dan Lokasi & Kontak)
-  Warm black #0B0A0A · Band #0F0D0C · Surface #141211 · Washi #F5F0EA
-  Crimson #D7263D (aksi) · Champagne #D4B483 (detail premium)
+  Warm black #080808 · Band #0D0D0D · Surface #141414 · Washi #FAFAFA
+  Crimson #EE0000 (aksi) · Champagne #FFF500 (detail premium)
 */
 
 a:focus-visible,
 button:focus-visible {
-  outline: 2px solid #D4B483;
+  outline: 2px solid #FFF500;
   outline-offset: 3px;
 }
 
@@ -1020,22 +1020,22 @@ button:focus-visible {
   font-weight: 600;
   line-height: 1.1;
   letter-spacing: -0.02em;
-  color: #F5F0EA;
+  color: #FAFAFA;
 }
 
 /* ── Kartu & tombol ── */
 .card-surface {
   border-radius: 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.07);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012)), #141211;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012)), #141414;
   padding: 1.5rem;
 }
 
 .bento-large {
   background:
-    radial-gradient(70% 70% at 100% 100%, rgba(215, 38, 61, 0.14), transparent 70%),
+    radial-gradient(70% 70% at 100% 100%, rgba(238,0,0, 0.14), transparent 70%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012)),
-    #141211;
+    #141414;
 }
 
 .icon-tile {
@@ -1046,9 +1046,9 @@ button:focus-visible {
   align-items: center;
   justify-content: center;
   border-radius: 0.75rem;
-  border: 1px solid rgba(212, 180, 131, 0.22);
-  background: rgba(212, 180, 131, 0.1);
-  color: #D4B483;
+  border: 1px solid rgba(255,245,0, 0.22);
+  background: rgba(255,245,0, 0.1);
+  color: #FFF500;
 }
 
 .btn-primary,
@@ -1063,17 +1063,17 @@ button:focus-visible {
   transition: all 0.2s ease;
 }
 .btn-primary {
-  background: #D7263D;
+  background: #EE0000;
   color: #fff;
 }
 .btn-primary:hover {
-  background: #B91C32;
-  box-shadow: 0 8px 24px -8px rgba(215, 38, 61, 0.6);
+  background: #C20000;
+  box-shadow: 0 8px 24px -8px rgba(238,0,0, 0.6);
   transform: translateY(-2px);
 }
 .btn-ghost {
   border: 1px solid rgba(255, 255, 255, 0.18);
-  color: #F5F0EA;
+  color: #FAFAFA;
 }
 .btn-ghost:hover {
   border-color: rgba(255, 255, 255, 0.4);
@@ -1115,8 +1115,8 @@ button:focus-visible {
 }
 .hero-glow {
   background:
-    radial-gradient(60% 50% at 0% 100%, rgba(215, 38, 61, 0.2), transparent 70%),
-    radial-gradient(40% 40% at 100% 0%, rgba(212, 180, 131, 0.08), transparent 70%);
+    radial-gradient(60% 50% at 0% 100%, rgba(238,0,0, 0.2), transparent 70%),
+    radial-gradient(40% 40% at 100% 0%, rgba(255,245,0, 0.08), transparent 70%);
 }
 
 @keyframes heroIn {
@@ -1131,7 +1131,7 @@ button:focus-visible {
 
 /* ── CTA ── */
 .cta {
-  background: linear-gradient(135deg, #8E1426 0%, #B01E31 45%, #5A0D1A 100%);
+  background: linear-gradient(135deg, #8F0000 0%, #C20000 45%, #5A0D1A 100%);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 .cta-sheen {
@@ -1163,8 +1163,8 @@ button:focus-visible {
   z-index: 1;
   pointer-events: none;
 }
-.marquee-wrap::before { left: 0;  background: linear-gradient(90deg,  #0F0D0C, transparent); }
-.marquee-wrap::after  { right: 0; background: linear-gradient(270deg, #0F0D0C, transparent); }
+.marquee-wrap::before { left: 0;  background: linear-gradient(90deg,  #0D0D0D, transparent); }
+.marquee-wrap::after  { right: 0; background: linear-gradient(270deg, #0D0D0D, transparent); }
 
 /* ── Lightbox ── */
 .lightbox-fade-enter-active,

@@ -195,7 +195,7 @@ onBeforeUnmount(() => {
   min-height: 40px; padding: 0.5rem 0.9rem;
   background: var(--surface); border: 1px solid rgb(var(--ink) / 0.08);
   border-radius: 10px; color: var(--text-dim); cursor: pointer;
-  font-family: 'Oswald', sans-serif; font-size: 0.68rem;
+  font-family: 'Oswald', sans-serif; font-size: 0.72rem;
   letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap;
   transition: border-color 0.15s, color 0.15s;
 }
@@ -205,7 +205,7 @@ onBeforeUnmount(() => {
 }
 .cq-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--tone, var(--text-faint)); flex-shrink: 0; }
 .cq-chip-tag {
-  padding: 0.1rem 0.4rem; border-radius: 6px; font-size: 0.58rem;
+  padding: 0.1rem 0.4rem; border-radius: 6px; font-size: 0.72rem;
   background: color-mix(in srgb, var(--amber) 14%, transparent); color: var(--amber-soft);
 }
 
@@ -218,7 +218,7 @@ onBeforeUnmount(() => {
   border-radius: 12px; box-shadow: var(--shadow-lg);
   font-family: inherit; text-transform: none; letter-spacing: normal;
 }
-.cq-title { margin: 0; font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-faint); }
+.cq-title { margin: 0; font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-faint); }
 .cq-note {
   margin: 0; padding: 0.55rem 0.7rem; border-radius: 8px; font-size: 0.72rem; line-height: 1.45;
   background: rgb(var(--ink) / 0.04); color: var(--text-dim);
@@ -242,7 +242,7 @@ onBeforeUnmount(() => {
 .cq-chip.is-ramai,  .cq-level.is-ramai  { --tone: var(--red-soft); }
 
 .cq-field { display: flex; flex-direction: column; gap: 0.4rem; }
-.cq-label { font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-faint); }
+.cq-label { font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-faint); }
 .cq-durations { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .cq-dur {
   min-height: 36px; padding: 0.35rem 0.75rem; border-radius: 8px; cursor: pointer;

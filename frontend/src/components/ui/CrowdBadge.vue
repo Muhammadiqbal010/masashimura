@@ -23,7 +23,7 @@ const { visible, level, label } = useCrowd()
 </script>
 
 <style scoped>
-/* Palet Menu: Crimson #D7263D · Washi #F5F0EA · Champagne #D4B483. Teks selalu ada, warna hanya penegas. */
+/* Palet Menu: Crimson #EE0000 · Washi #FAFAFA · Champagne #FFF500. Teks selalu ada, warna hanya penegas. */
 .crowd-badge {
   --tone: #7FD1A0;
   display: inline-flex; align-items: center; gap: 0.5rem;
@@ -31,12 +31,12 @@ const { visible, level, label } = useCrowd()
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--tone) 40%, transparent);
   background: color-mix(in srgb, var(--tone) 10%, transparent);
-  color: #F5F0EA; font-size: 0.8125rem; line-height: 1.2;
+  color: #FAFAFA; font-size: 0.8125rem; line-height: 1.2;
 }
 .crowd-badge strong { font-weight: 600; color: var(--tone); }
 .crowd-badge.is-santai { --tone: #7FD1A0; }
-.crowd-badge.is-sedang { --tone: #D4B483; }
-.crowd-badge.is-ramai  { --tone: #F2707A; }
+.crowd-badge.is-sedang { --tone: #FFF500; }
+.crowd-badge.is-ramai  { --tone: #FF5C5C; }
 .crowd-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--tone); flex-shrink: 0; }
 .crowd-badge.is-ramai .crowd-dot { animation: crowd-pulse 1.8s ease-in-out infinite; }
 @keyframes crowd-pulse {

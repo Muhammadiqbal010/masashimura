@@ -99,8 +99,8 @@ const FOCUS = {
   "bottom-left": "0% 100%", "bottom": "50% 100%", "bottom-right": "100% 100%",
 }
 const THEMES = {
-  red:     { accent: "#DC2626", ink: "#ffffff" },
-  amber:   { accent: "#F59E0B", ink: "#1c1300" },
+  red:     { accent: "#EE0000", ink: "#ffffff" },
+  amber:   { accent: "#FFF500", ink: "#1c1300" },
   emerald: { accent: "#10B981", ink: "#03150d" },
   sky:     { accent: "#0EA5E9", ink: "#02131c" },
   violet:  { accent: "#8B5CF6", ink: "#ffffff" },

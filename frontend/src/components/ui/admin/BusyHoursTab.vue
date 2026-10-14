@@ -259,7 +259,7 @@ const rangeText = computed(() => {
 .bh-weeks { display: flex; gap: 0.25rem; padding: 0.25rem; background: var(--surface); border: 1px solid rgb(var(--ink) / 0.08); border-radius: 12px; }
 .bh-week {
   min-height: 40px; padding: 0.4rem 0.9rem; border-radius: 9px; border: 0; cursor: pointer; background: transparent;
-  font-family: 'Oswald', sans-serif; font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint);
+  font-family: 'Oswald', sans-serif; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint);
 }
 .bh-week:hover { color: var(--text-dim); }
 .bh-week.is-on { background: rgb(var(--ink) / 0.1); color: var(--text); }
@@ -276,28 +276,28 @@ const rangeText = computed(() => {
   background: var(--surface); border: 1px solid rgb(var(--ink) / 0.05); border-radius: 16px; padding: 1rem 1.1rem;
 }
 .bh-kpi-value { margin: 0; font-family: 'Oswald', sans-serif; font-size: 1.25rem; font-weight: 700; color: var(--text); }
-.bh-kpi-label { margin: 0.25rem 0 0; font-size: 0.62rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-faint); }
+.bh-kpi-label { margin: 0.25rem 0 0; font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-faint); }
 .bh-kpi-sub { margin: 0.4rem 0 0; font-size: 0.7rem; color: var(--text-faint); }
 
 .bh-card-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.9rem; }
-.bh-card-title { margin: 0 0 0.9rem; font-family: 'Oswald', sans-serif; font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-faint); font-weight: 400; }
+.bh-card-title { margin: 0 0 0.9rem; font-family: 'Oswald', sans-serif; font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-faint); font-weight: 400; }
 .bh-card-head .bh-card-title { margin: 0; }
 
-.bh-legend { display: flex; align-items: center; gap: 0.5rem; font-size: 0.62rem; color: var(--text-faint); }
+.bh-legend { display: flex; align-items: center; gap: 0.5rem; font-size: 0.72rem; color: var(--text-faint); }
 .bh-legend-bar { width: 72px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 10%, transparent), color-mix(in srgb, var(--accent) 90%, transparent)); }
 
 .bh-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .bh-grid { border-collapse: separate; border-spacing: 3px; min-width: 100%; }
 .bh-corner { width: 36px; }
-.bh-hour { min-width: 34px; padding-bottom: 4px; font-size: 0.62rem; font-weight: 400; color: var(--text-faint); text-align: center; }
+.bh-hour { min-width: 34px; padding-bottom: 4px; font-size: 0.72rem; font-weight: 400; color: var(--text-faint); text-align: center; }
 .bh-day { padding-right: 8px; font-size: 0.7rem; font-weight: 500; color: var(--text-dim); text-align: left; white-space: nowrap; }
 .bh-cell { height: 34px; min-width: 34px; border-radius: 6px; text-align: center; background: rgb(var(--ink) / 0.03); }
 .bh-cell.is-closed {
   background: repeating-linear-gradient(135deg, transparent 0 4px, rgb(var(--ink) / 0.05) 4px 5px);
   opacity: 0.7;
 }
-.bh-num { font-size: 0.64rem; color: var(--text); font-variant-numeric: tabular-nums; }
-.bh-foot { margin: 0.75rem 0 0; font-size: 0.68rem; color: var(--text-faint); }
+.bh-num { font-size: 0.72rem; color: var(--text); font-variant-numeric: tabular-nums; }
+.bh-foot { margin: 0.75rem 0 0; font-size: 0.72rem; color: var(--text-faint); }
 .bh-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 .bh-two { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }

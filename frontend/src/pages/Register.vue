@@ -5,7 +5,7 @@
     <div class="mb-6 sm:mb-8">
       <div class="flex items-center gap-2 mb-2">
         <span class="w-1 h-1 rounded-full bg-red-600"></span>
-        <p class="text-[color:var(--text-faint)] text-[10px] font-oswald uppercase tracking-[0.25em]">Masashimura · Admin</p>
+        <p class="text-[color:var(--text-faint)] text-[11px] font-oswald uppercase tracking-[0.25em]">Masashimura · Admin</p>
       </div>
       <h1 class="font-oswald text-2xl sm:text-4xl uppercase tracking-tighter text-[color:var(--text)] leading-tight">
         Register Staff Internal
@@ -20,7 +20,7 @@
 
         <!-- Nama -->
         <div class="space-y-2">
-          <label for="staff-name" class="block text-[10px] uppercase tracking-widest font-bold text-[color:var(--text-2)]">
+          <label for="staff-name" class="block text-[11px] uppercase tracking-widest font-bold text-[color:var(--text-2)]">
             Nama Lengkap Karyawan
           </label>
           <div class="relative">
@@ -39,7 +39,7 @@
 
         <!-- Email -->
         <div class="space-y-2">
-          <label for="staff-email" class="block text-[10px] uppercase tracking-widest font-bold text-[color:var(--text-2)]">
+          <label for="staff-email" class="block text-[11px] uppercase tracking-widest font-bold text-[color:var(--text-2)]">
             Alamat Email Login
           </label>
           <div class="relative">
@@ -72,7 +72,7 @@
 
         <!-- Role -->
         <div class="space-y-2">
-          <label class="block text-[10px] uppercase tracking-widest font-bold text-[color:var(--text-2)]">
+          <label class="block text-[11px] uppercase tracking-widest font-bold text-[color:var(--text-2)]">
             Role / Hak Akses Sistem
           </label>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -108,7 +108,7 @@
 
         <!-- Password -->
         <div class="space-y-2">
-          <label for="staff-password" class="block text-[10px] uppercase tracking-widest font-bold text-[color:var(--text-2)]">
+          <label for="staff-password" class="block text-[11px] uppercase tracking-widest font-bold text-[color:var(--text-2)]">
             Password Akun
           </label>
           <div class="relative">
@@ -143,7 +143,7 @@
                 :class="i <= passwordStrength.score ? passwordStrength.color : 'bg-[color:rgb(var(--ink)/0.08)]'"
               ></span>
             </div>
-            <span class="text-[10px] uppercase tracking-wider shrink-0" :class="passwordStrength.textColor">
+            <span class="text-[11px] uppercase tracking-wider shrink-0" :class="passwordStrength.textColor">
               {{ passwordStrength.label }}
             </span>
           </div>
@@ -151,7 +151,7 @@
 
         <!-- PIN Keamanan -->
 <div class="space-y-2">
-  <label for="staff-pin" class="block text-[10px] uppercase tracking-widest font-bold text-[color:var(--text-2)]">
+  <label for="staff-pin" class="block text-[11px] uppercase tracking-widest font-bold text-[color:var(--text-2)]">
     PIN Keamanan (6 digit)
   </label>
   <div class="relative">
@@ -178,7 +178,7 @@
         <button
           type="submit"
           :disabled="loading || !canSubmit"
-          class="w-full bg-red-600 hover:bg-red-500 text-white font-oswald uppercase tracking-widest h-14 rounded-xl font-bold transition-all flex justify-center items-center gap-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-red-600 shadow-[0_4px_20px_rgba(220,38,38,0.15)] text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+          class="w-full bg-red-600 hover:bg-red-500 text-white font-oswald uppercase tracking-widest h-14 rounded-xl font-bold transition-all flex justify-center items-center gap-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-red-600 shadow-[0_4px_20px_rgba(238,0,0,0.15)] text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
         >
           <span
             v-if="loading"

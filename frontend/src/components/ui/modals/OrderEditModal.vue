@@ -13,7 +13,7 @@
           <h2 class="font-oswald text-2xl uppercase tracking-wide text-white">
             Edit Pesanan #{{ localOrder?.id || "..." }}
           </h2>
-          <p class="text-xs text-white/40">
+          <p class="text-xs text-white/60">
             Pelanggan: {{ localOrder?.customer?.phone || "Guest" }}
           </p>
         </div>
@@ -30,7 +30,7 @@
       >
         <div>
           <label
-            class="block text-xs uppercase tracking-widest text-white/40 mb-2"
+            class="block text-xs uppercase tracking-widest text-white/60 mb-2"
             >Ubah Status</label
           >
           <select
@@ -47,7 +47,7 @@
           v-if="localOrder.payment_method === 'qris' && localOrder.qris_url"
           class="bg-white/5 p-4 rounded-xl flex flex-col items-center border border-white/5"
         >
-          <p class="text-xs uppercase tracking-widest text-white/40 mb-3">
+          <p class="text-xs uppercase tracking-widest text-white/60 mb-3">
             Scan QRIS
           </p>
           <img
@@ -59,7 +59,7 @@
 
         <div>
           <div class="flex justify-between items-center mb-3">
-            <label class="block text-xs uppercase tracking-widest text-white/40"
+            <label class="block text-xs uppercase tracking-widest text-white/60"
               >Item Menu</label
             >
             <button
@@ -80,7 +80,7 @@
                 <p class="text-sm font-semibold">
                   {{ item.menu?.name || "Item Menu" }}
                 </p>
-                <p class="text-xs text-white/40">
+                <p class="text-xs text-white/60">
                   Rp {{ (item.price || 0).toLocaleString() }}
                 </p>
               </div>
@@ -113,7 +113,7 @@
 
               <button
                 @click="removeItemRow(index)"
-                class="text-white/30 hover:text-red-500 transition"
+                class="text-white/60 hover:text-red-500 transition"
               >
                 🗑️
               </button>
