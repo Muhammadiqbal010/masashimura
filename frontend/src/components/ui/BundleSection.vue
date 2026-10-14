@@ -90,7 +90,7 @@ const add = (b) => {
 
 onMounted(async () => {
   try {
-    const { data } = await bundleAPI.getAll()
+    const { data } = await bundleAPI.getPublic()
     bundles.value = Array.isArray(data) ? data : data?.results || []
     // Keranjang tersimpan di HP: samakan dengan paket terbaru (dihapus / habis / harga berubah).
     const r = cartStore.reconcileBundles(bundles.value)

@@ -365,7 +365,9 @@ def create_order(request):
     for entry in bundles_data:
         try:
             bundle_id = int(entry.get('bundle_id'))
-            bundle_qty = int(entry.get('quantity', 1) or 1)
+            # quantity 0 harus DITOLAK (bukan diam-diam jadi 1), jadi jangan pakai `or 1`.
+            raw_qty = entry.get('quantity', 1)
+            bundle_qty = int(1 if raw_qty is None else raw_qty)
         except (TypeError, ValueError, AttributeError):
             transaction.set_rollback(True)
             return Response({"error": "Data paket tidak valid (bundle_id/quantity)"}, status=400)
@@ -510,13 +512,22 @@ def list_orders(request):
 # yang baru ketauan belakangan, duplikat, dsb, TERMASUK order yang sudah
 # completed/paid.
 #
-# Sebelum row-nya hilang:
-#   1. Reverse poin loyalty yang sudah kadung di-earn dari order ini
-#      (kalau order.loyalty_applied True) — di-clamp ke 0.
-#   2. Reverse kuota promo (used_count) kalau order ini pakai promo.
-#   3. Simpan snapshot lengkap ke OrderDeletionLog.
+# Semua efek order ini dibalikkan, sesuai isi nota yang dihapus:
+#   1. Menu (OrderItem, termasuk baris pecahan paket) dan pembayaran
+#      (OrderPayment: metode, nominal, split bill) ikut terhapus (CASCADE).
+#   2. Poin loyalty yang DIPAKAI buat tukar reward dikembalikan ke saldo.
+#   3. Poin loyalty yang di-EARN dari order ini ditarik balik (di-clamp ke 0),
+#      beserta total belanja & jumlah order customer.
+#   4. Kuota promo (used_count) dikembalikan kalau order ini pakai promo.
+#   5. Transaksi Midtrans yang masih menunggu bayar ditutup (QR lama tidak bisa dibayar).
+#   6. Snapshot lengkap disimpan ke OrderDeletionLog sebagai jejak audit.
+#
+# Return: dict ringkasan (dipakai buat pesan ke kasir).
 @transaction.atomic
 def _delete_order_permanently(order, deleted_by=""):
+    items = list(order.items.select_related("menu").all())
+    payments = list(order.payments.all())
+
     items_snapshot = [
         {
             "menu_name": item.menu.name if item.menu else "(menu dihapus)",
@@ -524,24 +535,51 @@ def _delete_order_permanently(order, deleted_by=""):
             "price": float(item.price),
             "notes": item.notes,
             "is_point_redemption": item.is_point_redemption,
+            "bundle_name": item.bundle_name,
+            "selected_options": item.selected_options,
         }
-        for item in order.items.select_related("menu").all()
+        for item in items
     ]
-    payments_snapshot = [
-        {"method": p.method, "amount": float(p.amount)}
-        for p in order.payments.all()
-    ]
+    payments_snapshot = [{"method": p.method, "amount": float(p.amount)} for p in payments]
+
+    has_redemption = any(i.is_point_redemption for i in items)
+    was_gateway_pending = order.payment_method == "gateway" and order.payment_status == "pending"
+    gateway_paid = any(p.method == "gateway" for p in payments)
 
     loyalty_points_reverted = 0
+    loyalty_points_refunded = 0
     loyalty_clamped = False
 
-    # Reverse poin HANYA kalau order ini memang pernah trigger penambahan poin.
-    if order.loyalty_applied and order.customer_phone:
+    # Satu kali lock customer untuk refund + reversal, supaya saldo akhirnya konsisten.
+    loyalty = None
+    if order.customer_phone and (order.loyalty_applied or has_redemption):
         loyalty = CustomerLoyalty.objects.select_for_update().filter(
             phone=order.customer_phone
         ).first()
 
-        if loyalty:
+    if loyalty:
+        adjustments = []
+
+        # (2) Kembalikan poin yang dipakai buat tukar reward di order ini. Jumlahnya diambil dari
+        # catatan potongan saat order dibuat (bukan dihitung ulang dari point_cost sekarang,
+        # yang bisa saja sudah diubah admin). Dilakukan SEBELUM reversal poin earn supaya
+        # saldo tidak ke-clamp padahal poinnya sebenarnya cukup.
+        if has_redemption:
+            spent = PointAdjustment.objects.filter(
+                customer=loyalty,
+                amount__lt=0,
+                note__startswith=f"Redeem reward saat order {order.order_number}",
+            ).aggregate(total=Sum("amount"))["total"] or 0
+            loyalty_points_refunded = -spent
+            if loyalty_points_refunded > 0:
+                loyalty.points += loyalty_points_refunded
+                adjustments.append((
+                    loyalty_points_refunded,
+                    f"Poin tukar reward dikembalikan — order {order.order_number} dihapus permanen",
+                ))
+
+        # (3) Tarik balik poin yang di-earn HANYA kalau order ini memang pernah menambah poin.
+        if order.loyalty_applied:
             points_to_revert = order.loyalty_points_earned
             if points_to_revert > loyalty.points:
                 loyalty_clamped = True
@@ -560,20 +598,25 @@ def _delete_order_permanently(order, deleted_by=""):
                 .aggregate(latest=Max("created_at"))["latest"]
             )
 
-            loyalty.save(update_fields=["points", "total_spent", "total_orders", "last_order_at"])
+            if loyalty_points_reverted:
+                adjustments.append((
+                    -loyalty_points_reverted,
+                    f"Reversal otomatis — order {order.order_number} dihapus permanen"
+                    + (" (poin di-clamp ke 0, saldo sudah kurang dari yang di-reverse)" if loyalty_clamped else ""),
+                ))
 
+        loyalty.save()
+
+        for amount, note in adjustments:
             PointAdjustment.objects.create(
                 customer=loyalty,
-                amount=-loyalty_points_reverted,
+                amount=amount,
                 reason="manual",
-                note=(
-                    f"Reversal otomatis — order {order.order_number} dihapus permanen"
-                    + (" (poin di-clamp ke 0, saldo sudah kurang dari yang di-reverse)" if loyalty_clamped else "")
-                ),
+                note=note,
                 admin_name=deleted_by or "system",
             )
 
-    # Reverse kuota promo (jangan sampai used_count jadi minus).
+    # (4) Reverse kuota promo (jangan sampai used_count jadi minus).
     promo_code_reverted = ""
     if order.promo_id:
         Promo.objects.filter(pk=order.promo_id, used_count__gt=0).update(used_count=F("used_count") - 1)
@@ -593,14 +636,26 @@ def _delete_order_permanently(order, deleted_by=""):
         items_snapshot=items_snapshot,
         payments_snapshot=payments_snapshot,
         loyalty_points_reverted=loyalty_points_reverted,
+        loyalty_points_refunded=loyalty_points_refunded,
         loyalty_clamped=loyalty_clamped,
         promo_code_reverted=promo_code_reverted,
         deleted_by=deleted_by,
     )
 
     order_number = order.order_number
+
+    # (5) Tutup transaksi Midtrans yang belum dibayar setelah commit berhasil.
+    if was_gateway_pending:
+        transaction.on_commit(lambda: cancel_midtrans_transaction(order_number))
+
     order.delete()
-    return order_number
+    return {
+        "order_number": order_number,
+        "points_reverted": loyalty_points_reverted,
+        "points_refunded": loyalty_points_refunded,
+        "promo_code_reverted": promo_code_reverted,
+        "gateway_paid": gateway_paid,
+    }
 
 
 @api_view(["GET", "DELETE"])
@@ -622,13 +677,23 @@ def get_order(request, pk):
             )
 
         deleted_by = getattr(request.user, "username", "") or "owner"
-        order_number = _delete_order_permanently(order, deleted_by=deleted_by)
+        result = _delete_order_permanently(order, deleted_by=deleted_by)
+        order_number = result["order_number"]
 
-        return Response({
-            "success": True,
-            "order_number": order_number,
-            "detail": f"Order {order_number} dihapus permanen. Poin loyalty & kuota promo sudah di-reverse.",
-        })
+        notes = []
+        if result["points_refunded"]:
+            notes.append(f"{result['points_refunded']} poin tukar reward dikembalikan")
+        if result["points_reverted"]:
+            notes.append(f"{result['points_reverted']} poin hasil belanja ditarik balik")
+        if result["promo_code_reverted"]:
+            notes.append(f"kuota promo {result['promo_code_reverted']} dikembalikan")
+        detail = f"Order {order_number} dihapus permanen beserta menu dan pembayarannya."
+        if notes:
+            detail += " " + ", ".join(notes).capitalize() + "."
+        if result["gateway_paid"]:
+            detail += " Pembayaran online (QRIS) sudah masuk ke Midtrans; refund ke pelanggan harus diproses manual di dashboard Midtrans."
+
+        return Response({"success": True, **result, "detail": detail})
 
     return Response(OrderSerializer(order).data)
 

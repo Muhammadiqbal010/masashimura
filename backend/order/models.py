@@ -281,6 +281,10 @@ class OrderDeletionLog(models.Model):
         default=0,
         help_text="Poin yang ditarik balik dari CustomerLoyalty (0 kalau order ini memang tidak pernah menyumbang poin)",
     )
+    loyalty_points_refunded = models.IntegerField(
+        default=0,
+        help_text="Poin tukar reward yang DIKEMBALIKAN ke customer karena order ini dihapus (poin yang dulu terpotong saat order dibuat)",
+    )
     loyalty_clamped = models.BooleanField(
         default=False,
         help_text="True kalau saldo poin customer sudah lebih kecil dari yang seharusnya di-reverse (kemungkinan poinnya sudah kepakai buat redeem reward lain) — dikliping ke 0, bukan dipaksa minus",

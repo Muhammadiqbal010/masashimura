@@ -109,6 +109,11 @@ class BundleViewSet(viewsets.ModelViewSet):
     queryset = MenuBundle.objects.prefetch_related("items__menu").all()
 
     def _staff_view(self):
+        # Halaman pelanggan (web) minta ?as=public supaya SELALU dapat harga web, walau browser-nya
+        # kebetulan sedang login sebagai staf. Tanpa ini staf melihat harga POS di checkout,
+        # padahal server menagih harga web (selisih seperti Rp88.000 vs Rp90.000).
+        if self.request.query_params.get("as") == "public":
+            return False
         return IsStaffLevel().has_permission(self.request, self)
 
     def get_permissions(self):

@@ -32,6 +32,15 @@
   </Teleport>
 </template>
 
+<script>
+// State bersama SEMUA instance modal. Harus di <script> biasa: top-level <script setup> itu
+// dibuat ulang per instance, sehingga stack modal & penghitung kunci scroll tidak akan terbagi.
+let uid = 0
+const stack = []
+let lockCount = 0
+let rewinding = false   // true selama history.back() buatan modal sendiri; modal lain mengabaikannya
+</script>
+
 <script setup>
 // Modal admin: Escape menutup, fokus dikunci di dalam dialog, fokus kembali ke
 // tombol pemicu saat ditutup, scroll body dikunci, dan modal bertumpuk (mis.
@@ -39,15 +48,12 @@
 import { ref, watch, nextTick, onBeforeUnmount } from 'vue'
 import { X } from 'lucide-vue-next'
 
-let uid = 0
-const stack = []
-let lockCount = 0
-
 const props = defineProps({
   modelValue: Boolean,
   title: { type: String, required: true },
   size: { type: String, default: 'md' }, // sm | md | lg
   persistent: Boolean,                   // true → tidak bisa ditutup (mis. saat menyimpan)
+  backClose: Boolean,                    // true → tombol Back (browser / HP) menutup modal, bukan pindah halaman
 })
 const emit = defineEmits(['update:modelValue', 'close'])
 
@@ -84,9 +90,51 @@ const trapTab = (e) => {
   else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
 }
 
+// ── Tombol Back menutup modal ───────────────────────────────────────
+// Saat modal (backClose) dibuka kita selipkan 1 entri riwayat. Back = entri itu dibuang
+// → modal tertutup, halaman TETAP di tempat. Kalau modal ditutup lewat X / Esc / klik luar,
+// entri selipan dibuang lewat history.back() supaya Back berikutnya tidak "kosong".
+let pushed = false
+
+const onPop = () => {
+  if (!pushed || rewinding) return
+  // Modal bertumpuk: satu kali Back hanya menutup modal paling atas.
+  if (stack[stack.length - 1] !== token) return
+  if (props.persistent) {
+    // Lagi menyimpan: Back tidak boleh menutup modal. Pasang lagi entri yang baru terbuang.
+    history.pushState({ ...(history.state || {}), __admModal: true }, '')
+    return
+  }
+  pushed = false
+  window.removeEventListener('popstate', onPop)
+  emit('update:modelValue', false)
+  emit('close')
+}
+
+const pushBackEntry = () => {
+  if (!props.backClose || pushed) return
+  // Spread state lama supaya data milik vue-router (position, dll) tidak hilang.
+  history.pushState({ ...(history.state || {}), __admModal: true }, '')
+  pushed = true
+  window.addEventListener('popstate', onPop)
+}
+
+const dropBackEntry = ({ rewind }) => {
+  if (!pushed) return
+  pushed = false
+  window.removeEventListener('popstate', onPop)
+  if (rewind && history.state && history.state.__admModal) {
+    rewinding = true
+    // Didaftarkan SETELAH listener modal lain, jadi dijalankan paling akhir di popstate yang sama.
+    window.addEventListener('popstate', () => { rewinding = false }, { once: true })
+    history.back()
+  }
+}
+
 const activate = async () => {
   if (active) return
   active = true
+  pushBackEntry()
   opener = document.activeElement
   stack.push(token)
   if (lockCount++ === 0) document.body.classList.add('adm-no-scroll')
@@ -99,9 +147,10 @@ const activate = async () => {
   target?.focus({ preventScroll: true })
 }
 
-const deactivate = () => {
+const deactivate = ({ rewind = true } = {}) => {
   if (!active) return
   active = false
+  dropBackEntry({ rewind })
   const i = stack.indexOf(token)
   if (i !== -1) stack.splice(i, 1)
   if (--lockCount <= 0) { lockCount = 0; document.body.classList.remove('adm-no-scroll') }
@@ -111,5 +160,6 @@ const deactivate = () => {
 }
 
 watch(() => props.modelValue, (v) => (v ? activate() : deactivate()), { immediate: true })
-onBeforeUnmount(deactivate)
+// Komponen dilepas (mis. pindah halaman): jangan panggil history.back() lagi, cukup bersihkan.
+onBeforeUnmount(() => deactivate({ rewind: false }))
 </script>

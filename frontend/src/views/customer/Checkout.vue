@@ -202,7 +202,11 @@
                   <X :size="16" />
                 </button>
               </div>
-              <p class="text-sm text-[#A39A93]">{{ line.quantity }} × {{ formatPrice(line.price) }}</p>
+              <p class="text-sm text-[#A39A93]">
+                {{ line.quantity }} × {{ formatPrice(line.price) }}
+                <span v-if="line.normal_price && line.savings > 0" class="ml-1 text-xs text-[#6F6761] line-through">{{ formatPrice(line.normal_price) }}</span>
+              </p>
+              <p v-if="line.savings > 0" class="text-xs font-semibold text-[#D4B483]">Kamu hemat {{ formatPrice(line.savings * line.quantity) }}</p>
               <p class="text-xs text-[#A39A93]">{{ line.contents.map((c) => c.quantity * line.quantity + '× ' + c.name).join(' · ') }}</p>
             </div>
 

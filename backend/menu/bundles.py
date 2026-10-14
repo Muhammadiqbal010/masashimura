@@ -4,7 +4,11 @@ Logika Menu Paket. Semua angka dihitung di server, tidak pernah dipercaya dari f
 Harga per sumber order:
   - POS : harga normal = jumlah harga menu (price) x jumlah; harga paket = bundle.price
   - web : harga normal = jumlah harga web tiap menu (markup 1% dibulatkan ke 500);
-          harga paket  = web_price(bundle.price), aturan markup yang sama dengan menu.
+          harga paket  = harga normal web DIKURANGI potongan POS.
+          Jadi potongan paket SAMA di POS dan web (admin set hemat Rp3.000 -> pelanggan web
+          juga hemat Rp3.000). Hanya harga menu yang kena markup web, potongannya tidak.
+          Kalau paket tidak lebih murah dari normal (potongan POS <= 0), harga admin dipakai
+          apa adanya dengan markup web biasa.
 
 Saat dipesan, paket dipecah jadi baris OrderItem biasa. Harga paket dibagi proporsional
 ke tiap baris menurut harga normalnya, dalam bilangan bulat rupiah, sehingga jumlah semua
@@ -18,12 +22,19 @@ def unit_price(menu, source):
     return int(web_price(menu.price)) if source == "web" else int(menu.price)
 
 
-def bundle_price(bundle, source):
-    return int(web_price(bundle.price)) if source == "web" else int(bundle.price)
-
-
 def normal_price(bundle, source):
     return sum(unit_price(i.menu, source) * i.quantity for i in bundle.items.all())
+
+
+def bundle_price(bundle, source):
+    pos_price = int(bundle.price)
+    if source != "web":
+        return pos_price
+    pos_savings = normal_price(bundle, "pos") - pos_price
+    if pos_savings > 0:
+        # Potongan sama dengan POS; tidak pernah di bawah 0.
+        return max(normal_price(bundle, "web") - pos_savings, 0)
+    return int(web_price(pos_price))
 
 
 def pricing(bundle, source):
@@ -80,6 +91,8 @@ def order_rows(bundle, quantity, source):
     for idx, (_, unit, qty) in enumerate(lines):
         if idx == len(lines) - 1:
             alloc = target - used
+        elif normal_total <= 0:
+            alloc = 0   # semua menu gratis: sisa dibebankan ke baris terakhir
         else:
             alloc = target * (unit * qty) // normal_total
         used += alloc

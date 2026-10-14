@@ -75,6 +75,7 @@
               </button>
             </div>
             <p class="text-xs text-[#A39A93]">{{ line.contents.map((c) => c.quantity + '× ' + c.name).join(' · ') }}</p>
+            <p v-if="line.savings > 0" class="text-xs font-semibold text-[#D4B483]">Hemat {{ formatPrice(line.savings * line.quantity) }}</p>
             <div class="flex items-center justify-between gap-3">
               <div class="flex items-center rounded-full border border-white/10 bg-white/[0.03] p-1">
                 <button type="button" :aria-label="'Kurangi ' + line.name" @click="cartStore.updateBundleQuantity(line.id, -1)"

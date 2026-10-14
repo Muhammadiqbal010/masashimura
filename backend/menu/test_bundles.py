@@ -43,10 +43,17 @@ class PricingTests(Base):
         self.assertEqual((p["price"], p["normal_price"], p["savings"]), (23000, 25000, 2000))
         self.assertFalse(p["not_cheaper"])
 
-    def test_web_uses_same_markup_rule_as_menu(self):
-        p = bundles.pricing(self.bundle, "web")
-        self.assertEqual(p["price"], int(web_price(23000)))
-        self.assertEqual(p["normal_price"], int(web_price(20000) + web_price(5000)))
+    def test_web_keeps_same_savings_as_pos(self):
+        # Potongan admin (Rp2.000) harus sama di web; yang dimarkup hanya harga menu.
+        pos = bundles.pricing(self.bundle, "pos")
+        web = bundles.pricing(self.bundle, "web")
+        self.assertEqual(web["normal_price"], int(web_price(20000) + web_price(5000)))
+        self.assertEqual(web["savings"], pos["savings"])
+        self.assertEqual(web["price"], web["normal_price"] - pos["savings"])
+
+    def test_web_not_cheaper_uses_plain_markup(self):
+        b = self.make("Mahal2", 30000, [(self.katsu, 1), (self.teh, 1)])
+        self.assertEqual(bundles.bundle_price(b, "web"), int(web_price(30000)))
 
     def test_not_cheaper_hides_saving(self):
         b = self.make("Mahal", 30000, [(self.katsu, 1), (self.teh, 1)])
@@ -119,7 +126,9 @@ class ApiTests(Base):
         r = client().get("/api/bundles/")
         self.assertEqual(r.status_code, 200)
         row = r.data[0] if isinstance(r.data, list) else r.data["results"][0]
-        self.assertEqual(row["price"], int(web_price(23000)))
+        self.assertEqual(row["price"], bundles.bundle_price(self.bundle, "web"))
+        self.assertEqual(row["price"], 24000)   # normal web 26.000 - hemat POS 2.000
+        self.assertEqual(row["savings"], 2000)
         self.assertNotIn("pos", row)
         self.assertNotIn("web", row)
 
@@ -158,10 +167,11 @@ class OrderTests(Base):
     def test_web_price_is_computed_by_server_and_client_price_is_ignored(self):
         r = APIClient().post("/api/orders/", {
             "source": "web", "payment_method": "cash",
+            "customer_name": "Budi", "customer_phone": "081234567890",
             "bundles": [{"bundle_id": self.bundle.pk, "quantity": 1, "price": 1}],
         }, format="json")
         self.assertEqual(r.status_code, 201, r.data)
-        self.assertEqual(int(Order.objects.get(pk=r.data["id"]).total_price), int(web_price(23000)))
+        self.assertEqual(int(Order.objects.get(pk=r.data["id"]).total_price), bundles.bundle_price(self.bundle, "web"))
 
     def test_mixed_with_normal_items_and_promo_on_total_after_bundle(self):
         from datetime import timedelta

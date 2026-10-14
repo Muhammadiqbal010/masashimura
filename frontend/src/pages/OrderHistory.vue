@@ -124,10 +124,19 @@
             class="px-4 pb-4 pt-0 border-t border-[color:rgb(var(--ink)/0.05)] mt-1"
           >
             <div class="space-y-1.5 pt-3">
-              <div v-for="item in order.items" :key="item.id" class="flex justify-between text-xs text-[color:var(--text-dim)]">
-                <span class="truncate pr-3">{{ item.quantity }}x {{ item.menu_name }}<small v-if="item.bundle_name" style="opacity:.65;font-size:.85em"> · Paket {{ item.bundle_name }}</small></span>
-                <span class="shrink-0">{{ formatPrice(item.price * item.quantity) }}</span>
-              </div>
+              <template v-for="(line, li) in groupReceiptLines(order.items)" :key="li">
+                <div v-if="line.type === 'bundle'" class="text-xs text-[color:var(--text-dim)]">
+                  <div class="flex justify-between font-semibold">
+                    <span class="truncate pr-3">Paket {{ line.name }}</span>
+                    <span class="shrink-0">{{ formatPrice(line.total) }}</span>
+                  </div>
+                  <p v-for="(c, ci) in line.contents" :key="ci" class="pl-3 opacity-70">{{ c.quantity }}x {{ c.menu_name }}</p>
+                </div>
+                <div v-else class="flex justify-between text-xs text-[color:var(--text-dim)]">
+                  <span class="truncate pr-3">{{ line.item.quantity }}x {{ line.item.menu_name }}</span>
+                  <span class="shrink-0">{{ formatPrice(line.item.price * line.item.quantity) }}</span>
+                </div>
+              </template>
             </div>
           </div>
         </div>
@@ -155,6 +164,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from "vue";
 import apiClient from "@/api/client";
+import { groupReceiptLines } from "@/utils/receiptLines";
 
 const orders = ref([]);
 const period = ref("today");

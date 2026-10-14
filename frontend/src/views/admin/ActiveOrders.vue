@@ -354,7 +354,7 @@
     </section>
 
     <!-- ── MODAL STRUK ─────────────────────────────────────────────── -->
-    <AdminModal v-model="isModalOpen" :title="`Struk ${selectedOrder?.order_number || ''}`" size="sm">
+    <AdminModal v-model="isModalOpen" :title="`Struk ${selectedOrder?.order_number || ''}`" size="sm" back-close>
       <div v-if="selectedOrder" class="rcpt">
         <div class="rcpt-head">
           <img :src="logoUrl" alt="Masashimura" class="rcpt-logo" />
@@ -384,13 +384,22 @@
         <hr class="rcpt-div" />
 
         <p class="rcpt-heading">Detail pesanan</p>
-        <div v-for="(item, idx) in selectedOrder.items" :key="idx" class="rcpt-item">
-          <div class="rcpt-item-main">
-            <span class="rcpt-qty">{{ item.quantity }}×</span>
-            <span class="rcpt-name">{{ item.menu_name }}</span>
-            <span class="rcpt-sub">{{ formatPrice(item.price * item.quantity) }}</span>
-          </div>
-          <div v-if="item.notes" class="rcpt-note">{{ item.notes }}</div>
+        <div v-for="(line, idx) in receiptLines" :key="idx" class="rcpt-item">
+          <template v-if="line.type === 'bundle'">
+            <div class="rcpt-item-main">
+              <span class="rcpt-name"><b>Paket {{ line.name }}</b></span>
+              <span class="rcpt-sub">{{ formatPrice(line.total) }}</span>
+            </div>
+            <div v-for="(c, ci) in line.contents" :key="ci" class="rcpt-note" style="font-style:normal">{{ c.quantity }}× {{ c.menu_name }}</div>
+          </template>
+          <template v-else>
+            <div class="rcpt-item-main">
+              <span class="rcpt-qty">{{ line.item.quantity }}×</span>
+              <span class="rcpt-name">{{ line.item.menu_name }}</span>
+              <span class="rcpt-sub">{{ formatPrice(line.item.price * line.item.quantity) }}</span>
+            </div>
+            <div v-if="line.item.notes" class="rcpt-note">{{ line.item.notes }}</div>
+          </template>
         </div>
 
         <hr class="rcpt-div" />
@@ -479,9 +488,15 @@
 
       <div style="margin-bottom:12px;">
         <div style="font-weight:900; font-size:13px; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;">Detail Pesanan:</div>
-        <div v-for="(item, idx) in selectedOrder?.items" :key="idx" style="margin-bottom:8px;">
-          <div style="display:flex; justify-content:space-between; gap:12px;"><span>{{ item.quantity }}x {{ item.menu_name }}</span><span style="white-space:nowrap;">{{ formatPrice(item.price * item.quantity) }}</span></div>
-          <div v-if="item.notes" style="font-size:12px; padding-left:12px; font-style:italic; color:#000;">📋 "{{ item.notes }}"</div>
+        <div v-for="(line, idx) in receiptLines" :key="idx" style="margin-bottom:8px;">
+          <template v-if="line.type === 'bundle'">
+            <div style="display:flex; justify-content:space-between; gap:12px; font-weight:700;"><span>Paket {{ line.name }}</span><span style="white-space:nowrap;">{{ formatPrice(line.total) }}</span></div>
+            <div v-for="(c, ci) in line.contents" :key="ci" style="font-size:12px; padding-left:12px;">{{ c.quantity }}x {{ c.menu_name }}</div>
+          </template>
+          <template v-else>
+            <div style="display:flex; justify-content:space-between; gap:12px;"><span>{{ line.item.quantity }}x {{ line.item.menu_name }}</span><span style="white-space:nowrap;">{{ formatPrice(line.item.price * line.item.quantity) }}</span></div>
+            <div v-if="line.item.notes" style="font-size:12px; padding-left:12px; font-style:italic; color:#000;">📋 "{{ line.item.notes }}"</div>
+          </template>
         </div>
       </div>
 
@@ -520,12 +535,21 @@
       <div v-if="customerLabel" class="pr-row"><span>Pelanggan</span><span>{{ customerLabel }}</span></div>
       <div class="pr-divider"></div>
       <div class="pr-heading">Detail Pesanan</div>
-      <div v-for="(item, idx) in selectedOrder?.items" :key="'pr' + idx" class="pr-item">
-        <div class="pr-item-row">
-          <span>{{ item.quantity }}x {{ item.menu_name }}</span>
-          <span>{{ formatPrice(item.price * item.quantity) }}</span>
-        </div>
-        <div v-if="item.notes" class="pr-note">"{{ item.notes }}"</div>
+      <div v-for="(line, idx) in receiptLines" :key="'pr' + idx" class="pr-item">
+        <template v-if="line.type === 'bundle'">
+          <div class="pr-item-row" style="font-weight:700">
+            <span>Paket {{ line.name }}</span>
+            <span>{{ formatPrice(line.total) }}</span>
+          </div>
+          <div v-for="(c, ci) in line.contents" :key="ci" class="pr-note" style="font-style:normal">{{ c.quantity }}x {{ c.menu_name }}</div>
+        </template>
+        <template v-else>
+          <div class="pr-item-row">
+            <span>{{ line.item.quantity }}x {{ line.item.menu_name }}</span>
+            <span>{{ formatPrice(line.item.price * line.item.quantity) }}</span>
+          </div>
+          <div v-if="line.item.notes" class="pr-note">"{{ line.item.notes }}"</div>
+        </template>
       </div>
       <div class="pr-divider"></div>
       <div class="pr-row"><span>Subtotal</span><span>{{ formatPrice(computedSubtotal) }}</span></div>
@@ -547,7 +571,7 @@
     </div>
 
     <!-- ── MODAL LUNASI ────────────────────────────────────────────── -->
-    <AdminModal v-model="isPayModalOpen" :title="`Lunasi ${selectedPayOrder?.order_number || ''}`" size="md" :persistent="isPaying">
+    <AdminModal v-model="isPayModalOpen" :title="`Lunasi ${selectedPayOrder?.order_number || ''}`" size="md" :persistent="isPaying" back-close>
       <template v-if="selectedPayOrder">
         <div class="ao-person">
           <p class="ao-person-name">{{ selectedPayOrder.customer_name || 'Walk In' }}</p>
@@ -635,7 +659,7 @@
     </AdminModal>
 
     <!-- ── MODAL BATALKAN ORDER ────────────────────────────────────── -->
-    <AdminModal v-model="isCancelModalOpen" :title="`Batalkan ${selectedCancelOrder?.order_number || ''}`" size="sm" :persistent="isCancelling">
+    <AdminModal v-model="isCancelModalOpen" :title="`Batalkan ${selectedCancelOrder?.order_number || ''}`" size="sm" :persistent="isCancelling" back-close>
       <template v-if="selectedCancelOrder">
         <div class="ao-person">
           <p class="ao-person-name">{{ selectedCancelOrder.customer_name || 'Walk In' }}</p>
@@ -691,7 +715,7 @@
     </AdminModal>
 
     <!-- ── MODAL HAPUS PERMANEN (khusus owner) ─────────────────────── -->
-    <AdminModal v-model="isDeleteModalOpen" title="Hapus permanen" size="sm" :persistent="isDeleting" @close="closeDeleteModal">
+    <AdminModal v-model="isDeleteModalOpen" title="Hapus permanen" size="sm" :persistent="isDeleting" back-close @close="closeDeleteModal">
       <template v-if="selectedDeleteOrder">
         <div class="ao-person">
           <p class="ao-person-name">{{ selectedDeleteOrder.order_number }} · {{ selectedDeleteOrder.customer_name || 'Walk In' }}</p>
@@ -702,9 +726,16 @@
           <AlertTriangle :size="16" class="ao-error-icon" aria-hidden="true" />
           <span>
             Order ini akan <strong>dihapus permanen</strong> dari database{{ selectedDeleteOrder.payment_status === 'paid' ? ', termasuk data transaksi yang sudah LUNAS' : '' }}.
-            Laporan penjualan, data prediksi, dan riwayat poin pelanggan ikut terpengaruh. Tindakan ini <strong>tidak bisa dibatalkan</strong>.
+            Tindakan ini <strong>tidak bisa dibatalkan</strong>.
           </span>
         </p>
+        <ul class="ao-del-effects">
+          <li>Semua menu, jumlah, dan total di nota ini dihapus (laporan penjualan ikut berubah).</li>
+          <li>Pembayaran ikut dihapus: metode, nominal, dan pembagian bayar.</li>
+          <li v-if="selectedDeleteOrder.items?.some((i) => i.is_point_redemption)">Poin yang dipakai untuk tukar reward <strong>dikembalikan</strong> ke pelanggan.</li>
+          <li v-if="selectedDeleteOrder.customer_phone">Poin yang didapat dari order ini ditarik kembali, begitu juga total belanja dan jumlah order pelanggan.</li>
+          <li v-if="selectedDeleteOrder.promo_discount_amount > 0">Kuota promo yang terpakai dikembalikan.</li>
+        </ul>
 
         <div class="adm-field">
           <label class="adm-label" for="ao-delete-confirm">
@@ -747,6 +778,7 @@ import { toast } from 'vue-sonner'
 import { useAuthStore } from '@/stores/auth'
 import html2canvas from 'html2canvas'
 import AdminModal from '@/components/ui/admin/Adminmodal.vue'
+import { groupReceiptLines } from '@/utils/receiptLines'
 // Di-import (bukan "/src/assets/…") supaya path-nya ikut di-hash & tetap jalan di build production.
 import logoUrl from '@/assets/masashimura-logo.png'
 
@@ -1092,9 +1124,21 @@ watch([unpaidTotal, isToday], ([n, today]) => {
 
 // ── Ringkasan menu di daftar ────────────────────────────────────────
 const ITEMS_PREVIEW = 2
-const itemsPreview = (o) => (o.items || []).slice(0, ITEMS_PREVIEW)
-const itemsMore = (o) => Math.max((o.items?.length || 0) - ITEMS_PREVIEW, 0)
-const itemsTitle = (o) => (o.items || []).map((i) => `${i.quantity}× ${i.menu_name}`).join('\n')
+// Baris hasil pecahan paket (menu & paket sama, beda harga satuan) digabung jadi satu baris.
+const mergedItems = (o) => {
+  const out = []
+  const seen = {}
+  for (const it of o.items || []) {
+    if (!it.bundle_name) { out.push(it); continue }
+    const key = `${it.bundle_name}|${it.menu_name}`
+    if (seen[key] !== undefined) out[seen[key]] = { ...out[seen[key]], quantity: out[seen[key]].quantity + it.quantity }
+    else seen[key] = out.push({ ...it }) - 1
+  }
+  return out
+}
+const itemsPreview = (o) => mergedItems(o).slice(0, ITEMS_PREVIEW)
+const itemsMore = (o) => Math.max(mergedItems(o).length - ITEMS_PREVIEW, 0)
+const itemsTitle = (o) => mergedItems(o).map((i) => `${i.quantity}× ${i.menu_name}`).join('\n')
 
 // ── Umur order (untuk yang belum lunas) ─────────────────────────────
 const ageMinutes = (o) => Math.floor((now.value - new Date(o.created_at).getTime()) / 60000)
@@ -1205,6 +1249,8 @@ const openOrderModal = (order) => {
   selectedSnapshot.value = order
   isModalOpen.value = true
 }
+
+const receiptLines = computed(() => groupReceiptLines(selectedOrder.value?.items))
 
 const computedSubtotal = computed(() => {
   const items = selectedOrder.value?.items || []
@@ -1471,8 +1517,9 @@ const confirmDelete = async () => {
   if (!canConfirmDelete.value) return
   isDeleting.value = true
   try {
-    await apiClient.delete(`/orders/${selectedDeleteOrder.value.id}/`)
-    toast.success(`Order ${selectedDeleteOrder.value.order_number} dihapus permanen`)
+    const { data } = await apiClient.delete(`/orders/${selectedDeleteOrder.value.id}/`)
+    // Server mengembalikan ringkasan (poin dikembalikan, promo, dll) di `detail`.
+    toast.success(data?.detail || `Order ${selectedDeleteOrder.value.order_number} dihapus permanen`, { duration: 8000 })
     closeDeleteModal()
     fetchActiveOrders({ force: true })
   } catch (err) {
@@ -1864,4 +1911,7 @@ const confirmDelete = async () => {
   margin-top: 4px;
   letter-spacing: 0.02em;
 }
+
+.ao-del-effects { margin: 0.75rem 0 1rem; padding-left: 1.1rem; font-size: 0.78rem; line-height: 1.5; color: var(--text-dim, inherit); list-style: disc; }
+.ao-del-effects li + li { margin-top: 0.2rem; }
 </style>

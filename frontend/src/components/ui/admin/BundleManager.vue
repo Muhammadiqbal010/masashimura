@@ -40,7 +40,7 @@
           <p v-if="b.pos.not_cheaper" class="bm-warn" role="alert">
             <AlertTriangle :size="13" /> Harga paket sama atau lebih mahal dari harga normal. Label hemat disembunyikan dari pelanggan.
           </p>
-          <p class="bm-web">Harga di web: {{ rp(b.web.price) }}<template v-if="!b.web.not_cheaper"> (normal {{ rp(b.web.normal_price) }})</template></p>
+          <p class="bm-web">Harga di web: {{ rp(b.web.price) }}<template v-if="!b.web.not_cheaper"> (normal {{ rp(b.web.normal_price) }}, hemat {{ rp(b.web.savings) }})</template></p>
         </div>
         <div class="bm-actions">
           <button type="button" class="adm-btn adm-btn--ghost" @click="toggle(b)">{{ b.is_available ? 'Tandai habis' : 'Tandai tersedia' }}</button>
