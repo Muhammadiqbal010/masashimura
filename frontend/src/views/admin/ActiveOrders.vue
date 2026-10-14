@@ -1605,16 +1605,16 @@ const confirmDelete = async () => {
 .ao-skel-row { height: 3.25rem; border-radius: var(--r-md); }
 
 /* ── Daftar: satu markup, dua layout ─────────────────────────────── */
-.ao-list { display: flex; flex-direction: column; }
+.ao-list { display: flex; flex-direction: column; container-type: inline-size; container-name: ao; width: 100%; }
 
 .ao-head,
 .ao-row {
   display: grid;
-  grid-template-columns: 5.5rem minmax(9rem, 1.1fr) minmax(11rem, 1.6fr) 9rem 7.5rem 6.5rem auto;
+  grid-template-columns: 4.5rem minmax(7rem, 1fr) minmax(9rem, 1.5fr) 8rem 6.5rem 5.5rem 8.75rem;
   grid-template-areas: 'id cust menu bill status time act';
   align-items: center;
-  column-gap: 1rem;
-  padding: 0.85rem 1.1rem;
+  column-gap: 0.75rem;
+  padding: 0.85rem 1rem;
 }
 .ao-a-id { grid-area: id; }
 .ao-a-cust { grid-area: cust; min-width: 0; }
@@ -1681,8 +1681,8 @@ const confirmDelete = async () => {
 .ao-method--cash  { color: #facc15; background: rgb(234 179 8 / 0.14);  border-color: rgb(234 179 8 / 0.45); }
 .ao-method--qris  { color: #60a5fa; background: rgb(59 130 246 / 0.14); border-color: rgb(59 130 246 / 0.45); }
 .ao-method--mixed { color: var(--text-dim); background: rgb(var(--ink) / 0.08); border-color: var(--border-strong); }
-:global(html[data-admin-theme='light']) .ao-method--cash { color: #a16207; background: rgb(234 179 8 / 0.18); }
-:global(html[data-admin-theme='light']) .ao-method--qris { color: #1d4ed8; background: rgb(59 130 246 / 0.12); }
+html[data-admin-theme='light'] .ao-method--cash { color: #a16207; background: rgb(234 179 8 / 0.18); }
+html[data-admin-theme='light'] .ao-method--qris { color: #1d4ed8; background: rgb(59 130 246 / 0.12); }
 
 /* Status */
 .ao-status { display: inline-flex; flex-direction: column; align-items: center; gap: 0.3rem; }
@@ -1695,16 +1695,17 @@ const confirmDelete = async () => {
 .ao-late { margin-top: 2px; font-family: var(--font-body); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--amber-soft); }
 
 /* Aksi */
-.ao-actions { display: flex; align-items: center; justify-content: flex-end; gap: 0.4rem; white-space: nowrap; }
+.ao-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 0.4rem; min-width: 0; }
+.ao-actions .adm-btn { white-space: nowrap; }
 
 /* Tombol "tampilkan lagi" */
 .ao-more { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; padding: 0.8rem 1.1rem; border-top: 1px solid var(--border); font-size: 0.75rem; color: var(--text-dim); }
 
 /* ── Layout kartu (tablet & HP) ──────────────────────────────────── */
-@media (max-width: 1100px) {
+@container ao (max-width: 58rem) {
   .ao-head { display: none; }
-  .ao-list { gap: 0.6rem; padding: 0.6rem; }
   .ao-row {
+    margin: 0.3rem 0.6rem;
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
       'id    time'
