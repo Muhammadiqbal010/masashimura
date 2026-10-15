@@ -5,7 +5,7 @@
     <header class="adm-header">
       <div>
         <p class="adm-eyebrow">Masashimura · Operasional</p>
-        <h1 class="adm-title">Active Orders</h1>
+        <h1 class="adm-title">Riwayat Pesanan</h1>
         <p class="adm-sub">
           {{ formattedCurrentDate }}
           <template v-if="lastUpdated"> · diperbarui {{ lastUpdated }}</template>
@@ -1530,6 +1530,18 @@ const confirmDelete = async () => {
 
 <style scoped>
 .ao-page { max-width: 87.5rem; }
+
+.ao-page .adm-header::before,
+.ao-page .adm-header::after,
+.ao-page .adm-header > div::before,
+.ao-page .adm-header > div::after,
+.ao-page .adm-title::before,
+.ao-page .adm-title::after,
+.ao-page .adm-sub::before,
+.ao-page .adm-sub::after {
+  content: none;
+  display: none;
+}
 
 /* ── Header ──────────────────────────────────────────────────────── */
 .ao-head-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
