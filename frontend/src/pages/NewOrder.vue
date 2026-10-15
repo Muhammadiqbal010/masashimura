@@ -1992,7 +1992,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
   border-radius: 10px !important;
   font-family: 'Manrope', system-ui, sans-serif;
   font-size: 0.72rem !important;
-  letter-spacing: -0.01em !important; !important;
+  letter-spacing: -0.01em !important;
   cursor: pointer;
   opacity: 1 !important;
 }
