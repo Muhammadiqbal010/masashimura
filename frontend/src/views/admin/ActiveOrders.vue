@@ -296,45 +296,37 @@
           </div>
 
           <div class="ao-a-act ao-actions" role="cell" @click.stop>
-            <button
-              v-if="canPay(order)"
-              type="button"
-              class="adm-btn adm-btn--primary adm-btn--sm"
-              @click="openPayModal(order)"
-            >Lunasi</button>
+            <div v-if="hasMainActions(order)" class="ao-act-main">
+              <button
+                v-if="canPay(order)"
+                type="button"
+                class="adm-btn adm-btn--primary adm-btn--sm"
+                @click="openPayModal(order)"
+              >Lunasi</button>
 
-            <button
-              v-if="order.status !== 'completed' && order.status !== 'cancelled'"
-              type="button"
-              class="adm-btn adm-btn--soft adm-btn--sm"
-              @click="openCancelModal(order)"
-            >Batalkan</button>
+              <button
+                v-if="order.status !== 'completed' && order.status !== 'cancelled'"
+                type="button"
+                class="adm-btn adm-btn--soft adm-btn--sm"
+                @click="openCancelModal(order)"
+              >Batalkan</button>
 
-            <button
-              v-if="canRemind(order)"
-              type="button"
-              class="adm-icon-btn adm-icon-btn--bordered"
-              title="Ingatkan pembayaran via WhatsApp"
-              aria-label="Ingatkan pembayaran via WhatsApp"
-              @click="remindViaWA(order)"
-            >
-              <MessageCircle :size="14" />
-            </button>
-
-            <button
-              type="button"
-              class="adm-icon-btn adm-icon-btn--bordered"
-              title="Lihat struk"
-              aria-label="Lihat struk"
-              @click="openOrderModal(order)"
-            >
-              <Receipt :size="14" />
-            </button>
+              <button
+                v-if="canRemind(order)"
+                type="button"
+                class="adm-icon-btn adm-icon-btn--bordered"
+                title="Ingatkan pembayaran via WhatsApp"
+                aria-label="Ingatkan pembayaran via WhatsApp"
+                @click="remindViaWA(order)"
+              >
+                <MessageCircle :size="14" />
+              </button>
+            </div>
 
             <button
               v-if="isOwner"
               type="button"
-              class="adm-icon-btn adm-icon-btn--danger adm-icon-btn--bordered"
+              class="ao-del adm-icon-btn adm-icon-btn--danger adm-icon-btn--bordered"
               title="Hapus permanen (khusus owner)"
               aria-label="Hapus permanen"
               @click="openDeleteModal(order)"
@@ -1186,6 +1178,12 @@ const normalizePhone = (raw) => {
   return digits
 }
 const canRemind = (o) => isUnpaid(o) && !!normalizePhone(o.customer_phone)
+
+// Kalau tidak ada tombol utama (mis. order selesai), grupnya tidak dirender
+// supaya tidak ada baris kosong di kartu mobile.
+const hasMainActions = (o) =>
+  canPay(o) || (o.status !== 'completed' && o.status !== 'cancelled') || canRemind(o)
+
 const remindViaWA = (o) => {
   const phone = normalizePhone(o.customer_phone)
   if (!phone) return
@@ -1610,7 +1608,7 @@ const confirmDelete = async () => {
 .ao-head,
 .ao-row {
   display: grid;
-  grid-template-columns: 4.5rem minmax(7rem, 1fr) minmax(9rem, 1.5fr) 8rem 6.5rem 5.5rem 8.75rem;
+  grid-template-columns: 4rem minmax(6rem, 1fr) minmax(8rem, 1.4fr) 7.5rem 6rem 5.5rem 14rem;
   grid-template-areas: 'id cust menu bill status time act';
   align-items: center;
   column-gap: 0.75rem;
@@ -1694,41 +1692,57 @@ html[data-admin-theme='light'] .ao-method--qris { color: #1d4ed8; background: rg
 .ao-age.is-old { font-weight: 700; color: var(--red-soft); }
 .ao-late { margin-top: 2px; font-family: var(--font-body); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--amber-soft); }
 
-/* Aksi */
-.ao-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 0.4rem; min-width: 0; }
+/* Aksi (desktop): satu baris, rata kanan, tidak pernah turun baris */
+.ao-actions { display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-end; gap: 0.4rem; min-width: 0; }
+.ao-act-main { display: flex; flex-wrap: nowrap; align-items: center; gap: 0.4rem; }
 .ao-actions .adm-btn { white-space: nowrap; }
 
 /* Tombol "tampilkan lagi" */
 .ao-more { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; padding: 0.8rem 1.1rem; border-top: 1px solid var(--border); font-size: 0.75rem; color: var(--text-dim); }
 
 /* ── Layout kartu (tablet & HP) ──────────────────────────────────── */
-@container ao (max-width: 58rem) {
+@container ao (max-width: 60rem) {
   .ao-head { display: none; }
+
   .ao-row {
-    margin: 0.3rem 0.6rem;
-    grid-template-columns: minmax(0, 1fr) auto;
+    margin: 0.35rem 0.6rem;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     grid-template-areas:
-      'id    time'
-      'cust  cust'
-      'menu  menu'
-      'bill  status'
-      'act   act';
+      'id    cust  time'
+      'menu  menu  del'
+      'bill  bill  status'
+      'act   act   act';
+    align-items: center;
+    column-gap: 0.6rem;
     row-gap: 0.55rem;
-    padding: 0.85rem 0.95rem;
+    padding: 0.8rem 0.9rem;
     border: 1px solid var(--border); border-radius: var(--r-md);
     background: var(--surface-2);
   }
   .ao-row:last-of-type { border-bottom: 1px solid var(--border); }
   .ao-row--unpaid { border-color: var(--line-accent); }
-  .ao-a-time { flex-direction: row; align-items: baseline; gap: 0.5rem; justify-self: end; }
-  .ao-age, .ao-late { margin-top: 0; }
+
+  /* Baris 1: #order · nama · jam (+ "Input susulan" kecil di bawah jam) */
+  .ao-a-time { align-items: flex-end; gap: 0.1rem; text-align: right; }
+  .ao-age, .ao-late { margin-top: 0; font-size: 0.68rem; line-height: 1.2; }
+  .ao-cust-name { font-size: 0.9rem; }
+
+  /* Baris 2: menu + tombol hapus sejajar dengan nama item pertama */
+  .ao-a-menu { align-self: start; }
+  .ao-items-name { white-space: normal; }
+  .ao-actions { display: contents; }          /* anak-anaknya jadi item grid */
+  .ao-del { grid-area: del; align-self: start; justify-self: end; min-width: 36px; min-height: 36px; }
+
+  /* Baris 3: harga + metode di kiri, status di kanan */
   .ao-bill { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
   .ao-status { flex-direction: row; justify-self: end; }
   .ao-a-status { justify-content: flex-end; }
-  .ao-items-name { white-space: normal; }
-  .ao-actions { flex-wrap: wrap; justify-content: stretch; padding-top: 0.6rem; border-top: 1px dashed var(--border); }
-  .ao-actions .adm-btn { flex: 1; min-height: 44px; }
-  .ao-actions .adm-icon-btn { min-width: 44px; min-height: 44px; }
+
+  /* Baris 4: tombol utama selebar kartu */
+  .ao-act-main { grid-area: act; padding-top: 0.6rem; border-top: 1px dashed var(--border); }
+  .ao-act-main .adm-btn { flex: 1; min-height: 44px; }
+  .ao-act-main .adm-icon-btn { min-width: 44px; min-height: 44px; }
+
   .ao-more { border-top: 0; padding-inline: 0.4rem; }
 }
 
