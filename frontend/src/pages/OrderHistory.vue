@@ -5,7 +5,7 @@
       <!-- Header -->
       <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
         <div>
-          <h1 class="text-2xl sm:text-3xl font-oswald uppercase tracking-wide">Riwayat Transaksi</h1>
+          <h1 class="text-2xl sm:text-3xl font-manrope font-bold tracking-wide">Riwayat Transaksi</h1>
           <p class="text-sm text-[color:var(--text-faint)] mt-1">Pantau transaksi yang sudah diproses pada periode ini.</p>
         </div>
 
@@ -29,15 +29,15 @@
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
         <div class="bg-[color:var(--surface)] border border-[color:rgb(var(--ink)/0.05)] rounded-xl p-4">
           <p class="text-xs text-[color:var(--text-faint)] uppercase tracking-wide">Total Transaksi</p>
-          <p class="text-2xl font-oswald mt-1">{{ summary.count }}</p>
+          <p class="text-2xl font-manrope font-bold mt-1">{{ summary.count }}</p>
         </div>
         <div class="bg-[color:var(--surface)] border border-[color:rgb(var(--ink)/0.05)] rounded-xl p-4">
           <p class="text-xs text-[color:var(--text-faint)] uppercase tracking-wide">Total Pendapatan</p>
-          <p class="text-2xl font-oswald mt-1 text-[color:var(--accent-text)]">{{ formatPrice(summary.total) }}</p>
+          <p class="text-2xl font-manrope font-bold mt-1 text-[color:var(--accent-text)]">{{ formatPrice(summary.total) }}</p>
         </div>
         <div class="bg-[color:var(--surface)] border border-[color:rgb(var(--ink)/0.05)] rounded-xl p-4">
           <p class="text-xs text-[color:var(--text-faint)] uppercase tracking-wide">Rata-rata / Transaksi</p>
-          <p class="text-2xl font-oswald mt-1">{{ formatPrice(summary.average) }}</p>
+          <p class="text-2xl font-manrope font-bold mt-1">{{ formatPrice(summary.average) }}</p>
         </div>
       </div>
 

@@ -5,9 +5,9 @@
     <div>
       <div class="flex items-center gap-2 mb-2">
         <span class="w-1 h-1 rounded-full bg-red-600"></span>
-        <p class="text-[color:var(--text-faint)] text-[11px] font-oswald uppercase tracking-[0.25em]">Masashimura · Akun</p>
+        <p class="text-[color:var(--text-faint)] text-[11px] font-manrope font-bold tracking-normal">Masashimura · Akun</p>
       </div>
-      <h1 class="font-oswald text-3xl sm:text-4xl uppercase tracking-tighter text-[color:var(--text)]">
+      <h1 class="font-manrope font-bold text-3xl sm:text-4xl tracking-tighter text-[color:var(--text)]">
         My Profile
       </h1>
       <p class="text-[color:var(--text-faint)] text-xs sm:text-sm font-light mt-1">
@@ -19,7 +19,7 @@
 
       <!-- CARD INFORMASI AKUN -->
       <div class="md:col-span-1 bg-[color:var(--surface)] border border-[color:rgb(var(--ink)/0.05)] rounded-2xl p-6 text-center space-y-4 shadow-xl md:sticky md:top-6">
-        <div class="w-20 h-20 rounded-full bg-red-600/10 border-2 border-red-600/20 flex items-center justify-center text-3xl font-bold text-[color:var(--accent-text)] mx-auto font-oswald select-none">
+        <div class="w-20 h-20 rounded-full bg-red-600/10 border-2 border-red-600/20 flex items-center justify-center text-3xl font-bold text-[color:var(--accent-text)] mx-auto font-manrope font-bold select-none">
           {{ userInitial }}
         </div>
         <div>
@@ -59,7 +59,7 @@
           <section class="space-y-5">
             <div class="flex items-center gap-2 pb-3 border-b border-[color:rgb(var(--ink)/0.05)]">
               <IdCard :size="14" class="text-[color:var(--accent-text)]" />
-              <h2 class="font-oswald text-sm uppercase tracking-wider text-[color:var(--text-2)]">Informasi Akun</h2>
+              <h2 class="font-manrope font-bold text-sm tracking-normal text-[color:var(--text-2)]">Informasi Akun</h2>
             </div>
 
             <div class="space-y-1.5">
@@ -102,7 +102,7 @@
           <section class="space-y-5">
             <div class="flex items-center gap-2 pb-3 border-b border-[color:rgb(var(--ink)/0.05)]">
               <ShieldCheck :size="14" class="text-[color:var(--accent-text)]" />
-              <h2 class="font-oswald text-sm uppercase tracking-wider text-[color:var(--text-2)]">Keamanan Password</h2>
+              <h2 class="font-manrope font-bold text-sm tracking-normal text-[color:var(--text-2)]">Keamanan Password</h2>
               <span class="text-[11px] text-[color:var(--text-faint)] italic ml-auto">Opsional</span>
             </div>
 
@@ -236,7 +236,7 @@
             <button
               type="submit"
               :disabled="isSaving || !canSubmit"
-              class="w-full sm:w-fit flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white font-oswald uppercase px-8 py-3.5 rounded-xl text-xs font-bold tracking-widest transition disabled:opacity-40 disabled:hover:bg-red-600 cursor-pointer disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+              class="w-full sm:w-fit flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white font-manrope font-bold px-8 py-3.5 rounded-xl text-xs font-bold tracking-normal transition disabled:opacity-40 disabled:hover:bg-red-600 cursor-pointer disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
             >
               <span v-if="isSaving" class="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
               <Save v-else :size="14" />
@@ -411,7 +411,7 @@ const handleUpdateProfile = async () => {
   background: rgb(var(--ink) / 0.03); border: 1px solid rgb(var(--ink) / 0.08);
   color: var(--text-dim);
   font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
-  letter-spacing: 0.08em; text-transform: uppercase;
+  letter-spacing: -0.01em;
   cursor: pointer; transition: all 0.15s;
 }
 .verify-btn-active {

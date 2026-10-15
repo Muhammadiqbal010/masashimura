@@ -4,10 +4,10 @@
     class="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
   >
     <div
-      class="bg-[#111111] border border-white/10 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl"
+      class="bg-[#0a0a0a] border border-white/10 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl"
     >
       <div class="px-8 py-6 border-b border-white/10">
-        <h2 class="font-oswald text-2xl uppercase tracking-tight text-white">
+        <h2 class="font-manrope font-bold text-2xl tracking-tight text-white">
           Buat Akun Baru
         </h2>
         <p class="text-white/50 text-sm">

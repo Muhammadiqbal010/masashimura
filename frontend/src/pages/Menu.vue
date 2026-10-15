@@ -1,5 +1,5 @@
 <template>
-  <div class="page relative min-h-screen bg-[#111111] font-inter text-[#FAFAFA]">
+  <div class="page relative min-h-screen bg-[#080808] font-inter text-[#FAFAFA]">
     <!-- Atmosfer latar -->
     <div class="page-glow pointer-events-none absolute inset-x-0 top-0 h-[480px]" aria-hidden="true"></div>
 
@@ -15,7 +15,7 @@
     </header>
 
     <!-- ── STICKY SEARCH + FILTER BAR ─────────────────────────────────────────── -->
-    <div class="sticky top-0 z-30 border-y border-white/[0.06] bg-[#111111]/85 backdrop-blur-xl">
+    <div class="sticky top-[60px] z-30 bg-[#080808]/80 backdrop-blur-xl sm:top-[68px]">
       <div class="mx-auto max-w-7xl space-y-3 px-5 py-3 sm:px-8 sm:py-4 lg:px-10">
 
         <!-- Search + Sort -->
@@ -30,7 +30,7 @@
               autocomplete="off"
               placeholder="Cari menu favoritmu"
               aria-label="Cari menu"
-              class="h-12 w-full rounded-xl border border-white/10 bg-[#1B1B1B] pl-11 pr-11 text-base text-[#FAFAFA] transition-colors placeholder:text-[#737373] focus:border-[#FFD400]/60 focus:outline-none sm:text-sm"
+              class="h-12 w-full rounded-xl border border-white/10 bg-[#141414] pl-11 pr-11 text-base text-[#FAFAFA] transition-colors placeholder:text-[#737373] focus:border-[#F4C542]/60 focus:outline-none sm:text-sm"
             />
             <button
               v-if="searchQuery"
@@ -47,7 +47,7 @@
             <select
               v-model="sortBy"
               aria-label="Urutkan menu"
-              class="h-12 cursor-pointer appearance-none rounded-xl border border-white/10 bg-[#1B1B1B] pl-4 pr-10 text-base font-medium text-[#FAFAFA] transition-colors focus:border-[#FFD400]/60 focus:outline-none sm:text-sm"
+              class="h-12 cursor-pointer appearance-none rounded-xl border border-white/10 bg-[#141414] pl-4 pr-10 text-base font-medium text-[#FAFAFA] transition-colors focus:border-[#F4C542]/60 focus:outline-none sm:text-sm"
             >
               <option value="default">Urutkan</option>
               <option value="price_asc">Termurah</option>
@@ -85,8 +85,8 @@
                 :class="[
                   'inline-flex min-h-[40px] flex-shrink-0 items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-medium transition-all duration-200',
                   selectedCategory === cat.value
-                    ? 'border-[#D71920] bg-[#D71920] text-white'
-                    : 'border-white/10 bg-[#1B1B1B] text-[#A3A3A3] hover:border-white/25 hover:text-[#FAFAFA]'
+                    ? 'border-[#D92B22] bg-[#D92B22] text-white'
+                    : 'border-white/10 bg-[#141414] text-[#A3A3A3] hover:border-white/25 hover:text-[#FAFAFA]'
                 ]"
               >
                 <ThumbsUp v-if="cat.value === FILTER_RECOMMENDED" :size="13" />
@@ -99,7 +99,7 @@
               </button>
             </template>
           </div>
-          <div class="pointer-events-none absolute bottom-0 right-0 top-0 w-10 bg-gradient-to-l from-[#111111] to-transparent sm:hidden"></div>
+          <div class="pointer-events-none absolute bottom-0 right-0 top-0 w-10 bg-gradient-to-l from-[#080808] to-transparent sm:hidden"></div>
         </div>
       </div>
     </div>
@@ -110,10 +110,10 @@
       <!-- Store closed banner -->
       <div
         v-if="settingsReady && !isStoreOpen"
-        class="mb-6 flex items-start gap-3 rounded-2xl border border-[#D71920]/25 bg-[#D71920]/10 px-5 py-4"
+        class="mb-6 flex items-start gap-3 rounded-2xl border border-[#D92B22]/25 bg-[#D92B22]/10 px-5 py-4"
         role="status"
       >
-        <Lock :size="17" class="mt-0.5 flex-shrink-0 text-[#FF6A70]" />
+        <Lock :size="17" class="mt-0.5 flex-shrink-0 text-[#F0605A]" />
         <p class="text-sm leading-relaxed text-[#FFB0B0]">
           {{ closedMessage }}
           <span v-if="nextOpenText" class="mt-1 block font-semibold text-[#FFD0D0]">{{ nextOpenText }}</span>
@@ -140,7 +140,7 @@
           >
             <span
               class="relative h-5 w-9 flex-shrink-0 rounded-full border transition-colors"
-              :class="hideSoldOut ? 'border-[#D71920] bg-[#D71920]' : 'border-white/20 bg-white/[0.04]'"
+              :class="hideSoldOut ? 'border-[#D92B22] bg-[#D92B22]' : 'border-white/20 bg-white/[0.04]'"
               aria-hidden="true"
             >
               <span
@@ -155,7 +155,7 @@
             v-if="hasActiveFilters"
             type="button"
             @click="resetFilters"
-            class="border-b border-[#FFD400]/60 pb-0.5 text-sm font-medium text-[#FFD400] transition-colors hover:text-[#FAFAFA]"
+            class="border-b border-[#F4C542]/60 pb-0.5 text-sm font-medium text-[#F4C542] transition-colors hover:text-[#FAFAFA]"
           >
             Reset filter
           </button>
@@ -167,7 +167,7 @@
         <div
           v-for="n in 6"
           :key="n"
-          class="flex animate-pulse flex-col overflow-hidden rounded-3xl border border-white/[0.06] bg-[#1B1B1B]"
+          class="flex animate-pulse flex-col overflow-hidden rounded-3xl border border-white/[0.06] bg-[#141414]"
         >
           <div class="aspect-video w-full bg-white/[0.04]"></div>
           <div class="space-y-3 p-5">
@@ -187,7 +187,7 @@
         class="space-y-4 rounded-3xl border border-dashed border-white/10 py-24 text-center sm:py-28"
         role="alert"
       >
-        <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-[#1B1B1B]">
+        <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-[#141414]">
           <WifiOff :size="22" class="text-[#A3A3A3]" />
         </div>
         <p class="px-4 font-sora text-lg font-semibold text-[#FAFAFA]">Gagal memuat menu</p>
@@ -195,7 +195,7 @@
         <button
           type="button"
           @click="fetchMenus"
-          class="mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-[#D71920] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#B5121B] active:scale-95"
+          class="mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-[#D92B22] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#B8201A] active:scale-95"
         >
           <RefreshCw :size="15" />
           Coba lagi
@@ -207,7 +207,7 @@
         v-else-if="filteredMenus.length === 0"
         class="space-y-4 rounded-3xl border border-dashed border-white/10 py-24 text-center sm:py-28"
       >
-        <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-[#1B1B1B]">
+        <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-[#141414]">
           <span class="text-2xl">🍽️</span>
         </div>
         <p class="px-4 font-sora text-lg font-semibold text-[#FAFAFA]">
@@ -240,13 +240,13 @@
         <div
           v-for="menu in filteredMenus"
           :key="menu.id"
-          class="menu-card group relative flex flex-col overflow-hidden rounded-3xl border border-white/[0.07] transition-all duration-300 hover:border-[#FFD400]/35 sm:hover:-translate-y-1 sm:hover:shadow-lg shadow-black/20"
+          class="menu-card group relative flex flex-col overflow-hidden rounded-3xl border border-white/[0.07] transition-all duration-300 hover:border-[#F4C542]/35 sm:hover:-translate-y-1 sm:hover:shadow-[0_28px_48px_-30px_rgba(217,43,34,0.5)]"
         >
           <!-- Foto 16:9 (klik → detail) -->
           <button
             type="button"
             :aria-label="'Lihat detail ' + menu.name"
-            class="relative aspect-video w-full shrink-0 overflow-hidden bg-[#1B1B1B] text-left"
+            class="relative aspect-video w-full shrink-0 overflow-hidden bg-[#1A1A1A] text-left"
             @click="openDetail(menu)"
           >
             <img
@@ -263,7 +263,7 @@
               <span class="text-xs text-[#737373]">Belum ada foto</span>
             </div>
 
-            <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#1B1B1B] via-transparent to-transparent opacity-70"></div>
+            <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-transparent opacity-70"></div>
 
             <!-- Badge -->
             <div class="absolute left-3 top-3 z-10 flex flex-col items-start gap-1.5">
@@ -275,7 +275,7 @@
               </div>
               <div
                 v-if="menu.is_recommended"
-                class="flex items-center gap-1 rounded-full bg-[#D71920] px-2.5 py-1 text-white"
+                class="flex items-center gap-1 rounded-full bg-[#D92B22] px-2.5 py-1 text-white"
                 title="Rekomendasi"
               >
                 <ThumbsUp :size="11" />
@@ -283,7 +283,7 @@
               </div>
               <div
                 v-if="bestSellerIds.has(menu.id)"
-                class="flex items-center gap-1 rounded-full bg-[#FFD400] px-2.5 py-1 text-[#1A1700]"
+                class="flex items-center gap-1 rounded-full bg-[#F4C542] px-2.5 py-1 text-[#2A1F00]"
                 title="Terlaris"
               >
                 <Flame :size="11" />
@@ -300,7 +300,7 @@
             class="absolute right-3 top-3 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/55 backdrop-blur-md transition-colors hover:bg-black/80"
             @click.stop="toggleFavorite(menu.id)"
           >
-            <Heart :size="16" :class="isFavorite(menu.id) ? 'fill-[#D71920] text-[#D71920]' : 'text-white/85'" />
+            <Heart :size="16" :class="isFavorite(menu.id) ? 'fill-[#D92B22] text-[#D92B22]' : 'text-white/85'" />
           </button>
 
           <!-- Info -->
@@ -314,7 +314,7 @@
                 class="min-w-0 flex-1 space-y-1.5 text-left"
                 @click="openDetail(menu)"
               >
-                <span class="block text-xs font-medium text-[#FFD400]">
+                <span class="block text-xs font-medium text-[#F4C542]">
                   {{ menu.category_name }}
                 </span>
                 <h3 class="line-clamp-2 font-sora text-lg font-semibold leading-snug text-[#FAFAFA] transition-colors group-hover:text-white">
@@ -360,7 +360,7 @@
                   type="button"
                   :aria-label="'Tambah ' + menu.name"
                   :disabled="!menu.is_available || !isStoreOpen"
-                  class="flex h-9 w-9 items-center justify-center rounded-full bg-[#D71920] text-white transition-colors hover:bg-[#B5121B] disabled:opacity-40"
+                  class="flex h-9 w-9 items-center justify-center rounded-full bg-[#D92B22] text-white transition-colors hover:bg-[#B8201A] disabled:opacity-40"
                   @click="requestAdd(menu)"
                 >
                   <Plus :size="15" />
@@ -376,8 +376,8 @@
                 :class="[
                   'flex min-h-[44px] items-center justify-center gap-1.5 rounded-full px-5 text-sm font-semibold transition-all duration-200',
                   menu.is_available && isStoreOpen
-                    ? 'bg-[#D71920] text-white hover:bg-[#B5121B] hover:shadow-lg shadow-black/20 active:scale-95'
-                    : 'cursor-not-allowed border border-white/5 bg-[#1B1B1B] text-[#737373]'
+                    ? 'bg-[#D92B22] text-white hover:bg-[#B8201A] hover:shadow-[0_8px_24px_-8px_rgba(217,43,34,0.6)] active:scale-95'
+                    : 'cursor-not-allowed border border-white/5 bg-[#1A1A1A] text-[#737373]'
                 ]"
               >
                 <Plus :size="15" />
@@ -406,13 +406,13 @@
           type="button"
           @click="isCartOpen = true"
           :aria-label="`Buka keranjang: ${cartStore.cartItemCount} item, total ${formatPrice(cartStore.totalPrice)}`"
-          class="cart-bar flex w-full items-center justify-between gap-4 rounded-2xl border border-white/10 py-3.5 pl-4 pr-5 text-white shadow-lg shadow-black/20 transition-all duration-200 active:scale-[0.99]"
+          class="cart-bar flex w-full items-center justify-between gap-4 rounded-2xl border border-white/10 py-3.5 pl-4 pr-5 text-white shadow-[0_16px_44px_rgba(217,43,34,0.4)] transition-all duration-200 active:scale-[0.99]"
           :class="{ 'fab-bump': cartBump }"
         >
           <div class="flex min-w-0 items-center gap-3">
             <div class="relative flex-shrink-0">
               <ShoppingCart :size="20" />
-              <span class="absolute -right-2 -top-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#FAFAFA] px-1 text-[11px] font-bold leading-none text-[#8E1016]">
+              <span class="absolute -right-2 -top-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#FAFAFA] px-1 text-[11px] font-bold leading-none text-[#8F0000]">
                 {{ cartStore.cartItemCount }}
               </span>
             </div>
@@ -780,22 +780,22 @@ onUnmounted(() => clearTimeout(bumpTimer))
 <style scoped>
 /*
   Palet (sama dengan halaman Lokasi & Kontak)
-  Warm black #111111 · Surface #1B1B1B · Washi #FAFAFA
-  Crimson #D71920 (aksi) · Champagne #FFD400 (detail premium)
+  Warm black #080808 · Surface #141414 · Washi #FAFAFA
+  Crimson #D92B22 (aksi) · Champagne #F4C542 (detail premium)
 */
 
 .page-glow {
   background:
-    radial-gradient(60% 70% at 15% 0%, rgba(215,25,32, 0.15), transparent 70%),
-    radial-gradient(40% 50% at 90% 10%, rgba(255,212,0, 0.07), transparent 70%);
+    radial-gradient(60% 70% at 15% 0%, rgba(217,43,34, 0.09), transparent 70%),
+    radial-gradient(40% 50% at 90% 10%, rgba(244,197,66, 0.03), transparent 70%);
 }
 
 .menu-card {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)), #1B1B1B;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)), #141414;
 }
 
 .cart-bar {
-  background: linear-gradient(135deg, #B5121B 0%, #D71920 50%, #8E1016 100%);
+  background: linear-gradient(135deg, #B8201A 0%, #D92B22 50%, #8F0000 100%);
 }
 .cart-bar:hover {
   filter: brightness(1.08);
@@ -808,7 +808,7 @@ onUnmounted(() => clearTimeout(bumpTimer))
 a:focus-visible,
 button:focus-visible,
 select:focus-visible {
-  outline: 2px solid #FFD400;
+  outline: 2px solid #F4C542;
   outline-offset: 3px;
 }
 

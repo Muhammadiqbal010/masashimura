@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen overflow-x-hidden bg-[#111111] font-inter text-[#FAFAFA] selection:bg-[#D71920]/40 selection:text-white">
+  <div class="min-h-screen overflow-x-hidden bg-[#080808] font-inter text-[#FAFAFA] selection:bg-[#D92B22]/40 selection:text-white">
 
     <!-- ═══════════════════════════════════════════
          1. HERO (tampil langsung, bagian CMS pakai skeleton)
@@ -21,8 +21,8 @@
             class="h-full w-full object-cover"
           />
         </div>
-        <div class="absolute inset-0 bg-gradient-to-t from-[#111111] via-[#111111]/60 to-[#111111]/55"></div>
-        <div class="absolute inset-0 hidden bg-gradient-to-r from-[#111111] via-[#111111]/70 to-transparent lg:block"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-[#080808] via-[#080808]/60 to-[#080808]/55"></div>
+        <div class="absolute inset-0 hidden bg-gradient-to-r from-[#080808] via-[#080808]/70 to-transparent lg:block"></div>
         <div class="hero-glow pointer-events-none absolute inset-0"></div>
       </div>
 
@@ -37,14 +37,18 @@
             >
               <span class="relative flex h-2 w-2 shrink-0">
                 <span
+                  v-if="openStatus.isOpen"
+                  class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60"
+                ></span>
+                <span
                   class="relative inline-flex h-2 w-2 rounded-full"
-                  :class="openStatus.isOpen ? 'bg-emerald-400' : 'bg-[#D71920]'"
+                  :class="openStatus.isOpen ? 'bg-emerald-400' : 'bg-[#D92B22]'"
                 ></span>
               </span>
               <span class="text-xs font-medium text-[#FAFAFA]">{{ openStatus.label }}</span>
               <span v-if="openStatus.detail" class="text-xs text-[#A3A3A3]">{{ openStatus.detail }}</span>
             </div>
-            <span class="rounded-full border border-[#FFD400]/25 bg-[#FFD400]/10 px-3.5 py-1.5 text-xs font-medium text-[#FFD400]">
+            <span class="rounded-full border border-[#F4C542]/25 bg-[#F4C542]/10 px-3.5 py-1.5 text-xs font-medium text-[#F4C542]">
               Bekasi, sejak 2024
             </span>
           </div>
@@ -59,7 +63,7 @@
               v-for="(line, i) in headlineLines"
               :key="i"
               class="block"
-              :class="line.accent ? 'text-[#FFD400]' : ''"
+              :class="line.accent ? 'text-[#F4C542]' : ''"
             >{{ line.text }}</span>
           </h1>
           <div v-else class="space-y-3" aria-hidden="true">
@@ -94,8 +98,8 @@
         <!-- Foto makanan (desktop) -->
         <div class="hero-in hidden items-end justify-end lg:col-span-5 lg:flex" style="--d: 300ms">
           <div class="relative w-80">
-            <div class="absolute -right-3 -top-3 h-full w-full rounded-[2rem] border border-[#FFD400]/30"></div>
-            <div class="relative aspect-square overflow-hidden rounded-[2rem] border border-white/10 bg-[#1B1B1B]">
+            <div class="absolute -right-3 -top-3 h-full w-full rounded-[2rem] border border-[#F4C542]/15"></div>
+            <div class="relative aspect-square overflow-hidden rounded-[2rem] border border-white/10 bg-[#141414]">
               <img
                 v-if="!loading.cms"
                 v-blur-img
@@ -106,7 +110,7 @@
               <div v-else class="skeleton h-full w-full" aria-hidden="true"></div>
               <div class="absolute inset-x-3 bottom-3 flex items-center justify-between rounded-2xl border border-white/10 bg-black/55 px-4 py-3 backdrop-blur-md">
                 <span class="text-sm font-medium text-[#FAFAFA]">Signature dish</span>
-                <span class="h-2 w-2 rounded-full bg-[#D71920]"></span>
+                <span class="h-2 w-2 animate-pulse rounded-full bg-[#D92B22]"></span>
               </div>
             </div>
           </div>
@@ -122,19 +126,19 @@
     <!-- ═══════════════════════════════════════════
          2. MARQUEE
     ═══════════════════════════════════════════ -->
-    <div v-if="cms.marquee_text" class="marquee-wrap overflow-hidden border-y border-white/[0.06] bg-[#111111] py-5" aria-hidden="true">
+    <div v-if="cms.marquee_text" class="marquee-wrap overflow-hidden bg-transparent py-5" aria-hidden="true">
       <div class="animate-marquee flex">
         <div v-for="g in 2" :key="g" class="flex shrink-0 items-center">
           <template v-for="m in 4" :key="m">
             <span class="mx-8 whitespace-nowrap font-sora text-sm font-medium tracking-[0.2em] text-[#737373]">
               {{ cms.marquee_text }}
             </span>
-            <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-[#FFD400]"></span>
+            <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-[#F4C542]"></span>
           </template>
         </div>
       </div>
     </div>
-    <div v-else class="border-y border-white/[0.06] bg-[#111111] py-5" aria-hidden="true">
+    <div v-else class="bg-transparent py-5" aria-hidden="true">
       <div class="skeleton mx-auto h-3 w-1/2 rounded-full"></div>
     </div>
 
@@ -153,7 +157,7 @@
           <h2 class="section-title">Menu terlaris</h2>
           <p class="max-w-md text-base text-[#A3A3A3]">Yang paling sering dipesan pelanggan kami.</p>
         </div>
-        <router-link to="/menu" class="group hidden items-center gap-2 text-sm font-medium text-[#FFD400] transition-colors hover:text-[#FAFAFA] sm:inline-flex">
+        <router-link to="/menu" class="group hidden items-center gap-2 text-sm font-medium text-[#F4C542] transition-colors hover:text-[#FAFAFA] sm:inline-flex">
           Lihat semua
           <ArrowRight :size="15" class="transition-transform duration-200 group-hover:translate-x-1" />
         </router-link>
@@ -161,7 +165,7 @@
 
       <!-- Skeleton -->
       <div v-if="loading.best" class="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3" aria-hidden="true">
-        <div v-for="n in 3" :key="n" class="overflow-hidden rounded-3xl border border-white/[0.07] bg-[#1B1B1B]">
+        <div v-for="n in 3" :key="n" class="overflow-hidden rounded-3xl border border-white/[0.07] bg-[#141414]">
           <div class="skeleton aspect-[4/3] w-full"></div>
           <div class="space-y-3 p-6">
             <div class="skeleton h-5 w-3/4 rounded-full"></div>
@@ -180,9 +184,9 @@
           v-for="(item, idx) in topBestSellers"
           :key="idx"
           to="/menu"
-          class="card-surface group flex flex-col overflow-hidden !p-0 transition-all duration-300 hover:-translate-y-1 hover:border-[#FFD400]/35 hover:shadow-lg shadow-black/20"
+          class="card-surface group flex flex-col overflow-hidden !p-0 transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_28px_48px_-30px_rgba(217,43,34,0.5)]"
         >
-          <div class="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-[#1B1B1B]">
+          <div class="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-[#1A1A1A]">
             <div class="h-full w-full transition-transform duration-700 ease-out group-hover:scale-105">
               <img
                 v-blur-img
@@ -192,13 +196,13 @@
                 class="h-full w-full object-cover"
               />
             </div>
-            <div class="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#1B1B1B] to-transparent opacity-80"></div>
+            <div class="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#141414] to-transparent opacity-80"></div>
             <span class="absolute left-3 top-3 flex h-8 min-w-8 items-center justify-center rounded-full border border-white/10 bg-black/55 px-2 text-xs font-semibold tabular-nums text-[#FAFAFA] backdrop-blur-md">
               {{ idx + 1 }}
             </span>
             <span
               v-if="idx === 0"
-              class="absolute right-3 top-3 rounded-full bg-[#FFD400] px-3 py-1 text-xs font-semibold text-[#1A1700]"
+              class="absolute right-3 top-3 rounded-full bg-[#F4C542] px-3 py-1 text-xs font-semibold text-[#2A1F00]"
             >
               Terlaris
             </span>
@@ -213,7 +217,7 @@
               <span class="font-sora text-lg font-semibold tracking-tight text-[#FAFAFA]">
                 {{ formatRupiah(item.price) }}
               </span>
-              <span class="inline-flex items-center gap-2 rounded-full bg-[#D71920] px-5 py-2.5 text-sm font-semibold text-white transition-colors group-hover:bg-[#B5121B]">
+              <span class="inline-flex items-center gap-2 rounded-full bg-[#D92B22] px-5 py-2.5 text-sm font-semibold text-white transition-colors group-hover:bg-[#B8201A]">
                 Pesan
                 <ArrowRight :size="14" class="transition-transform duration-200 group-hover:translate-x-0.5" />
               </span>
@@ -240,12 +244,12 @@
     <!-- ═══════════════════════════════════════════
          5. TENTANG MASASHIMURA
     ═══════════════════════════════════════════ -->
-    <section v-reveal class="border-y border-white/[0.06] bg-[#111111] py-20 sm:py-28 lg:py-32">
+    <section v-reveal class="band py-20 sm:py-28 lg:py-32">
       <div class="mx-auto grid max-w-7xl grid-cols-1 items-center gap-14 px-5 sm:px-8 lg:grid-cols-2 lg:gap-20 lg:px-10">
 
         <div class="relative">
-          <div class="absolute -bottom-3 -left-3 h-full w-full rounded-[2rem] border border-[#FFD400]/25 sm:-bottom-4 sm:-left-4"></div>
-          <div class="relative aspect-square overflow-hidden rounded-[2rem] bg-[#1B1B1B]">
+          <div class="absolute -bottom-3 -left-3 h-full w-full rounded-[2rem] border border-[#F4C542]/12 sm:-bottom-4 sm:-left-4"></div>
+          <div class="relative aspect-square overflow-hidden rounded-[2rem] bg-[#141414]">
             <img
               v-if="!loading.cms"
               v-blur-img
@@ -281,7 +285,7 @@
             </div>
             <div class="space-y-1 px-3 py-5 sm:px-6">
               <p
-                class="whitespace-nowrap font-sora font-semibold leading-tight text-[#FFD400]"
+                class="whitespace-nowrap font-sora font-semibold leading-tight text-[#F4C542]"
                 :class="metric3IsStars ? 'pt-1 text-[0.9rem] tracking-tighter sm:pt-0 sm:text-2xl' : 'text-2xl sm:text-3xl'"
               >
                 {{ cms.metric_3 || "–" }}
@@ -290,7 +294,7 @@
             </div>
           </div>
 
-          <router-link to="/menu" class="group inline-flex items-center gap-2 text-sm font-semibold text-[#FFD400] transition-colors hover:text-[#FAFAFA]">
+          <router-link to="/menu" class="group inline-flex items-center gap-2 text-sm font-semibold text-[#F4C542] transition-colors hover:text-[#FAFAFA]">
             Lihat semua menu
             <ArrowRight :size="15" class="transition-transform duration-200 group-hover:translate-x-1" />
           </router-link>
@@ -319,9 +323,9 @@
           <div
             v-for="(bento, i) in bentoLarge"
             :key="'l' + i"
-            class="bento-large group relative flex min-h-[220px] flex-1 flex-col justify-between overflow-hidden rounded-3xl border border-white/[0.07] p-8 transition-colors duration-300 hover:border-[#FFD400]/35 sm:min-h-[260px] sm:p-10"
+            class="bento-large group relative flex min-h-[220px] flex-1 flex-col justify-between overflow-hidden rounded-3xl border border-white/[0.07] p-8 transition-colors duration-300 hover:border-white/20 sm:min-h-[260px] sm:p-10"
           >
-            <div class="pointer-events-none absolute -bottom-10 -right-10 text-[#FFD400] opacity-[0.07] transition-opacity duration-500 group-hover:opacity-[0.14]">
+            <div class="pointer-events-none absolute -bottom-10 -right-10 text-[#F4C542] opacity-[0.07] transition-opacity duration-500 group-hover:opacity-[0.14]">
               <component :is="getIcon(bento.icon_name)" :size="220" :stroke-width="1" />
             </div>
             <div class="icon-tile relative !h-12 !w-12">
@@ -340,7 +344,7 @@
           <div
             v-for="(bento, i) in bentoSmall"
             :key="'s' + i"
-            class="card-surface group flex min-h-[112px] flex-col justify-between gap-6 !p-5 transition-colors duration-300 hover:border-[#FFD400]/35 sm:min-h-[130px] sm:!p-6"
+            class="card-surface group flex min-h-[112px] flex-col justify-between gap-6 !p-5 transition-colors duration-300 hover:border-white/20 sm:min-h-[130px] sm:!p-6"
             :class="isBentoOrphan(i) ? 'col-span-2' : ''"
           >
             <div class="icon-tile">
@@ -357,7 +361,7 @@
     <!-- ═══════════════════════════════════════════
          7. GALLERY
     ═══════════════════════════════════════════ -->
-    <section v-reveal class="border-y border-white/[0.06] bg-[#111111] py-20 sm:py-28 lg:py-32">
+    <section v-reveal class="band py-20 sm:py-28 lg:py-32">
       <div class="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
         <div class="mb-8 sm:mb-10">
           <h2 class="section-title">Gallery</h2>
@@ -374,8 +378,8 @@
             @click="setCategory(cat)"
             :class="[
               activeCategory === cat
-                ? 'border-[#D71920] bg-[#D71920] text-white'
-                : 'border-white/10 bg-[#1B1B1B] text-[#A3A3A3] hover:border-white/25 hover:text-[#FAFAFA]',
+                ? 'border-[#D92B22] bg-[#D92B22] text-white'
+                : 'border-white/10 bg-[#141414] text-[#A3A3A3] hover:border-white/25 hover:text-[#FAFAFA]',
               'shrink-0 cursor-pointer whitespace-nowrap rounded-full border px-4 py-2.5 text-sm font-medium transition-all'
             ]"
           >
@@ -401,7 +405,7 @@
             @click="openLightbox(i)"
             :class="[
               isFeatured(i) ? 'col-span-2 row-span-2' : '',
-              'group relative cursor-pointer overflow-hidden rounded-2xl border-0 bg-[#1B1B1B] p-0 text-left'
+              'group relative cursor-pointer overflow-hidden rounded-2xl border-0 bg-[#141414] p-0 text-left'
             ]"
           >
             <div class="h-full w-full transition-transform duration-700 ease-out group-hover:scale-105">
@@ -416,7 +420,7 @@
             <div class="absolute inset-0 flex items-end bg-gradient-to-t from-black/80 via-black/0 to-transparent p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100 sm:p-4">
               <div class="min-w-0 space-y-0.5">
                 <p class="line-clamp-1 font-sora text-sm font-semibold text-white">{{ img.title || 'Masashimura' }}</p>
-                <p v-if="img.category" class="text-xs text-[#FFD400]">{{ img.category }}</p>
+                <p v-if="img.category" class="text-xs text-[#F4C542]">{{ img.category }}</p>
               </div>
             </div>
             <div class="absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-black/55 opacity-0 backdrop-blur-md transition-opacity duration-300 group-hover:opacity-100 sm:right-3 sm:top-3">
@@ -485,7 +489,7 @@
           </div>
           <div class="space-y-1 text-center">
             <p class="font-sora text-base font-semibold text-[#FAFAFA]">{{ currentLightboxImage?.title || 'Masashimura' }}</p>
-            <p v-if="currentLightboxImage?.category" class="text-sm text-[#FFD400]">{{ currentLightboxImage.category }}</p>
+            <p v-if="currentLightboxImage?.category" class="text-sm text-[#F4C542]">{{ currentLightboxImage.category }}</p>
           </div>
         </div>
       </div>
@@ -530,12 +534,12 @@
             class="col-start-1 row-start-1 space-y-7 transition-all duration-500 ease-out"
             :class="i === currentReviewIndex ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-3 opacity-0'"
           >
-            <Quote :size="32" class="text-[#FFD400]/70" />
+            <Quote :size="32" class="text-[#F4C542]/70" />
             <blockquote class="max-w-2xl font-sora text-xl font-normal leading-relaxed text-[#FAFAFA] sm:text-2xl">
               “{{ review.text }}”
             </blockquote>
             <figcaption class="flex items-center gap-3">
-              <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#FFD400]/30 bg-[#FFD400]/10 font-sora text-sm font-semibold uppercase text-[#FFD400]">
+              <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#F4C542]/30 bg-[#F4C542]/10 font-sora text-sm font-semibold uppercase text-[#F4C542]">
                 {{ (review.name || '?').trim().charAt(0) }}
               </span>
               <span class="flex min-w-0 flex-col">
@@ -551,7 +555,7 @@
             v-for="(r, i) in reviews"
             :key="i"
             class="block h-1.5 rounded-full transition-all duration-500"
-            :class="i === currentReviewIndex ? 'w-8 bg-[#D71920]' : 'w-1.5 bg-white/20'"
+            :class="i === currentReviewIndex ? 'w-8 bg-[#D92B22]' : 'w-1.5 bg-white/20'"
           ></span>
         </div>
       </div>
@@ -999,21 +1003,21 @@ onUnmounted(() => {
 <style scoped>
 /*
   Palet (sama dengan halaman Menu dan Lokasi & Kontak)
-  Warm black #111111 · Band #111111 · Surface #1B1B1B · Washi #FAFAFA
-  Crimson #D71920 (aksi) · Champagne #FFD400 (detail premium)
+  Warm black #080808 · Band #0D0D0D · Surface #141414 · Washi #FAFAFA
+  Crimson #D92B22 (aksi) · Champagne #F4C542 (detail premium)
 */
 
 a:focus-visible,
 button:focus-visible {
-  outline: 2px solid #FFD400;
+  outline: 2px solid #F4C542;
   outline-offset: 3px;
 }
 
 /* ── Judul section ── */
 .section-title {
-  font-family: "Sora", ui-sans-serif, system-ui, sans-serif;
-  font-size: clamp(1.875rem, 4vw, 2.75rem);
-  font-weight: 600;
+  font-family: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  font-size: clamp(1.75rem, 3.6vw, 2.5rem);
+  font-weight: 700;
   line-height: 1.1;
   letter-spacing: -0.02em;
   color: #FAFAFA;
@@ -1023,15 +1027,15 @@ button:focus-visible {
 .card-surface {
   border-radius: 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.07);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012)), #1B1B1B;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012)), #141414;
   padding: 1.5rem;
 }
 
 .bento-large {
   background:
-    radial-gradient(70% 70% at 100% 100%, rgba(215,25,32, 0.14), transparent 70%),
+    radial-gradient(70% 70% at 100% 100%, rgba(217,43,34, 0.08), transparent 70%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012)),
-    #1B1B1B;
+    #141414;
 }
 
 .icon-tile {
@@ -1042,9 +1046,9 @@ button:focus-visible {
   align-items: center;
   justify-content: center;
   border-radius: 0.75rem;
-  border: 1px solid rgba(255,212,0, 0.22);
-  background: rgba(255,212,0, 0.1);
-  color: #FFD400;
+  border: 1px solid rgba(244,197,66, 0.22);
+  background: rgba(244,197,66, 0.1);
+  color: #F4C542;
 }
 
 .btn-primary,
@@ -1059,12 +1063,12 @@ button:focus-visible {
   transition: all 0.2s ease;
 }
 .btn-primary {
-  background: #D71920;
+  background: #D92B22;
   color: #fff;
 }
 .btn-primary:hover {
-  background: #B5121B;
-  box-shadow: 0 8px 24px -8px rgba(215,25,32, 0.6);
+  background: #B8201A;
+  box-shadow: 0 8px 24px -8px rgba(217,43,34, 0.6);
   transform: translateY(-2px);
 }
 .btn-ghost {
@@ -1111,8 +1115,8 @@ button:focus-visible {
 }
 .hero-glow {
   background:
-    radial-gradient(60% 50% at 0% 100%, rgba(215,25,32, 0.2), transparent 70%),
-    radial-gradient(40% 40% at 100% 0%, rgba(255,212,0, 0.08), transparent 70%);
+    radial-gradient(60% 50% at 0% 100%, rgba(217,43,34, 0.12), transparent 70%),
+    radial-gradient(40% 40% at 100% 0%, rgba(244,197,66, 0.04), transparent 70%);
 }
 
 @keyframes heroIn {
@@ -1127,13 +1131,18 @@ button:focus-visible {
 
 /* ── CTA ── */
 .cta {
-  background: linear-gradient(135deg, #8E1016 0%, #B5121B 45%, #5A0D1A 100%);
+  background: linear-gradient(135deg, #8F0000 0%, #B8201A 45%, #5A0D1A 100%);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 .cta-sheen {
   background:
     radial-gradient(60% 90% at 100% 0%, rgba(255, 214, 170, 0.22), transparent 65%),
     radial-gradient(50% 70% at 0% 100%, rgba(0, 0, 0, 0.35), transparent 70%);
+}
+
+/* ── Band: blok tonal lembut, tepinya memudar (tanpa garis pembatas) ── */
+.band {
+  background: linear-gradient(180deg, transparent 0%, #0C0C0C 14%, #0C0C0C 86%, transparent 100%);
 }
 
 /* ── Marquee ── */
@@ -1159,8 +1168,8 @@ button:focus-visible {
   z-index: 1;
   pointer-events: none;
 }
-.marquee-wrap::before { left: 0;  background: linear-gradient(90deg,  #111111, transparent); }
-.marquee-wrap::after  { right: 0; background: linear-gradient(270deg, #111111, transparent); }
+.marquee-wrap::before { left: 0;  background: linear-gradient(90deg,  #080808, transparent); }
+.marquee-wrap::after  { right: 0; background: linear-gradient(270deg, #080808, transparent); }
 
 /* ── Lightbox ── */
 .lightbox-fade-enter-active,

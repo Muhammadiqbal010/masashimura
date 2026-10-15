@@ -240,7 +240,7 @@ defineExpose({ reload: load })
 }
 .bf-eyebrow {
   margin: 0 0 0.2rem; font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
-  letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent-text);
+  letter-spacing: -0.01em; color: var(--accent-text);
 }
 .bf-title { margin: 0; font-size: 1.15rem; font-weight: 600; color: var(--text); }
 .bf-status { font-size: 0.72rem; color: var(--text-faint); }
@@ -258,8 +258,7 @@ defineExpose({ reload: load })
   border-radius: 12px;
 }
 .bf-label {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; letter-spacing: 0.14em;
-  text-transform: uppercase; color: var(--text-dim);
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; letter-spacing: -0.01em; color: var(--text-dim);
 }
 .bf-label-note { margin-left: 0.4rem; letter-spacing: 0.02em; text-transform: none; font-family: 'Inter', sans-serif; color: var(--text-faint); }
 .bf-value {
@@ -334,7 +333,7 @@ defineExpose({ reload: load })
 .bf-btn {
   padding: 0.4rem 0.9rem; border-radius: 8px; cursor: pointer;
   border: 1px solid rgb(var(--ink) / 0.18); background: transparent; color: var(--text);
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.7rem; letter-spacing: -0.01em;
 }
 .bf-btn:hover { border-color: rgb(var(--ink) / 0.35); }
 

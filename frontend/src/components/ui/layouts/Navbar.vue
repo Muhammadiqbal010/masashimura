@@ -2,49 +2,48 @@
   <nav
     v-if="!isAdminRoute"
     :class="[
-      'fixed top-0 z-50 w-full transition-[background-color,padding,backdrop-filter] duration-300',
+      'fixed top-0 w-full z-50 transition-all duration-500',
       isScrolled || isOpen
-        ? 'bg-[#111111]/92 py-3 backdrop-blur-xl'
-        : 'bg-transparent py-5',
+        ? 'bg-[#080808]/80 backdrop-blur-2xl py-3'
+        : 'bg-gradient-to-b from-[#080808]/75 to-transparent py-5',
     ]"
   >
-    <div class="mx-auto flex max-w-7xl items-center justify-between px-6 md:px-12">
+    <div class="max-w-7xl mx-auto px-6 md:px-12 flex justify-between items-center">
 
       <!-- Logo -->
       <router-link
         to="/"
-        class="flex shrink-0 items-center"
+        class="flex items-center shrink-0"
         @click="closeMenu"
         aria-label="Masashimura – Beranda"
       >
         <img
           src="@/assets/masashimura-logo.png"
           alt="Masashimura"
-          class="w-[128px] object-contain md:w-[152px]"
+          class="object-contain transition-all duration-300 w-[130px] md:w-[160px]"
+          :class="isScrolled ? 'opacity-90' : 'opacity-100'"
         />
       </router-link>
 
       <!-- Desktop Nav -->
-      <div class="hidden items-center gap-1 md:flex">
+      <div class="hidden md:flex items-center gap-2">
         <router-link
           v-for="link in navLinks"
           :key="link.path"
           :to="link.path"
-          class="relative rounded-xl px-4 py-2 text-sm font-semibold transition-colors duration-200"
-          :class="isExact(link.path) ? 'text-white' : 'text-white/65 hover:text-white'"
+          class="relative rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-200"
+          :class="isExact(link.path) ? 'text-[#F4C542]' : 'text-white/70 hover:text-white'"
           :aria-current="isExact(link.path) ? 'page' : undefined"
         >
           {{ link.name }}
-          <!-- Penanda halaman aktif: titik kecil, bukan garis panjang -->
           <span
-            class="absolute -bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-[#FFD400] transition-opacity duration-200"
-            :class="isExact(link.path) ? 'opacity-100' : 'opacity-0'"
-            aria-hidden="true"
+            class="absolute -bottom-0.5 left-4 right-4 h-[2px] rounded-full bg-[#F4C542] transition-transform duration-300 origin-left"
+            :class="isExact(link.path) ? 'scale-x-100' : 'scale-x-0'"
           />
         </router-link>
         <router-link
           to="/menu"
-          class="ml-3 inline-flex items-center rounded-xl bg-[#D71920] px-5 py-2.5 text-sm font-bold text-white transition-colors duration-200 hover:bg-[#B5121B] active:scale-[0.98]"
+          class="ml-3 inline-flex items-center rounded-full bg-[#D92B22] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#B8201A] hover:shadow-[0_8px_24px_-8px_rgba(217,43,34,0.7)] active:scale-95"
         >
           Pesan sekarang
         </router-link>
@@ -52,23 +51,23 @@
 
       <!-- Hamburger -->
       <button
-        class="relative flex h-11 w-11 flex-col items-center justify-center gap-[5px] rounded-xl bg-white/[0.06] transition-colors hover:bg-white/[0.1] md:hidden"
+        class="md:hidden relative w-10 h-10 flex flex-col items-center justify-center gap-[5px] cursor-pointer rounded-xl border border-white/10 bg-white/[0.04]"
         @click="toggleMenu"
         :aria-expanded="isOpen"
         aria-controls="mobile-menu"
         aria-label="Toggle navigasi"
       >
         <span
-          class="block h-0.5 w-5 origin-center rounded bg-white transition-all duration-300"
-          :class="isOpen ? 'translate-y-[7px] rotate-45' : ''"
+          class="block w-5 h-0.5 rounded bg-white transition-all duration-300 origin-center"
+          :class="isOpen ? 'rotate-45 translate-y-[7px]' : ''"
         />
         <span
-          class="block h-0.5 w-5 rounded bg-white transition-all duration-200"
-          :class="isOpen ? 'w-0 opacity-0' : 'opacity-100'"
+          class="block h-0.5 rounded bg-[#F4C542] transition-all duration-200"
+          :class="isOpen ? 'w-0 opacity-0' : 'w-4 opacity-60'"
         />
         <span
-          class="block h-0.5 w-5 origin-center rounded bg-white transition-all duration-300"
-          :class="isOpen ? '-translate-y-[7px] -rotate-45' : ''"
+          class="block w-5 h-0.5 rounded bg-white transition-all duration-300 origin-center"
+          :class="isOpen ? '-rotate-45 -translate-y-[7px]' : ''"
         />
       </button>
     </div>
@@ -85,26 +84,25 @@
       <div
         v-if="isOpen"
         id="mobile-menu"
-        class="absolute left-0 top-full w-full bg-[#111111]/97 backdrop-blur-xl md:hidden"
+        class="md:hidden absolute top-full left-0 w-full bg-[#080808]/95 backdrop-blur-2xl"
       >
-        <div class="mx-auto max-w-7xl space-y-1 px-6 pb-6 pt-3">
+        <div class="max-w-7xl mx-auto px-6 py-5 space-y-1">
           <router-link
             v-for="link in navLinks"
             :key="link.path"
             :to="link.path"
-            class="flex min-h-[48px] items-center justify-between rounded-xl px-4 text-base font-semibold transition-colors duration-200"
+            class="flex items-center justify-between rounded-xl px-4 py-4 text-base font-semibold transition-colors duration-200"
             :class="isExact(link.path)
-              ? 'bg-white/[0.08] text-white'
-              : 'text-white/75 hover:bg-white/[0.05] hover:text-white'"
-            :aria-current="isExact(link.path) ? 'page' : undefined"
+              ? 'bg-[#F4C542]/10 text-[#F4C542]'
+              : 'text-white/80 hover:bg-white/[0.05] hover:text-white'"
             @click="closeMenu"
           >
             {{ link.name }}
-            <span v-if="isExact(link.path)" class="h-1.5 w-1.5 rounded-full bg-[#FFD400]" aria-hidden="true"></span>
+            <span v-if="isExact(link.path)" class="h-2 w-2 rounded-full bg-[#F4C542]" aria-hidden="true"></span>
           </router-link>
           <router-link
             to="/menu"
-            class="mt-3 flex min-h-[48px] w-full items-center justify-center rounded-xl bg-[#D71920] px-4 text-base font-bold text-white transition-colors hover:bg-[#B5121B] active:scale-[0.98]"
+            class="mt-3 flex w-full items-center justify-center rounded-xl bg-[#D92B22] px-4 py-4 text-base font-bold text-white active:scale-[0.98]"
             @click="closeMenu"
           >
             Pesan sekarang

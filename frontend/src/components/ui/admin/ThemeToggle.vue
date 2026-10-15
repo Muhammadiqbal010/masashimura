@@ -51,7 +51,7 @@ const { isDark, toggleTheme } = useTheme()
 
 <style scoped>
 .tt {
-  font-family: var(--font-body, 'Manrope', system-ui, sans-serif);
+  font-family: var(--font-body, 'Inter', system-ui, sans-serif);
   color: var(--text-2);
   border: 1px solid transparent;
   background: transparent;

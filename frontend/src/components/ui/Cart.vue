@@ -16,7 +16,7 @@
           <h2 class="font-sora text-xl font-semibold tracking-tight text-[#FAFAFA]">Keranjang</h2>
           <span
             v-if="!cartStore.isEmpty"
-            class="rounded-full border border-[#FFD400]/25 bg-[#FFD400]/10 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-[#FFD400]"
+            class="rounded-full border border-[#F4C542]/25 bg-[#F4C542]/10 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-[#F4C542]"
           >
             {{ Object.values(cartStore.cart).length + cartStore.bundleLines.length }} item
           </span>
@@ -36,7 +36,7 @@
 
         <!-- Empty state -->
         <div v-if="cartStore.isEmpty" class="flex h-full flex-col items-center justify-center gap-4 py-24">
-          <div class="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-[#1B1B1B]">
+          <div class="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-[#141414]">
             <ShoppingCart :size="22" class="text-[#A3A3A3]" />
           </div>
           <div class="space-y-1 text-center">
@@ -46,7 +46,7 @@
           <router-link
             to="/menu"
             @click="$emit('close')"
-            class="mt-2 inline-flex items-center justify-center rounded-full bg-[#D71920] px-7 py-3 text-sm font-semibold text-white transition-all duration-150 hover:bg-[#B5121B]"
+            class="mt-2 inline-flex items-center justify-center rounded-full bg-[#D92B22] px-7 py-3 text-sm font-semibold text-white transition-all duration-150 hover:bg-[#B8201A]"
           >
             Lihat menu
           </router-link>
@@ -62,27 +62,27 @@
           >
             <div class="flex items-start justify-between gap-2">
               <div class="min-w-0 flex-1">
-                <p class="text-[11px] font-semibold uppercase tracking-wider text-[#FFD400]">Paket</p>
+                <p class="text-[11px] font-semibold uppercase tracking-wider text-[#F4C542]">Paket</p>
                 <h4 class="line-clamp-2 font-sora text-[15px] font-semibold leading-snug text-[#FAFAFA]">{{ line.name }}</h4>
               </div>
               <button
                 type="button"
                 :aria-label="'Hapus ' + line.name + ' dari keranjang'"
                 @click="cartStore.removeBundle(line.id)"
-                class="-mr-2 -mt-1.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#737373] transition-colors hover:bg-[#D71920]/10 hover:text-[#FF6A70]"
+                class="-mr-2 -mt-1.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#737373] transition-colors hover:bg-[#D92B22]/10 hover:text-[#F0605A]"
               >
                 <X :size="16" />
               </button>
             </div>
             <p class="text-xs text-[#A3A3A3]">{{ line.contents.map((c) => c.quantity + '× ' + c.name).join(' · ') }}</p>
-            <p v-if="line.savings > 0" class="text-xs font-semibold text-[#FFD400]">Hemat {{ formatPrice(line.savings * line.quantity) }}</p>
+            <p v-if="line.savings > 0" class="text-xs font-semibold text-[#F4C542]">Hemat {{ formatPrice(line.savings * line.quantity) }}</p>
             <div class="flex items-center justify-between gap-3">
               <div class="flex items-center rounded-full border border-white/10 bg-white/[0.03] p-1">
                 <button type="button" :aria-label="'Kurangi ' + line.name" @click="cartStore.updateBundleQuantity(line.id, -1)"
                   class="flex h-8 w-8 items-center justify-center rounded-full text-[#FAFAFA] transition-colors hover:bg-white/10"><Minus :size="14" /></button>
                 <span class="min-w-[1.75rem] text-center text-sm font-semibold tabular-nums text-[#FAFAFA]">{{ line.quantity }}</span>
                 <button type="button" :aria-label="'Tambah ' + line.name" @click="cartStore.updateBundleQuantity(line.id, 1)"
-                  class="flex h-8 w-8 items-center justify-center rounded-full bg-[#D71920] text-white transition-colors hover:bg-[#B5121B]"><Plus :size="14" /></button>
+                  class="flex h-8 w-8 items-center justify-center rounded-full bg-[#D92B22] text-white transition-colors hover:bg-[#B8201A]"><Plus :size="14" /></button>
               </div>
               <span class="font-sora text-base font-semibold tracking-tight text-[#FAFAFA]">{{ formatPrice(line.price * line.quantity) }}</span>
             </div>
@@ -94,7 +94,7 @@
             class="item-card group flex gap-4"
           >
             <!-- Thumbnail -->
-            <div class="h-[72px] w-[72px] flex-shrink-0 overflow-hidden rounded-2xl border border-white/[0.07] bg-[#1B1B1B]">
+            <div class="h-[72px] w-[72px] flex-shrink-0 overflow-hidden rounded-2xl border border-white/[0.07] bg-[#1A1A1A]">
               <img
                 v-if="item.image_url"
                 :src="getMediaUrl(item.image_url, 160)"
@@ -117,7 +117,7 @@
                   type="button"
                   :aria-label="'Hapus ' + item.name + ' dari keranjang'"
                   @click="cartStore.removeFromCart(item.cartKey)"
-                  class="-mr-2 -mt-1.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#737373] transition-colors hover:bg-[#D71920]/10 hover:text-[#FF6A70]"
+                  class="-mr-2 -mt-1.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#737373] transition-colors hover:bg-[#D92B22]/10 hover:text-[#F0605A]"
                 >
                   <X :size="16" />
                 </button>
@@ -161,7 +161,7 @@
                     type="button"
                     :aria-label="'Tambah ' + item.name"
                     @click="cartStore.updateQuantity(item.cartKey, 1)"
-                    class="flex h-8 w-8 items-center justify-center rounded-full bg-[#D71920] text-white transition-colors hover:bg-[#B5121B]"
+                    class="flex h-8 w-8 items-center justify-center rounded-full bg-[#D92B22] text-white transition-colors hover:bg-[#B8201A]"
                   >
                     <Plus :size="14" />
                   </button>
@@ -197,10 +197,10 @@
         <!-- Toko tutup: beri tahu di sini, jangan sampai customer baru tahu di halaman checkout -->
         <div
           v-if="settingsReady && !isStoreOpen"
-          class="mb-4 flex items-start gap-3 rounded-2xl border border-[#D71920]/25 bg-[#D71920]/10 px-4 py-3.5"
+          class="mb-4 flex items-start gap-3 rounded-2xl border border-[#D92B22]/25 bg-[#D92B22]/10 px-4 py-3.5"
           role="status"
         >
-          <Lock :size="16" class="mt-0.5 flex-shrink-0 text-[#FF6A70]" />
+          <Lock :size="16" class="mt-0.5 flex-shrink-0 text-[#F0605A]" />
           <p class="text-sm leading-relaxed text-[#FFB0B0]">
             Toko sedang tutup, pesanan belum bisa dibuat.
             <span v-if="nextOpenText" class="mt-0.5 block font-semibold text-[#FFD0D0]">{{ nextOpenText }}</span>
@@ -208,20 +208,24 @@
         </div>
 
         <!-- CTA -->
-        <router-link
+        <button
           v-if="isStoreOpen"
-          to="/checkout"
-          @click="$emit('close')"
-          class="flex min-h-[56px] w-full items-center justify-center gap-2 rounded-full bg-[#D71920] text-base font-semibold text-white transition-all duration-200 hover:bg-[#B5121B] hover:shadow-lg shadow-black/20 active:scale-[0.98]"
+          type="button"
+          :disabled="navigating"
+          class="cta-btn flex min-h-[56px] w-full items-center justify-center gap-2 rounded-full bg-[#D92B22] text-base font-semibold text-white transition-all duration-200 hover:bg-[#B8201A] hover:shadow-[0_10px_28px_-10px_rgba(217,43,34,0.6)] active:scale-[0.98] disabled:opacity-70"
+          @click="goCheckout"
         >
-          <span>Pesan sekarang</span>
-          <ArrowRight :size="18" />
-        </router-link>
+          <span v-if="navigating" class="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden="true"></span>
+          <template v-else>
+            <span>Pesan sekarang</span>
+            <ArrowRight :size="18" />
+          </template>
+        </button>
         <button
           v-else
           type="button"
           disabled
-          class="flex min-h-[56px] w-full cursor-not-allowed items-center justify-center gap-2 rounded-full border border-white/5 bg-[#1B1B1B] text-base font-semibold text-[#737373]"
+          class="flex min-h-[56px] w-full cursor-not-allowed items-center justify-center gap-2 rounded-full border border-white/5 bg-[#1A1A1A] text-base font-semibold text-[#737373]"
         >
           <span>Toko tutup</span>
         </button>
@@ -231,33 +235,53 @@
 </template>
 
 <script setup>
-import { onMounted } from "vue"
+import { ref, onMounted } from "vue"
+import { useRouter } from "vue-router"
 import { useCartStore } from "@/stores/cart"
 import { getMediaUrl } from "@/api"
 import { useStoreSettings } from "@/composables/useStoreSettings"
 import { X, ShoppingCart, ArrowRight, Lock, Plus, Minus } from "lucide-vue-next"
 
+const router = useRouter()
 const cartStore = useCartStore()
 const { isStoreOpen, settingsReady, nextOpenText, fetchSettings } = useStoreSettings()
 
 onMounted(() => fetchSettings())
 
 defineProps({ formatPrice: Function })
-defineEmits(["close"])
+const emit = defineEmits(["close"])
+
+// Pindah ke checkout secara programatik (bukan lewat <router-link> + emit close).
+// Sebelumnya drawer langsung dibongkar saat diklik, sehingga kalau chunk halaman checkout
+// gagal dimuat (mis. setelah deploy baru di Vercel) navigasi macet tanpa pesan apa pun.
+const navigating = ref(false)
+const goCheckout = async () => {
+  if (navigating.value) return
+  navigating.value = true
+  try {
+    await router.push("/checkout")
+    emit("close")
+  } catch {
+    // Fallback keras: muat ulang langsung ke /checkout
+    window.location.assign("/checkout")
+  } finally {
+    navigating.value = false
+  }
+}
 </script>
 
 <style scoped>
-/* Palet: Surface #1B1B1B · Washi #FAFAFA · Crimson #D71920 · Champagne #FFD400 */
+/* Palet: Surface #141414 · Washi #FAFAFA · Crimson #D92B22 · Champagne #F4C542 */
 
 .drawer {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.008)), #111111;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.008)), #0D0D0D;
   box-shadow: -40px 0 80px -20px rgba(0, 0, 0, 0.6);
 }
 
 .item-card {
   border-radius: 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.07);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)), #1B1B1B;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)), #141414;
   padding: 1rem;
 }
 
@@ -267,7 +291,7 @@ defineEmits(["close"])
   height: 2.5rem;
   border-radius: 0.75rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  background: #111111;
+  background: #0D0D0D;
   padding: 0 0.875rem;
   font-size: 1rem;
   color: #C8C8C8;
@@ -280,8 +304,8 @@ defineEmits(["close"])
 .note-input::placeholder { color: #737373; }
 .note-input:hover { border-color: rgba(255, 255, 255, 0.18); }
 .note-input:focus {
-  border-color: rgba(255,212,0, 0.6);
-  box-shadow: 0 0 0 3px rgba(255,212,0, 0.12);
+  border-color: rgba(244,197,66, 0.6);
+  box-shadow: 0 0 0 3px rgba(244,197,66, 0.12);
 }
 
 /* Footer aman dari home-indicator di HP */
@@ -289,7 +313,7 @@ defineEmits(["close"])
 
 a:focus-visible,
 button:focus-visible {
-  outline: 2px solid #FFD400;
+  outline: 2px solid #F4C542;
   outline-offset: 3px;
 }
 

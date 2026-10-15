@@ -14,7 +14,7 @@
       <article
         v-for="b in bundles"
         :key="b.id"
-        class="flex flex-col justify-between gap-4 rounded-3xl border border-white/[0.08] bg-[#1B1B1B] p-5"
+        class="flex flex-col justify-between gap-4 rounded-3xl border border-white/[0.08] bg-[#141414] p-5"
         :class="{ 'opacity-60': b.unavailable_reason }"
       >
         <div class="space-y-3">
@@ -22,7 +22,7 @@
             <h3 class="font-sora text-lg font-semibold leading-snug text-[#FAFAFA]">{{ b.name }}</h3>
             <span
               v-if="b.savings > 0"
-              class="flex-shrink-0 rounded-full border border-[#FFD400]/30 bg-[#FFD400]/10 px-2.5 py-1 text-xs font-semibold text-[#FFD400]"
+              class="flex-shrink-0 rounded-full border border-[#F4C542]/30 bg-[#F4C542]/10 px-2.5 py-1 text-xs font-semibold text-[#F4C542]"
             >Hemat {{ rp(b.savings) }}</span>
           </div>
 
@@ -38,7 +38,7 @@
             <p class="font-sora text-xl font-semibold tabular-nums text-[#FAFAFA]">{{ rp(b.price) }}</p>
           </div>
 
-          <p v-if="b.unavailable_reason" class="text-sm font-medium text-[#FF6A70]">{{ b.unavailable_reason }}</p>
+          <p v-if="b.unavailable_reason" class="text-sm font-medium text-[#F0605A]">{{ b.unavailable_reason }}</p>
 
           <div
             v-else-if="cartStore.quantityOfBundle(b.id) > 0"
@@ -54,7 +54,7 @@
             <button
               type="button"
               :aria-label="'Tambah ' + b.name"
-              class="flex h-9 w-9 items-center justify-center rounded-full bg-[#D71920] text-white transition-colors hover:bg-[#B5121B]"
+              class="flex h-9 w-9 items-center justify-center rounded-full bg-[#D92B22] text-white transition-colors hover:bg-[#B8201A]"
               @click="cartStore.updateBundleQuantity(b.id, 1)"
             ><Plus :size="14" /></button>
           </div>
@@ -62,7 +62,7 @@
           <button
             v-else
             type="button"
-            class="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-[#D71920] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#B5121B]"
+            class="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-[#D92B22] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#B8201A]"
             @click="add(b)"
           ><Plus :size="15" /> Tambah</button>
         </div>

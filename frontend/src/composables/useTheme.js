@@ -15,7 +15,7 @@ const STORAGE_KEY = 'masashimura-admin-theme'
 const ATTR = 'data-admin-theme'
 const SWITCHING_ATTR = 'data-theme-switching'
 const THEMES = ['dark', 'light']
-const META_COLOR = { dark: '#111111', light: '#f5f5f2' }
+const META_COLOR = { dark: '#08080a', light: '#f4f4f5' }
 
 const readStored = () => {
   try {

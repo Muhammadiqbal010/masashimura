@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen min-h-[100dvh] bg-[color:var(--bg)] text-[color:var(--text)] font-inter antialiased flex">
+  <div class="min-h-screen min-h-[100dvh] bg-[color:var(--bg)] text-[color:var(--text)] font-manrope antialiased flex">
 
     <!-- Overlay mobile -->
     <Transition name="fade">
@@ -21,7 +21,7 @@
 
       <!-- Topbar — mobile only -->
       <header
-        class="lg:hidden sticky top-0 z-20 flex items-center gap-3 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] bg-[color:color-mix(in_srgb,var(--bg-sidebar)_95%,transparent)] backdrop-blur-xl border-b border-[color:var(--border)]"
+        class="lg:hidden sticky top-0 z-20 flex items-center gap-3 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] bg-[color:color-mix(in_srgb,var(--bg-sidebar)_95%,transparent)] backdrop-blur-xl"
       >
         <button
           type="button"
@@ -44,7 +44,7 @@
               class="h-6 w-auto object-contain select-none pointer-events-none opacity-90"
             />
           </span>
-          <span class="font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--text-faint)]">Admin</span>
+          <span class="text-[10px] font-bold uppercase tracking-[0.18em] text-[color:var(--text-faint)]">Admin</span>
         </div>
 
         <!-- Switch tema cepat di HP (opsional, switch utama tetap di sidebar) -->

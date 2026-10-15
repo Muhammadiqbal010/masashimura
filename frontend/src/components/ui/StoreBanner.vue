@@ -55,15 +55,15 @@ const todaySchedule = computed(() => {
 </script>
 
 <style scoped>
-/* Palet: Crimson #D71920 · Washi #FAFAFA · Champagne #FFD400 */
+/* Palet: Crimson #D92B22 · Washi #FAFAFA · Champagne #F4C542 */
 .store-banner {
   display: flex;
   align-items: flex-start;
   gap: 16px;
   background:
-    radial-gradient(80% 120% at 0% 0%, rgba(215,25,32, 0.14), transparent 70%),
-    rgba(215,25,32, 0.05);
-  border: 1px solid rgba(215,25,32, 0.25);
+    radial-gradient(80% 120% at 0% 0%, rgba(217,43,34, 0.14), transparent 70%),
+    rgba(217,43,34, 0.05);
+  border: 1px solid rgba(217,43,34, 0.25);
   border-radius: 20px;
   padding: 18px 20px;
   margin-bottom: 24px;
@@ -73,19 +73,19 @@ const todaySchedule = computed(() => {
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: rgba(215,25,32, 0.14);
-  border: 1px solid rgba(215,25,32, 0.3);
+  background: rgba(217,43,34, 0.14);
+  border: 1px solid rgba(217,43,34, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #FF6A70;
+  color: #F0605A;
   flex-shrink: 0;
 }
 
 .banner-content { flex: 1; min-width: 0; }
 
 .banner-title {
-  font-family: "Sora", ui-sans-serif, system-ui, sans-serif;
+  font-family: "Manrope", ui-sans-serif, system-ui, sans-serif;
   font-size: 16px;
   font-weight: 600;
   color: #FAFAFA;
@@ -102,7 +102,7 @@ const todaySchedule = computed(() => {
 .banner-next {
   font-size: 14px;
   font-weight: 600;
-  color: #FFD400;
+  color: #F4C542;
   margin-top: 6px;
   line-height: 1.4;
 }

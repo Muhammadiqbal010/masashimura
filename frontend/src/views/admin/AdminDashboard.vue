@@ -601,7 +601,7 @@ const trendChartData = computed(() => {
         label: 'Batas Atas',
         data: upperData,
         borderColor: 'transparent',
-        backgroundColor: 'rgba(215,25,32,0.12)',
+        backgroundColor: 'rgba(217,43,34,0.12)',
         pointRadius: 0,
         fill: '+1',
         tension: 0.3,
@@ -610,7 +610,7 @@ const trendChartData = computed(() => {
         label: 'Batas Bawah',
         data: lowerData,
         borderColor: 'transparent',
-        backgroundColor: 'rgba(215,25,32,0.12)',
+        backgroundColor: 'rgba(217,43,34,0.12)',
         pointRadius: 0,
         fill: false,
         tension: 0.3,
@@ -618,8 +618,8 @@ const trendChartData = computed(() => {
       {
         label: 'Prediksi',
         data: predData,
-        borderColor: '#D71920',
-        backgroundColor: '#D71920',
+        borderColor: '#d92b22',
+        backgroundColor: '#d92b22',
         borderDash: [6, 4],
         pointRadius: 2,
         tension: 0.3,
@@ -628,8 +628,8 @@ const trendChartData = computed(() => {
       {
         label: 'Prediksi Tersimpan',
         data: savedData,
-        borderColor: '#FFD400',
-        backgroundColor: '#FFD400',
+        borderColor: '#f4c542',
+        backgroundColor: '#f4c542',
         borderDash: [2, 3],
         borderWidth: 1.5,
         pointRadius: 3,
@@ -701,7 +701,7 @@ const forecastBarData = computed(() => {
     datasets: [{
       label: 'Prediksi Revenue',
       data: preds.map(p => p.predicted_revenue),
-      backgroundColor: '#D71920',
+      backgroundColor: '#d92b22',
       borderRadius: 4,
       maxBarThickness: 36,
     }],
@@ -771,8 +771,7 @@ const formatPrice = (value) =>
 .dash-eyebrow {
   font-family: 'Manrope', system-ui, sans-serif;
   font-size: 0.72rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
+  letter-spacing: -0.01em;
   color: var(--accent-text);
   margin-bottom: 0.3rem;
 }
@@ -780,8 +779,7 @@ const formatPrice = (value) =>
   font-family: 'Manrope', system-ui, sans-serif;
   font-size: 1.75rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: -0.01em;
   color: var(--text);
   margin: 0;
 }
@@ -811,8 +809,7 @@ const formatPrice = (value) =>
 .date-label {
   font-size: 0.72rem;
   font-family: 'Manrope', system-ui, sans-serif;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
+  letter-spacing: -0.01em;
   color: var(--text-faint);
 }
 .date-input {
@@ -843,8 +840,7 @@ const formatPrice = (value) =>
   color: var(--text-dim);
   font-family: 'Manrope', system-ui, sans-serif;
   font-size: 0.7rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  letter-spacing: -0.01em;
   cursor: pointer;
   transition: all 0.18s ease;
 }
@@ -853,8 +849,8 @@ const formatPrice = (value) =>
   color: var(--text-2);
 }
 .shortcut-btn.active {
-  background: #D71920;
-  border-color: #D71920;
+  background: #d92b22;
+  border-color: #d92b22;
   color: var(--on-accent);
 }
 
@@ -869,13 +865,12 @@ const formatPrice = (value) =>
   color: var(--text-faint);
   font-size: 0.75rem;
   font-family: 'Manrope', system-ui, sans-serif;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
+  letter-spacing: -0.01em;
 }
 .spinner {
   width: 32px; height: 32px;
   border: 2px solid rgb(var(--ink) / 0.08);
-  border-top-color: #D71920;
+  border-top-color: #d92b22;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -889,7 +884,7 @@ const formatPrice = (value) =>
 }
 .stat-hero {
   background: linear-gradient(135deg, var(--hero-from) 0%, var(--surface) 65%);
-  border: 1px solid rgba(215,25,32,0.25);
+  border: 1px solid rgba(217,43,34,0.25);
   border-radius: 18px;
   padding: clamp(1.25rem, 3vw, 2rem) clamp(1.25rem, 3vw, 2.25rem);
   position: relative;
@@ -900,7 +895,7 @@ const formatPrice = (value) =>
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 3px;
-  background: #D71920;
+  background: #d92b22;
 }
 .stat-hero-top {
   display: flex;
@@ -911,8 +906,7 @@ const formatPrice = (value) =>
 .stat-hero-label {
   font-family: 'Manrope', system-ui, sans-serif;
   font-size: 0.75rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
+  letter-spacing: -0.01em;
   color: var(--text-dim);
 }
 .stat-hero-value {
@@ -956,8 +950,7 @@ const formatPrice = (value) =>
 .stat-badge {
   font-size: 0.72rem;
   font-family: 'Manrope', system-ui, sans-serif;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  letter-spacing: -0.01em;
   padding: 0.15rem 0.5rem;
   border-radius: 100px;
   border: 1px solid rgb(var(--ink) / 0.1);
@@ -1006,8 +999,7 @@ const formatPrice = (value) =>
 .stat-label {
   font-family: 'Manrope', system-ui, sans-serif;
   font-size: 0.72rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  letter-spacing: -0.01em;
   color: var(--text-dim);
   white-space: nowrap;
   overflow: hidden;
@@ -1059,9 +1051,8 @@ const formatPrice = (value) =>
 .table-title {
   font-family: 'Manrope', system-ui, sans-serif;
   font-size: 1rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--text);
   margin: 0 0 0.25rem;
 }
@@ -1103,9 +1094,8 @@ const formatPrice = (value) =>
   padding: 0.75rem 1.5rem;
   font-family: 'Manrope', system-ui, sans-serif;
   font-size: 0.72rem;
-  font-weight: 400;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--text-faint);
   text-align: left;
   white-space: nowrap;
@@ -1136,7 +1126,7 @@ const formatPrice = (value) =>
   font-weight: 700;
   font-family: 'Inter', monospace;
 }
-.rank-gold   { background: rgba(255,212,0,0.15); color: var(--amber-soft); }
+.rank-gold   { background: rgba(244,197,66,0.15); color: var(--amber-soft); }
 .rank-silver { background: rgba(156,163,175,0.12); color: var(--text-dim); }
 .rank-bronze { background: rgba(180,83,9,0.15);  color: var(--amber-soft); }
 .rank-default{ background: rgb(var(--ink) / 0.04); color: var(--text-faint); }
@@ -1161,7 +1151,7 @@ const formatPrice = (value) =>
 }
 .bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #D71920, #FF343B);
+  background: linear-gradient(90deg, #d92b22, #f0524a);
   border-radius: 99px;
   transition: width 0.7s ease;
 }
@@ -1217,8 +1207,7 @@ const formatPrice = (value) =>
 .predict-inline-label {
   font-family: 'Manrope', system-ui, sans-serif;
   font-size: 0.72rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  letter-spacing: -0.01em;
   color: var(--text-faint);
 }
 .predict-inline-value {
@@ -1236,18 +1225,17 @@ const formatPrice = (value) =>
 .retrain-btn {
   padding: 0.45rem 1rem;
   border-radius: 8px;
-  border: 1px solid rgba(215,25,32,0.3);
-  background: rgba(215,25,32,0.08);
+  border: 1px solid rgba(217,43,34,0.3);
+  background: rgba(217,43,34,0.08);
   color: var(--red-soft);
   font-family: 'Manrope', system-ui, sans-serif;
   font-size: 0.72rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  letter-spacing: -0.01em;
   cursor: pointer;
   transition: all 0.18s ease;
   white-space: nowrap;
 }
-.retrain-btn:hover:not(:disabled) { background: rgba(215,25,32,0.18); }
+.retrain-btn:hover:not(:disabled) { background: rgba(217,43,34,0.18); }
 .retrain-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .predict-notice {
   margin: -0.75rem 0 1.25rem;
@@ -1278,8 +1266,7 @@ const formatPrice = (value) =>
 .chart-title {
   font-family: 'Manrope', system-ui, sans-serif;
   font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: -0.01em;
   color: var(--text-2);
   margin: 0 0 1rem 0;
 }
@@ -1317,7 +1304,7 @@ const formatPrice = (value) =>
   border-radius: 10px; border: 1px solid var(--border-strong);
   background: transparent; color: var(--text-2);
   font-family: 'Manrope', system-ui, sans-serif; font-size: 0.7rem;
-  letter-spacing: 0.1em; text-transform: uppercase;
+  letter-spacing: -0.01em;
   cursor: pointer; transition: all 0.15s;
 }
 .refresh-btn:hover:not(:disabled) { background: var(--surface-hover); color: var(--text); }
@@ -1336,7 +1323,7 @@ const formatPrice = (value) =>
 .retry-btn {
   min-height: 36px; padding: 0.45rem 1rem; border-radius: 8px; flex-shrink: 0;
   background: transparent; border: 1px solid rgb(239 68 68 / 0.5); color: var(--red-soft);
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.7rem; letter-spacing: -0.01em;
   cursor: pointer; transition: background 0.15s;
 }
 .retry-btn:hover { background: rgb(239 68 68 / 0.12); }
@@ -1428,13 +1415,12 @@ const formatPrice = (value) =>
   color: var(--text-dim);
   font-family: 'Manrope', system-ui, sans-serif;
   font-size: 0.72rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  letter-spacing: -0.01em;
   cursor: pointer;
   transition: background 0.18s ease, color 0.18s ease;
 }
 .view-toggle-btn:hover { color: var(--text-2); }
-.view-toggle-btn.active { background: #D71920; color: var(--on-accent); }
+.view-toggle-btn.active { background: #d92b22; color: var(--on-accent); }
 
 .level-chip {
   display: inline-block;

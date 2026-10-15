@@ -1,5 +1,5 @@
 <template>
-  <div class="page relative min-h-screen overflow-x-hidden bg-[#111111] font-inter text-[#FAFAFA]">
+  <div class="page relative min-h-screen overflow-x-hidden bg-[#080808] font-inter text-[#FAFAFA]">
     <!-- Atmosfer latar: glow halus, tidak mengganggu konten -->
     <div class="page-glow pointer-events-none absolute inset-x-0 top-0 h-[520px]" aria-hidden="true"></div>
 
@@ -15,7 +15,7 @@
         >
           <span
             class="h-1.5 w-1.5 rounded-full"
-            :class="isOpen ? 'bg-emerald-400' : 'bg-[#737373]'"
+            :class="isOpen ? 'animate-pulse bg-emerald-400' : 'bg-[#737373]'"
           ></span>
           {{ isOpen ? "Buka sekarang" : "Sedang tutup" }}
         </div>
@@ -33,7 +33,7 @@
 
         <!-- Map -->
         <div
-          class="relative h-[340px] overflow-hidden rounded-3xl border border-white/[0.08] bg-[#1B1B1B] sm:h-[440px] lg:col-span-3 lg:h-auto lg:min-h-[600px]"
+          class="relative h-[340px] overflow-hidden rounded-3xl border border-white/[0.08] bg-[#141414] sm:h-[440px] lg:col-span-3 lg:h-auto lg:min-h-[600px]"
           @pointerleave="onMapLeave"
         >
           <div class="absolute inset-0">
@@ -61,7 +61,7 @@
               :href="mapsUrl"
               target="_blank"
               rel="noopener"
-              class="pointer-events-auto flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-black/60 px-4 py-2 text-xs font-medium text-[#FAFAFA] backdrop-blur-md transition-colors duration-150 hover:bg-white hover:text-[#111111] sm:text-[13px]"
+              class="pointer-events-auto flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-black/60 px-4 py-2 text-xs font-medium text-[#FAFAFA] backdrop-blur-md transition-colors duration-150 hover:bg-white hover:text-[#080808] sm:text-[13px]"
             >
               Buka di Maps
               <ArrowUpRight :size="13" />
@@ -97,8 +97,8 @@
               <p class="text-sm leading-relaxed text-[#A3A3A3]">
                 Harapan Mulya, Medan Satria,<br />Kota Bekasi, Jawa Barat
               </p>
-              <p class="inline-flex items-center gap-2 pt-3 text-[13px] font-medium text-[#FFD400]">
-                <span class="h-1.5 w-1.5 rounded-full bg-[#FFD400]"></span>
+              <p class="inline-flex items-center gap-2 pt-3 text-[13px] font-medium text-[#F4C542]">
+                <span class="h-1.5 w-1.5 rounded-full bg-[#F4C542]"></span>
                 Depan PN Bekasi
               </p>
             </div>
@@ -134,7 +134,7 @@
                   : 'border-white/10 bg-white/[0.05] text-[#A3A3A3]'"
               >
                 <span
-                  :class="isOpen ? 'bg-emerald-400' : 'bg-[#737373]'"
+                  :class="isOpen ? 'animate-pulse bg-emerald-400' : 'bg-[#737373]'"
                   class="h-1.5 w-1.5 shrink-0 rounded-full"
                 ></span>
                 {{ isOpen ? "Buka" : "Tutup" }}
@@ -147,14 +147,14 @@
                 :key="row.label"
                 class="flex items-center justify-between gap-3 rounded-xl border px-4 py-3.5 transition-colors"
                 :class="isToday(row)
-                  ? 'border-[#D71920]/30 bg-[#D71920]/[0.08]'
+                  ? 'border-[#D92B22]/30 bg-[#D92B22]/[0.08]'
                   : 'border-transparent bg-white/[0.025]'"
               >
                 <span class="flex items-center gap-2.5 text-sm" :class="isToday(row) ? 'font-medium text-[#FAFAFA]' : 'text-[#A3A3A3]'">
                   {{ row.label }}
                   <span
                     v-if="isToday(row)"
-                    class="rounded-full bg-[#D71920] px-2 py-0.5 text-[11px] font-semibold text-white"
+                    class="rounded-full bg-[#D92B22] px-2 py-0.5 text-[11px] font-semibold text-white"
                   >Hari ini</span>
                 </span>
                 <span
@@ -180,14 +180,14 @@
         <!-- Email -->
         <a
           href="mailto:kedaimasashimura@gmail.com"
-          class="card group flex flex-col gap-6 transition-colors duration-300 hover:border-[#FFD400]/40 lg:col-span-2"
+          class="card group flex flex-col gap-6 transition-colors duration-300 hover:border-[#F4C542]/40 lg:col-span-2"
         >
           <div class="flex items-center justify-between gap-3">
             <div class="flex items-center gap-3">
-              <div class="icon-tile transition-colors duration-300 group-hover:bg-[#FFD400]/20"><Mail :size="17" /></div>
+              <div class="icon-tile transition-colors duration-300 group-hover:bg-[#F4C542]/20"><Mail :size="17" /></div>
               <h2 class="font-sora text-base font-semibold text-[#FAFAFA]">Email</h2>
             </div>
-            <span class="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-[#A3A3A3] transition-all duration-300 group-hover:border-[#FFD400] group-hover:bg-[#FFD400] group-hover:text-[#111111]">
+            <span class="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-[#A3A3A3] transition-all duration-300 group-hover:border-[#F4C542] group-hover:bg-[#F4C542] group-hover:text-[#080808]">
               <ArrowUpRight :size="16" />
             </span>
           </div>
@@ -329,23 +329,23 @@ const copyAddress = async () => {
 <style scoped>
 /*
   Palet
-  - Warm black  #111111  → latar
-  - Surface     #1B1B1B  → kartu
+  - Warm black  #080808  → latar
+  - Surface     #141414  → kartu
   - Washi       #FAFAFA  → teks utama (putih hangat, bukan putih murni)
-  - Crimson     #D71920  → aksi & penanda "hari ini"
-  - Champagne   #FFD400  → detail premium (ikon, landmark, hover)
+  - Crimson     #D92B22  → aksi & penanda "hari ini"
+  - Champagne   #F4C542  → detail premium (ikon, landmark, hover)
 */
 
 .page-glow {
   background:
-    radial-gradient(60% 70% at 15% 0%, rgba(215,25,32, 0.16), transparent 70%),
-    radial-gradient(40% 50% at 90% 10%, rgba(255,212,0, 0.07), transparent 70%);
+    radial-gradient(60% 70% at 15% 0%, rgba(217,43,34, 0.09), transparent 70%),
+    radial-gradient(40% 50% at 90% 10%, rgba(244,197,66, 0.03), transparent 70%);
 }
 
 .card {
   border-radius: 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.07);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012)), #1B1B1B;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012)), #141414;
   padding: 1.5rem;
 }
 @media (min-width: 640px) {
@@ -360,9 +360,9 @@ const copyAddress = async () => {
   align-items: center;
   justify-content: center;
   border-radius: 0.75rem;
-  border: 1px solid rgba(255,212,0, 0.22);
-  background: rgba(255,212,0, 0.1);
-  color: #FFD400;
+  border: 1px solid rgba(244,197,66, 0.22);
+  background: rgba(244,197,66, 0.1);
+  color: #F4C542;
 }
 
 .btn-primary,
@@ -378,12 +378,12 @@ const copyAddress = async () => {
   transition: all 0.2s ease;
 }
 .btn-primary {
-  background: #D71920;
+  background: #D92B22;
   color: #fff;
 }
 .btn-primary:hover {
-  background: #B5121B;
-  box-shadow: 0 8px 24px -8px rgba(215,25,32, 0.6);
+  background: #B8201A;
+  box-shadow: 0 8px 24px -8px rgba(217,43,34, 0.6);
 }
 .btn-ghost {
   border: 1px solid rgba(255, 255, 255, 0.14);
@@ -399,7 +399,7 @@ const copyAddress = async () => {
 }
 
 .cta {
-  background: linear-gradient(135deg, #8E1016 0%, #B5121B 45%, #5A0D1A 100%);
+  background: linear-gradient(135deg, #8F0000 0%, #B8201A 45%, #5A0D1A 100%);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 .cta-sheen {
@@ -410,7 +410,7 @@ const copyAddress = async () => {
 
 a:focus-visible,
 button:focus-visible {
-  outline: 2px solid #FFD400;
+  outline: 2px solid #F4C542;
   outline-offset: 3px;
 }
 

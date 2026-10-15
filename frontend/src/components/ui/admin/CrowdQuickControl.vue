@@ -196,7 +196,7 @@ onBeforeUnmount(() => {
   background: var(--surface); border: 1px solid rgb(var(--ink) / 0.08);
   border-radius: 10px; color: var(--text-dim); cursor: pointer;
   font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
-  letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap;
+  letter-spacing: -0.01em; white-space: nowrap;
   transition: border-color 0.15s, color 0.15s;
 }
 .cq-chip:hover { border-color: rgb(var(--ink) / 0.18); color: var(--text); }

@@ -10,7 +10,7 @@
 
 /* ── Token turunan (tint transparan dari warna semantik) ───────────── */
 html[data-admin-theme] {
-  --font-display: 'Manrope', system-ui, sans-serif;
+  --font-display: 'Oswald', sans-serif;
   --font-body: 'Manrope', system-ui, sans-serif;
 
   --tint-accent: color-mix(in srgb, var(--accent) 12%, transparent);
@@ -50,25 +50,36 @@ html[data-admin-theme] {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 1rem;
-  padding-bottom: 0.25rem;
+  padding-bottom: 1.1rem;
+}
+/* Garis aksen brand di bawah judul halaman admin (merah -> kuning, mengikuti logo) */
+.adm-header { position: relative; }
+.adm-header::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 40px;
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #d92b22, #f4c542);
 }
 .adm-eyebrow {
-  margin: 0 0 0.35rem;
+  margin: 0 0 0.4rem;
   font-family: var(--font-body);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: none;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
   color: var(--accent-text);
 }
 .adm-title {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2rem);
+  font-size: clamp(1.5rem, 1.2rem + 1.1vw, 1.95rem);
   font-weight: 700;
   line-height: 1.15;
-  letter-spacing: -0.015em;
-  text-transform: none;
+  letter-spacing: -0.02em;
   color: var(--text);
 }
 .adm-sub { margin: 0.4rem 0 0; max-width: 60ch; font-size: 0.8125rem; line-height: 1.5; color: var(--text-dim); }
@@ -97,7 +108,7 @@ html[data-admin-theme] {
   transition: background 0.15s, border-color 0.15s, color 0.15s, opacity 0.15s;
 }
 .adm-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-.adm-btn--primary, .adm-btn--danger { background: var(--accent); color: var(--on-accent); }
+.adm-btn--primary, .adm-btn--danger { background: var(--accent); color: var(--on-accent); box-shadow: 0 6px 16px -8px color-mix(in srgb, var(--accent) 80%, transparent); }
 .adm-btn--primary:hover:not(:disabled), .adm-btn--danger:hover:not(:disabled) { background: var(--accent-hover); }
 .adm-btn--ghost { border-color: var(--border-strong); color: var(--text-2); }
 .adm-btn--ghost:hover:not(:disabled) { background: var(--surface-hover); color: var(--text); }
@@ -144,7 +155,7 @@ html[data-admin-theme] {
   display: flex;
   align-items: flex-start;
   gap: 0.85rem;
-  padding: 1.1rem 1.25rem;
+  padding: 1.15rem 1.35rem;
   border-bottom: 1px solid var(--border);
 }
 .adm-card-head-main { flex: 1; min-width: 0; }
@@ -296,7 +307,7 @@ button.adm-badge:disabled { opacity: 0.5; cursor: wait; }
   border-radius: var(--r-lg); box-shadow: var(--shadow-sm);
 }
 .adm-stat-icon { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 38px; height: 38px; border-radius: var(--r-sm); }
-.adm-stat-value { margin: 0; font-family: var(--font-display); font-size: 1.5rem; font-weight: 600; line-height: 1; color: var(--text); }
+.adm-stat-value { margin: 0; font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1; color: var(--text); }
 .adm-stat-label { margin: 0.3rem 0 0; font-size: 0.72rem; color: var(--text-dim); }
 
 /* ── Toolbar / pencarian / segmented ───────────────────────────────── */
@@ -339,8 +350,8 @@ button.adm-badge:disabled { opacity: 0.5; cursor: wait; }
 .adm-table { width: 100%; border-collapse: collapse; }
 .adm-table th {
   padding: 0.75rem 1rem; text-align: left; white-space: nowrap;
-  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--text-dim); background: var(--surface-2); border-bottom: 1px solid var(--border);
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text-faint); background: transparent; border-bottom: 1px solid var(--border);
 }
 .adm-table td {
   padding: 0.8rem 1rem; vertical-align: middle;
@@ -426,7 +437,7 @@ button.adm-badge:disabled { opacity: 0.5; cursor: wait; }
   display: flex; flex-direction: column;
   width: 100%; max-width: 34rem; max-height: calc(100vh - 2rem); max-height: calc(100dvh - 2rem);
   background: var(--surface); border: 1px solid var(--border-strong);
-  border-radius: 18px; box-shadow: var(--shadow-lg); outline: none;
+  border-radius: 20px; box-shadow: var(--shadow-lg); outline: none;
 }
 .adm-modal--sm { max-width: 24rem; }
 .adm-modal--lg { max-width: 44rem; }
@@ -434,7 +445,7 @@ button.adm-badge:disabled { opacity: 0.5; cursor: wait; }
   display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-shrink: 0;
   padding: 0.9rem 0.9rem 0.9rem 1.25rem; border-bottom: 1px solid var(--border);
 }
-.adm-modal-title { margin: 0; font-family: var(--font-display); font-size: 1rem; font-weight: 700; letter-spacing: -0.005em; text-transform: none; }
+.adm-modal-title { margin: 0; font-family: var(--font-display); font-size: 1.0625rem; font-weight: 700; letter-spacing: -0.01em; }
 .adm-modal-body { display: flex; flex-direction: column; gap: 1rem; flex: 1; min-height: 0; padding: 1.25rem; overflow-y: auto; overscroll-behavior: contain; }
 .adm-modal-foot {
   display: flex; justify-content: flex-end; gap: 0.6rem; flex-shrink: 0;
@@ -478,3 +489,13 @@ html:root[data-admin-theme='light'] { --brand-tile: transparent; }
 html[data-admin-theme='light'] img[src*='masashimura-logo'] {
   filter: drop-shadow(0 0 1px rgb(24 24 27 / 0.55)) drop-shadow(0 1px 1px rgb(24 24 27 / 0.2));
 }
+
+/* ── Polesan premium ─────────────────────────────────────────────── */
+html[data-admin-theme='dark'] .adm-card,
+html[data-admin-theme='dark'] .adm-stat {
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.025), rgb(255 255 255 / 0)), var(--surface);
+}
+.adm-card, .adm-stat { transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+.adm-stat:hover { border-color: var(--border-strong); }
+html[data-admin-theme='light'] .adm-card,
+html[data-admin-theme='light'] .adm-stat { box-shadow: 0 1px 2px rgb(24 24 27 / 0.04), 0 8px 24px -16px rgb(24 24 27 / 0.12); }

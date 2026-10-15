@@ -267,15 +267,13 @@ const metricsMismatch = computed(
 .pi-label {
   font-family: 'Manrope', system-ui, sans-serif;
   font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: -0.01em;
   color: var(--text-2);
 }
 .pi-title {
   font-family: 'Manrope', system-ui, sans-serif;
   font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: -0.01em;
   color: var(--text-2);
   margin: 0 0 1rem 0;
 }
@@ -398,8 +396,7 @@ const metricsMismatch = computed(
   list-style: none;
   font-family: 'Manrope', system-ui, sans-serif;
   font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: -0.01em;
   color: var(--text-2);
 }
 .pi-details summary::-webkit-details-marker { display: none; }

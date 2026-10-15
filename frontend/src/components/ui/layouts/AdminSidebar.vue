@@ -366,9 +366,9 @@ onBeforeUnmount(() => {
   flex-direction: column;
   flex-shrink: 0;
   background: var(--bg-sidebar);
-  border-right: 1px solid var(--border);
+  box-shadow: 1px 0 0 rgb(var(--ink) / 0.035);
   color: var(--text);
-  font-family: 'Inter', sans-serif;
+  font-family: 'Manrope', system-ui, sans-serif;
   user-select: none;
 
   /* mobile: drawer tersembunyi. visibility mencegah fokus keyboard masuk ke menu yang tak terlihat */
@@ -401,7 +401,6 @@ onBeforeUnmount(() => {
   gap: 0.5rem;
   padding: 1.25rem 1rem 1rem 1.25rem;
   padding-top: calc(1.25rem + env(safe-area-inset-top, 0px));
-  border-bottom: 1px solid var(--border);
 }
 .sb-brand-main { min-width: 0; }
 
@@ -419,9 +418,10 @@ onBeforeUnmount(() => {
 
 .sb-eyebrow {
   margin: 0.55rem 0 0;
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.22em;
+  font-family: "Manrope", system-ui, sans-serif;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--text-faint);
 }
@@ -445,7 +445,7 @@ onBeforeUnmount(() => {
 }
 
 /* ── Profil ──────────────────────────────────────────────────────── */
-.sb-profile-wrap { padding: 0.9rem 1rem; border-bottom: 1px solid var(--border); }
+.sb-profile-wrap { padding: 0.9rem 1rem; }
 .sb-profile {
   display: flex;
   align-items: center;
@@ -485,7 +485,7 @@ onBeforeUnmount(() => {
   display: inline-block;
   padding: 0.12rem 0.45rem;
   border-radius: 6px;
-  font-family: var(--font-mono);
+  font-family: "Manrope", system-ui, sans-serif;
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -513,7 +513,7 @@ onBeforeUnmount(() => {
 .sb-section {
   margin: 0.6rem 0 0.2rem;
   padding: 0 0.75rem;
-  font-family: var(--font-mono);
+  font-family: "Manrope", system-ui, sans-serif;
   font-size: 0.72rem;
   letter-spacing: 0.24em;
   text-transform: uppercase;
@@ -535,7 +535,7 @@ onBeforeUnmount(() => {
   transition: background 0.15s, color 0.15s;
 }
 .sb-link:hover { background: var(--surface-hover); color: var(--text); }
-.sb-link.is-active { background: rgb(var(--ink) / 0.07); color: var(--text); }
+.sb-link.is-active { background: color-mix(in srgb, var(--accent) 11%, transparent); color: var(--text); font-weight: 600; }
 .sb-link.is-active::before {
   content: '';
   position: absolute;
@@ -561,7 +561,7 @@ onBeforeUnmount(() => {
   border-radius: 99px;
   background: var(--accent);
   color: var(--on-accent);
-  font-family: var(--font-mono);
+  font-family: "Manrope", system-ui, sans-serif;
   font-size: 0.72rem;
   font-weight: 700;
 }
@@ -619,15 +619,13 @@ onBeforeUnmount(() => {
 
 .sb-account {
   margin-top: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--border);
+  padding-top: 0.25rem;
 }
 
 /* ── Footer ──────────────────────────────────────────────────────── */
 .sb-footer {
   padding: 0.75rem 1rem;
   padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
-  border-top: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -664,8 +662,8 @@ onBeforeUnmount(() => {
   width: 44px;
   height: 24px;
   border-radius: 99px;
-  background: #FFD400;
-  border: 1px solid #FFD400;
+  background: #fcd34d;
+  border: 1px solid #f4c542;
   transition: background 0.2s, border-color 0.2s;
 }
 .sb-switch.is-on { background: #3f3f46; border-color: #52525b; }
@@ -727,7 +725,7 @@ onBeforeUnmount(() => {
   background: var(--surface);
   color: var(--text);
   box-shadow: var(--shadow-lg);
-  font-family: 'Inter', sans-serif;
+  font-family: 'Manrope', system-ui, sans-serif;
 }
 .sb-modal-icon {
   display: flex;
@@ -746,9 +744,8 @@ onBeforeUnmount(() => {
   text-align: center;
   font-family: 'Manrope', system-ui, sans-serif;
   font-size: 1.05rem;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 .sb-modal-text {
   margin: 0 0 1.4rem;
@@ -808,7 +805,7 @@ onBeforeUnmount(() => {
   background: var(--surface-2);
   color: var(--text-2);
   box-shadow: var(--shadow-lg);
-  font-family: 'Inter', sans-serif;
+  font-family: 'Manrope', system-ui, sans-serif;
 }
 .sb-toast.is-success { border-color: rgb(34 197 94 / 0.4); color: var(--green-soft); }
 .sb-toast.is-error   { border-color: rgb(239 68 68 / 0.45); color: var(--red-soft); }

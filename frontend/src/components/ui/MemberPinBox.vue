@@ -43,7 +43,8 @@
           :value="pin"
           type="password"
           inputmode="numeric"
-          autocomplete="off"
+          autocomplete="new-password"
+          name="member-pin"
           maxlength="4"
           pattern="[0-9]*"
           class="field pin-input tabular-nums"
@@ -173,30 +174,30 @@ const waLink = computed(() => {
 .pin-input { max-width: 7.5rem; text-align: center; letter-spacing: .4em; }
 .pin-btn {
   min-height: 48px; flex: 1; padding: 0 1rem; border-radius: .875rem; cursor: pointer;
-  border: 1px solid rgba(255,212,0,.35); background: rgba(255,212,0,.1); color: #FFD400;
+  border: 1px solid rgba(244,197,66,.35); background: rgba(244,197,66,.1); color: #F4C542;
   font-size: .875rem; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
 }
 .pin-btn:disabled { opacity: .45; cursor: not-allowed; }
-.pin-btn:focus-visible, .pin-link:focus-visible, .pin-wa:focus-visible { outline: 2px solid #FFD400; outline-offset: 2px; }
+.pin-btn:focus-visible, .pin-link:focus-visible, .pin-wa:focus-visible { outline: 2px solid #F4C542; outline-offset: 2px; }
 .pin-spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid currentColor; border-top-color: transparent; animation: pin-rot .7s linear infinite; }
 @keyframes pin-rot { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .pin-spin { animation: none; } }
-.pin-error { margin: 0; font-size: .8125rem; color: #FF6A70; }
-.pin-hint { margin: 0; font-size: .8125rem; color: #FFD400; }
+.pin-error { margin: 0; font-size: .8125rem; color: #F0605A; }
+.pin-hint { margin: 0; font-size: .8125rem; color: #F4C542; }
 .pin-help { margin: 0; font-size: .75rem; line-height: 1.5; color: #A3A3A3; }
-.pin-wa { display: block; margin-top: .25rem; color: #FFD400; text-decoration: underline; text-underline-offset: 2px; }
+.pin-wa { display: block; margin-top: .25rem; color: #F4C542; text-decoration: underline; text-underline-offset: 2px; }
 
 .pin-head { display: flex; align-items: center; gap: .625rem; }
-.pin-tile { display: flex; height: 2rem; width: 2rem; align-items: center; justify-content: center; border-radius: .625rem; border: 1px solid rgba(255,212,0,.25); background: rgba(255,212,0,.1); color: #FFD400; flex-shrink: 0; }
+.pin-tile { display: flex; height: 2rem; width: 2rem; align-items: center; justify-content: center; border-radius: .625rem; border: 1px solid rgba(244,197,66,.25); background: rgba(244,197,66,.1); color: #F4C542; flex-shrink: 0; }
 .pin-head-text { flex: 1; min-width: 0; }
 .pin-title { margin: 0; font-size: .75rem; color: #A3A3A3; }
-.pin-balance { margin: 0; font-family: "Sora", ui-sans-serif, system-ui, sans-serif; font-size: 1.375rem; font-weight: 600; color: #FFD400; font-variant-numeric: tabular-nums; }
+.pin-balance { margin: 0; font-family: "Manrope", ui-sans-serif, system-ui, sans-serif; font-size: 1.375rem; font-weight: 600; color: #F4C542; font-variant-numeric: tabular-nums; }
 .pin-link { min-height: 40px; padding: 0 .5rem; background: none; border: 0; color: #A3A3A3; font-size: .8125rem; cursor: pointer; text-decoration: underline; }
 .pin-progress { display: flex; flex-direction: column; gap: .4rem; }
 .pin-bar { height: 8px; border-radius: 999px; background: rgba(255,255,255,.08); overflow: hidden; }
-.pin-bar-fill { display: block; height: 100%; border-radius: 999px; background: #FFD400; transition: width .4s ease; }
+.pin-bar-fill { display: block; height: 100%; border-radius: 999px; background: #F4C542; transition: width .4s ease; }
 @media (prefers-reduced-motion: reduce) { .pin-bar-fill { transition: none; } }
 .pin-progress-text { margin: 0; font-size: .8125rem; line-height: 1.5; color: #C8C8C8; }
 .pin-expiry { margin: 0; font-size: .8125rem; line-height: 1.5; color: #A3A3A3; }
-.pin-expiry.is-soon { color: #FFD400; font-weight: 500; }
+.pin-expiry.is-soon { color: #F4C542; font-weight: 500; }
 </style>

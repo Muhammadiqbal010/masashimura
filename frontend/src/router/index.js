@@ -76,4 +76,21 @@ router.beforeEach((to) => {
   return true;
 });
 
+// Setelah deploy baru, file chunk lama (hash berbeda) hilang di server. Navigasi ke halaman
+// yang di-lazy-load jadi gagal diam-diam. Muat ulang sekali ke tujuan agar dapat versi terbaru.
+router.onError((err, to) => {
+  const msg = String(err?.message || err);
+  const isChunkError = /dynamically imported module|Importing a module script failed|Loading chunk|Unable to preload CSS/i.test(msg);
+  if (!isChunkError) return;
+  const KEY = "masashimura:chunkReload";
+  if (sessionStorage.getItem(KEY) === to.fullPath) return; // cegah loop reload
+  sessionStorage.setItem(KEY, to.fullPath);
+  window.location.assign(to.fullPath);
+});
+
+window.addEventListener("vite:preloadError", (e) => {
+  e.preventDefault();
+  window.location.reload();
+});
+
 export default router;

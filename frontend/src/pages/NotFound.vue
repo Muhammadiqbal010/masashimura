@@ -19,7 +19,7 @@ import logo from "../assets/masashimura-logo.png";
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  background: #111111;
+  background: #080808;
   color: #fff;
   text-align: center;
   padding: 2rem;
@@ -32,7 +32,7 @@ import logo from "../assets/masashimura-logo.png";
 .not-found h1 {
   font-size: 5rem;
   margin: 0;
-  color: #D71920;
+  color: #ee0000;
   font-family: 'Manrope', system-ui, sans-serif;
   letter-spacing: 2px;
 }
@@ -43,7 +43,7 @@ import logo from "../assets/masashimura-logo.png";
 .not-found__link {
   margin-top: 0.5rem;
   padding: 0.6rem 1.5rem;
-  background: #D71920;
+  background: #ee0000;
   color: #fff;
   border-radius: 6px;
   text-decoration: none;

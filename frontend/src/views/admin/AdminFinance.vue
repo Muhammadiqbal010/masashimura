@@ -827,12 +827,10 @@ onMounted(async () => {
 }
 .fr-heading { display: flex; flex-direction: column; gap: 0.25rem; }
 .fr-eyebrow {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; letter-spacing: 0.22em;
-  text-transform: uppercase; color: var(--accent-text); margin: 0;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; letter-spacing: -0.01em; color: var(--accent-text); margin: 0;
 }
 .fr-title {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: clamp(1.4rem, 4vw, 1.85rem); font-weight: 600;
-  text-transform: uppercase; letter-spacing: 0.03em; margin: 0; line-height: 1.1;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: clamp(1.4rem, 4vw, 1.85rem); font-weight: 600; letter-spacing: -0.01em; margin: 0; line-height: 1.1;
 }
 .fr-subtitle { font-size: 0.72rem; color: var(--text-dim); margin: 0; font-family: monospace; }
 
@@ -845,7 +843,7 @@ onMounted(async () => {
 .mode-btn {
   padding: 0.45rem 1.05rem; border-radius: 9px; border: none; background: transparent;
   color: var(--text-faint); font-family: 'Manrope', system-ui, sans-serif; font-size: 0.7rem;
-  letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: all 0.15s;
+  letter-spacing: -0.01em; cursor: pointer; transition: all 0.15s;
 }
 .mode-btn:hover { color: var(--text-2); }
 .mode-btn.active { background: var(--accent); color: var(--on-accent); }
@@ -876,7 +874,7 @@ onMounted(async () => {
 .today-btn {
   padding: 0.55rem 0.9rem; border-radius: var(--r-md); background: transparent;
   border: 1px solid var(--line-accent, var(--border-strong)); color: var(--accent-text);
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.7rem; letter-spacing: -0.01em;
   cursor: pointer; transition: all 0.15s;
 }
 .today-btn:hover { background: var(--tint-accent, var(--surface-hover)); }
@@ -905,15 +903,15 @@ onMounted(async () => {
   width: 28px; height: 28px; border-radius: var(--r-sm); flex-shrink: 0;
 }
 .ic-green { background: rgba(34,197,94,0.1); color: var(--green-soft); }
-.ic-amber { background: rgba(255,212,0,0.1); color: var(--amber-soft); }
-.ic-red   { background: rgba(255,52,59,0.1); color: var(--red-soft); }
-.s-label { font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); flex: 1; min-width: 0; }
+.ic-amber { background: rgba(244,197,66,0.1); color: var(--amber-soft); }
+.ic-red   { background: rgba(255,42,42,0.1); color: var(--red-soft); }
+.s-label { font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; letter-spacing: -0.01em; color: var(--text-dim); flex: 1; min-width: 0; }
 .s-badge {
   font-size: 0.72rem; padding: 0.15rem 0.55rem; border-radius: 100px;
-  font-family: 'Manrope', system-ui, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap;
+  font-family: 'Manrope', system-ui, sans-serif; letter-spacing: -0.01em; white-space: nowrap;
 }
 .badge-up   { background: rgba(34,197,94,0.1); color: var(--green-soft); border: 1px solid rgba(34,197,94,0.2); }
-.badge-down { background: rgba(255,52,59,0.1); color: var(--red-soft); border: 1px solid rgba(255,52,59,0.2); }
+.badge-down { background: rgba(255,42,42,0.1); color: var(--red-soft); border: 1px solid rgba(255,42,42,0.2); }
 .s-value {
   font-family: monospace; font-size: clamp(1.1rem, 4.2vw, 1.45rem); overflow-wrap: anywhere;
   font-weight: 700; color: var(--text); letter-spacing: -0.02em; margin-bottom: 0.4rem;
@@ -950,12 +948,10 @@ onMounted(async () => {
 .card-head.border-b { border-bottom: 1px solid var(--border); }
 .card-titles { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }   /* eyebrow di atas judul, bukan sebelahan */
 .card-eyebrow {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; letter-spacing: 0.18em;
-  text-transform: uppercase; color: var(--accent-text); margin: 0;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; letter-spacing: -0.01em; color: var(--accent-text); margin: 0;
 }
 .card-title {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.9rem; font-weight: 500;
-  text-transform: uppercase; letter-spacing: 0.05em; margin: 0; color: var(--text);
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.9rem; font-weight: 600; letter-spacing: -0.01em; margin: 0; color: var(--text);
   overflow-wrap: anywhere;
 }
 .card-head-actions { display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0; }
@@ -964,13 +960,13 @@ onMounted(async () => {
 .jump-btn {
   display: none; min-height: 34px; padding: 0.3rem 0.8rem; border-radius: 8px;
   background: var(--accent); border: none; color: var(--on-accent);
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.7rem; letter-spacing: -0.01em;
   cursor: pointer;
 }
 .jump-btn:hover { background: var(--accent-hover); }
 .link-btn {
   padding: 0.25rem 0.1rem; border: 0; background: none; color: var(--accent-text);
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.7rem; letter-spacing: -0.01em;
   text-decoration: underline; cursor: pointer; flex-shrink: 0;
 }
 .link-btn:hover { color: var(--text); }
@@ -979,7 +975,7 @@ onMounted(async () => {
 .form-card.is-editing { border-color: var(--amber); box-shadow: 0 0 0 1px var(--amber), var(--shadow-sm); }
 .expense-form { padding: 1.25rem 1.4rem 1.4rem; display: flex; flex-direction: column; gap: 1.1rem; }
 .field { display: flex; flex-direction: column; gap: 0.4rem; }
-.field-label { font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-faint); }
+.field-label { font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; letter-spacing: -0.01em; color: var(--text-faint); }
 .field-input {
   min-height: 42px; background: rgb(var(--ink) / 0.03); border: 1px solid var(--border-strong);
   border-radius: var(--r-sm); padding: 0.7rem 1rem; color: var(--text);
@@ -1006,7 +1002,7 @@ onMounted(async () => {
 .method-btn {
   flex: 1; padding: 0.5rem 0.7rem; border-radius: 6px; border: none; background: transparent;
   color: var(--text-faint); font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
-  letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: all 0.15s;
+  letter-spacing: -0.01em; cursor: pointer; transition: all 0.15s;
 }
 .method-btn:hover { color: var(--text-2); }
 .method-btn.active { background: var(--accent); color: var(--on-accent); }
@@ -1015,7 +1011,7 @@ onMounted(async () => {
   display: flex; align-items: center; justify-content: center; gap: 0.45rem;
   min-height: 44px; padding: 0.75rem; background: var(--accent);
   border: 1px solid var(--accent); border-radius: var(--r-sm); color: var(--on-accent);
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; letter-spacing: -0.01em;
   cursor: pointer; transition: all 0.15s;
 }
 .submit-btn:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
@@ -1033,8 +1029,8 @@ onMounted(async () => {
 .table-scroll { overflow-x: auto; }
 .data-table { width: 100%; border-collapse: collapse; min-width: 420px; }
 .data-table th {
-  padding: 0.65rem 1.4rem; font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; font-weight: 400;
-  letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-faint); text-align: left;
+  padding: 0.65rem 1.4rem; font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; font-weight: 600;
+  letter-spacing: -0.01em; color: var(--text-faint); text-align: left;
   background: rgb(var(--ink) / 0.015); border-bottom: 1px solid var(--border);
 }
 .th-right  { text-align: right !important; }
@@ -1048,7 +1044,7 @@ onMounted(async () => {
 .data-row:hover { background: var(--surface-hover); }
 .data-row:last-child { border-bottom: none; }
 .row-empty { opacity: 0.3; }
-.row-editing, .row-editing:hover { background: rgba(255,212,0,0.08); }
+.row-editing, .row-editing:hover { background: rgba(244,197,66,0.08); }
 
 .data-table td { padding: 0.85rem 1.4rem; font-size: 0.82rem; vertical-align: middle; }
 .td-mono   { font-family: monospace; color: var(--text-2); }
@@ -1064,14 +1060,13 @@ onMounted(async () => {
 
 .total-row { background: rgb(var(--ink) / 0.03) !important; border-top: 1px solid var(--border-strong) !important; }
 .total-row td {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--text-dim); padding: 0.75rem 1.4rem;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; letter-spacing: -0.01em; color: var(--text-dim); padding: 0.75rem 1.4rem;
 }
 .total-row .td-rev, .total-row .td-exp, .total-row .td-pos, .total-row .td-neg { font-size: 0.82rem; }
 
 .method-badge {
   display: inline-block; padding: 0.15rem 0.6rem; border-radius: 100px; border: 1px solid;
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; letter-spacing: -0.01em;
 }
 .mb-cash { color: var(--text-dim); background: rgb(var(--ink) / 0.04); border-color: var(--border-strong); }
 .mb-qris { color: var(--blue-soft); background: rgba(56,189,248,0.08); border-color: rgba(56,189,248,0.25); }
@@ -1079,13 +1074,13 @@ onMounted(async () => {
 .row-actions { display: inline-flex; gap: 0.4rem; }
 .edit-btn, .delete-btn {
   padding: 0.3rem 0.7rem; border-radius: 6px; border: 1px solid;
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; letter-spacing: -0.01em;
   cursor: pointer; transition: all 0.15s;
 }
 .edit-btn { background: rgb(var(--ink) / 0.04); border-color: var(--border-strong); color: var(--text-dim); }
 .edit-btn:hover { color: var(--text); background: rgb(var(--ink) / 0.08); }
-.delete-btn { background: rgba(255,52,59,0.07); border-color: rgba(255,52,59,0.18); color: var(--red-soft); }
-.delete-btn:hover { background: rgba(255,52,59,0.15); }
+.delete-btn { background: rgba(255,42,42,0.07); border-color: rgba(255,42,42,0.18); color: var(--red-soft); }
+.delete-btn:hover { background: rgba(255,42,42,0.15); }
 
 .empty-cell { padding: 2.5rem 1.4rem !important; text-align: center; color: var(--text-faint); }
 .empty-cell .spinner-sm { margin: 0 auto 0.6rem; }
@@ -1119,7 +1114,7 @@ onMounted(async () => {
 }
 .toggle-btn {
   padding: 0.42rem 1rem; border-radius: 6px; border: none; background: transparent; color: var(--text-faint);
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; letter-spacing: -0.01em;
   cursor: pointer; transition: all 0.15s;
 }
 .toggle-btn:hover { color: var(--text-2); }
@@ -1136,20 +1131,20 @@ onMounted(async () => {
 .export-btn {
   display: flex; align-items: center; justify-content: center; gap: 0.4rem; min-width: 8rem;
   padding: 0.65rem 1rem; border-radius: var(--r-sm); border: 1px solid;
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; letter-spacing: -0.01em;
   cursor: pointer; transition: all 0.15s;
 }
 .export-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .btn-excel { background: rgba(34,197,94,0.07); border-color: rgba(34,197,94,0.25); color: var(--green-soft); }
 .btn-excel:hover:not(:disabled) { background: rgba(34,197,94,0.14); }
-.btn-pdf   { background: rgba(215,25,32,0.07); border-color: rgba(215,25,32,0.25); color: var(--red-soft); }
-.btn-pdf:hover:not(:disabled)   { background: rgba(215,25,32,0.14); }
+.btn-pdf   { background: rgba(217,43,34,0.07); border-color: rgba(217,43,34,0.25); color: var(--red-soft); }
+.btn-pdf:hover:not(:disabled)   { background: rgba(217,43,34,0.14); }
 
 /* ── Grafik ──────────────────────────────────────────────────────── */
 .chart-loading {
   display: flex; align-items: center; justify-content: center; gap: 0.6rem; padding: 3rem;
   color: var(--text-faint); font-size: 0.75rem; font-family: 'Manrope', system-ui, sans-serif;
-  letter-spacing: 0.1em; text-transform: uppercase;
+  letter-spacing: -0.01em;
 }
 .spinner-sm {
   width: 20px; height: 20px; border: 2px solid rgb(var(--ink) / 0.07);
@@ -1191,15 +1186,15 @@ onMounted(async () => {
 @keyframes modal-in { from { opacity: 0; transform: translateY(6px) scale(0.98); } to { opacity: 1; transform: none; } }
 .modal-icon {
   display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;
-  border-radius: var(--r-sm); margin-bottom: 1rem; background: rgba(255,52,59,0.1); color: var(--red-soft);
+  border-radius: var(--r-sm); margin-bottom: 1rem; background: rgba(255,42,42,0.1); color: var(--red-soft);
 }
-.modal-title { font-family: 'Manrope', system-ui, sans-serif; font-size: 1rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.5rem; color: var(--text); }
+.modal-title { font-family: 'Manrope', system-ui, sans-serif; font-size: 1rem; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 0.5rem; color: var(--text); }
 .modal-text { font-size: 0.8rem; line-height: 1.55; color: var(--text-dim); margin: 0 0 1.25rem; }
 .modal-text strong { color: var(--text); font-weight: 600; }
 .modal-actions { display: flex; gap: 0.5rem; }
 .modal-cancel, .modal-confirm {
   flex: 1; min-height: 42px; padding: 0.7rem; border-radius: var(--r-sm); border: 1px solid;
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.7rem; letter-spacing: -0.01em;
   cursor: pointer; transition: all 0.15s;
 }
 .modal-cancel { background: rgb(var(--ink) / 0.04); border-color: var(--border-strong); color: var(--text); }

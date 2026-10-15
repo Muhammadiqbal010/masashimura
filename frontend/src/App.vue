@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-background font-manrope">
+  <div class="min-h-screen bg-[#080808] font-manrope" :class="{ 'site-public': !isAdminRoute && !route.meta.hideNavFooter }">
     <!-- 🟢 Halaman Publik (Muncul Navbar & Footer) -->
     <!-- Logika: Jika BUKAN rute admin DAN BUKAN rute yang disembunyikan metanya -->
     <template v-if="!isAdminRoute && !route.meta.hideNavFooter">

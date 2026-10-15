@@ -275,7 +275,7 @@
 
           <!-- Alasan (wajib) -->
           <div class="modal-field">
-            <label class="modal-field-label">Alasan <span style="color:#D71920;">*</span></label>
+            <label class="modal-field-label">Alasan <span style="color:#d92b22;">*</span></label>
             <input
               v-model="adjustNote"
               type="text"
@@ -616,14 +616,12 @@ onMounted(() => {
 }
 .lc-eyebrow {
   font-family: 'Manrope', system-ui, sans-serif;
-  font-size: 0.72rem; letter-spacing: 0.2em;
-  text-transform: uppercase; color: var(--accent-text);
+  font-size: 0.72rem; letter-spacing: -0.01em; color: var(--accent-text);
   margin: 0 0 0.3rem;
 }
 .lc-title {
   font-family: 'Manrope', system-ui, sans-serif;
-  font-size: 1.75rem; font-weight: 600;
-  text-transform: uppercase; letter-spacing: 0.04em; margin: 0 0 0.3rem;
+  font-size: 1.75rem; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 0.3rem;
 }
 .lc-subtitle { font-size: 0.7rem; color: var(--text-faint); margin: 0; }
 
@@ -634,7 +632,7 @@ onMounted(() => {
   border: 1px solid rgb(var(--ink) / 0.08);
   border-radius: 10px; color: var(--text-dim);
   font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
-  letter-spacing: 0.1em; text-transform: uppercase;
+  letter-spacing: -0.01em;
   cursor: pointer; transition: all 0.15s;
 }
 .refresh-btn:hover { background: rgb(var(--ink) / 0.08); color: var(--text); border-color: rgb(var(--ink) / 0.15); }
@@ -659,18 +657,18 @@ onMounted(() => {
   background: rgb(var(--ink) / 0.06);
 }
 .stat-green::before { background: #22c55e; }
-.stat-amber::before { background: #FFD400; }
+.stat-amber::before { background: #f4c542; }
 
 .stat-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.65rem; }
 .stat-label {
   font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
-  letter-spacing: 0.14em; text-transform: uppercase;
+  letter-spacing: -0.01em;
   color: var(--text-faint);
 }
 .stat-dot { width: 6px; height: 6px; border-radius: 50%; }
 .dot-white { background: rgb(var(--ink) / 0.2); }
 .dot-green { background: #22c55e; }
-.dot-amber { background: #FFD400; }
+.dot-amber { background: #f4c542; }
 
 .stat-val {
   font-family: monospace; font-size: 1.8rem; font-weight: 700;
@@ -687,11 +685,11 @@ onMounted(() => {
   background: var(--surface); border: 1px solid rgb(var(--ink) / 0.05);
   border-radius: 16px;
   color: var(--text-faint); font-family: 'Manrope', system-ui, sans-serif;
-  font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase;
+  font-size: 0.7rem; letter-spacing: -0.01em;
 }
 .spinner {
   width: 28px; height: 28px;
-  border: 2px solid rgb(var(--ink) / 0.07); border-top-color: #D71920;
+  border: 2px solid rgb(var(--ink) / 0.07); border-top-color: #d92b22;
   border-radius: 50%; animation: spin 0.8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -708,13 +706,13 @@ onMounted(() => {
 }
 .card-eyebrow {
   font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
-  letter-spacing: 0.18em; text-transform: uppercase;
+  letter-spacing: -0.01em;
   color: var(--accent-text); margin: 0 0 0.15rem;
 }
 .card-title-sm {
   font-family: 'Manrope', system-ui, sans-serif; font-size: 0.82rem;
-  font-weight: 500; text-transform: uppercase;
-  letter-spacing: 0.08em; color: var(--text-dim); margin: 0;
+  font-weight: 600;
+  letter-spacing: -0.01em; color: var(--text-dim); margin: 0;
 }
 
 .table-scroll { overflow-x: auto; }
@@ -722,8 +720,8 @@ onMounted(() => {
 
 .lc-table th {
   padding: 0.65rem 1.25rem;
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; font-weight: 400;
-  letter-spacing: 0.14em; text-transform: uppercase;
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--text-faint); text-align: left;
   background: rgb(var(--ink) / 0.015);
   border-bottom: 1px solid rgb(var(--ink) / 0.04);
@@ -765,7 +763,7 @@ onMounted(() => {
 .badge-red  .discount-pct { color: var(--red-soft); }
 .badge-green .discount-pct { color: var(--green-soft); }
 .discount-lbl {
-  font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase;
+  font-size: 0.72rem; letter-spacing: -0.01em;
   color: var(--text-faint); font-family: 'Manrope', system-ui, sans-serif;
 }
 .no-discount { color: var(--text-faint); font-size: 0.85rem; }
@@ -774,7 +772,7 @@ onMounted(() => {
 .status-pill {
   display: inline-block; padding: 0.22rem 0.7rem;
   border-radius: 100px; font-size: 0.72rem;
-  font-family: 'Manrope', system-ui, sans-serif; letter-spacing: 0.1em; text-transform: uppercase;
+  font-family: 'Manrope', system-ui, sans-serif; letter-spacing: -0.01em;
 }
 .pill-loyal   { background: color-mix(in srgb, var(--green) 10%, transparent);  color: var(--green-soft); border: 1px solid color-mix(in srgb, var(--green) 20%, transparent); }
 .pill-regular { background: rgb(var(--ink) / 0.04); color: var(--text-faint); border: 1px solid rgb(var(--ink) / 0.08); }
@@ -783,13 +781,13 @@ onMounted(() => {
 .action-btn {
   padding: 0.35rem 0.85rem; border-radius: 8px;
   font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
-  letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer;
+  letter-spacing: -0.01em; cursor: pointer;
   transition: all 0.15s; border: 1px solid;
 }
 .action-active {
   background: color-mix(in srgb, var(--accent) 8%, transparent); border-color: color-mix(in srgb, var(--accent) 25%, transparent); color: var(--red-soft);
 }
-.action-active:hover { background: #D71920; border-color: #D71920; color: #fff; }
+.action-active:hover { background: #d92b22; border-color: #d92b22; color: #fff; }
 .action-disabled {
   background: transparent; border-color: rgb(var(--ink) / 0.05);
   color: var(--text-faint); cursor: not-allowed;
@@ -824,12 +822,12 @@ onMounted(() => {
 }
 .modal-eyebrow {
   font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
-  letter-spacing: 0.18em; text-transform: uppercase;
+  letter-spacing: -0.01em;
   color: var(--accent-text); margin: 0 0 0.2rem;
 }
 .modal-title {
   font-family: 'Manrope', system-ui, sans-serif; font-size: 1.1rem;
-  font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 0.2rem;
+  font-weight: 600; letter-spacing: -0.01em; margin: 0 0 0.2rem;
 }
 .modal-phone { font-family: monospace; font-size: 0.78rem; color: var(--text-faint); margin: 0; }
 .modal-close {
@@ -848,7 +846,7 @@ onMounted(() => {
 }
 .current-label {
   font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
-  letter-spacing: 0.14em; text-transform: uppercase;
+  letter-spacing: -0.01em;
   color: var(--text-faint); margin: 0 0 0.4rem;
 }
 .current-val-wrap { display: flex; align-items: baseline; gap: 0.6rem; }
@@ -863,7 +861,7 @@ onMounted(() => {
 .modal-field { display: flex; flex-direction: column; gap: 0.4rem; }
 .modal-field-label {
   font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
-  letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-faint);
+  letter-spacing: -0.01em; color: var(--text-faint);
 }
 .modal-input {
   background: rgb(var(--ink) / 0.04); border: 1px solid rgb(var(--ink) / 0.08);
@@ -880,19 +878,19 @@ onMounted(() => {
 .modal-save-btn {
   display: flex; align-items: center; justify-content: center; gap: 0.4rem;
   padding: 0.8rem; border-radius: 10px; border: none;
-  background: #D71920; color: #fff;
+  background: #d92b22; color: #fff;
   font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
-  letter-spacing: 0.1em; text-transform: uppercase;
+  letter-spacing: -0.01em;
   cursor: pointer; transition: background 0.15s;
 }
-.modal-save-btn:hover:not(:disabled) { background: #B5121B; }
+.modal-save-btn:hover:not(:disabled) { background: #b8201a; }
 .modal-save-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .modal-cancel-btn {
   padding: 0.8rem; border-radius: 10px;
   background: rgb(var(--ink) / 0.04); border: 1px solid rgb(var(--ink) / 0.08);
   color: var(--text-dim);
   font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
-  letter-spacing: 0.1em; text-transform: uppercase;
+  letter-spacing: -0.01em;
   cursor: pointer; transition: all 0.15s;
 }
 .modal-cancel-btn:hover { background: rgb(var(--ink) / 0.08); color: var(--text); }
@@ -902,7 +900,7 @@ onMounted(() => {
   width: 100%; background: none; border: none;
   color: var(--text-faint);
   font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
-  letter-spacing: 0.1em; text-transform: uppercase;
+  letter-spacing: -0.01em;
   cursor: pointer; transition: color 0.15s; padding: 0.25rem;
 }
 .modal-reset-btn:hover { color: var(--red-soft); }
@@ -950,8 +948,8 @@ html[data-admin-theme] .lc-root :focus-visible { outline-offset: 2px; }
 .exp-pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 600; background: rgba(128,128,128,.16); }
 .pin-state { font-size: 12px; }
 .pin-state--none { opacity: .55; }
-.pin-state--locked { color: #D71920; font-weight: 600; }
-.pin-err { margin: 0 0 10px; font-size: 13px; color: #D71920; }
+.pin-state--locked { color: #d92b22; font-weight: 600; }
+.pin-err { margin: 0 0 10px; font-size: 13px; color: #d92b22; }
 .pin-once-label { margin: 6px 0 0; font-size: 13px; opacity: .75; }
 .pin-once { margin: 6px 0 4px; font-family: monospace; font-size: 40px; font-weight: 700; letter-spacing: .3em; text-align: center; }
 .pin-once-warn { margin: 0 0 14px; font-size: 12.5px; text-align: center; color: #d97706; }
@@ -970,7 +968,7 @@ html[data-admin-theme] .lc-root :focus-visible { outline-offset: 2px; }
   display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 600;
   background: rgba(128,128,128,.16);
 }
-.seg-pill.seg-setia    { background: rgba(255,212,0,.2); }
+.seg-pill.seg-setia    { background: rgba(244,197,66,.2); }
 .seg-pill.seg-aktif    { background: rgba(34,160,90,.18); }
 .seg-pill.seg-baru     { background: rgba(60,130,220,.18); }
 .seg-pill.seg-berisiko { background: rgba(230,140,30,.22); }
@@ -980,11 +978,11 @@ html[data-admin-theme] .lc-root :focus-visible { outline-offset: 2px; }
 .del-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 20px 4px; font-size: 12.5px; }
 .del-all { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
 .del-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-.del-btn { color: #D71920; border-color: rgba(215,25,32,.4); background: transparent; }
+.del-btn { color: #d92b22; border-color: rgba(217,43,34,.4); background: transparent; }
 .del-btn:disabled { opacity: .4; cursor: not-allowed; }
 .td-action .del-btn { margin-left: 6px; }
 .del-list { margin: 4px 0 14px; padding-left: 18px; font-size: 13px; line-height: 1.55; }
-.del-confirm-btn { background: #D71920; color: #fff; }
+.del-confirm-btn { background: #d92b22; color: #fff; }
 .del-confirm-btn:disabled { opacity: .45; cursor: not-allowed; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 </style>

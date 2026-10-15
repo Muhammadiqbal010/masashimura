@@ -10,9 +10,9 @@
           <div>
             <div class="flex items-center gap-2 mb-2">
               <span class="w-1 h-1 rounded-full bg-red-600"></span>
-              <p class="text-[color:var(--text-faint)] text-[11px] font-oswald uppercase tracking-[0.25em]">Masashimura · Admin</p>
+              <p class="text-[color:var(--text-faint)] text-[11px] font-manrope font-bold tracking-normal">Masashimura · Admin</p>
             </div>
-            <h1 class="font-oswald text-3xl sm:text-4xl lg:text-5xl uppercase italic tracking-tighter text-[color:var(--accent-text)] leading-none">
+            <h1 class="font-manrope font-bold text-3xl sm:text-4xl lg:text-5xl italic tracking-tighter text-[color:var(--accent-text)] leading-none">
               Order Reports
             </h1>
             <p class="text-[color:var(--text-faint)] text-xs sm:text-sm font-light mt-2">
@@ -39,7 +39,7 @@
                 aria-haspopup="menu"
                 :aria-expanded="exportOpen"
                 :disabled="loading"
-                class="flex items-center gap-2 bg-[color:rgb(var(--ink)/0.04)] border border-[color:rgb(var(--ink)/0.1)] px-4 sm:px-5 h-11 rounded-xl text-[11px] font-oswald uppercase tracking-widest hover:bg-[color:rgb(var(--ink)/0.08)] transition-all text-[color:var(--text)] disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/60"
+                class="flex items-center gap-2 bg-[color:rgb(var(--ink)/0.04)] border border-[color:rgb(var(--ink)/0.1)] px-4 sm:px-5 h-11 rounded-xl text-[11px] font-manrope font-bold tracking-normal hover:bg-[color:rgb(var(--ink)/0.08)] transition-all text-[color:var(--text)] disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/60"
               >
                 <Download :size="13" class="text-[color:var(--accent-text)]" />
                 <span class="hidden sm:inline">Export</span>
@@ -60,13 +60,13 @@
                 >
                   <button
                     @click="exportDocument('pdf')"
-                    class="w-full flex items-center gap-2.5 px-4 py-3 text-[11px] font-oswald uppercase tracking-widest text-[color:var(--text-2)] hover:bg-[color:rgb(var(--ink)/0.05)] hover:text-[color:var(--text)] transition-colors"
+                    class="w-full flex items-center gap-2.5 px-4 py-3 text-[11px] font-manrope font-bold tracking-normal text-[color:var(--text-2)] hover:bg-[color:rgb(var(--ink)/0.05)] hover:text-[color:var(--text)] transition-colors"
                   >
                     <FileText :size="13" class="text-[color:var(--accent-text)]" /> Export PDF
                   </button>
                   <button
                     @click="exportDocument('excel')"
-                    class="w-full flex items-center gap-2.5 px-4 py-3 text-[11px] font-oswald uppercase tracking-widest text-[color:var(--text-2)] hover:bg-[color:rgb(var(--ink)/0.05)] hover:text-[color:var(--text)] transition-colors border-t border-[color:rgb(var(--ink)/0.05)]"
+                    class="w-full flex items-center gap-2.5 px-4 py-3 text-[11px] font-manrope font-bold tracking-normal text-[color:var(--text-2)] hover:bg-[color:rgb(var(--ink)/0.05)] hover:text-[color:var(--text)] transition-colors border-t border-[color:rgb(var(--ink)/0.05)]"
                   >
                     <Sheet :size="13" class="text-[color:var(--green-soft)]" /> Export Excel
                   </button>
@@ -86,7 +86,7 @@
             :aria-selected="activeTab === t.value"
             @click="activeTab = t.value"
             :class="[
-              'px-4 min-h-[44px] -mb-px shrink-0 whitespace-nowrap text-[11px] font-oswald uppercase tracking-widest border-b-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/60 rounded-t-lg',
+              'px-4 min-h-[44px] -mb-px shrink-0 whitespace-nowrap text-[11px] font-manrope font-bold tracking-normal border-b-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/60 rounded-t-lg',
               activeTab === t.value
                 ? 'border-red-600 text-[color:var(--text)]'
                 : 'border-transparent text-[color:var(--text-faint)] hover:text-[color:var(--text-dim)]'
@@ -105,7 +105,7 @@
               :key="g.value"
               @click="selectGroup(g.value)"
               :class="[
-                'flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[11px] font-oswald uppercase tracking-widest transition-all duration-200 whitespace-nowrap shrink-0 sm:flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/60',
+                'flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[11px] font-manrope font-bold tracking-normal transition-all duration-200 whitespace-nowrap shrink-0 sm:flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/60',
                 activeGroup === g.value
                   ? 'bg-red-600 text-white shadow-lg shadow-red-900/30'
                   : 'text-[color:var(--text-faint)] hover:text-[color:var(--text-dim)] hover:bg-[color:rgb(var(--ink)/0.05)]'
@@ -128,7 +128,7 @@
                 :key="w.value"
                 @click="activeWeek = w.value; fetchReport()"
                 :class="[
-                  'px-4 py-3 rounded-xl text-[11px] font-oswald uppercase tracking-widest transition-all whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/60',
+                  'px-4 py-3 rounded-xl text-[11px] font-manrope font-bold tracking-normal transition-all whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/60',
                   activeWeek === w.value ? 'bg-[color:rgb(var(--ink)/0.1)] text-[color:var(--text)]' : 'text-[color:var(--text-faint)] hover:text-[color:var(--text-dim)]'
                 ]"
               >
@@ -143,14 +143,14 @@
               <select
                 v-model.number="activeMonth"
                 @change="fetchReport()"
-                class="flex-1 sm:flex-none bg-transparent border border-[color:rgb(var(--ink)/0.1)] rounded-lg px-3 py-2.5 text-[11px] font-oswald uppercase tracking-widest outline-none focus:border-red-600 text-[color:var(--text)] cursor-pointer"
+                class="flex-1 sm:flex-none bg-transparent border border-[color:rgb(var(--ink)/0.1)] rounded-lg px-3 py-2.5 text-[11px] font-manrope font-bold tracking-normal outline-none focus:border-red-600 text-[color:var(--text)] cursor-pointer"
               >
                 <option v-for="m in 12" :key="m" :value="m" class="bg-[color:var(--surface)]">{{ monthName(m) }}</option>
               </select>
               <select
                 v-model.number="activeYear"
                 @change="fetchReport()"
-                class="flex-1 sm:flex-none bg-transparent border border-[color:rgb(var(--ink)/0.1)] rounded-lg px-3 py-2.5 text-[11px] font-oswald uppercase tracking-widest outline-none focus:border-red-600 text-[color:var(--text)] cursor-pointer"
+                class="flex-1 sm:flex-none bg-transparent border border-[color:rgb(var(--ink)/0.1)] rounded-lg px-3 py-2.5 text-[11px] font-manrope font-bold tracking-normal outline-none focus:border-red-600 text-[color:var(--text)] cursor-pointer"
               >
                 <option v-for="y in yearOptions" :key="y" :value="y" class="bg-[color:var(--surface)]">{{ y }}</option>
               </select>
@@ -165,7 +165,7 @@
                 :key="y"
                 @click="activeYear = y; fetchReport()"
                 :class="[
-                  'px-4 py-3 rounded-xl text-[11px] font-oswald uppercase tracking-widest transition-all whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/60',
+                  'px-4 py-3 rounded-xl text-[11px] font-manrope font-bold tracking-normal transition-all whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/60',
                   activeYear === y ? 'bg-[color:rgb(var(--ink)/0.1)] text-[color:var(--text)]' : 'text-[color:var(--text-faint)] hover:text-[color:var(--text-dim)]'
                 ]"
               >
@@ -177,7 +177,7 @@
           <!-- Sub-filter: Lifetime — just a label -->
           <template v-if="activeGroup === 'lifetime'">
             <div class="flex items-center px-4 py-2 sm:py-0">
-              <span class="text-[color:var(--text-faint)] text-[11px] font-oswald uppercase tracking-widest">Semua waktu</span>
+              <span class="text-[color:var(--text-faint)] text-[11px] font-manrope font-bold tracking-normal">Semua waktu</span>
             </div>
           </template>
         </div>
@@ -185,7 +185,7 @@
         <!-- ═══ PERIOD BADGE ════════════════════════════════════════════ -->
         <div class="flex items-center gap-3 mt-5">
           <div class="h-px flex-1 bg-[color:rgb(var(--ink)/0.05)]"></div>
-          <span class="text-[color:var(--text-faint)] text-[11px] font-oswald uppercase tracking-[0.25em] whitespace-nowrap">
+          <span class="text-[color:var(--text-faint)] text-[11px] font-manrope font-bold tracking-normal whitespace-nowrap">
             {{ periodLabel }}
           </span>
           <div class="h-px flex-1 bg-[color:rgb(var(--ink)/0.05)]"></div>
@@ -216,7 +216,7 @@
             <div class="bg-[color:var(--surface)] border border-[color:rgb(var(--ink)/0.05)] rounded-2xl p-6 h-64"></div>
             <div class="bg-[color:var(--surface)] border border-[color:rgb(var(--ink)/0.05)] rounded-2xl p-6 h-64"></div>
           </div>
-          <p class="text-center text-[color:var(--text-faint)] text-[11px] font-oswald uppercase tracking-widest pt-2">
+          <p class="text-center text-[color:var(--text-faint)] text-[11px] font-manrope font-bold tracking-normal pt-2">
             Memuat data laporan...
           </p>
         </div>
@@ -265,8 +265,8 @@
                     :key="i"
                     class="border-t border-[color:rgb(var(--ink)/0.04)] group hover:bg-[color:rgb(var(--ink)/0.03)] transition-colors"
                   >
-                    <td class="py-3 pr-3 text-[color:var(--text-faint)] text-xs font-oswald">{{ String(i+1).padStart(2,'0') }}</td>
-                    <td class="py-3 text-[color:var(--text)] font-oswald uppercase tracking-tight text-sm">{{ m.name }}</td>
+                    <td class="py-3 pr-3 text-[color:var(--text-faint)] text-xs font-manrope font-bold">{{ String(i+1).padStart(2,'0') }}</td>
+                    <td class="py-3 text-[color:var(--text)] font-manrope font-bold tracking-tight text-sm">{{ m.name }}</td>
                     <td class="py-3 text-right">
                       <span class="bg-amber-500/10 text-[color:var(--amber-soft)] font-bold text-xs px-2.5 py-1 rounded-lg">{{ m.qty }}</span>
                     </td>
@@ -283,9 +283,9 @@
                   class="flex items-center justify-between bg-[color:rgb(var(--ink)/0.02)] border border-[color:rgb(var(--ink)/0.05)] rounded-xl px-3.5 py-3"
                 >
                   <div class="flex items-center gap-3 min-w-0">
-                    <span class="text-[color:var(--text-faint)] text-[11px] font-oswald shrink-0">{{ String(i+1).padStart(2,'0') }}</span>
+                    <span class="text-[color:var(--text-faint)] text-[11px] font-manrope font-bold shrink-0">{{ String(i+1).padStart(2,'0') }}</span>
                     <div class="min-w-0">
-                      <p class="text-[color:var(--text)] font-oswald uppercase tracking-tight text-xs truncate">{{ m.name }}</p>
+                      <p class="text-[color:var(--text)] font-manrope font-bold tracking-tight text-xs truncate">{{ m.name }}</p>
                       <p class="text-[color:var(--text-faint)] text-[11px] font-mono mt-0.5">{{ formatRp(m.omzet) }}</p>
                     </div>
                   </div>
@@ -300,7 +300,7 @@
               <div class="space-y-5">
                 <div v-for="(m, i) in report.menu_paling_menghasilkan" :key="i">
                   <div class="flex justify-between text-xs mb-2 gap-2">
-                    <span class="text-[color:var(--text)] font-oswald uppercase tracking-tight truncate">{{ m.name }}</span>
+                    <span class="text-[color:var(--text)] font-manrope font-bold tracking-tight truncate">{{ m.name }}</span>
                     <span class="text-[color:var(--green-soft)] font-bold tabular-nums shrink-0">{{ formatRp(m.omzet) }}</span>
                   </div>
                   <div class="w-full bg-[color:rgb(var(--ink)/0.05)] h-1.5 rounded-full overflow-hidden">
@@ -326,7 +326,7 @@
                   :key="i"
                   class="flex justify-between items-center bg-[color:var(--tint-accent)] border border-red-500/8 rounded-xl px-4 py-3"
                 >
-                  <span class="text-[color:var(--text)] text-xs font-oswald uppercase tracking-tight truncate mr-2">{{ m.name }}</span>
+                  <span class="text-[color:var(--text)] text-xs font-manrope font-bold tracking-tight truncate mr-2">{{ m.name }}</span>
                   <span class="text-[color:color-mix(in_srgb,var(--red-soft)_70%,transparent)] text-[11px] font-bold uppercase tracking-wider shrink-0">
                     {{ m.transaksi }}×
                   </span>
@@ -370,15 +370,15 @@
           <RCard title="Pelanggan" icon="Users" accent="pink">
             <div class="grid grid-cols-3 gap-3 sm:gap-6 text-center">
               <div class="py-3 sm:py-4">
-                <p class="font-oswald text-2xl sm:text-4xl font-bold text-[color:var(--text)] mb-1">{{ report.pelanggan.baru }}</p>
+                <p class="font-manrope font-bold text-2xl sm:text-4xl font-bold text-[color:var(--text)] mb-1">{{ report.pelanggan.baru }}</p>
                 <p class="text-[11px] sm:text-[11px] text-[color:var(--text-faint)] uppercase tracking-[0.15em] sm:tracking-[0.2em]">Pelanggan Baru</p>
               </div>
               <div class="py-3 sm:py-4 border-x border-[color:rgb(var(--ink)/0.05)]">
-                <p class="font-oswald text-2xl sm:text-4xl font-bold text-[color:var(--text)] mb-1">{{ report.pelanggan.lama }}</p>
+                <p class="font-manrope font-bold text-2xl sm:text-4xl font-bold text-[color:var(--text)] mb-1">{{ report.pelanggan.lama }}</p>
                 <p class="text-[11px] sm:text-[11px] text-[color:var(--text-faint)] uppercase tracking-[0.15em] sm:tracking-[0.2em]">Pelanggan Lama</p>
               </div>
               <div class="py-3 sm:py-4">
-                <p class="font-oswald text-2xl sm:text-4xl font-bold text-[color:var(--amber-soft)] mb-1">{{ report.pelanggan.loyal_member }}</p>
+                <p class="font-manrope font-bold text-2xl sm:text-4xl font-bold text-[color:var(--amber-soft)] mb-1">{{ report.pelanggan.loyal_member }}</p>
                 <p class="text-[11px] sm:text-[11px] text-[color:var(--text-faint)] uppercase tracking-[0.15em] sm:tracking-[0.2em]">Member Loyal</p>
               </div>
             </div>
@@ -390,11 +390,11 @@
           <div class="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center mb-4">
             <AlertTriangle :size="20" class="text-[color:var(--accent-text)]" />
           </div>
-          <p class="text-[color:var(--text)] text-sm font-oswald uppercase tracking-wide mb-1">Gagal memuat data</p>
+          <p class="text-[color:var(--text)] text-sm font-manrope font-bold tracking-wide mb-1">Gagal memuat data</p>
           <p class="text-[color:var(--text-faint)] text-xs mb-5">Periksa koneksi atau coba lagi beberapa saat.</p>
           <button
             @click="fetchReport()"
-            class="flex items-center gap-2 bg-red-600 hover:bg-red-500 text-white text-[11px] font-oswald uppercase tracking-widest px-5 py-3 rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+            class="flex items-center gap-2 bg-red-600 hover:bg-red-500 text-white text-[11px] font-manrope font-bold tracking-normal px-5 py-3 rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
           >
             <RefreshCw :size="13" /> Muat ulang
           </button>
@@ -544,7 +544,7 @@ const omzetData = computed(() => ({
   datasets: [{
     label: "Omzet",
     data: report.value?.trend.omzet || [],
-    backgroundColor: "#D71920",
+    backgroundColor: "#d92b22",
     borderRadius: 6,
     borderSkipped: false,
     maxBarThickness: 36,
@@ -556,7 +556,7 @@ const transaksiData = computed(() => ({
   datasets: [{
     label: "Transaksi",
     data: report.value?.trend.transaksi || [],
-    backgroundColor: "#FFD400",
+    backgroundColor: "#f4c542",
     borderRadius: 6,
     borderSkipped: false,
     maxBarThickness: 36,
@@ -598,7 +598,7 @@ const chartTheme = computed(() => isDark.value
 
 const barOpts = computed(() => {
   const c = chartTheme.value;
-  const tick = { color: c.tick, font: { size: 11, family: "Oswald" } };
+  const tick = { color: c.tick, font: { size: 11, family: "Manrope" } };
   return {
     responsive: true,
     maintainAspectRatio: false,
@@ -606,7 +606,7 @@ const barOpts = computed(() => {
       legend: { display: false },
       tooltip: {
         backgroundColor: c.tipBg, borderColor: c.tipBorder, borderWidth: 1,
-        titleColor: c.tipTitle, titleFont: { family: "Oswald" },
+        titleColor: c.tipTitle, titleFont: { family: "Manrope" },
         bodyColor: c.tipBody, padding: 10, cornerRadius: 8,
       },
     },
@@ -663,7 +663,7 @@ const RCard = (props, { slots }) =>
       props.icon && iconMap[props.icon]
         ? h(iconMap[props.icon], { size: 13, class: accentText[props.accent] || "text-[color:var(--red-soft)]" })
         : null,
-      h("h3", { class: "font-oswald uppercase text-[color:var(--text-faint)] text-[11px] tracking-[0.18em]" }, props.title),
+      h("h3", { class: "font-manrope font-bold text-[color:var(--text-faint)] text-[11px] tracking-normal" }, props.title),
       props.subtitle
         ? h("span", { class: "text-[color:var(--text-faint)] text-[11px] font-light ml-1" }, `· ${props.subtitle}`)
         : null,
@@ -678,7 +678,7 @@ const StatCard = (props) => {
     h("div", { class: `w-9 h-9 sm:w-10 sm:h-10 rounded-xl ${bgMap[props.color]} flex items-center justify-center mb-3 sm:mb-4` }, [
       iconMap[props.icon] ? h(iconMap[props.icon], { size: 17, class: txtMap[props.color] }) : null,
     ]),
-    h("p", { class: "font-oswald text-lg sm:text-xl font-bold text-[color:var(--text)] leading-tight truncate" }, String(props.value)),
+    h("p", { class: "font-manrope font-bold text-lg sm:text-xl font-bold text-[color:var(--text)] leading-tight truncate" }, String(props.value)),
     h("p", { class: "text-[11px] sm:text-[11px] text-[color:var(--text-faint)] uppercase tracking-[0.15em] sm:tracking-[0.18em] mt-1" }, props.label),
     props.sub
       ? h("p", { class: "text-[11px] text-[color:var(--text-faint)] mt-1.5" }, props.sub)

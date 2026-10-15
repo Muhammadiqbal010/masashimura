@@ -259,7 +259,7 @@ const rangeText = computed(() => {
 .bh-weeks { display: flex; gap: 0.25rem; padding: 0.25rem; background: var(--surface); border: 1px solid rgb(var(--ink) / 0.08); border-radius: 12px; }
 .bh-week {
   min-height: 40px; padding: 0.4rem 0.9rem; border-radius: 9px; border: 0; cursor: pointer; background: transparent;
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint);
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; letter-spacing: -0.01em; color: var(--text-faint);
 }
 .bh-week:hover { color: var(--text-dim); }
 .bh-week.is-on { background: rgb(var(--ink) / 0.1); color: var(--text); }
@@ -280,7 +280,7 @@ const rangeText = computed(() => {
 .bh-kpi-sub { margin: 0.4rem 0 0; font-size: 0.7rem; color: var(--text-faint); }
 
 .bh-card-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.9rem; }
-.bh-card-title { margin: 0 0 0.9rem; font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-faint); font-weight: 400; }
+.bh-card-title { margin: 0 0 0.9rem; font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; letter-spacing: -0.01em; color: var(--text-faint); font-weight: 600; }
 .bh-card-head .bh-card-title { margin: 0; }
 
 .bh-legend { display: flex; align-items: center; gap: 0.5rem; font-size: 0.72rem; color: var(--text-faint); }
@@ -316,7 +316,7 @@ const rangeText = computed(() => {
 .bh-days-val { text-align: right; color: var(--text); font-variant-numeric: tabular-nums; }
 
 .bh-empty { padding: 4rem 1rem; text-align: center; }
-.bh-empty-title { margin: 0 0 0.25rem; font-family: 'Manrope', system-ui, sans-serif; font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text); }
+.bh-empty-title { margin: 0 0 0.25rem; font-family: 'Manrope', system-ui, sans-serif; font-size: 0.85rem; letter-spacing: -0.01em; color: var(--text); }
 .bh-empty-sub { margin: 0 0 1rem; font-size: 0.75rem; color: var(--text-faint); }
 .bh-retry { min-height: 44px; padding: 0.6rem 1.2rem; border: 0; border-radius: 12px; cursor: pointer; background: var(--accent); color: #fff; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; }
 

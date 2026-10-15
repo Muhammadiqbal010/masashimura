@@ -5,9 +5,9 @@
     <div class="mb-6 sm:mb-8">
       <div class="flex items-center gap-2 mb-2">
         <span class="w-1 h-1 rounded-full bg-red-600"></span>
-        <p class="text-[color:var(--text-faint)] text-[11px] font-oswald uppercase tracking-[0.25em]">Masashimura · Admin</p>
+        <p class="text-[color:var(--text-faint)] text-[11px] font-manrope font-bold tracking-normal">Masashimura · Admin</p>
       </div>
-      <h1 class="font-oswald text-2xl sm:text-4xl uppercase tracking-tighter text-[color:var(--text)] leading-tight">
+      <h1 class="font-manrope font-bold text-2xl sm:text-4xl tracking-tighter text-[color:var(--text)] leading-tight">
         Register Staff Internal
       </h1>
       <p class="text-[color:var(--text-faint)] text-xs sm:text-sm mt-1.5">
@@ -98,7 +98,7 @@
                 >
                   <component :is="r.icon" :size="15" :class="formData.role === r.value ? 'text-[color:var(--red-soft)]' : 'text-[color:var(--text-faint)]'" />
                 </div>
-                <span class="font-oswald uppercase text-xs tracking-wide text-[color:var(--text)]">{{ r.label }}</span>
+                <span class="font-manrope font-bold text-xs tracking-wide text-[color:var(--text)]">{{ r.label }}</span>
                 <CheckCircle2 v-if="formData.role === r.value" :size="14" class="text-[color:var(--accent-text)] ml-auto" />
               </div>
               <p class="text-[color:var(--text-faint)] text-[11px] leading-snug pl-[42px] -mt-0.5">{{ r.desc }}</p>
@@ -178,7 +178,7 @@
         <button
           type="submit"
           :disabled="loading || !canSubmit"
-          class="w-full bg-red-600 hover:bg-red-500 text-white font-oswald uppercase tracking-widest h-14 rounded-xl font-bold transition-all flex justify-center items-center gap-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-red-600 shadow-lg shadow-black/20 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+          class="w-full bg-red-600 hover:bg-red-500 text-white font-manrope font-bold tracking-normal h-14 rounded-xl font-bold transition-all flex justify-center items-center gap-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-red-600 shadow-[0_4px_20px_rgba(217,43,34,0.15)] text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
         >
           <span
             v-if="loading"

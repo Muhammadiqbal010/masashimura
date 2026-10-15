@@ -252,14 +252,14 @@ defineExpose({ reload: load })
 .bm-contents, .bm-web { margin: 0; font-size: .8rem; opacity: .75; }
 .bm-price { margin: 0; display: flex; flex-wrap: wrap; gap: .6rem; align-items: baseline; }
 .bm-normal { font-size: .78rem; opacity: .6; text-decoration: line-through; }
-.bm-save { font-size: .78rem; font-weight: 600; color: var(--amber-soft, #D9B500); }
-.bm-warn { margin: 0; display: flex; gap: .4rem; align-items: flex-start; font-size: .78rem; color: var(--amber-soft, #D9B500); }
+.bm-save { font-size: .78rem; font-weight: 600; color: var(--amber-soft, #e0d100); }
+.bm-warn { margin: 0; display: flex; gap: .4rem; align-items: flex-start; font-size: .78rem; color: var(--amber-soft, #e0d100); }
 .bm-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
-.bm-del { color: #D71920; }
+.bm-del { color: #d92b22; }
 .bm-empty { padding: 2rem 1rem; text-align: center; }
 .bm-form { display: flex; flex-direction: column; gap: 1rem; }
 .bm-row { display: grid; grid-template-columns: 1fr 76px 40px; gap: .5rem; margin-bottom: .5rem; align-items: center; }
 .bm-add { align-self: flex-start; }
 .bm-preview { margin: .4rem 0 0; font-size: .8rem; opacity: .8; }
-.bm-preview.is-bad { color: var(--amber-soft, #D9B500); opacity: 1; }
+.bm-preview.is-bad { color: var(--amber-soft, #e0d100); opacity: 1; }
 </style>

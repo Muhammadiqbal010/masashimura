@@ -4,13 +4,13 @@
     class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 backdrop-blur-sm p-4"
   >
     <div
-      class="bg-[#111111] border border-white/10 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl"
+      class="bg-[#0a0a0a] border border-white/10 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl"
     >
       <div
         class="px-8 py-5 border-b border-white/5 flex justify-between items-center bg-white/5"
       >
         <div>
-          <h2 class="font-oswald text-2xl uppercase tracking-wide text-white">
+          <h2 class="font-manrope font-bold text-2xl tracking-wide text-white">
             Edit Pesanan #{{ localOrder?.id || "..." }}
           </h2>
           <p class="text-xs text-white/60">
@@ -107,7 +107,7 @@
                 </button>
               </div>
 
-              <div class="w-24 text-right font-oswald text-sm text-amber-500">
+              <div class="w-24 text-right font-manrope font-bold text-sm text-amber-500">
                 Rp {{ ((item.price || 0) * item.quantity).toLocaleString() }}
               </div>
 
@@ -127,7 +127,7 @@
           <span class="text-sm uppercase tracking-wider text-white/50"
             >Total Baru:</span
           >
-          <span class="text-xl font-bold font-oswald text-emerald-400">
+          <span class="text-xl font-bold font-manrope font-bold text-emerald-400">
             Rp {{ calculatedFinalPrice.toLocaleString() }}
           </span>
         </div>

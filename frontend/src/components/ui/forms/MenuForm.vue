@@ -11,7 +11,7 @@
       <!-- Header -->
       <div class="flex items-center justify-between px-8 py-5 border-b border-white/10 bg-[#161616]">
         <div>
-          <h2 class="text-xl font-oswald uppercase tracking-widest text-white">
+          <h2 class="text-xl font-manrope font-bold tracking-normal text-white">
             {{ editingMenu ? "Edit Menu" : "Tambah Menu Baru" }}
           </h2>
           <p class="text-xs text-white/60 mt-1">Lengkapi data menu di bawah ini.</p>
@@ -29,7 +29,7 @@
 
           <!-- Nama -->
           <div>
-            <label class="block mb-2 text-[11px] uppercase tracking-widest text-white/60 font-oswald">
+            <label class="block mb-2 text-[11px] tracking-normal text-white/60 font-manrope font-bold">
               Nama Menu
             </label>
             <input
@@ -43,7 +43,7 @@
 
           <!-- Deskripsi -->
           <div>
-            <label class="block mb-2 text-[11px] uppercase tracking-widest text-white/60 font-oswald">
+            <label class="block mb-2 text-[11px] tracking-normal text-white/60 font-manrope font-bold">
               Deskripsi
             </label>
             <textarea
@@ -59,7 +59,7 @@
 
             <!-- Category -->
             <div class="relative">
-              <label class="block mb-2 text-[11px] uppercase tracking-widest text-white/60 font-oswald">
+              <label class="block mb-2 text-[11px] tracking-normal text-white/60 font-manrope font-bold">
                 Kategori
               </label>
               <button
@@ -94,7 +94,7 @@
 
             <!-- Price -->
             <div>
-              <label class="block mb-2 text-[11px] uppercase tracking-widest text-white/60 font-oswald">
+              <label class="block mb-2 text-[11px] tracking-normal text-white/60 font-manrope font-bold">
                 Harga (Rp)
               </label>
               <input
@@ -111,7 +111,7 @@
 
           <!-- Foto Menu -->
           <div>
-            <label class="block mb-3 text-[11px] uppercase tracking-widest text-white/60 font-oswald">
+            <label class="block mb-3 text-[11px] tracking-normal text-white/60 font-manrope font-bold">
               Foto Menu
             </label>
 
@@ -126,7 +126,7 @@
               <!-- Overlay hint -->
               <div class="absolute inset-0 flex flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition bg-black/40">
                 <span class="text-2xl">✏️</span>
-                <span class="font-oswald text-xs uppercase tracking-widest text-white">Klik untuk ganti foto</span>
+                <span class="font-manrope font-bold text-xs tracking-normal text-white">Klik untuk ganti foto</span>
               </div>
             </div>
 

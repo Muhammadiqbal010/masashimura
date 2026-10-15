@@ -73,7 +73,7 @@ const props = defineProps({ params: { type: Object, required: true } })
 const { data, loading, error, load } = useReportLoad(analyticsAPI.getChannels, () => props.params)
 defineExpose({ reload: load, loading })
 
-const COLORS = { web: "#3b82f6", pos: "#FFD400" }
+const COLORS = { web: "#3b82f6", pos: "#f4c542" }
 const color = (s) => COLORS[s] || "#71717a"
 const rp = (v) => "Rp " + Math.round(v || 0).toLocaleString("id-ID")
 
