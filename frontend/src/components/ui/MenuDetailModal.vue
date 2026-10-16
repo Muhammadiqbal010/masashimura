@@ -87,7 +87,7 @@
             </div>
 
             <!-- Info -->
-            <div class="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 pb-2 pt-4 sm:px-7">
+            <div ref="scrollEl" class="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 pb-2 pt-4 sm:px-7">
               <div class="space-y-2.5">
                 <span class="block text-xs font-medium text-[#F4C542]">
                   {{ menu.category_name }}
@@ -113,6 +113,17 @@
                   </span>
                 </div>
               </div>
+
+              <!-- Rekomendasi: menu serupa (content-based filtering) -->
+              <MenuRecommendations
+                :items="recommendations"
+                title="Menu serupa"
+                :format-price="formatPrice"
+                :can-add="isStoreOpen"
+                show-reason
+                @select="$emit('open-menu', $event)"
+                @add="$emit('add-to-cart', $event)"
+              />
             </div>
 
             <!-- Footer: harga + aksi -->
@@ -147,8 +158,10 @@
 </template>
 
 <script setup>
+import { ref, watch } from "vue"
 import { Plus, X, ThumbsUp, Flame, Heart, Share2 } from "lucide-vue-next"
 import { getMediaUrl } from "@/api"
+import MenuRecommendations from "@/components/ui/MenuRecommendations.vue"
 
 const props = defineProps({
   menu: { type: Object, required: true },
@@ -156,9 +169,18 @@ const props = defineProps({
   isStoreOpen: { type: Boolean, default: true },
   isBestSeller: { type: Boolean, default: false },
   isFavorite: { type: Boolean, default: false },
+  // [{ menu, score, reason }] dari useRecommender().similarMenus
+  recommendations: { type: Array, default: () => [] },
 })
 
-const emit = defineEmits(["close", "add-to-cart", "share", "toggle-favorite"])
+const emit = defineEmits(["close", "add-to-cart", "share", "toggle-favorite", "open-menu"])
+
+// Saat pindah ke menu serupa, konten modal yang sama dipakai ulang: kembalikan scroll ke atas.
+const scrollEl = ref(null)
+watch(
+  () => props.menu.id,
+  () => scrollEl.value?.scrollTo({ top: 0 })
+)
 
 // Menu beropsi: Menu.vue yang membuka picker; di sini cukup meneruskan menunya.
 const handleAdd = () => {

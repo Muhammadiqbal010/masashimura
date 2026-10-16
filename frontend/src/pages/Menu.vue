@@ -426,7 +426,14 @@
     </transition>
 
     <!-- ── CART DRAWER ────────────────────────────────────────────────────────── -->
-    <Cart v-if="isCartOpen" @close="isCartOpen = false" :format-price="formatPrice" />
+    <Cart
+      v-if="isCartOpen"
+      :format-price="formatPrice"
+      :recommendations="cartRecommendations"
+      @close="isCartOpen = false"
+      @add="requestAdd"
+      @view="viewFromCart"
+    />
 
     <!-- ── DETAIL MODAL ───────────────────────────────────────────────────────── -->
     <MenuDetailModal
@@ -436,7 +443,9 @@
       :is-store-open="isStoreOpen"
       :is-best-seller="bestSellerIds.has(selectedMenu.id)"
       :is-favorite="isFavorite(selectedMenu.id)"
+      :recommendations="detailRecommendations"
       @close="closeDetail"
+      @open-menu="openDetail"
       @add-to-cart="requestAdd"
       @share="shareMenu"
       @toggle-favorite="toggleFavorite"
@@ -468,6 +477,7 @@ import Cart from "@/components/ui/Cart.vue"
 import MenuDetailModal from "@/components/ui/MenuDetailModal.vue"
 import MenuOptionPicker from "@/components/ui/MenuOptionPicker.vue"
 import CrowdBadge from "@/components/ui/CrowdBadge.vue"
+import { useRecommender } from "@/composables/useRecommender"
 import BundleSection from "@/components/ui/BundleSection.vue"
 import { useStoreSettings } from "@/composables/useStoreSettings"
 import { shareMenuToWhatsApp } from "@/composables/useShareMenu"
@@ -530,6 +540,16 @@ const fetchBestSellers = async () => {
 }
 
 const activeMenus = computed(() => menus.value.filter((m) => m.category_name))
+
+// ── Rekomendasi (content-based: TF-IDF + cosine similarity) ─────────────────
+// Indeks dibangun dari menu yang tampil di halaman ini (tanpa menu secret/nonaktif).
+const { similarMenus, cartSuggestions } = useRecommender(activeMenus)
+const detailRecommendations = computed(() =>
+  selectedMenu.value ? similarMenus(selectedMenu.value.id, 3) : []
+)
+const cartRecommendations = computed(() =>
+  cartSuggestions(cartStore.cartItems.map((item) => item.id), 3)
+)
 
 const soldOutCount = computed(() => activeMenus.value.filter((m) => !m.is_available).length)
 
@@ -711,6 +731,12 @@ const syncDetailFromRoute = () => {
   }
 }
 watch(() => route.query.item, syncDetailFromRoute)
+
+// Dari rekomendasi di keranjang: tutup drawer dulu, baru buka detail menunya.
+const viewFromCart = (menu) => {
+  isCartOpen.value = false
+  openDetail(menu)
+}
 
 const openDetail = (menu) => {
   selectedMenu.value = menu

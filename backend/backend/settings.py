@@ -13,7 +13,10 @@ load_dotenv()
 # BASE CONFIG
 # ========================
 BASE_DIR = Path(__file__).resolve().parent.parent
-SECRET_KEY = 'django-insecure-ftxu0z)2z=ei553@4usfbx@*$037=ae8=8b+8bl(_%w*++t-uy'
+# SECRET_KEY WAJIB dari environment (Vercel -> Settings -> Environment Variables).
+# Sengaja tanpa default: kalau lupa diisi, aplikasi gagal start (lebih aman
+# daripada diam-diam jalan dengan key yang bisa ditebak).
+SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 DEBUG = False
 ALLOWED_HOSTS = [
     'masashimura-backend.vercel.app',
@@ -85,6 +88,8 @@ REST_FRAMEWORK = {
         'reset_password': '5/hour',
         'login': '10/hour',          # <- baru: batasin brute-force login
         'admin_action': '30/hour',   # <- baru: batasin admin_reset_password & set-pin
+        'payment_create': '10/min',  # per order_number (lihat payments/throttles.py)
+        'payment_status': '60/min',  # per order_number; polling frontend = 30/min
     },
 }
 

@@ -11,16 +11,6 @@ _keys = dict(
     client_key=settings.MIDTRANS_CLIENT_KEY,
 )
 
-# DIAGNOSTIK SEMENTARA: hapus setelah masalah 401 ketemu.
-# Cuma menampilkan 10 karakter awal, jadi key tidak bocor.
-logger.warning(
-    "Midtrans config: is_production=%r server_prefix=%r server_len=%d client_prefix=%r",
-    settings.MIDTRANS_IS_PRODUCTION,
-    settings.MIDTRANS_SERVER_KEY[:10],
-    len(settings.MIDTRANS_SERVER_KEY),
-    settings.MIDTRANS_CLIENT_KEY[:10],
-)
-
 snap = midtransclient.Snap(**_keys)
 core = midtransclient.CoreApi(**_keys)
 
@@ -31,3 +21,8 @@ def cancel_midtrans_transaction(order_number):
         core.transactions.cancel(order_number)
     except Exception:
         logger.warning("Gagal cancel transaksi Midtrans %s", order_number, exc_info=True)
+
+
+def fetch_midtrans_status(order_number):
+    """Ambil status transaksi LANGSUNG dari Midtrans (bukan dari body webhook)."""
+    return core.transactions.status(order_number)

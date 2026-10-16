@@ -173,6 +173,17 @@
               </div>
             </div>
           </div>
+
+          <!-- Rekomendasi dari isi keranjang (content-based filtering) -->
+          <MenuRecommendations
+            :items="recommendations"
+            title="Mungkin kamu suka"
+            :format-price="formatPrice"
+            :can-add="isStoreOpen"
+            class="pt-2"
+            @select="$emit('view', $event)"
+            @add="$emit('add', $event)"
+          />
         </template>
       </div>
 
@@ -241,6 +252,7 @@ import { useCartStore } from "@/stores/cart"
 import { getMediaUrl } from "@/api"
 import { useStoreSettings } from "@/composables/useStoreSettings"
 import { X, ShoppingCart, ArrowRight, Lock, Plus, Minus } from "lucide-vue-next"
+import MenuRecommendations from "@/components/ui/MenuRecommendations.vue"
 
 const router = useRouter()
 const cartStore = useCartStore()
@@ -248,8 +260,12 @@ const { isStoreOpen, settingsReady, nextOpenText, fetchSettings } = useStoreSett
 
 onMounted(() => fetchSettings())
 
-defineProps({ formatPrice: Function })
-const emit = defineEmits(["close"])
+defineProps({
+  formatPrice: Function,
+  // [{ menu, score, reason }] dari useRecommender().cartSuggestions
+  recommendations: { type: Array, default: () => [] },
+})
+const emit = defineEmits(["close", "add", "view"])
 
 // Pindah ke checkout secara programatik (bukan lewat <router-link> + emit close).
 // Sebelumnya drawer langsung dibongkar saat diklik, sehingga kalau chunk halaman checkout

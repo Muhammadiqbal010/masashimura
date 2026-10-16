@@ -12,7 +12,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from order.models import Order, OrderPayment
-from .services import snap
+from .services import fetch_midtrans_status, snap
+from .throttles import PaymentCreateThrottle, PaymentStatusThrottle
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +22,7 @@ class CreatePaymentView(APIView):
     """POST /api/payments/create/<order_number>/  → { token }"""
     authentication_classes = []
     permission_classes = [AllowAny]
+    throttle_classes = [PaymentCreateThrottle]
 
     @transaction.atomic
     def post(self, request, order_number):
@@ -93,7 +95,18 @@ class MidtransWebhookView(APIView):
         if not order:
             return Response({"ok": True})
 
-        trx_status = d.get("transaction_status")
+        # 3) Konfirmasi ke Midtrans. Signature valid hanya membuktikan pengirimnya
+        #    kenal server key; status & nominal yang dipakai diambil LANGSUNG dari
+        #    Midtrans, bukan dari body request. Kalau Midtrans tidak terjangkau,
+        #    balas 503 supaya Midtrans mengirim ulang notifikasinya nanti.
+        try:
+            verified = fetch_midtrans_status(order.order_number)
+        except Exception:
+            logger.exception("Gagal konfirmasi status Midtrans untuk %s", order.order_number)
+            return Response({"detail": "Tidak bisa konfirmasi ke Midtrans."}, status=503)
+
+        trx_status = verified.get("transaction_status")
+        verified_gross = verified.get("gross_amount")
 
         # 3a) Lunas
         if trx_status == "settlement":
@@ -105,7 +118,7 @@ class MidtransWebhookView(APIView):
                 return Response({"ok": True})
 
             try:
-                gross = Decimal(str(d.get("gross_amount")))
+                gross = Decimal(str(verified_gross))
             except InvalidOperation:
                 return Response(status=400)
             if gross != order.total_price:
@@ -140,6 +153,7 @@ class PaymentStatusView(APIView):
     """GET /api/payments/status/<order_number>/ — buat polling dari frontend."""
     authentication_classes = []
     permission_classes = [AllowAny]
+    throttle_classes = [PaymentStatusThrottle]
 
     def get(self, request, order_number):
         order = get_object_or_404(Order, order_number=order_number)
