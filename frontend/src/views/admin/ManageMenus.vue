@@ -19,9 +19,12 @@
     <div class="adm-seg mm-tabs" role="tablist" aria-label="Bagian kelola menu">
       <button type="button" role="tab" class="adm-seg-btn" :aria-selected="pageTab === 'menu'" :aria-pressed="pageTab === 'menu'" @click="pageTab = 'menu'">Menu</button>
       <button type="button" role="tab" class="adm-seg-btn" :aria-selected="pageTab === 'paket'" :aria-pressed="pageTab === 'paket'" @click="pageTab = 'paket'">Paket</button>
+      <button type="button" role="tab" class="adm-seg-btn" :aria-selected="pageTab === 'kemiripan'" :aria-pressed="pageTab === 'kemiripan'" @click="pageTab = 'kemiripan'">Kemiripan</button>
     </div>
 
     <BundleManager v-if="pageTab === 'paket'" :menus="menus" />
+
+    <MenuSimilarityTab v-else-if="pageTab === 'kemiripan'" :menus="menus" @go-paket="pageTab = 'paket'" />
 
     <template v-else>
 
@@ -412,12 +415,13 @@ import { getMediaUrl } from '@/api'
 import ImageCropper from '@/components/ui/ImageCropper.vue'
 import AdminModal from '@/components/ui/admin/Adminmodal.vue'
 import BundleManager from '@/components/ui/admin/BundleManager.vue'
+import MenuSimilarityTab from '@/components/ui/admin/MenuSimilarityTab.vue'
 
 const router = useRouter()
 
 // ── State ───────────────────────────────────────────────────────────
 const menus          = ref([])
-const pageTab        = ref('menu')   // 'menu' | 'paket'
+const pageTab        = ref('menu')   // 'menu' | 'paket' | 'kemiripan'
 const loading        = ref(true)
 const isDialogOpen   = ref(false)
 const editingMenu    = ref(null)

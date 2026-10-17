@@ -87,7 +87,7 @@
             </div>
 
             <!-- Info -->
-            <div ref="scrollEl" class="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 pb-2 pt-4 sm:px-7">
+            <div ref="scrollEl" class="modal-body flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 pb-2 pt-4 sm:px-7">
               <div class="space-y-2.5">
                 <span class="block text-xs font-medium text-[#F4C542]">
                   {{ menu.category_name }}
@@ -118,6 +118,8 @@
               <MenuRecommendations
                 :items="recommendations"
                 title="Menu serupa"
+                subtitle="Dari nama, kategori, dan deskripsi menu"
+                variant="cards"
                 :format-price="formatPrice"
                 :can-add="isStoreOpen"
                 show-reason
@@ -189,6 +191,10 @@ const handleAdd = () => {
 </script>
 
 <style scoped>
+/* Lebar bleed = padding kiri/kanan area scroll, supaya kartu rekomendasi geser sampai tepi sheet di HP */
+.modal-body { --rec-bleed: 1.5rem; }
+@media (min-width: 640px) { .modal-body { --rec-bleed: 1.75rem; } }
+
 /* Palet: Surface #141414 · Washi #FAFAFA · Crimson #D92B22 · Champagne #F4C542 */
 
 .modal-sheet {

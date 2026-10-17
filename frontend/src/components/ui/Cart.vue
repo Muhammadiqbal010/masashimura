@@ -178,9 +178,11 @@
           <MenuRecommendations
             :items="recommendations"
             title="Mungkin kamu suka"
+            subtitle="Berdasarkan isi keranjang"
+            variant="list"
             :format-price="formatPrice"
             :can-add="isStoreOpen"
-            class="pt-2"
+            class="mt-1"
             @select="$emit('view', $event)"
             @add="$emit('add', $event)"
           />

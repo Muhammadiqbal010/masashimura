@@ -136,8 +136,12 @@ export const sharedTerms = (index, idA, idB, limit = 2) => {
   return out.sort((x, y) => y[1] - x[1]).slice(0, limit).map(([t]) => t)
 }
 
-// Hanya menu yang bisa dipesan yang layak direkomendasikan.
+// Hanya menu yang bisa dipesan yang layak direkomendasikan ke pelanggan dan kasir.
 const isRecommendable = (m) => m.is_available !== false && m.is_active !== false && !m.is_secret
+
+// Untuk admin: menu habis atau secret tetap ikut dianalisis (hanya yang nonaktif dibuang),
+// karena admin justru perlu melihat kemiripan semua menu yang ada di daftar.
+const isListed = (m) => m.is_active !== false
 
 // Pilih `limit` hasil dari daftar yang sudah terurut skor.
 // `crossSlots` slot terakhir disisihkan untuk menu dari kategori LAIN (content-based
@@ -163,14 +167,15 @@ const diversify = (ranked, limit, crossSlots, refCategories) => {
  * Menu serupa untuk satu menu (dipakai di modal detail).
  * @returns [{ menu, score, reason: string[] }]
  */
-export const similarTo = (index, menuId, { limit = 3, crossSlots = 0 } = {}) => {
+export const similarTo = (index, menuId, { limit = 3, crossSlots = 0, includeHidden = false } = {}) => {
   const base = index.docs.get(menuId)
   if (!base) return []
+  const eligible = includeHidden ? isListed : isRecommendable
   const ranked = []
   for (const [id, doc] of index.docs) {
-    if (id === menuId || !isRecommendable(doc.menu)) continue
+    if (id === menuId || !eligible(doc.menu)) continue
     const score = dot(base.vec, doc.vec)
-    if (score >= MIN_SCORE) ranked.push({ menu: doc.menu, score, reason: sharedTerms(index, menuId, id) })
+    if (score >= MIN_SCORE) ranked.push({ menu: doc.menu, score, reason: sharedTerms(index, menuId, id, 3) })
   }
   ranked.sort((a, b) => b.score - a.score)
   return diversify(ranked, limit, crossSlots, new Set([base.menu.category_name]))
@@ -206,4 +211,29 @@ export const forCart = (index, menuIds, { limit = 3, crossSlots = 1 } = {}) => {
   }
   ranked.sort((a, b) => b.score - a.score)
   return diversify(ranked, limit, crossSlots, refCategories)
+}
+
+/**
+ * Pasangan menu yang paling mirip satu sama lain (dipakai panel admin).
+ * Semua pasangan dihitung sekali (i < j), jadi biayanya O(N^2) — aman untuk daftar menu
+ * puluhan sampai ratusan item.
+ * @returns [{ a, b, score, reason: string[], sameCategory: boolean }]
+ */
+export const similarPairs = (index, { limit = 8, minScore = 0.15 } = {}) => {
+  const docs = [...index.docs.values()].filter((d) => isListed(d.menu))
+  const out = []
+  for (let i = 0; i < docs.length; i++) {
+    for (let j = i + 1; j < docs.length; j++) {
+      const score = dot(docs[i].vec, docs[j].vec)
+      if (score < minScore) continue
+      out.push({
+        a: docs[i].menu,
+        b: docs[j].menu,
+        score,
+        reason: sharedTerms(index, docs[i].menu.id, docs[j].menu.id, 3),
+        sameCategory: docs[i].menu.category_name === docs[j].menu.category_name,
+      })
+    }
+  }
+  return out.sort((x, y) => y.score - x.score).slice(0, limit)
 }

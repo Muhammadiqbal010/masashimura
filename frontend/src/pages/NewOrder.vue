@@ -253,21 +253,33 @@
             </div>
 
             <!-- Saran menu dari isi keranjang (TF-IDF + cosine similarity) -->
-            <div v-if="suggestions.length" class="suggest">
-              <span class="field-label">Saran menu</span>
-              <div class="suggest-list">
-                <button
-                  v-for="menu in suggestions"
-                  :key="menu.id"
-                  type="button"
-                  class="suggest-chip"
-                  @click="onMenuClick(menu)"
-                >
-                  <span class="suggest-name">{{ menu.name }}</span>
-                  <span class="suggest-price">{{ formatPrice(menu.price) }}</span>
-                </button>
+            <section v-if="suggestions.length" class="suggest" aria-label="Saran menu">
+              <div class="suggest-head">
+                <span class="field-label">Saran menu</span>
+                <span class="suggest-hint">dari isi keranjang</span>
               </div>
-            </div>
+              <ul class="suggest-list">
+                <li v-for="rec in suggestions" :key="rec.menu.id">
+                  <button
+                    type="button"
+                    class="suggest-row"
+                    :aria-label="'Tambah ' + rec.menu.name"
+                    @click="onMenuClick(rec.menu)"
+                  >
+                    <span class="suggest-text">
+                      <span class="suggest-name">{{ rec.menu.name }}</span>
+                      <span class="suggest-meta">
+                        <span class="suggest-price">{{ formatPrice(rec.menu.price) }}</span>
+                        <span v-if="rec.menu.options?.length" class="menu-tag menu-tag-opt" title="Punya opsi pilihan">OPSI</span>
+                      </span>
+                    </span>
+                    <span class="suggest-plus" aria-hidden="true">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    </span>
+                  </button>
+                </li>
+              </ul>
+            </section>
           </template>
         </div>
 
@@ -1130,11 +1142,11 @@ const describeSelection = (menu, selection) => {
 // Dihitung di browser dari daftar menu yang sudah dimuat. Hanya untuk order baru
 // (bukan mode tambah ke tagihan) dan hanya menu aktif yang tersedia.
 const activeMenus = computed(() => menus.value.filter((m) => m.is_active !== false));
-const { forCart } = useRecommender(activeMenus);
+const { cartSuggestions } = useRecommender(activeMenus);
 const suggestions = computed(() =>
   addTarget.value || orderItems.value.length === 0
     ? []
-    : forCart(orderItems.value.map((i) => i.id), 4)
+    : cartSuggestions(orderItems.value.map((i) => i.id), 3)
 );
 
 const addToOrder = (menu, selection = {}, quantity = 1) => {
@@ -1891,19 +1903,33 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 
 .cart-list { display: flex; flex-direction: column; gap: 0.6rem; }
 
-.suggest { display: flex; flex-direction: column; gap: 0.45rem; margin-top: 0.9rem; }
-.suggest-list { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-.suggest-chip {
-  display: flex; align-items: baseline; gap: 0.45rem;
-  padding: 0.45rem 0.75rem;
+.suggest { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; padding-top: 0.85rem; border-top: 1px dashed rgb(var(--ink) / 0.1); }
+.suggest-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
+.suggest-hint { font-size: 0.68rem; color: var(--text-faint); }
+.suggest-list { display: flex; flex-direction: column; gap: 0.4rem; margin: 0; padding: 0; list-style: none; }
+/* Seluruh baris = satu tombol (min 48px) supaya mudah ditekan kasir saat sibuk, di tablet maupun HP */
+.suggest-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+  width: 100%; min-height: 48px; padding: 0.5rem 0.5rem 0.5rem 0.85rem;
   background: var(--surface); border: 1px solid rgb(var(--ink) / 0.08);
-  border-radius: 10px; color: var(--text-dim);
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.78rem;
-  cursor: pointer; transition: border-color 0.15s, color 0.15s; text-align: left;
+  border-radius: 12px; color: var(--text);
+  font-family: 'Manrope', system-ui, sans-serif; text-align: left;
+  cursor: pointer; transition: border-color 0.15s, background-color 0.15s;
 }
-.suggest-chip:hover { border-color: rgb(var(--ink) / 0.18); color: var(--text); }
-.suggest-name { font-weight: 600; }
-.suggest-price { font-size: 0.72rem; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.suggest-row:hover { border-color: rgb(var(--ink) / 0.2); }
+.suggest-row:active { background: rgb(var(--ink) / 0.05); }
+.suggest-text { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+.suggest-name { font-size: 0.82rem; font-weight: 600; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.suggest-meta { display: flex; align-items: center; gap: 0.4rem; }
+.suggest-price { font-family: monospace; font-size: 0.74rem; font-weight: 700; color: var(--accent-text); }
+.suggest-plus {
+  display: flex; flex-shrink: 0; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 9px;
+  background: rgb(var(--ink) / 0.07); color: var(--text-dim);
+  transition: background-color 0.15s, color 0.15s;
+}
+.suggest-row:hover .suggest-plus { background: var(--accent); color: #fff; }
+@media (hover: none) { .suggest-row:hover .suggest-plus { background: rgb(var(--ink) / 0.07); color: var(--text-dim); } }
 
 .cart-item {
   background: rgb(var(--ink) / 0.03); border: 1px solid rgb(var(--ink) / 0.06);
