@@ -251,6 +251,23 @@
                 />
               </div>
             </div>
+
+            <!-- Saran menu dari isi keranjang (TF-IDF + cosine similarity) -->
+            <div v-if="suggestions.length" class="suggest">
+              <span class="field-label">Saran menu</span>
+              <div class="suggest-list">
+                <button
+                  v-for="menu in suggestions"
+                  :key="menu.id"
+                  type="button"
+                  class="suggest-chip"
+                  @click="onMenuClick(menu)"
+                >
+                  <span class="suggest-name">{{ menu.name }}</span>
+                  <span class="suggest-price">{{ formatPrice(menu.price) }}</span>
+                </button>
+              </div>
+            </div>
           </template>
         </div>
 
@@ -754,6 +771,7 @@ import { useAuthStore } from "@/stores/auth";
 import PromoCodeBox from "@/components/ui/PromoCodeBox.vue";
 import PointRedeemBox from "@/components/ui/PointRedeemBox.vue";
 import CrowdQuickControl from "@/components/ui/admin/CrowdQuickControl.vue";
+import { useRecommender } from "@/composables/useRecommender";
 
 const authStore = useAuthStore();
 const kasirName = computed(() => authStore.user?.name || authStore.user?.username || "Staff");
@@ -1107,6 +1125,17 @@ const describeSelection = (menu, selection) => {
   }
   return details;
 };
+
+// ── Saran menu untuk kasir ───────────────────────────────────────────
+// Dihitung di browser dari daftar menu yang sudah dimuat. Hanya untuk order baru
+// (bukan mode tambah ke tagihan) dan hanya menu aktif yang tersedia.
+const activeMenus = computed(() => menus.value.filter((m) => m.is_active !== false));
+const { forCart } = useRecommender(activeMenus);
+const suggestions = computed(() =>
+  addTarget.value || orderItems.value.length === 0
+    ? []
+    : forCart(orderItems.value.map((i) => i.id), 4)
+);
 
 const addToOrder = (menu, selection = {}, quantity = 1) => {
   if (!menu.is_available) { toast.error("Menu ini sedang habis!"); return; }
@@ -1861,6 +1890,20 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .cart-clear:hover { color: var(--red-soft); }
 
 .cart-list { display: flex; flex-direction: column; gap: 0.6rem; }
+
+.suggest { display: flex; flex-direction: column; gap: 0.45rem; margin-top: 0.9rem; }
+.suggest-list { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.suggest-chip {
+  display: flex; align-items: baseline; gap: 0.45rem;
+  padding: 0.45rem 0.75rem;
+  background: var(--surface); border: 1px solid rgb(var(--ink) / 0.08);
+  border-radius: 10px; color: var(--text-dim);
+  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.78rem;
+  cursor: pointer; transition: border-color 0.15s, color 0.15s; text-align: left;
+}
+.suggest-chip:hover { border-color: rgb(var(--ink) / 0.18); color: var(--text); }
+.suggest-name { font-weight: 600; }
+.suggest-price { font-size: 0.72rem; color: var(--text-faint); font-variant-numeric: tabular-nums; }
 
 .cart-item {
   background: rgb(var(--ink) / 0.03); border: 1px solid rgb(var(--ink) / 0.06);
