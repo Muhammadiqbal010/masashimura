@@ -10,6 +10,9 @@
       <button type="button" class="adm-btn adm-btn--primary" @click="openCreate"><Plus :size="15" /> Buat Paket</button>
     </div>
 
+    <!-- Saran paket dari penjualan + kemiripan menu; "Buat paket ini" membuka form yang sudah terisi -->
+    <BundleSuggestions :menus="menus" :bundles="bundles" @use="openFromSuggestion" />
+
     <div v-if="loading" class="adm-card adm-card--flush" aria-busy="true"><div class="bm-pad adm-skel" style="height:64px"></div></div>
 
     <div v-else-if="loadError" class="adm-card bm-empty">
@@ -117,6 +120,7 @@ import { Plus, X, Pencil, Trash2, AlertTriangle } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { bundleAPI } from '@/api'
 import AdminModal from '@/components/ui/admin/Adminmodal.vue'
+import BundleSuggestions from '@/components/ui/admin/BundleSuggestions.vue'
 
 const props = defineProps({ menus: { type: Array, default: () => [] } })
 const emit = defineEmits(['changed'])
@@ -160,6 +164,18 @@ const load = async () => {
 const openCreate = () => {
   editingId.value = null
   Object.assign(form, { name: '', description: '', price: null, items: [{ menu: null, quantity: 1 }, { menu: null, quantity: 1 }] })
+  formError.value = ''
+  showForm.value = true
+}
+// Dari "Saran paket": isi form dengan saran, owner tetap bebas mengubah nama, isi, dan harga.
+const openFromSuggestion = (draft) => {
+  editingId.value = null
+  Object.assign(form, {
+    name: draft.name,
+    description: '',
+    price: draft.price,
+    items: draft.items.map((r) => ({ menu: r.menu, quantity: r.quantity })),
+  })
   formError.value = ''
   showForm.value = true
 }

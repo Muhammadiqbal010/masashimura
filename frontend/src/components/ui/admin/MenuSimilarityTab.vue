@@ -109,7 +109,7 @@
           <strong>satu kategori</strong> yang sangat mirip bisa saling menggantikan di mata pelanggan.
           Keduanya baru dugaan dari teks, cocokkan dengan tab Pasangan Menu di laporan penjualan sebelum memutuskan.
         </p>
-        <button type="button" class="rt-btn ms-go" @click="$emit('go-paket')">Buka tab Paket</button>
+        <button type="button" class="rt-btn ms-go" @click="$emit('go-paket')">Lihat saran paket</button>
       </section>
     </template>
   </div>

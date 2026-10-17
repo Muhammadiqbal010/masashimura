@@ -266,6 +266,20 @@
                 </p>
               </div>
             </div>
+
+            <!-- Rekomendasi dari isi keranjang -->
+            <MenuRecommendations
+              v-if="!cartStore.isEmpty"
+              :items="recommendations"
+              title="Mungkin kamu suka"
+              subtitle="Berdasarkan isi keranjang"
+              variant="list"
+              :format-price="formatPrice"
+              :can-add="isStoreOpen"
+              class="pt-3"
+              @select="addRecommended"
+              @add="addRecommended"
+            />
           </section>
 
           <!-- ── KANAN: Form & Payment ────────────────────────────── -->
@@ -453,6 +467,15 @@
         </div>
       </div>
     </div>
+
+    <!-- Picker opsi untuk menu beropsi yang ditambah dari rekomendasi -->
+    <MenuOptionPicker
+      v-if="pickerMenu"
+      :menu="pickerMenu"
+      :format-price="formatPrice"
+      @close="pickerMenu = null"
+      @confirm="confirmPicker"
+    />
   </div>
 </template>
 
@@ -460,7 +483,7 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue"
 import { useRouter } from "vue-router"
 import { useCartStore } from "@/stores/cart"
-import { orderAPI, paymentAPI, getMediaUrl } from "@/api"
+import { orderAPI, paymentAPI, menuAPI, getMediaUrl } from "@/api"
 import { toast } from "vue-sonner"
 import { X, Check, Clock, ShoppingCart, ArrowRight } from "lucide-vue-next"
 import { useStoreSettings } from "@/composables/useStoreSettings"
@@ -468,6 +491,9 @@ import PromoCodeBox from "@/components/ui/PromoCodeBox.vue"
 import PointRedeemBox from "@/components/ui/PointRedeemBox.vue"
 import MemberPinBox from "@/components/ui/MemberPinBox.vue"
 import StoreBanner from "@/components/ui/StoreBanner.vue"
+import MenuRecommendations from "@/components/ui/MenuRecommendations.vue"
+import MenuOptionPicker from "@/components/ui/MenuOptionPicker.vue"
+import { useRecommender } from "@/composables/useRecommender"
 import { unlockPaymentAudio, playPaymentSuccess } from "@/utils/paymentSuccessSound.js"
 import {
   PHONE_MIN, PHONE_MAX,
@@ -478,6 +504,45 @@ import { NAME_MIN, NAME_MAX, sanitizeName, cleanName, nameError, isValidName } f
 const cartStore = useCartStore()
 const router    = useRouter()
 const { adminWhatsapp, isStoreOpen, fetchSettings } = useStoreSettings()
+
+// ══════════════════════════════════════════════════════════════════════════════
+// REKOMENDASI (content-based: TF-IDF + cosine similarity)
+// Checkout tidak punya daftar menu sendiri, jadi dimuat di sini. Kalau gagal dimuat,
+// bagian rekomendasi cukup tidak tampil; checkout tidak boleh terganggu.
+// ══════════════════════════════════════════════════════════════════════════════
+const recMenus   = ref([])
+const pickerMenu = ref(null)   // menu beropsi yang sedang dipilih opsinya
+const { cartSuggestions } = useRecommender(recMenus)
+const recommendations = computed(() =>
+  cartSuggestions(cartStore.cartItems.map((item) => item.id), 3)
+)
+
+const loadRecMenus = async () => {
+  try {
+    const { data } = await menuAPI.getAll()
+    recMenus.value = (data || []).filter((m) => m.is_active !== false && !m.is_secret && m.category_name)
+  } catch {
+    recMenus.value = []
+  }
+}
+
+const addRecommended = (menu) => {
+  if (!isStoreOpen.value) return toast.error("Toko sedang tutup, pesanan belum bisa dibuat.")
+  if (!menu.is_available) return toast.error("Menu ini sedang habis!")
+  if (menu.options?.length) { pickerMenu.value = menu; return }
+  const result = cartStore.addToCart(menu)
+  if (!result.ok) return toast.error(result.error)
+  toast.success(`${menu.name} ditambahkan! 🛒`)
+}
+
+const confirmPicker = ({ selection, quantity }) => {
+  const menu = pickerMenu.value
+  if (!menu) return
+  const result = cartStore.addToCart(menu, selection, quantity)
+  if (!result.ok) return toast.error(result.error)
+  toast.success(`${menu.name} ditambahkan! 🛒`)
+  pickerMenu.value = null
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // FORM
@@ -1102,6 +1167,7 @@ const checkout = async () => {
 onMounted(() => {
   fetchSettings()
   restorePendingPayment()
+  loadRecMenus()
 })
 
 onBeforeUnmount(() => {
