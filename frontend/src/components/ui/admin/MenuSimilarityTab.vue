@@ -111,6 +111,18 @@
         </p>
         <button type="button" class="rt-btn ms-go" @click="$emit('go-paket')">Lihat saran paket</button>
       </section>
+
+      <!-- ── Lembar penilaian relevansi ── -->
+      <section class="rt-card">
+        <h3 class="rt-title">Lembar penilaian relevansi</h3>
+        <p class="rt-lead ms-note">
+          Unduh daftar 3 rekomendasi teratas untuk setiap menu, lengkap dengan kolom kosong untuk penilai
+          (1 = relevan, 0 = tidak). Pakai untuk mengukur Precision@3. Skor cosine ada di kolom paling kanan,
+          sembunyikan kolom itu sebelum lembar dibagikan ke penilai.
+        </p>
+        <button type="button" class="rt-btn ms-go" @click="exportSheet">Unduh lembar (CSV)</button>
+        <p v-if="exportInfo" class="ms-none ms-export-info" role="status">{{ exportInfo }}</p>
+      </section>
     </template>
   </div>
 </template>
@@ -118,6 +130,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { buildIndex, similarTo, similarPairs } from '@/utils/recommender'
+import { buildRelevanceSheet, downloadText } from '@/utils/relevanceSheet'
 
 const props = defineProps({
   // Daftar menu dari Kelola Menu (admin melihat semuanya, termasuk habis dan secret)
@@ -160,6 +173,15 @@ const neighbors = computed(() =>
   activeMenu.value ? similarTo(index.value, activeMenu.value.id, { limit: 5, includeHidden: true }) : [],
 )
 const pairs = computed(() => similarPairs(index.value, { limit: 8 }))
+
+// Lembar penilaian relevansi (untuk evaluasi Precision@3 di laporan)
+const exportInfo = ref('')
+const exportSheet = () => {
+  const { csv, referenceCount, rowCount } = buildRelevanceSheet(index.value, { limit: 3, raters: 3 })
+  const stamp = new Date().toISOString().slice(0, 10)
+  downloadText(csv, `lembar-penilaian-relevansi-${stamp}.csv`)
+  exportInfo.value = `${referenceCount} menu acuan, ${rowCount} baris terunduh.`
+}
 
 const pct = (score) => Math.round(Math.min(1, Math.max(0, score)) * 100)
 const formatRp = (n) =>
@@ -208,6 +230,7 @@ const formatRp = (n) =>
 }
 
 .ms-note { margin-top: 1rem; font-size: 0.75rem; }
+.ms-export-info { margin-top: 0.6rem; }
 .ms-go { margin-top: 0.9rem; width: 100%; }
 @media (min-width: 640px) { .ms-go { width: auto; } }
 </style>

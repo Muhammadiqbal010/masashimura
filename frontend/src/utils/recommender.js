@@ -38,6 +38,9 @@ export const tokenize = (text) => {
   return String(text)
     .toLowerCase()
     .normalize("NFKD")
+    // "Non Kopi" / "non-coffee" harus jadi satu term sendiri ("nonkopi"), bukan "non" + "kopi".
+    // Tanpa ini, kategori Non Kopi dianggap mirip menu kopi hanya karena memuat kata "kopi".
+    .replace(/\bnon[\s-]+(?=[a-z])/g, "non")
     .replace(/[^a-z0-9\s]/g, " ")
     .split(/\s+/)
     .filter((t) => t.length >= 3 && !STOPWORDS.has(t) && !/^\d+$/.test(t))
