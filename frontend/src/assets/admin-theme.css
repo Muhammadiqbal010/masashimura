@@ -9,91 +9,104 @@
 
 /* ── Token yang sama di kedua tema ─────────────────────────────────── */
 html[data-admin-theme] {
+  /* Skala radius tunggal: kontrol 12 · kartu 16 · modal 16 (PRD 4.5) */
+  --r-xs: 6px;
   --r-sm: 8px;
   --r-md: 12px;
-  --r-lg: 18px;
+  --r-lg: 16px;
+  --r-xl: 16px;
+
+  /* Spasi kelipatan 4 */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-6: 24px; --sp-8: 32px; --sp-12: 48px;
+
   --on-accent: #ffffff;
   --accent: #d92b22;
   --accent-hover: #b8201a;
-  --green: #22c55e;
-  --amber: #f4c542;
+  --brand-yellow: #f4c542;
   --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  --z-sidebar: 40; --z-modal: 9990; --z-toast: 9999;
 }
 
-/* ── Tema GELAP (default) ──────────────────────────────────────────── */
+/* ── Tema GELAP (default) — charcoal, bukan hitam pekat ────────────── */
 html[data-admin-theme='dark'] {
   color-scheme: dark;
 
-  /* "ink" = warna tinta untuk overlay transparan: putih di gelap, hitam di terang.
-     Dipakai sebagai rgb(var(--ink) / .06) di seluruh stylesheet. */
+  /* "ink" = warna tinta untuk overlay transparan: putih di gelap, hitam di terang. */
   --ink: 255 255 255;
 
-  --bg: #09090a;
-  --bg-sidebar: #0d0d0e;
-  --surface: #131314;
-  --surface-2: #1a1a1c;
-  --surface-hover: rgb(255 255 255 / 0.035);
+  --bg: #111113;
+  --bg-sidebar: #141416;
+  --surface: #1c1c1f;
+  --surface-2: #232327;
+  --surface-hover: rgb(255 255 255 / 0.045);
 
-  --border: rgb(255 255 255 / 0.06);
-  --border-strong: rgb(255 255 255 / 0.14);
+  --border: #2b2b2f;
+  --border-strong: #343438;
 
-  --text: #fafafa;
-  --text-2: rgb(255 255 255 / 0.84);
-  --text-dim: rgb(255 255 255 / 0.68);
-  --text-faint: rgb(255 255 255 / 0.52);
+  --text: #f5f3ef;
+  --text-2: #dcdad5;
+  --text-dim: #b8b8c0;
+  --text-faint: #9a9aa3;
 
-  --accent-text: #f0605a;
-  --green-soft: #4ade80;
+  --accent-text: #ff6f66;
+
+  /* Warna status punya token sendiri — tidak meminjam merah/kuning brand */
+  --green: #2fb36d;
+  --green-soft: #4cd08a;
+  --amber: #e8a93a;
   --amber-soft: #f4c542;
-  --red-soft: #f0605a;
-  --blue-soft: #7dd3fc;
-  --purple-soft: #c084fc;
+  --red-soft: #ff6f66;
+  --blue-soft: #7cc4f5;
+  --purple-soft: #c79bf7;
 
-  --hero-from: #1a0707;
-  --overlay: rgb(0 0 0 / 0.72);
+  --hero-from: #221212;
+  --overlay: rgb(8 8 10 / 0.72);
   --shadow-sm: none;
+  --shadow-card: none;
   --shadow-lg: 0 24px 60px rgb(0 0 0 / 0.55);
   --ring: #f4c542;
 
-  /* Logo brand dirancang untuk latar gelap → di tema terang dikasih "tile" gelap */
+  /* Logo brand dirancang untuk latar gelap */
   --brand-tile: transparent;
 }
 
-/* ── Tema TERANG ───────────────────────────────────────────────────── */
+/* ── Tema TERANG — krem hangat, kartu putih ────────────────────────── */
 html[data-admin-theme='light'] {
   color-scheme: light;
-  --ink: 24 24 27;
+  --ink: 32 32 36;
 
-  --bg: #f6f5f3;
+  --bg: #f7f5f0;
   --bg-sidebar: #ffffff;
   --surface: #ffffff;
-  --surface-2: #f8f7f5;
-  --surface-hover: rgb(24 24 27 / 0.04);
+  --surface-2: #f4f2ed;
+  --surface-hover: rgb(32 32 36 / 0.045);
 
-  --border: rgb(24 24 27 / 0.09);
-  --border-strong: rgb(24 24 27 / 0.18);
+  --border: #e5e2dc;
+  --border-strong: #d3cfc7;
 
-  --text: #18181b;
+  --text: #202024;
   --text-2: #3f3f46;
-  --text-dim: #63636b;
-  --text-faint: #8a8a93;
+  --text-dim: #66666d;
+  --text-faint: #72727a;
 
   --accent-text: #b8201a;
-  --green: #16a34a;
-  --green-soft: #15803d;
+  --green: #1f9d5b;
+  --green-soft: #167a46;
   --amber: #c99a1e;
-  --amber-soft: #8a6500;
+  --amber-soft: #855f00;
   --red-soft: #b8201a;
-  --blue-soft: #0369a1;
-  --purple-soft: #7e22ce;
+  --blue-soft: #0b5f9a;
+  --purple-soft: #7a2ec2;
 
-  --hero-from: #fff4f4;
-  --overlay: rgb(24 24 27 / 0.5);
-  --shadow-sm: 0 1px 2px rgb(24 24 27 / 0.05), 0 1px 1px rgb(24 24 27 / 0.03);
-  --shadow-lg: 0 20px 50px rgb(24 24 27 / 0.2);
-  --ring: #111111;
+  --hero-from: #fff1ef;
+  --overlay: rgb(32 32 36 / 0.5);
+  --shadow-sm: 0 1px 2px rgb(32 32 36 / 0.05);
+  --shadow-card: 0 1px 2px rgb(32 32 36 / 0.04), 0 8px 24px -16px rgb(32 32 36 / 0.12);
+  --shadow-lg: 0 20px 50px rgb(32 32 36 / 0.2);
+  --ring: #111113;
 
-  --brand-tile: #050505;
+  --brand-tile: #111113;
 }
 
 /* ── Aturan global area admin ──────────────────────────────────────── */
@@ -114,7 +127,7 @@ html[data-admin-theme] :focus-visible:not(input):not(textarea):not(select) {
 html[data-admin-theme] input:focus-visible,
 html[data-admin-theme] textarea:focus-visible,
 html[data-admin-theme] select:focus-visible {
-  box-shadow: 0 0 0 3px rgb(217 43 34 / 0.22);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent);
 }
 
 /* Angka rata kolom — biar nominal rupiah tidak "bergoyang" */

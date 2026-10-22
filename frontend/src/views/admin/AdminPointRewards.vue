@@ -541,7 +541,7 @@ const confirmDelete = async () => {
   min-height: 100%;
   background: var(--bg);
   color: var(--text);
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
   padding: clamp(1.1rem, 3vw, 2rem) max(clamp(1rem, 3vw, 2.5rem), calc((100% - var(--page-max)) / 2)) 3rem;
   display: flex;
@@ -682,7 +682,7 @@ const confirmDelete = async () => {
   border: 1px solid var(--border-strong);
   border-radius: var(--r-md);
   padding: 0.6rem 0.9rem 0.6rem 2.15rem;
-  color: var(--text); font-size: 0.8rem; font-family: 'Inter', sans-serif;
+  color: var(--text); font-size: 0.8rem; font-family: var(--font-ui);
   outline: none; transition: border-color 0.15s;
 }
 .search-input::placeholder { color: var(--text-faint); }
@@ -745,7 +745,7 @@ const confirmDelete = async () => {
   cursor: pointer; transition: all 0.15s;
 }
 .icon-btn:hover { background: rgb(var(--ink) / 0.1); color: var(--text); }
-.icon-btn-danger:hover { background: rgba(255,42,42,0.15); color: var(--red-soft); border-color: rgba(255,42,42,0.3); }
+.icon-btn-danger:hover { background: rgba(217,43,34,0.15); color: var(--red-soft); border-color: rgba(217,43,34,0.3); }
 
 .status-badge {
   padding: 0.3rem 0.7rem; border-radius: 100px; border: 1px solid;
@@ -818,7 +818,7 @@ const confirmDelete = async () => {
 .form-input {
   background: rgb(var(--ink) / 0.04); border: 1px solid rgb(var(--ink) / 0.1);
   border-radius: 9px; padding: 0.6rem 0.8rem;
-  color: var(--text); font-size: 0.82rem; font-family: 'Inter', sans-serif;
+  color: var(--text); font-size: 0.82rem; font-family: var(--font-ui);
   outline: none; transition: border-color 0.15s; width: 100%;
 
 }
@@ -851,7 +851,7 @@ const confirmDelete = async () => {
   gap: 0.5rem;
   padding: 0.55rem 0.65rem; border-radius: 6px; border: none;
   background: transparent; color: var(--text-2);
-  font-size: 0.8rem; font-family: 'Inter', sans-serif; text-align: left;
+  font-size: 0.8rem; font-family: var(--font-ui); text-align: left;
   cursor: pointer; transition: background 0.12s;
 }
 .custom-select-option:hover { background: rgb(var(--ink) / 0.06); color: var(--text); }
@@ -866,7 +866,7 @@ const confirmDelete = async () => {
 
 .form-error {
   font-size: 0.75rem; color: var(--red-soft); margin: 0;
-  background: rgba(255,42,42,0.08); border: 1px solid rgba(255,42,42,0.2);
+  background: rgba(217,43,34,0.08); border: 1px solid rgba(217,43,34,0.2);
   padding: 0.6rem 0.8rem; border-radius: 8px;
 }
 

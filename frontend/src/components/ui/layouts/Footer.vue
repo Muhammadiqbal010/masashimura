@@ -1,21 +1,17 @@
 <template>
-  <footer class="relative mt-8 overflow-hidden bg-[#0B0B0B] font-inter text-white">
-    <!-- Transisi halus dari konten ke footer (tanpa garis) -->
-    <div class="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-[#080808] to-transparent" />
-    <div class="pointer-events-none absolute -bottom-48 -left-32 h-80 w-80 rounded-full bg-[#D92B22]/[0.06] blur-3xl" />
-
-    <div class="relative mx-auto max-w-7xl px-6 pb-8 pt-20 md:px-12">
-      <div class="grid grid-cols-2 gap-x-8 gap-y-12 pb-12 md:grid-cols-12">
+  <footer class="site-footer relative overflow-hidden bg-[#111113] text-white">
+    <div class="relative mx-auto max-w-7xl px-5 pb-8 pt-16 sm:px-8 lg:px-10 lg:pt-20">
+      <div class="grid grid-cols-1 gap-12 pb-12 sm:grid-cols-2 lg:grid-cols-12">
 
         <!-- Brand -->
-        <div class="col-span-2 space-y-5 md:col-span-5">
+        <div class="space-y-5 sm:col-span-2 lg:col-span-5">
           <img
             src="@/assets/masashimura-logo.png"
             alt="Masashimura"
             loading="lazy"
-            class="pointer-events-none h-10 w-auto select-none md:h-12"
+            class="pointer-events-none h-11 w-auto select-none"
           />
-          <p class="max-w-xs text-sm leading-relaxed text-white/70">
+          <p class="max-w-xs text-[0.9375rem] leading-relaxed text-[#B8B8C0]">
             Warkop modern di jantung Bekasi. Cozy, kustom, harga bersahabat.
           </p>
           <div class="flex items-center gap-2.5">
@@ -26,56 +22,55 @@
               :aria-label="s.label"
               target="_blank"
               rel="noopener noreferrer"
-              class="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] text-white/70 transition-all duration-200 hover:border-[#F4C542] hover:bg-[#F4C542] hover:text-black"
+              class="flex h-11 w-11 items-center justify-center rounded-xl bg-white/[0.07] text-white/80 transition-colors duration-200 hover:bg-[#F4C542] hover:text-[#111113]"
             >
-              <component :is="s.icon" :size="17" />
+              <component :is="s.icon" :size="18" />
             </a>
           </div>
         </div>
 
         <!-- Halaman -->
-        <div class="col-span-2 space-y-4 md:col-span-3">
-          <h3 class="font-sora text-sm font-bold text-[#F4C542]">Halaman</h3>
-          <nav class="space-y-1" aria-label="Footer">
+        <div class="space-y-4 lg:col-span-3">
+          <h3 class="text-sm font-bold text-white">Halaman</h3>
+          <nav class="space-y-0.5" aria-label="Footer">
             <router-link
               v-for="link in navLinks"
               :key="link.path"
               :to="link.path"
-              class="group flex items-center gap-2.5 py-1.5 text-sm text-white/70 transition-colors duration-150 hover:text-white"
+              class="flex min-h-[40px] items-center text-[0.9375rem] text-[#B8B8C0] transition-colors duration-150 hover:text-[#F4C542]"
             >
-              <span class="h-0.5 w-3 shrink-0 rounded bg-white/25 transition-all duration-200 group-hover:w-5 group-hover:bg-[#D92B22]" />
               {{ link.name }}
             </router-link>
           </nav>
         </div>
 
         <!-- Kontak -->
-        <div class="col-span-2 space-y-4 md:col-span-4">
-          <h3 class="font-sora text-sm font-bold text-[#F4C542]">Kontak</h3>
+        <div class="space-y-4 lg:col-span-4">
+          <h3 class="text-sm font-bold text-white">Kontak</h3>
           <div class="space-y-4">
             <a href="mailto:kedaimasashimura@gmail.com" class="group flex items-start gap-3">
-              <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05] transition-all duration-200 group-hover:border-[#D92B22]/60 group-hover:bg-[#D92B22]/10">
-                <Mail :size="15" class="text-white/70 transition-colors duration-200 group-hover:text-[#F0524A]" />
-              </div>
-              <span class="break-all pt-1.5 text-sm leading-snug text-white/70 transition-colors duration-150 group-hover:text-white">
+              <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.07] transition-colors duration-200 group-hover:bg-[#D92B22]/20">
+                <Mail :size="16" class="text-[#B8B8C0] transition-colors duration-200 group-hover:text-[#F0524A]" />
+              </span>
+              <span class="break-all pt-2 text-[0.9375rem] leading-snug text-[#B8B8C0] transition-colors duration-150 group-hover:text-white">
                 kedaimasashimura@gmail.com
               </span>
             </a>
 
             <div class="flex items-start gap-3">
-              <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05]">
-                <MapPin :size="15" class="text-white/70" />
-              </div>
+              <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.07]">
+                <MapPin :size="16" class="text-[#B8B8C0]" />
+              </span>
               <div class="space-y-1 pt-0.5">
-                <p class="text-sm font-semibold leading-snug text-white">Jl. Pintu Air No.48</p>
-                <p class="text-sm leading-relaxed text-white/60">
+                <p class="text-[0.9375rem] font-semibold leading-snug text-white">Jl. Pintu Air No.48</p>
+                <p class="text-sm leading-relaxed text-[#B8B8C0]">
                   Harapan Mulya, Medan Satria,<br />Kota Bekasi, Jawa Barat
                 </p>
                 <a
                   href="https://maps.app.goo.gl/xtLih1iDMfdLnqQC8"
                   target="_blank"
                   rel="noopener"
-                  class="inline-flex items-center gap-1 pt-1 text-sm font-semibold text-[#F4C542] underline-offset-4 transition-colors hover:underline"
+                  class="inline-flex min-h-[36px] items-center gap-1 text-sm font-semibold text-[#F4C542] underline-offset-4 hover:underline"
                 >
                   Buka di Maps <span aria-hidden="true">↗</span>
                 </a>
@@ -87,7 +82,7 @@
 
       <!-- Bottom bar -->
       <div class="flex flex-col items-center justify-between gap-3 pt-2 sm:flex-row">
-        <p class="text-xs text-white/50">&copy; {{ currentYear }} Masashimura. All rights reserved.</p>
+        <p class="text-[0.8125rem] text-[#9A9AA3]">&copy; {{ currentYear }} Masashimura. All rights reserved.</p>
         <div class="flex flex-col items-center gap-1.5 text-center sm:flex-row sm:gap-3 sm:text-right" role="status">
           <span class="flex items-center gap-2">
             <span class="relative flex h-2 w-2 shrink-0">
@@ -100,12 +95,11 @@
                 :class="status.isOpen ? 'bg-emerald-400' : 'bg-[#D92B22]'"
               />
             </span>
-            <span class="text-xs font-semibold text-white/80">
+            <span class="text-[0.8125rem] font-semibold text-white/85">
               {{ status.label }}<template v-if="status.detail"> · {{ status.detail }}</template>
             </span>
           </span>
-          
-          <span class="text-xs text-white/50">{{ scheduleText }}</span>
+          <span class="text-[0.8125rem] text-[#9A9AA3]">{{ scheduleText }}</span>
         </div>
       </div>
     </div>

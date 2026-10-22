@@ -101,15 +101,15 @@ defineEmits(["select", "add"])
 </script>
 
 <style scoped>
-/* Palet: Surface #141414 · Washi #FAFAFA · Crimson #D92B22 · Champagne #F4C542 */
+/* Palet: Surface #1C1C1F · Washi #FAFAFA · Crimson #D92B22 · Champagne #F4C542 */
 
 .reco { display: flex; flex-direction: column; gap: 0.75rem; }
 .reco-head { display: flex; flex-direction: column; gap: 0.15rem; }
 .reco-title { margin: 0; font-size: 0.8125rem; font-weight: 600; color: #FAFAFA; letter-spacing: -0.01em; }
-.reco-sub { margin: 0; font-size: 0.75rem; color: #737373; }
+.reco-sub { margin: 0; font-size: 0.75rem; color: #9A9AA3; }
 
 /* ── Thumbnail ── */
-.reco-thumb { display: block; overflow: hidden; background: #1A1A1A; flex-shrink: 0; }
+.reco-thumb { display: block; overflow: hidden; background: #232327; flex-shrink: 0; }
 .reco-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .reco-thumb--wide { aspect-ratio: 4 / 3; width: 100%; border-radius: 0.75rem; }
 .reco-thumb--square { width: 3.5rem; height: 3.5rem; border-radius: 0.75rem; }
@@ -120,7 +120,7 @@ defineEmits(["select", "add"])
   font-size: 0.8125rem; font-weight: 600; line-height: 1.3; color: #FAFAFA;
 }
 .reco-price { font-size: 0.8125rem; font-weight: 600; color: #C8C8C8; font-variant-numeric: tabular-nums; }
-.reco-reason { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.6875rem; color: #737373; }
+.reco-reason { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.6875rem; color: #9A9AA3; }
 
 /* ── Tombol tambah: 40px di HP (mudah ditekan jempol), 36px di layar lebar ── */
 .reco-add {
@@ -131,7 +131,7 @@ defineEmits(["select", "add"])
 }
 .reco-add:hover:not(:disabled) { background: rgba(244, 197, 66, 0.16); border-color: rgba(244, 197, 66, 0.5); }
 .reco-add:active:not(:disabled) { transform: scale(0.94); }
-.reco-add:disabled { cursor: not-allowed; border-color: rgba(255, 255, 255, 0.08); background: rgba(255, 255, 255, 0.03); color: #737373; }
+.reco-add:disabled { cursor: not-allowed; border-color: rgba(255, 255, 255, 0.08); background: rgba(255, 255, 255, 0.03); color: #9A9AA3; }
 @media (min-width: 640px) { .reco-add { width: 2.25rem; height: 2.25rem; } }
 
 /* ── Cards ── */
@@ -146,7 +146,7 @@ defineEmits(["select", "add"])
   display: flex; flex-direction: column; justify-content: space-between; gap: 0.5rem;
   flex: 0 0 8.75rem; scroll-snap-align: start; padding: 0.5rem;
   border-radius: 1rem; border: 1px solid rgba(255, 255, 255, 0.07);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)), #141414;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)), #1C1C1F;
 }
 .reco-card-main { display: flex; flex-direction: column; gap: 0.4rem; width: 100%; padding: 0; border: 0; background: none; text-align: left; cursor: pointer; }
 .reco-card-main .reco-name { min-height: 2.1rem; }

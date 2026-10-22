@@ -1,5 +1,5 @@
 <template>
-  <div class="page relative min-h-screen overflow-x-hidden bg-[#080808] font-inter text-[#FAFAFA]">
+  <div class="page relative min-h-screen overflow-x-hidden bg-[#111113] font-inter text-[#FAFAFA]">
     <!-- Atmosfer latar: glow halus, tidak mengganggu konten -->
     <div class="page-glow pointer-events-none absolute inset-x-0 top-0 h-[520px]" aria-hidden="true"></div>
 
@@ -11,11 +11,11 @@
           class="mb-6 inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-medium backdrop-blur"
           :class="isOpen
             ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300'
-            : 'border-white/10 bg-white/[0.04] text-[#A3A3A3]'"
+            : 'border-white/10 bg-white/[0.04] text-[#B8B8C0]'"
         >
           <span
             class="h-1.5 w-1.5 rounded-full"
-            :class="isOpen ? 'animate-pulse bg-emerald-400' : 'bg-[#737373]'"
+            :class="isOpen ? 'animate-pulse bg-emerald-400' : 'bg-[#9A9AA3]'"
           ></span>
           {{ isOpen ? "Buka sekarang" : "Sedang tutup" }}
         </div>
@@ -23,7 +23,7 @@
         <h1 class="font-sora text-4xl font-semibold leading-[1.05] tracking-tight text-[#FAFAFA] sm:text-5xl lg:text-6xl">
           Lokasi dan kontak
         </h1>
-        <p class="mt-4 max-w-md text-base leading-relaxed text-[#A3A3A3] sm:text-lg">
+        <p class="mt-4 max-w-md text-base leading-relaxed text-[#B8B8C0] sm:text-lg">
           Kunjungi Masashimura di Bekasi, atau hubungi kami lewat kontak resmi di bawah.
         </p>
       </header>
@@ -33,7 +33,7 @@
 
         <!-- Map -->
         <div
-          class="relative h-[340px] overflow-hidden rounded-3xl border border-white/[0.08] bg-[#141414] sm:h-[440px] lg:col-span-3 lg:h-auto lg:min-h-[600px]"
+          class="relative h-[340px] overflow-hidden rounded-3xl border border-white/[0.08] bg-[#1C1C1F] sm:h-[440px] lg:col-span-3 lg:h-auto lg:min-h-[600px]"
           @pointerleave="onMapLeave"
         >
           <div class="absolute inset-0">
@@ -61,7 +61,7 @@
               :href="mapsUrl"
               target="_blank"
               rel="noopener"
-              class="pointer-events-auto flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-black/60 px-4 py-2 text-xs font-medium text-[#FAFAFA] backdrop-blur-md transition-colors duration-150 hover:bg-white hover:text-[#080808] sm:text-[13px]"
+              class="pointer-events-auto flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-black/60 px-4 py-2 text-xs font-medium text-[#FAFAFA] backdrop-blur-md transition-colors duration-150 hover:bg-white hover:text-[#111113] sm:text-[13px]"
             >
               Buka di Maps
               <ArrowUpRight :size="13" />
@@ -94,7 +94,7 @@
 
             <div class="space-y-1.5">
               <p class="font-sora text-xl font-semibold leading-snug text-[#FAFAFA]">Jl. Pintu Air No.48</p>
-              <p class="text-sm leading-relaxed text-[#A3A3A3]">
+              <p class="text-sm leading-relaxed text-[#B8B8C0]">
                 Harapan Mulya, Medan Satria,<br />Kota Bekasi, Jawa Barat
               </p>
               <p class="inline-flex items-center gap-2 pt-3 text-[13px] font-medium text-[#F4C542]">
@@ -131,10 +131,10 @@
                 class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium"
                 :class="isOpen
                   ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300'
-                  : 'border-white/10 bg-white/[0.05] text-[#A3A3A3]'"
+                  : 'border-white/10 bg-white/[0.05] text-[#B8B8C0]'"
               >
                 <span
-                  :class="isOpen ? 'animate-pulse bg-emerald-400' : 'bg-[#737373]'"
+                  :class="isOpen ? 'animate-pulse bg-emerald-400' : 'bg-[#9A9AA3]'"
                   class="h-1.5 w-1.5 shrink-0 rounded-full"
                 ></span>
                 {{ isOpen ? "Buka" : "Tutup" }}
@@ -150,7 +150,7 @@
                   ? 'border-[#D92B22]/30 bg-[#D92B22]/[0.08]'
                   : 'border-transparent bg-white/[0.025]'"
               >
-                <span class="flex items-center gap-2.5 text-sm" :class="isToday(row) ? 'font-medium text-[#FAFAFA]' : 'text-[#A3A3A3]'">
+                <span class="flex items-center gap-2.5 text-sm" :class="isToday(row) ? 'font-medium text-[#FAFAFA]' : 'text-[#B8B8C0]'">
                   {{ row.label }}
                   <span
                     v-if="isToday(row)"
@@ -159,7 +159,7 @@
                 </span>
                 <span
                   class="whitespace-nowrap text-sm font-semibold tabular-nums"
-                  :class="row.closed ? 'text-[#737373]' : 'text-[#FAFAFA]'"
+                  :class="row.closed ? 'text-[#9A9AA3]' : 'text-[#FAFAFA]'"
                 >
                   {{ row.time }}
                 </span>
@@ -168,7 +168,7 @@
 
             <div class="mt-auto space-y-0.5 border-t border-white/[0.07] pt-4">
               <p class="text-sm font-medium" :class="isOpen ? 'text-emerald-300' : 'text-[#FAFAFA]'">{{ statusNote }}</p>
-              <p class="text-xs text-[#737373]">Waktu Indonesia Barat (WIB)</p>
+              <p class="text-xs text-[#9A9AA3]">Waktu Indonesia Barat (WIB)</p>
             </div>
           </article>
         </div>
@@ -187,13 +187,13 @@
               <div class="icon-tile transition-colors duration-300 group-hover:bg-[#F4C542]/20"><Mail :size="17" /></div>
               <h2 class="font-sora text-base font-semibold text-[#FAFAFA]">Email</h2>
             </div>
-            <span class="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-[#A3A3A3] transition-all duration-300 group-hover:border-[#F4C542] group-hover:bg-[#F4C542] group-hover:text-[#080808]">
+            <span class="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-[#B8B8C0] transition-all duration-300 group-hover:border-[#F4C542] group-hover:bg-[#F4C542] group-hover:text-[#111113]">
               <ArrowUpRight :size="16" />
             </span>
           </div>
           <div class="space-y-1.5">
             <p class="font-sora text-xl font-semibold text-[#FAFAFA]">Kirim pesan</p>
-            <p class="break-all text-sm text-[#A3A3A3]">kedaimasashimura@gmail.com</p>
+            <p class="break-all text-sm text-[#B8B8C0]">kedaimasashimura@gmail.com</p>
           </div>
         </a>
 
@@ -329,8 +329,8 @@ const copyAddress = async () => {
 <style scoped>
 /*
   Palet
-  - Warm black  #080808  → latar
-  - Surface     #141414  → kartu
+  - Warm black  #111113  → latar
+  - Surface     #1C1C1F  → kartu
   - Washi       #FAFAFA  → teks utama (putih hangat, bukan putih murni)
   - Crimson     #D92B22  → aksi & penanda "hari ini"
   - Champagne   #F4C542  → detail premium (ikon, landmark, hover)
@@ -345,7 +345,7 @@ const copyAddress = async () => {
 .card {
   border-radius: 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.07);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012)), #141414;
+  background: #1C1C1F;
   padding: 1.5rem;
 }
 @media (min-width: 640px) {

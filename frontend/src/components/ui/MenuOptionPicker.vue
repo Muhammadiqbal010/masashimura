@@ -21,7 +21,7 @@
           <button
             type="button"
             aria-label="Tutup"
-            class="-mr-2 -mt-1 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-[#A3A3A3] transition-colors hover:bg-white/5 hover:text-[#FAFAFA]"
+            class="-mr-2 -mt-1 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-[#B8B8C0] transition-colors hover:bg-white/5 hover:text-[#FAFAFA]"
             @click="$emit('close')"
           >
             <X :size="18" />
@@ -33,7 +33,7 @@
           <fieldset v-for="group in menu.options" :key="group.name" class="space-y-3">
             <legend class="flex w-full flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
               <span class="font-sora text-base font-semibold text-[#FAFAFA]">{{ group.name }}</span>
-              <span class="text-xs font-medium" :class="group.required ? 'text-[#F0605A]' : 'text-[#737373]'">
+              <span class="text-xs font-medium" :class="group.required ? 'text-[#F0605A]' : 'text-[#9A9AA3]'">
                 {{ group.required ? "Wajib" : "Opsional" }} · {{ group.multiple ? "boleh lebih dari satu" : "pilih satu" }}
               </span>
             </legend>
@@ -107,7 +107,7 @@
               :class="[
                 'flex h-[52px] flex-1 items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold transition-all duration-200',
                 missingGroup
-                  ? 'cursor-not-allowed border border-white/5 bg-[#1A1A1A] text-[#737373]'
+                  ? 'cursor-not-allowed border border-white/5 bg-[#232327] text-[#9A9AA3]'
                   : 'bg-[#D92B22] text-white hover:bg-[#B8201A] hover:shadow-[0_8px_24px_-8px_rgba(217,43,34,0.6)] active:scale-[0.98]'
               ]"
               @click="confirm"
@@ -181,10 +181,10 @@ onUnmounted(() => document.removeEventListener("keydown", onKey))
 </script>
 
 <style scoped>
-/* Palet: Surface #141414 · Washi #FAFAFA · Crimson #D92B22 · Champagne #F4C542 */
+/* Palet: Surface #1C1C1F · Washi #FAFAFA · Crimson #D92B22 · Champagne #F4C542 */
 
 .picker-sheet {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)), #141414;
+  background: #1C1C1F;
   box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.7);
 }
 

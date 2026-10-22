@@ -366,9 +366,9 @@ onBeforeUnmount(() => {
   flex-direction: column;
   flex-shrink: 0;
   background: var(--bg-sidebar);
-  box-shadow: 1px 0 0 rgb(var(--ink) / 0.035);
+  border-right: 1px solid var(--border);
   color: var(--text);
-  font-family: 'Manrope', system-ui, sans-serif;
+  font-family: var(--font-body, 'Manrope', system-ui, sans-serif);
   user-select: none;
 
   /* mobile: drawer tersembunyi. visibility mencegah fokus keyboard masuk ke menu yang tak terlihat */
@@ -385,7 +385,7 @@ onBeforeUnmount(() => {
 @media (min-width: 1024px) {
   .sb {
     position: sticky;
-    width: 16rem;
+    width: 15.5rem;
     transform: none;
     visibility: visible;
     box-shadow: none;
@@ -406,7 +406,7 @@ onBeforeUnmount(() => {
 
 .sb-logo-tile { display: inline-flex; }
 .sb-logo {
-  height: 1.75rem;
+  height: 2rem;
   width: auto;
   object-fit: contain;
   pointer-events: none;
@@ -417,12 +417,11 @@ onBeforeUnmount(() => {
 }
 
 .sb-eyebrow {
-  margin: 0.55rem 0 0;
+  margin: 0.45rem 0 0;
   font-family: "Manrope", system-ui, sans-serif;
-  font-size: 0.66rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   color: var(--text-faint);
 }
 
@@ -486,10 +485,10 @@ onBeforeUnmount(() => {
   padding: 0.12rem 0.45rem;
   border-radius: 6px;
   font-family: "Manrope", system-ui, sans-serif;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  text-transform: capitalize;
   background: rgb(34 197 94 / 0.12);
   color: var(--green-soft);
 }
@@ -514,9 +513,8 @@ onBeforeUnmount(() => {
   margin: 0.6rem 0 0.2rem;
   padding: 0 0.75rem;
   font-family: "Manrope", system-ui, sans-serif;
-  font-size: 0.72rem;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 600;
   color: var(--text-faint);
 }
 
@@ -525,30 +523,20 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: 0.7rem;
-  min-height: 40px;
-  padding: 0.5rem 0.75rem;
-  border-radius: 10px;
+  min-height: 44px;
+  padding: 0.5rem 0.85rem;
+  border-radius: 12px;
   color: var(--text-dim);
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 500;
   text-decoration: none;
   transition: background 0.15s, color 0.15s;
 }
 .sb-link:hover { background: var(--surface-hover); color: var(--text); }
-.sb-link.is-active { background: color-mix(in srgb, var(--accent) 11%, transparent); color: var(--text); font-weight: 600; }
-.sb-link.is-active::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 24%;
-  bottom: 24%;
-  width: 3px;
-  border-radius: 0 3px 3px 0;
-  background: var(--accent);
-}
+.sb-link.is-active { background: var(--accent); color: var(--on-accent); font-weight: 700; box-shadow: 0 8px 20px -12px color-mix(in srgb, var(--accent) 90%, transparent); }
 .sb-link-icon { flex-shrink: 0; color: var(--text-faint); transition: color 0.15s; }
 .sb-link:hover .sb-link-icon { color: var(--text-dim); }
-.sb-link.is-active .sb-link-icon { color: var(--accent-text); }
+.sb-link.is-active .sb-link-icon { color: var(--on-accent); }
 .sb-link-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .sb-badge {
@@ -559,8 +547,8 @@ onBeforeUnmount(() => {
   height: 20px;
   padding: 0 0.3rem;
   border-radius: 99px;
-  background: var(--accent);
-  color: var(--on-accent);
+  background: var(--brand-yellow, #f4c542);
+  color: #1a1400;
   font-family: "Manrope", system-ui, sans-serif;
   font-size: 0.72rem;
   font-weight: 700;
@@ -573,10 +561,10 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  min-height: 40px;
-  padding: 0.5rem 0.75rem;
+  min-height: 44px;
+  padding: 0.5rem 0.85rem;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   background: transparent;
   color: var(--text-2);
   font-family: inherit;
@@ -588,9 +576,8 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 600;
-  letter-spacing: 0.04em;
 }
 .sb-group-icon.tone-amber { color: var(--amber-soft); }
 .sb-group-icon.tone-sky   { color: var(--blue-soft); }
@@ -642,7 +629,7 @@ onBeforeUnmount(() => {
   padding: 0.45rem 0.75rem;
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: rgb(var(--ink) / 0.03);
+  background: var(--surface);
   color: var(--text);
   font-family: inherit;
   text-align: left;
@@ -654,7 +641,7 @@ onBeforeUnmount(() => {
 .sb-theme-icon { flex-shrink: 0; color: var(--amber-soft); }
 .sb-theme-copy { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .sb-theme-title { font-size: 0.8125rem; font-weight: 600; line-height: 1.2; }
-.sb-theme-state { font-size: 0.72rem; color: var(--text-dim); line-height: 1.2; }
+.sb-theme-state { font-size: 0.75rem; color: var(--text-dim); line-height: 1.2; }
 
 .sb-switch {
   position: relative;
@@ -662,8 +649,8 @@ onBeforeUnmount(() => {
   width: 44px;
   height: 24px;
   border-radius: 99px;
-  background: #fcd34d;
-  border: 1px solid #f4c542;
+  background: #f4c542;
+  border: 1px solid #d9a82a;
   transition: background 0.2s, border-color 0.2s;
 }
 .sb-switch.is-on { background: #3f3f46; border-color: #52525b; }
@@ -721,7 +708,7 @@ onBeforeUnmount(() => {
   max-width: 24rem;
   padding: 1.5rem;
   border: 1px solid var(--border-strong);
-  border-radius: 18px;
+  border-radius: 16px;
   background: var(--surface);
   color: var(--text);
   box-shadow: var(--shadow-lg);

@@ -18,6 +18,9 @@
     <!-- BRIEFING HARI INI (independen dari filter tanggal; dimuat sendiri) -->
     <BriefingStrip ref="briefingRef" />
 
+    <!-- PESANAN HARI INI (independen dari filter tanggal; refresh sendiri tiap 30 detik) -->
+    <TodayOrdersCard ref="todayOrdersRef" />
+
     <!-- FILTER BAR -->
     <div class="filter-bar">
       <div class="date-inputs">
@@ -328,6 +331,7 @@ import apiClient from '@/api/client';
 import { useTheme } from '@/composables/useTheme';
 import PredictionInsights from '@/components/ui/admin/PredictionInsights.vue';
 import BriefingStrip from '@/components/ui/admin/BriefingStrip.vue';
+import TodayOrdersCard from '@/components/ui/admin/TodayOrdersCard.vue';
 import SimulationPanel from '@/components/ui/admin/SimulationPanel.vue';
 import { analyticsAPI } from '@/api/analytics';
 
@@ -503,6 +507,7 @@ onMounted(fetchPrediction);
 
 // ── Strip Briefing (dimuat sendiri; di sini hanya ikut "Muat ulang") ──────
 const briefingRef = ref(null);
+const todayOrdersRef = ref(null);
 
 // ── Menu: periode ini / perkiraan besok ───────────────────────────────────
 // Data besok dimuat saat toggle pertama kali dibuka, bukan di awal, supaya dashboard tetap ringan.
@@ -534,6 +539,7 @@ const refreshAll = () => Promise.all([
   fetchStats(),
   fetchPrediction(),
   briefingRef.value?.reload?.(),
+  todayOrdersRef.value?.reload?.(),
   menuView.value === 'tomorrow' ? fetchTomorrow() : null,
 ]);
 
@@ -755,8 +761,9 @@ const formatPrice = (value) =>
   color: var(--text);
   /* konten dibatasi --page-max, tapi latar tetap full-width */
   padding: clamp(1.1rem, 3vw, 2.5rem) max(clamp(1rem, 3vw, 1.5rem), calc((100% - var(--page-max)) / 2));
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
+  padding-top: 0.5rem;
 }
 
 /* ── Header ──────────────────────────────────────────────────────── */
@@ -764,22 +771,22 @@ const formatPrice = (value) =>
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  margin-bottom: 2.5rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid rgb(var(--ink) / 0.06);
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.75rem;
 }
 .dash-eyebrow {
-  font-family: 'Manrope', system-ui, sans-serif;
-  font-size: 0.72rem;
-  letter-spacing: -0.01em;
+  font-size: 0.875rem;
+  font-weight: 600;
   color: var(--accent-text);
-  margin-bottom: 0.3rem;
+  margin: 0 0 0.25rem;
 }
 .dash-title {
-  font-family: 'Manrope', system-ui, sans-serif;
-  font-size: 1.75rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 1.4rem + 1vw, 2.25rem);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
   color: var(--text);
   margin: 0;
 }
@@ -790,11 +797,12 @@ const formatPrice = (value) =>
   flex-wrap: wrap;
   align-items: center;
   gap: 1rem;
-  margin-bottom: 2.5rem;
-  padding: 1rem 1.25rem;
+  margin-bottom: 1.75rem;
+  padding: 0.85rem 1.25rem;
   background: var(--surface);
-  border: 1px solid rgb(var(--ink) / 0.06);
-  border-radius: 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-card);
 }
 .date-inputs {
   display: flex;
@@ -807,8 +815,8 @@ const formatPrice = (value) =>
   gap: 0.2rem;
 }
 .date-label {
-  font-size: 0.72rem;
-  font-family: 'Manrope', system-ui, sans-serif;
+  font-size: 0.8125rem;
+  font-family: var(--font-body);
   letter-spacing: -0.01em;
   color: var(--text-faint);
 }
@@ -818,7 +826,7 @@ const formatPrice = (value) =>
   outline: none;
   color: var(--text);
   font-size: 0.85rem;
-  font-family: 'Inter', monospace;
+  font-family: var(--font-body);
   cursor: pointer;
   min-width: 130px;
 
@@ -833,14 +841,15 @@ const formatPrice = (value) =>
   margin-left: auto;
 }
 .shortcut-btn {
-  padding: 0.35rem 0.9rem;
-  border-radius: 8px;
+  min-height: 36px;
+  padding: 0.35rem 1rem;
+  border-radius: 10px;
   border: 1px solid rgb(var(--ink) / 0.1);
   background: transparent;
   color: var(--text-dim);
-  font-family: 'Manrope', system-ui, sans-serif;
-  font-size: 0.7rem;
-  letter-spacing: -0.01em;
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.18s ease;
 }
@@ -849,8 +858,8 @@ const formatPrice = (value) =>
   color: var(--text-2);
 }
 .shortcut-btn.active {
-  background: #d92b22;
-  border-color: #d92b22;
+  background: var(--accent);
+  border-color: var(--accent);
   color: var(--on-accent);
 }
 
@@ -864,13 +873,13 @@ const formatPrice = (value) =>
   padding: 6rem 2rem;
   color: var(--text-faint);
   font-size: 0.75rem;
-  font-family: 'Manrope', system-ui, sans-serif;
+  font-family: var(--font-body);
   letter-spacing: -0.01em;
 }
 .spinner {
   width: 32px; height: 32px;
-  border: 2px solid rgb(var(--ink) / 0.08);
-  border-top-color: #d92b22;
+  border: 2px solid rgb(var(--ink) / 0.1);
+  border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -883,19 +892,20 @@ const formatPrice = (value) =>
   margin-bottom: 1.25rem;
 }
 .stat-hero {
-  background: linear-gradient(135deg, var(--hero-from) 0%, var(--surface) 65%);
-  border: 1px solid rgba(217,43,34,0.25);
-  border-radius: 18px;
-  padding: clamp(1.25rem, 3vw, 2rem) clamp(1.25rem, 3vw, 2.25rem);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: clamp(1.25rem, 3vw, 1.75rem) clamp(1.25rem, 3vw, 2rem);
   position: relative;
   overflow: hidden;
+  box-shadow: var(--shadow-card);
 }
 .stat-hero::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-  background: #d92b22;
+  top: 0; bottom: 0; left: 0;
+  width: 4px;
+  background: var(--accent);
 }
 .stat-hero-top {
   display: flex;
@@ -904,17 +914,19 @@ const formatPrice = (value) =>
   margin-bottom: 0.75rem;
 }
 .stat-hero-label {
-  font-family: 'Manrope', system-ui, sans-serif;
-  font-size: 0.75rem;
-  letter-spacing: -0.01em;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
   color: var(--text-dim);
 }
 .stat-hero-value {
-  font-family: 'Inter', monospace;
-  font-size: clamp(2rem, 6vw, 3rem);
+  font-family: var(--font-body);
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5.5vw, 2.75rem);
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: var(--red-soft);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
   line-height: 1.05;
   margin-bottom: 0.85rem;
 }
@@ -934,22 +946,22 @@ const formatPrice = (value) =>
   gap: 0.4rem;
   padding: 0.25rem 0.7rem;
   border-radius: 100px;
-  font-family: 'Inter', monospace;
+  font-family: var(--font-body);
   font-size: 0.78rem;
   font-weight: 700;
 }
 .trend-up   { background: rgba(34,197,94,0.1);  color: var(--green-soft); border: 1px solid rgba(34,197,94,0.25); }
 .trend-down { background: rgba(248,113,113,0.1); color: var(--red-soft); border: 1px solid rgba(248,113,113,0.25); }
 .trend-pill-note {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-weight: 400;
-  font-size: 0.72rem;
+  font-size: 0.8125rem;
   opacity: 0.7;
 }
 
 .stat-badge {
-  font-size: 0.72rem;
-  font-family: 'Manrope', system-ui, sans-serif;
+  font-size: 0.8125rem;
+  font-family: var(--font-body);
   letter-spacing: -0.01em;
   padding: 0.15rem 0.5rem;
   border-radius: 100px;
@@ -972,9 +984,10 @@ const formatPrice = (value) =>
 
 .stat-card {
   background: var(--surface);
-  border: 1px solid rgb(var(--ink) / 0.05);
-  border-radius: 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
   padding: 1.15rem 1.3rem;
+  box-shadow: var(--shadow-card);
   position: relative;
   overflow: hidden;
   min-width: 0;
@@ -986,7 +999,7 @@ const formatPrice = (value) =>
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 2px;
-  background: #a855f7;
+  background: var(--purple-soft);
 }
 
 .stat-top {
@@ -997,9 +1010,9 @@ const formatPrice = (value) =>
   margin-bottom: 0.6rem;
 }
 .stat-label {
-  font-family: 'Manrope', system-ui, sans-serif;
-  font-size: 0.72rem;
-  letter-spacing: -0.01em;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
   color: var(--text-dim);
   white-space: nowrap;
   overflow: hidden;
@@ -1007,35 +1020,38 @@ const formatPrice = (value) =>
   min-width: 0;
 }
 .stat-value {
-  font-family: 'Inter', monospace;
-  font-size: 1.4rem;
+  font-family: var(--font-body);
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.625rem;
   font-weight: 700;
   color: var(--text);
-  line-height: 1.1;
+  line-height: 1.15;
   margin-bottom: 0.4rem;
   letter-spacing: -0.02em;
 }
 .accent-purple .stat-value { color: var(--purple-soft); }
 
 .stat-value-text {
-  font-family: 'Inter', sans-serif;
-  font-size: 1rem;
+  font-family: var(--font-body);
+  font-size: 1.0625rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .stat-sub {
-  font-size: 0.7rem;
+  font-size: 0.78rem;
   color: var(--text-faint);
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
 }
 
 /* ── Table Card ──────────────────────────────────────────────────── */
 .table-card {
   background: var(--surface);
-  border: 1px solid rgb(var(--ink) / 0.05);
+  border: 1px solid var(--border);
   border-radius: 16px;
+  box-shadow: var(--shadow-card);
   overflow: hidden;
   margin-bottom: 1.5rem;
 }
@@ -1046,20 +1062,19 @@ const formatPrice = (value) =>
   flex-wrap: wrap;
   gap: 0.75rem;
   padding: 1.5rem 1.75rem;
-  border-bottom: 1px solid rgb(var(--ink) / 0.05);
+  border-bottom: 1px solid var(--border);
 }
 .table-title {
-  font-family: 'Manrope', system-ui, sans-serif;
-  font-size: 1rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-family: var(--font-body);
+  font-size: 1.0625rem;
+  font-weight: 700;
   color: var(--text);
   margin: 0 0 0.25rem;
 }
 .table-sub {
-  font-size: 0.7rem;
+  font-size: 0.78rem;
   color: var(--text-faint);
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   margin: 0;
 }
 
@@ -1076,7 +1091,7 @@ const formatPrice = (value) =>
 }
 .empty-hint {
   color: var(--text-faint);
-  font-size: 0.72rem;
+  font-size: 0.8125rem;
   margin: 0;
 }
 
@@ -1088,15 +1103,14 @@ const formatPrice = (value) =>
   min-width: 600px;
 }
 .menu-table thead tr {
-  background: rgb(var(--ink) / 0.02);
+  background: var(--surface-2);
 }
 .menu-table th {
   padding: 0.75rem 1.5rem;
-  font-family: 'Manrope', system-ui, sans-serif;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  color: var(--text-faint);
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-dim);
   text-align: left;
   white-space: nowrap;
 }
@@ -1124,7 +1138,7 @@ const formatPrice = (value) =>
   border-radius: 8px;
   font-size: 0.75rem;
   font-weight: 700;
-  font-family: 'Inter', monospace;
+  font-family: var(--font-body);
 }
 .rank-gold   { background: rgba(244,197,66,0.15); color: var(--amber-soft); }
 .rank-silver { background: rgba(156,163,175,0.12); color: var(--text-dim); }
@@ -1135,7 +1149,7 @@ const formatPrice = (value) =>
 
 .td-center { text-align: center; }
 .qty-val { font-weight: 700; font-family: monospace; font-size: 1rem; }
-.qty-unit { font-size: 0.7rem; color: var(--text-faint); margin-left: 0.25rem; }
+.qty-unit { font-size: 0.78rem; color: var(--text-faint); margin-left: 0.25rem; }
 
 .td-right { text-align: right; }
 .td-revenue { font-family: monospace; font-weight: 700; color: var(--amber-soft); }
@@ -1144,7 +1158,7 @@ const formatPrice = (value) =>
 .bar-cell { display: flex; align-items: center; gap: 0.6rem; }
 .bar-track {
   flex: 1;
-  background: rgb(var(--ink) / 0.06);
+  background: var(--border);
   height: 4px;
   border-radius: 99px;
   overflow: hidden;
@@ -1156,7 +1170,7 @@ const formatPrice = (value) =>
   transition: width 0.7s ease;
 }
 .bar-pct {
-  font-size: 0.72rem;
+  font-size: 0.8125rem;
   font-family: monospace;
   color: var(--text-faint);
   min-width: 2.5rem;
@@ -1164,13 +1178,13 @@ const formatPrice = (value) =>
 }
 
 /* ── Predict Section ─────────────────────────────────────────────── */
-.predict-tabs { display: inline-flex; gap: 4px; padding: 3px; margin-bottom: 1.1rem; border-radius: 10px; background: rgb(var(--ink) / 0.06); }
+.predict-tabs { display: inline-flex; gap: 4px; padding: 3px; margin-bottom: 1.1rem; border-radius: 10px; background: var(--border); }
 .predict-tab { min-height: 36px; padding: 0 1rem; border: 0; border-radius: 8px; background: transparent; color: var(--text-dim); font-size: .75rem; cursor: pointer; }
 .predict-tab[aria-selected="true"] { background: var(--surface); color: var(--text); font-weight: 600; }
 .predict-tab:focus-visible { outline: 2px solid var(--red-soft); outline-offset: 2px; }
 .predict-section {
   background: var(--surface);
-  border: 1px solid rgb(var(--ink) / 0.05);
+  border: 1px solid var(--border);
   border-radius: 16px;
   padding: 1.5rem 1.75rem;
   margin-bottom: 2.5rem;
@@ -1205,13 +1219,13 @@ const formatPrice = (value) =>
   gap: 0.1rem;
 }
 .predict-inline-label {
-  font-family: 'Manrope', system-ui, sans-serif;
-  font-size: 0.72rem;
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
   letter-spacing: -0.01em;
   color: var(--text-faint);
 }
 .predict-inline-value {
-  font-family: 'Inter', monospace;
+  font-family: var(--font-body);
   font-size: 1.05rem;
   font-weight: 700;
   color: var(--purple-soft);
@@ -1228,8 +1242,8 @@ const formatPrice = (value) =>
   border: 1px solid rgba(217,43,34,0.3);
   background: rgba(217,43,34,0.08);
   color: var(--red-soft);
-  font-family: 'Manrope', system-ui, sans-serif;
-  font-size: 0.72rem;
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
   letter-spacing: -0.01em;
   cursor: pointer;
   transition: all 0.18s ease;
@@ -1240,8 +1254,8 @@ const formatPrice = (value) =>
 .predict-notice {
   margin: -0.75rem 0 1.25rem;
   padding: 0.55rem 0.8rem;
-  font-size: 0.72rem;
-  font-family: 'Inter', sans-serif;
+  font-size: 0.8125rem;
+  font-family: var(--font-body);
   color: var(--text-faint);
   border: 1px solid rgba(128, 128, 128, 0.3);
   border-radius: 8px;
@@ -1257,14 +1271,14 @@ const formatPrice = (value) =>
 
 .chart-card {
   background: var(--surface-2);
-  border: 1px solid rgb(var(--ink) / 0.05);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 1.1rem 1.2rem;
   min-width: 0;
   overflow: hidden;
 }
 .chart-title {
-  font-family: 'Manrope', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 0.75rem;
   letter-spacing: -0.01em;
   color: var(--text-2);
@@ -1297,13 +1311,13 @@ const formatPrice = (value) =>
 
 /* meta header: info update + tombol muat ulang */
 .dash-meta { display: flex; align-items: center; gap: 0.75rem; }
-.dash-updated { font-size: 0.72rem; color: var(--text-dim); white-space: nowrap; }
+.dash-updated { font-size: 0.8125rem; color: var(--text-dim); white-space: nowrap; }
 .refresh-btn {
   display: inline-flex; align-items: center; gap: 0.45rem;
   min-height: 36px; padding: 0.4rem 0.85rem;
   border-radius: 10px; border: 1px solid var(--border-strong);
   background: transparent; color: var(--text-2);
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.7rem;
+  font-family: var(--font-body); font-size: 0.78rem;
   letter-spacing: -0.01em;
   cursor: pointer; transition: all 0.15s;
 }
@@ -1323,7 +1337,7 @@ const formatPrice = (value) =>
 .retry-btn {
   min-height: 36px; padding: 0.45rem 1rem; border-radius: 8px; flex-shrink: 0;
   background: transparent; border: 1px solid rgb(239 68 68 / 0.5); color: var(--red-soft);
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.7rem; letter-spacing: -0.01em;
+  font-family: var(--font-body); font-size: 0.78rem; letter-spacing: -0.01em;
   cursor: pointer; transition: background 0.15s;
 }
 .retry-btn:hover { background: rgb(239 68 68 / 0.12); }
@@ -1393,7 +1407,7 @@ const formatPrice = (value) =>
 /* ── Prediksi tersimpan: keterangan akurasi di bawah judul grafik ───── */
 .chart-caption {
   margin: -0.2rem 0 0.7rem;
-  font-size: 0.72rem;
+  font-size: 0.8125rem;
   line-height: 1.4;
   color: var(--text-dim);
 }
@@ -1413,8 +1427,8 @@ const formatPrice = (value) =>
   border-radius: 7px;
   background: transparent;
   color: var(--text-dim);
-  font-family: 'Manrope', system-ui, sans-serif;
-  font-size: 0.72rem;
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
   letter-spacing: -0.01em;
   cursor: pointer;
   transition: background 0.18s ease, color 0.18s ease;
@@ -1427,7 +1441,7 @@ const formatPrice = (value) =>
   padding: 0.12rem 0.65rem;
   border-radius: 999px;
   border: 1px solid rgb(var(--ink) / 0.14);
-  font-size: 0.72rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: var(--text-2);
 }
@@ -1447,7 +1461,7 @@ const formatPrice = (value) =>
 }
 .tomorrow-note {
   margin: 0.9rem 0 0;
-  font-size: 0.72rem;
+  font-size: 0.8125rem;
   line-height: 1.45;
   color: var(--text-faint);
 }

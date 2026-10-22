@@ -156,7 +156,7 @@ const metaText = computed(() => {
 
 <style scoped>
 /*
-  Palet: Surface #141414 · Washi #FAFAFA · Muted #A3A3A3
+  Palet: Surface #1C1C1F · Washi #FAFAFA · Muted #B8B8C0
   Warna aksen (--pa) dan warna teks tombol (--pa-ink) tetap diambil dari tema yang
   dipilih admin lewat THEMES, jadi pilihan tema di admin tetap berfungsi.
 */
@@ -172,7 +172,7 @@ const metaText = computed(() => {
   background:
     radial-gradient(70% 90% at 100% 0%, var(--pa-soft), transparent 70%),
     linear-gradient(180deg, rgb(255 255 255 / 0.04), rgb(255 255 255 / 0.01)),
-    #141414;
+    #1C1C1F;
   padding: 1.25rem;
 }
 @media (min-width: 640px) {
@@ -194,7 +194,7 @@ const metaText = computed(() => {
   overflow: hidden;
   border-radius: 1.75rem;
   border: 1px solid rgb(255 255 255 / 0.1);
-  background: #141414;
+  background: #1C1C1F;
 }
 
 /* Tombol tutup: selalu di dalam kartu, pojok kanan atas */
@@ -223,7 +223,7 @@ const metaText = computed(() => {
   position: relative; flex-shrink: 0; overflow: hidden;
   width: var(--media-w, auto);
   border-radius: 1.25rem;
-  border: 1px solid rgb(255 255 255 / 0.1); background: #1A1A1A;
+  border: 1px solid rgb(255 255 255 / 0.1); background: #232327;
 }
 .promo-media img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .promo-card--overlay .promo-media { position: absolute; inset: 0; width: auto; border: none; border-radius: 0; }
@@ -272,7 +272,7 @@ const metaText = computed(() => {
 .is-compact .promo-title--split,
 .is-compact .promo-title--overlay { font-size: clamp(1.2rem, 1rem + 0.9vw, 1.6rem); }
 
-.promo-text { margin: 0; max-width: 36rem; font-size: 0.9375rem; line-height: 1.65; color: #A3A3A3; }
+.promo-text { margin: 0; max-width: 36rem; font-size: 0.9375rem; line-height: 1.65; color: #B8B8C0; }
 .promo-card--overlay .promo-text { color: rgb(245 240 234 / 0.82); }
 
 .promo-meta {

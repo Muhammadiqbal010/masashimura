@@ -2,98 +2,88 @@
   <nav
     v-if="!isAdminRoute"
     :class="[
-      'fixed top-0 w-full z-50 transition-all duration-500',
-      isScrolled || isOpen
-        ? 'bg-[#080808]/80 backdrop-blur-2xl py-3'
-        : 'bg-gradient-to-b from-[#080808]/75 to-transparent py-5',
+      'site-nav fixed top-0 z-50 w-full transition-[padding,background-color] duration-300',
+      isScrolled || isOpen ? 'is-solid py-2.5' : 'py-4',
     ]"
   >
-    <div class="max-w-7xl mx-auto px-6 md:px-12 flex justify-between items-center">
+    <div class="mx-auto flex max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10">
 
       <!-- Logo -->
       <router-link
         to="/"
-        class="flex items-center shrink-0"
+        class="flex shrink-0 items-center"
         @click="closeMenu"
         aria-label="Masashimura – Beranda"
       >
         <img
           src="@/assets/masashimura-logo.png"
           alt="Masashimura"
-          class="object-contain transition-all duration-300 w-[130px] md:w-[160px]"
-          :class="isScrolled ? 'opacity-90' : 'opacity-100'"
+          class="w-[128px] object-contain transition-all duration-300 md:w-[148px]"
         />
       </router-link>
 
       <!-- Desktop Nav -->
-      <div class="hidden md:flex items-center gap-2">
+      <div class="hidden items-center gap-1 md:flex">
         <router-link
           v-for="link in navLinks"
           :key="link.path"
           :to="link.path"
-          class="relative rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-200"
-          :class="isExact(link.path) ? 'text-[#F4C542]' : 'text-white/70 hover:text-white'"
+          class="nav-link"
+          :class="{ 'is-active': isExact(link.path) }"
           :aria-current="isExact(link.path) ? 'page' : undefined"
         >
           {{ link.name }}
-          <span
-            class="absolute -bottom-0.5 left-4 right-4 h-[2px] rounded-full bg-[#F4C542] transition-transform duration-300 origin-left"
-            :class="isExact(link.path) ? 'scale-x-100' : 'scale-x-0'"
-          />
         </router-link>
-        <router-link
-          to="/menu"
-          class="ml-3 inline-flex items-center rounded-full bg-[#D92B22] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#B8201A] hover:shadow-[0_8px_24px_-8px_rgba(217,43,34,0.7)] active:scale-95"
-        >
+        <router-link to="/menu" class="nav-cta ml-4">
           Pesan sekarang
         </router-link>
       </div>
 
       <!-- Hamburger -->
       <button
-        class="md:hidden relative w-10 h-10 flex flex-col items-center justify-center gap-[5px] cursor-pointer rounded-xl border border-white/10 bg-white/[0.04]"
+        class="relative flex h-11 w-11 flex-col items-center justify-center gap-[5px] rounded-xl border border-white/12 bg-white/[0.05] md:hidden"
         @click="toggleMenu"
         :aria-expanded="isOpen"
         aria-controls="mobile-menu"
-        aria-label="Toggle navigasi"
+        aria-label="Buka atau tutup navigasi"
       >
         <span
-          class="block w-5 h-0.5 rounded bg-white transition-all duration-300 origin-center"
-          :class="isOpen ? 'rotate-45 translate-y-[7px]' : ''"
+          class="block h-0.5 w-5 origin-center rounded bg-white transition-all duration-300"
+          :class="isOpen ? 'translate-y-[7px] rotate-45' : ''"
         />
         <span
           class="block h-0.5 rounded bg-[#F4C542] transition-all duration-200"
-          :class="isOpen ? 'w-0 opacity-0' : 'w-4 opacity-60'"
+          :class="isOpen ? 'w-0 opacity-0' : 'w-3.5 opacity-90'"
         />
         <span
-          class="block w-5 h-0.5 rounded bg-white transition-all duration-300 origin-center"
-          :class="isOpen ? '-rotate-45 -translate-y-[7px]' : ''"
+          class="block h-0.5 w-5 origin-center rounded bg-white transition-all duration-300"
+          :class="isOpen ? '-translate-y-[7px] -rotate-45' : ''"
         />
       </button>
     </div>
 
     <!-- Mobile Menu -->
     <Transition
-      enter-active-class="transition-all duration-300 ease-out"
+      enter-active-class="transition-all duration-250 ease-out"
       enter-from-class="opacity-0 -translate-y-2"
       enter-to-class="opacity-100 translate-y-0"
-      leave-active-class="transition-all duration-200 ease-in"
+      leave-active-class="transition-all duration-150 ease-in"
       leave-from-class="opacity-100 translate-y-0"
       leave-to-class="opacity-0 -translate-y-2"
     >
       <div
         v-if="isOpen"
         id="mobile-menu"
-        class="md:hidden absolute top-full left-0 w-full bg-[#080808]/95 backdrop-blur-2xl"
+        class="absolute left-0 top-full w-full bg-[#111113] pb-6 md:hidden"
       >
-        <div class="max-w-7xl mx-auto px-6 py-5 space-y-1">
+        <div class="mx-auto max-w-7xl space-y-1 px-5 pt-2 sm:px-8">
           <router-link
             v-for="link in navLinks"
             :key="link.path"
             :to="link.path"
-            class="flex items-center justify-between rounded-xl px-4 py-4 text-base font-semibold transition-colors duration-200"
+            class="flex min-h-[52px] items-center justify-between rounded-xl px-4 text-base font-semibold transition-colors duration-200"
             :class="isExact(link.path)
-              ? 'bg-[#F4C542]/10 text-[#F4C542]'
+              ? 'bg-[#F4C542]/12 text-[#F4C542]'
               : 'text-white/80 hover:bg-white/[0.05] hover:text-white'"
             @click="closeMenu"
           >
@@ -102,7 +92,7 @@
           </router-link>
           <router-link
             to="/menu"
-            class="mt-3 flex w-full items-center justify-center rounded-xl bg-[#D92B22] px-4 py-4 text-base font-bold text-white active:scale-[0.98]"
+            class="nav-cta mt-3 flex w-full !min-h-[52px] justify-center text-base"
             @click="closeMenu"
           >
             Pesan sekarang
@@ -160,3 +150,50 @@ onUnmounted(() => {
   window.removeEventListener("keydown", handleKeydown)
 })
 </script>
+
+<style scoped>
+/* Bar charcoal menyatu dengan hero gelap — tanpa garis pemisah */
+.site-nav { background: linear-gradient(180deg, #111113 0%, rgb(17 17 19 / 0.88) 100%); }
+.site-nav.is-solid { background: rgb(17 17 19 / 0.94); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+
+.nav-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 0.95rem;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgb(255 255 255 / 0.78);
+  transition: color 0.2s;
+}
+.nav-link:hover { color: #fff; }
+.nav-link.is-active { color: #F4C542; }
+.nav-link.is-active::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #F4C542;
+  transform: translateX(-50%);
+}
+
+.nav-cta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 1.4rem;
+  border-radius: 12px;
+  background: #D92B22;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 700;
+  transition: background 0.2s, transform 0.15s;
+}
+.nav-cta:hover { background: #B8201A; }
+.nav-cta:active { transform: translateY(1px); }
+</style>

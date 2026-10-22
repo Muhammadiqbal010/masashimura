@@ -271,7 +271,7 @@ const handleSelfResetPassword = async () => {
 .login-root {
   min-height: 100vh;
   display: flex;
-  background: #050505;
+  background: #111113;
   font-family: 'Inter', sans-serif;
   color: #fff;
 }
@@ -362,7 +362,7 @@ const handleSelfResetPassword = async () => {
   flex: 1;
   display: flex; align-items: center; justify-content: center;
   padding: 3rem 1.5rem;
-  background: linear-gradient(160deg, #0d0d0d 0%, #050505 100%);
+  background: linear-gradient(160deg, #17171A 0%, #111113 100%);
 }
 .form-inner {
   width: 100%; max-width: 380px;
@@ -518,7 +518,7 @@ const handleSelfResetPassword = async () => {
 @media (max-width: 1023px) {
   .form-panel {
     background:
-      linear-gradient(160deg, #0d0d0d 0%, #050505 100%);
+      linear-gradient(160deg, #17171A 0%, #111113 100%);
     min-height: 100vh;
   }
   .form-inner { max-width: 420px; }

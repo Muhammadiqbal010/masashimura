@@ -24,7 +24,7 @@
           <div class="modal-sheet flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-[2rem] border border-white/[0.08] sm:max-w-lg sm:rounded-[2rem]">
 
             <!-- Foto (16:9, sama dengan hasil crop di admin) -->
-            <div class="relative aspect-video w-full flex-shrink-0 bg-[#1A1A1A]">
+            <div class="relative aspect-video w-full flex-shrink-0 bg-[#232327]">
               <img
                 v-if="menu.image_url"
                 :src="getMediaUrl(menu.image_url, 900)"
@@ -33,10 +33,10 @@
               />
               <div v-else class="flex h-full w-full flex-col items-center justify-center gap-2">
                 <span class="text-4xl opacity-25">🍜</span>
-                <span class="text-xs text-[#737373]">Belum ada foto</span>
+                <span class="text-xs text-[#9A9AA3]">Belum ada foto</span>
               </div>
 
-              <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-black/30"></div>
+              <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#1C1C1F] via-transparent to-black/30"></div>
 
               <!-- Aksi kanan atas: favorit, bagikan, tutup -->
               <div class="absolute right-3 top-3 z-10 flex items-center gap-2">
@@ -95,14 +95,14 @@
                 <h2 class="font-sora text-2xl font-semibold leading-tight tracking-tight text-[#FAFAFA]">
                   {{ menu.name }}
                 </h2>
-                <p class="text-sm leading-relaxed text-[#A3A3A3]">
+                <p class="text-sm leading-relaxed text-[#B8B8C0]">
                   {{ menu.description || "Menu andalan spesial Masashimura." }}
                 </p>
               </div>
 
               <!-- Ringkasan opsi yang bisa dipilih -->
               <div v-if="menu.options?.length" class="space-y-2">
-                <span class="block text-xs font-medium text-[#737373]">Pilihan yang tersedia</span>
+                <span class="block text-xs font-medium text-[#9A9AA3]">Pilihan yang tersedia</span>
                 <div class="flex flex-wrap items-center gap-2">
                   <span
                     v-for="group in menu.options"
@@ -131,7 +131,7 @@
             <!-- Footer: harga + aksi -->
             <div class="footer-safe flex flex-shrink-0 items-center justify-between gap-4 border-t border-white/[0.07] bg-black/20 px-6 pt-4 sm:px-7">
               <div class="min-w-0">
-                <span class="block text-xs text-[#737373]">Harga</span>
+                <span class="block text-xs text-[#9A9AA3]">Harga</span>
                 <span class="block font-sora text-2xl font-semibold leading-none tracking-tight text-[#FAFAFA]">
                   {{ formatPrice(menu.price_web) }}
                 </span>
@@ -145,7 +145,7 @@
                   'flex min-h-[48px] flex-shrink-0 items-center gap-2 rounded-full px-6 text-sm font-semibold transition-all duration-200',
                   menu.is_available && isStoreOpen
                     ? 'bg-[#D92B22] text-white hover:bg-[#B8201A] hover:shadow-[0_8px_24px_-8px_rgba(217,43,34,0.6)] active:scale-95'
-                    : 'cursor-not-allowed border border-white/5 bg-[#1A1A1A] text-[#737373]'
+                    : 'cursor-not-allowed border border-white/5 bg-[#232327] text-[#9A9AA3]'
                 ]"
               >
                 <Plus :size="16" />
@@ -195,10 +195,10 @@ const handleAdd = () => {
 .modal-body { --rec-bleed: 1.5rem; }
 @media (min-width: 640px) { .modal-body { --rec-bleed: 1.75rem; } }
 
-/* Palet: Surface #141414 · Washi #FAFAFA · Crimson #D92B22 · Champagne #F4C542 */
+/* Palet: Surface #1C1C1F · Washi #FAFAFA · Crimson #D92B22 · Champagne #F4C542 */
 
 .modal-sheet {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)), #141414;
+  background: #1C1C1F;
   box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.7);
 }
 

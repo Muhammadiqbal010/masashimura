@@ -598,7 +598,7 @@ onMounted(() => {
   padding: 2rem 1.5rem;
   max-width: 1280px;
   margin: 0 auto;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-ui);
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -656,8 +656,8 @@ onMounted(() => {
   top: 0; left: 0; right: 0; height: 2px;
   background: rgb(var(--ink) / 0.06);
 }
-.stat-green::before { background: #22c55e; }
-.stat-amber::before { background: #f4c542; }
+.stat-green::before { background: var(--green); }
+.stat-amber::before { background: var(--amber); }
 
 .stat-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.65rem; }
 .stat-label {
@@ -667,8 +667,8 @@ onMounted(() => {
 }
 .stat-dot { width: 6px; height: 6px; border-radius: 50%; }
 .dot-white { background: rgb(var(--ink) / 0.2); }
-.dot-green { background: #22c55e; }
-.dot-amber { background: #f4c542; }
+.dot-green { background: var(--green); }
+.dot-amber { background: var(--amber); }
 
 .stat-val {
   font-family: monospace; font-size: 1.8rem; font-weight: 700;
@@ -689,7 +689,7 @@ onMounted(() => {
 }
 .spinner {
   width: 28px; height: 28px;
-  border: 2px solid rgb(var(--ink) / 0.07); border-top-color: #d92b22;
+  border: 2px solid rgb(var(--ink) / 0.07); border-top-color: var(--accent);
   border-radius: 50%; animation: spin 0.8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -787,7 +787,7 @@ onMounted(() => {
 .action-active {
   background: color-mix(in srgb, var(--accent) 8%, transparent); border-color: color-mix(in srgb, var(--accent) 25%, transparent); color: var(--red-soft);
 }
-.action-active:hover { background: #d92b22; border-color: #d92b22; color: #fff; }
+.action-active:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
 .action-disabled {
   background: transparent; border-color: rgb(var(--ink) / 0.05);
   color: var(--text-faint); cursor: not-allowed;
@@ -878,12 +878,12 @@ onMounted(() => {
 .modal-save-btn {
   display: flex; align-items: center; justify-content: center; gap: 0.4rem;
   padding: 0.8rem; border-radius: 10px; border: none;
-  background: #d92b22; color: #fff;
+  background: var(--accent); color: #fff;
   font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
   letter-spacing: -0.01em;
   cursor: pointer; transition: background 0.15s;
 }
-.modal-save-btn:hover:not(:disabled) { background: #b8201a; }
+.modal-save-btn:hover:not(:disabled) { background: var(--accent-hover); }
 .modal-save-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .modal-cancel-btn {
   padding: 0.8rem; border-radius: 10px;
@@ -944,15 +944,15 @@ html[data-admin-theme] .lc-root :focus-visible { outline-offset: 2px; }
 .exp-rule { margin: 4px 20px 10px; font-size: 12px; line-height: 1.55; opacity: .75; }
 .exp-date { display: block; font-size: 12.5px; }
 .exp-days { display: block; margin-top: 2px; font-size: 11px; opacity: .65; }
-.exp-days.is-soon { opacity: 1; font-weight: 600; color: #d97706; }
+.exp-days.is-soon { opacity: 1; font-weight: 600; color: var(--amber-soft); }
 .exp-pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 600; background: rgba(128,128,128,.16); }
 .pin-state { font-size: 12px; }
 .pin-state--none { opacity: .55; }
-.pin-state--locked { color: #d92b22; font-weight: 600; }
-.pin-err { margin: 0 0 10px; font-size: 13px; color: #d92b22; }
+.pin-state--locked { color: var(--accent-text); font-weight: 600; }
+.pin-err { margin: 0 0 10px; font-size: 13px; color: var(--accent-text); }
 .pin-once-label { margin: 6px 0 0; font-size: 13px; opacity: .75; }
 .pin-once { margin: 6px 0 4px; font-family: monospace; font-size: 40px; font-weight: 700; letter-spacing: .3em; text-align: center; }
-.pin-once-warn { margin: 0 0 14px; font-size: 12.5px; text-align: center; color: #d97706; }
+.pin-once-warn { margin: 0 0 14px; font-size: 12.5px; text-align: center; color: var(--amber-soft); }
 
 /* ── Segmentasi & hapus ───────────────────────────────────────────── */
 .seg-chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 20px 4px; }
@@ -978,11 +978,11 @@ html[data-admin-theme] .lc-root :focus-visible { outline-offset: 2px; }
 .del-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 20px 4px; font-size: 12.5px; }
 .del-all { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
 .del-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-.del-btn { color: #d92b22; border-color: rgba(217,43,34,.4); background: transparent; }
+.del-btn { color: var(--accent-text); border-color: color-mix(in srgb, var(--accent) 40%, transparent); background: transparent; }
 .del-btn:disabled { opacity: .4; cursor: not-allowed; }
 .td-action .del-btn { margin-left: 6px; }
 .del-list { margin: 4px 0 14px; padding-left: 18px; font-size: 13px; line-height: 1.55; }
-.del-confirm-btn { background: #d92b22; color: #fff; }
+.del-confirm-btn { background: var(--accent); color: #fff; }
 .del-confirm-btn:disabled { opacity: .45; cursor: not-allowed; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 </style>

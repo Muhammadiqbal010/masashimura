@@ -15,7 +15,7 @@
   <transition name="promo" appear>
     <section
       v-if="visible"
-      class="promo border-b border-white/[0.06] bg-[#0a0a0a]"
+      class="promo border-b border-white/[0.06] bg-[#111113]"
       :style="vars"
       aria-label="Promo dan event"
     >

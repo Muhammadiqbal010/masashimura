@@ -1,14 +1,11 @@
 <template>
-  <div class="min-h-screen overflow-x-hidden bg-[#080808] font-inter text-[#FAFAFA] selection:bg-[#D92B22]/40 selection:text-white">
+  <div class="home min-h-screen overflow-x-hidden bg-[#111113] text-[#F5F3EF] selection:bg-[#D92B22]/40 selection:text-white">
 
-    <!-- ═══════════════════════════════════════════
-         1. HERO (tampil langsung, bagian CMS pakai skeleton)
-    ═══════════════════════════════════════════ -->
-    <section class="hero relative flex items-end overflow-hidden">
-
-      <div class="absolute inset-0">
+    <!-- ═══════════════ 1. HERO ═══════════════ -->
+    <section class="hero relative overflow-hidden bg-[#111113]">
+      <div class="absolute inset-0" aria-hidden="true">
         <div
-          class="absolute inset-x-0 -top-[12%] h-[124%] will-change-transform"
+          class="absolute inset-x-0 -top-[10%] h-[120%] will-change-transform"
           :style="{ transform: `translate3d(0, ${parallaxY}px, 0)` }"
         >
           <img
@@ -18,23 +15,22 @@
             alt=""
             fetchpriority="high"
             decoding="async"
-            class="h-full w-full object-cover"
+            class="h-full w-full object-cover opacity-[0.28]"
           />
         </div>
-        <div class="absolute inset-0 bg-gradient-to-t from-[#080808] via-[#080808]/60 to-[#080808]/55"></div>
-        <div class="absolute inset-0 hidden bg-gradient-to-r from-[#080808] via-[#080808]/70 to-transparent lg:block"></div>
-        <div class="hero-glow pointer-events-none absolute inset-0"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-[#111113] via-[#111113]/85 to-[#111113]/40"></div>
+        <div class="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#111113] to-transparent"></div>
+        <!-- Ornamen sapuan kuas: satu merah, satu kuning, hanya di sisi foto -->
+        <span class="brush-red hero-brush-red"></span>
+        <span class="brush-yellow hero-brush-yellow"></span>
       </div>
 
-      <div class="relative z-10 mx-auto grid w-full max-w-7xl grid-cols-1 items-end gap-10 px-5 pb-16 pt-32 sm:px-8 sm:pb-20 lg:grid-cols-12 lg:px-10 lg:pb-24">
-        <div class="space-y-6 sm:space-y-7 lg:col-span-7">
+      <div class="relative z-10 mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-10 px-5 pb-16 pt-32 sm:px-8 sm:pb-20 sm:pt-36 lg:grid-cols-12 lg:gap-6 lg:px-10 lg:pb-24">
+        <div class="space-y-6 lg:col-span-6">
 
           <!-- Status + lokasi -->
           <div class="hero-in flex flex-wrap items-center gap-2" style="--d: 0ms">
-            <div
-              class="flex w-fit items-center gap-2.5 rounded-full border border-white/10 bg-black/40 px-3.5 py-1.5 backdrop-blur-md"
-              role="status"
-            >
+            <div class="flex w-fit items-center gap-2.5 rounded-full bg-white/[0.08] px-3.5 py-2" role="status">
               <span class="relative flex h-2 w-2 shrink-0">
                 <span
                   v-if="openStatus.isOpen"
@@ -45,10 +41,10 @@
                   :class="openStatus.isOpen ? 'bg-emerald-400' : 'bg-[#D92B22]'"
                 ></span>
               </span>
-              <span class="text-xs font-medium text-[#FAFAFA]">{{ openStatus.label }}</span>
-              <span v-if="openStatus.detail" class="text-xs text-[#A3A3A3]">{{ openStatus.detail }}</span>
+              <span class="text-[0.8125rem] font-semibold text-[#F5F3EF]">{{ openStatus.label }}</span>
+              <span v-if="openStatus.detail" class="text-[0.8125rem] text-[#B8B8C0]">{{ openStatus.detail }}</span>
             </div>
-            <span class="rounded-full border border-[#F4C542]/25 bg-[#F4C542]/10 px-3.5 py-1.5 text-xs font-medium text-[#F4C542]">
+            <span class="rounded-full bg-[#F4C542]/12 px-3.5 py-2 text-[0.8125rem] font-semibold text-[#F4C542]">
               Bekasi, sejak 2024
             </span>
           </div>
@@ -56,25 +52,19 @@
           <!-- Headline -->
           <h1
             v-if="!loading.cms"
-            class="hero-title hero-in break-words font-sora font-semibold leading-[1.02] tracking-tight text-[#FAFAFA]"
+            class="hero-title hero-in break-words text-[#F5F3EF]"
             style="--d: 100ms"
           >
-            <span
-              v-for="(line, i) in headlineLines"
-              :key="i"
-              class="block"
-              :class="line.accent ? 'text-[#F4C542]' : ''"
-            >{{ line.text }}</span>
+            <span v-for="(line, i) in headlineLines" :key="i" class="block">{{ line.text }}</span>
           </h1>
           <div v-else class="space-y-3" aria-hidden="true">
             <div class="skeleton hero-skel w-[85%] rounded-xl"></div>
             <div class="skeleton hero-skel w-[60%] rounded-xl"></div>
           </div>
 
-          <!-- Subheadline -->
           <p
             v-if="!loading.cms"
-            class="hero-in max-w-md text-base leading-relaxed text-[#C8C8C8] sm:text-lg"
+            class="hero-in max-w-md text-base leading-relaxed text-[#C9C9D0] sm:text-lg"
             style="--d: 220ms"
           >
             {{ cms.hero_subheadline }}
@@ -84,53 +74,43 @@
             <div class="skeleton h-4 w-2/3 rounded-full"></div>
           </div>
 
-          <div class="hero-in flex flex-col gap-3 pt-2 sm:flex-row sm:gap-4" style="--d: 320ms">
-            <router-link to="/menu" class="btn-primary group px-8 py-4">
-              Pesan sekarang
+          <div class="hero-in flex flex-col gap-3 pt-2 sm:flex-row" style="--d: 320ms">
+            <router-link to="/menu" class="btn-yellow group">
+              Lihat menu
               <ArrowRight :size="16" class="transition-transform duration-200 group-hover:translate-x-1" />
             </router-link>
-            <router-link to="/contact" class="btn-ghost px-8 py-4">
+            <router-link to="/contact" class="btn-line">
               Kontak kami
             </router-link>
           </div>
         </div>
 
-        <!-- Foto makanan (desktop) -->
-        <div class="hero-in hidden items-end justify-end lg:col-span-5 lg:flex" style="--d: 300ms">
-          <div class="relative w-80">
-            <div class="absolute -right-3 -top-3 h-full w-full rounded-[2rem] border border-[#F4C542]/15"></div>
-            <div class="relative aspect-square overflow-hidden rounded-[2rem] border border-white/10 bg-[#141414]">
-              <img
-                v-if="!loading.cms"
-                v-blur-img
-                :src="cms.hero_food_image || defaultHeroFood"
-                alt="Masashimura Signature Dish"
-                class="h-full w-full object-cover"
-              />
-              <div v-else class="skeleton h-full w-full" aria-hidden="true"></div>
-              <div class="absolute inset-x-3 bottom-3 flex items-center justify-between rounded-2xl border border-white/10 bg-black/55 px-4 py-3 backdrop-blur-md">
-                <span class="text-sm font-medium text-[#FAFAFA]">Signature dish</span>
-                <span class="h-2 w-2 animate-pulse rounded-full bg-[#D92B22]"></span>
-              </div>
-            </div>
+        <!-- Foto makanan -->
+        <div class="hero-in relative lg:col-span-6" style="--d: 260ms">
+          <div class="hero-photo relative mx-auto aspect-[5/4] w-full max-w-[34rem] overflow-hidden rounded-[1.75rem] bg-[#1C1C1F] lg:ml-auto lg:mr-10">
+            <img
+              v-if="!loading.cms"
+              v-blur-img
+              :src="cms.hero_food_image || defaultHeroFood"
+              alt="Menu andalan Masashimura"
+              class="h-full w-full object-cover"
+            />
+            <div v-else class="skeleton h-full w-full" aria-hidden="true"></div>
           </div>
+          <!-- Aksen tepi: teks vertikal Jepang -->
+          <p class="jp-vertical absolute right-0 top-1/2 hidden -translate-y-1/2 text-xl text-white/85 xl:block" aria-hidden="true">
+            まさしむら
+          </p>
         </div>
-      </div>
-
-      <div class="pointer-events-none absolute bottom-6 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-1.5 opacity-40 sm:flex">
-        <span class="text-xs text-[#A3A3A3]">Scroll</span>
-        <div class="h-8 w-px bg-gradient-to-b from-[#A3A3A3] to-transparent"></div>
       </div>
     </section>
 
-    <!-- ═══════════════════════════════════════════
-         2. MARQUEE
-    ═══════════════════════════════════════════ -->
-    <div v-if="cms.marquee_text" class="marquee-wrap overflow-hidden bg-transparent py-5" aria-hidden="true">
+    <!-- Marquee: satu baris tenang di bawah hero (teks dari CMS) -->
+    <div v-if="cms.marquee_text" class="marquee-wrap overflow-hidden bg-[#111113] pb-6 pt-1" aria-hidden="true">
       <div class="animate-marquee flex">
         <div v-for="g in 2" :key="g" class="flex shrink-0 items-center">
           <template v-for="m in 4" :key="m">
-            <span class="mx-8 whitespace-nowrap font-sora text-sm font-medium tracking-[0.2em] text-[#737373]">
+            <span class="mx-8 whitespace-nowrap text-[0.8125rem] font-semibold tracking-[0.14em] text-[#9A9AA3]">
               {{ cms.marquee_text }}
             </span>
             <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-[#F4C542]"></span>
@@ -138,256 +118,212 @@
         </div>
       </div>
     </div>
-    <div v-else class="bg-transparent py-5" aria-hidden="true">
-      <div class="skeleton mx-auto h-3 w-1/2 rounded-full"></div>
-    </div>
+    <div v-else class="bg-[#111113] pb-6" aria-hidden="true"></div>
 
-    <!-- ═══════════════════════════════════════════
-         3. PROMO / EVENT
-    ═══════════════════════════════════════════ -->
-    <PromoSection :promos="promos" />
-
-    <!-- ═══════════════════════════════════════════
-         4. BEST SELLER
-    ═══════════════════════════════════════════ -->
-    <section v-reveal class="mx-auto max-w-7xl px-5 py-20 sm:px-8 sm:py-28 lg:px-10 lg:py-32">
-
-      <div class="mb-10 flex items-end justify-between gap-6 sm:mb-14">
-        <div class="space-y-3">
-          <h2 class="section-title">Menu terlaris</h2>
-          <p class="max-w-md text-base text-[#A3A3A3]">Yang paling sering dipesan pelanggan kami.</p>
-        </div>
-        <router-link to="/menu" class="group hidden items-center gap-2 text-sm font-medium text-[#F4C542] transition-colors hover:text-[#FAFAFA] sm:inline-flex">
-          Lihat semua
-          <ArrowRight :size="15" class="transition-transform duration-200 group-hover:translate-x-1" />
-        </router-link>
-      </div>
-
-      <!-- Skeleton -->
-      <div v-if="loading.best" class="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3" aria-hidden="true">
-        <div v-for="n in 3" :key="n" class="overflow-hidden rounded-3xl border border-white/[0.07] bg-[#141414]">
-          <div class="skeleton aspect-[4/3] w-full"></div>
-          <div class="space-y-3 p-6">
-            <div class="skeleton h-5 w-3/4 rounded-full"></div>
-            <div class="skeleton h-3 w-full rounded-full"></div>
-            <div class="skeleton h-3 w-2/3 rounded-full"></div>
-            <div class="mt-1 flex items-center justify-between border-t border-white/10 pt-4">
-              <div class="skeleton h-5 w-24 rounded-full"></div>
-              <div class="skeleton h-10 w-24 rounded-full"></div>
-            </div>
+    <!-- ═══════════════ 2. RINGKASAN (krem) ═══════════════ -->
+    <section class="on-cream">
+      <div ref="metricsRef" class="mx-auto max-w-7xl px-5 pt-10 sm:px-8 lg:px-10">
+        <div class="metric-strip grid grid-cols-3 divide-x divide-[#E5E2DC] rounded-2xl bg-white">
+          <div class="px-3 py-5 text-center sm:px-8 sm:py-6 sm:text-left">
+            <p class="metric-num">{{ metricDisplays.m1 }}</p>
+            <p class="metric-label">Berdiri sejak</p>
+          </div>
+          <div class="px-3 py-5 text-center sm:px-8 sm:py-6 sm:text-left">
+            <p class="metric-num">{{ metricDisplays.m2 }}</p>
+            <p class="metric-label">Varian menu</p>
+          </div>
+          <div class="px-3 py-5 text-center sm:px-8 sm:py-6 sm:text-left">
+            <p
+              class="metric-num whitespace-nowrap"
+              :class="metric3IsStars ? '!text-[1rem] !tracking-tighter text-[#C7901A] sm:!text-[1.5rem]' : ''"
+            >{{ cms.metric_3 || "–" }}</p>
+            <p class="metric-label">Rating pelanggan</p>
           </div>
         </div>
       </div>
 
-      <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
-        <router-link
-          v-for="(item, idx) in topBestSellers"
-          :key="idx"
-          to="/menu"
-          class="card-surface group flex flex-col overflow-hidden !p-0 transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_28px_48px_-30px_rgba(217,43,34,0.5)]"
-        >
-          <div class="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-[#1A1A1A]">
-            <div class="h-full w-full transition-transform duration-700 ease-out group-hover:scale-105">
+      <!-- ═══════════════ 3. MENU TERLARIS ═══════════════ -->
+      <div v-reveal class="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20 lg:px-10 lg:py-24">
+        <div class="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-12">
+          <div class="space-y-4 lg:col-span-4 lg:pt-4">
+            <h2 class="h-section">Menu terlaris</h2>
+            <p class="max-w-xs text-base leading-relaxed text-[#66666D]">
+              Yang paling sering dipesan pelanggan kami.
+            </p>
+            <router-link to="/menu" class="link-red group hidden lg:inline-flex">
+              Lihat semua menu
+              <ArrowRight :size="15" class="transition-transform duration-200 group-hover:translate-x-1" />
+            </router-link>
+          </div>
+
+          <div class="lg:col-span-8">
+            <!-- Skeleton -->
+            <div v-if="loading.best" class="grid grid-cols-2 gap-4 sm:grid-cols-3" aria-hidden="true">
+              <div v-for="n in 3" :key="n" class="overflow-hidden rounded-2xl bg-white">
+                <div class="skeleton-light aspect-[4/3] w-full"></div>
+                <div class="space-y-2.5 p-4">
+                  <div class="skeleton-light h-4 w-3/4 rounded-full"></div>
+                  <div class="skeleton-light h-4 w-1/2 rounded-full"></div>
+                </div>
+              </div>
+            </div>
+
+            <div v-else class="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5">
+              <router-link
+                v-for="(item, idx) in topBestSellers"
+                :key="idx"
+                to="/menu"
+                class="menu-card group"
+                :aria-label="`${item.name}, ${formatRupiah(item.price)}. Buka halaman menu`"
+              >
+                <div class="relative aspect-[4/3] w-full overflow-hidden bg-[#E9E5DC]">
+                  <img
+                    v-blur-img
+                    :src="item.image"
+                    :alt="item.name"
+                    loading="lazy"
+                    class="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+                  />
+                  <span v-if="idx === 0" class="menu-tag bg-[#D92B22] text-white">Terlaris</span>
+                  <span v-else-if="idx === 1" class="menu-tag bg-[#F4C542] text-[#2A1F00]">Favorit</span>
+                </div>
+                <div class="flex items-end justify-between gap-2 p-3.5 sm:p-4">
+                  <div class="min-w-0">
+                    <h3 class="line-clamp-2 text-[0.9375rem] font-bold leading-snug text-[#202024]">{{ item.name }}</h3>
+                    <p class="mt-1 text-sm font-semibold tabular-nums text-[#66666D]">{{ formatRupiah(item.price) }}</p>
+                  </div>
+                  <span class="menu-add" aria-hidden="true"><Plus :size="16" /></span>
+                </div>
+              </router-link>
+
+              <div
+                v-if="bestSellers.length === 0"
+                class="col-span-full rounded-2xl bg-white py-16 text-center text-sm text-[#66666D]"
+              >
+                Menu belum tersedia saat ini.
+              </div>
+            </div>
+
+            <router-link to="/menu" class="btn-dark mt-8 w-full lg:hidden">
+              Lihat semua menu
+              <ArrowRight :size="16" />
+            </router-link>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════ 4. PROMO / EVENT ═══════════════ -->
+      <PromoSection :promos="promos" />
+
+      <!-- ═══════════════ 5. TENTANG ═══════════════ -->
+      <div v-reveal class="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20 lg:px-10 lg:py-24">
+        <div class="grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-16">
+          <div class="space-y-5 lg:col-span-5">
+            <h2 class="h-section">Tentang Masashimura</h2>
+            <p v-if="!loading.cms" class="max-w-md text-base leading-[1.85] text-[#4A4A52]">{{ cms.about_text }}</p>
+            <div v-else class="max-w-md space-y-2.5" aria-hidden="true">
+              <div class="skeleton-light h-4 w-full rounded-full"></div>
+              <div class="skeleton-light h-4 w-full rounded-full"></div>
+              <div class="skeleton-light h-4 w-4/5 rounded-full"></div>
+            </div>
+            <router-link to="/contact" class="link-red group inline-flex">
+              Lokasi &amp; kontak
+              <ArrowRight :size="15" class="transition-transform duration-200 group-hover:translate-x-1" />
+            </router-link>
+          </div>
+
+          <div class="lg:col-span-7">
+            <div class="relative aspect-[16/10] overflow-hidden rounded-[1.5rem] bg-[#E9E5DC]">
               <img
+                v-if="!loading.cms"
                 v-blur-img
-                :src="item.image"
-                :alt="item.name"
+                :src="cms.about_image || defaultAboutImage"
+                alt="Suasana Masashimura"
                 loading="lazy"
                 class="h-full w-full object-cover"
               />
+              <div v-else class="skeleton-light h-full w-full" aria-hidden="true"></div>
             </div>
-            <div class="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#141414] to-transparent opacity-80"></div>
-            <span class="absolute left-3 top-3 flex h-8 min-w-8 items-center justify-center rounded-full border border-white/10 bg-black/55 px-2 text-xs font-semibold tabular-nums text-[#FAFAFA] backdrop-blur-md">
-              {{ idx + 1 }}
-            </span>
-            <span
-              v-if="idx === 0"
-              class="absolute right-3 top-3 rounded-full bg-[#F4C542] px-3 py-1 text-xs font-semibold text-[#2A1F00]"
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════ 6. FASILITAS ═══════════════ -->
+      <div class="mx-auto max-w-7xl px-5 pb-20 sm:px-8 sm:pb-24 lg:px-10 lg:pb-28">
+        <h2 class="h-section mb-8 sm:mb-10">Apa yang lo dapet</h2>
+
+        <div v-if="loading.bento" class="grid grid-cols-1 gap-3 lg:grid-cols-12" aria-hidden="true">
+          <div class="skeleton-light min-h-[200px] rounded-2xl lg:col-span-5"></div>
+          <div class="grid auto-rows-fr grid-cols-2 gap-3 lg:col-span-7">
+            <div v-for="n in 4" :key="n" class="skeleton-light min-h-[110px] rounded-2xl"></div>
+          </div>
+        </div>
+
+        <div v-else class="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-12">
+          <div v-if="bentoLarge.length" class="flex flex-col gap-3 sm:gap-4 lg:col-span-5">
+            <div
+              v-for="(bento, i) in bentoLarge"
+              :key="'l' + i"
+              class="bento-feature relative flex min-h-[200px] flex-1 flex-col justify-between overflow-hidden rounded-2xl p-7 sm:min-h-[240px] sm:p-9"
             >
-              Terlaris
-            </span>
-          </div>
-
-          <div class="flex flex-1 flex-col gap-3 p-6">
-            <h3 class="line-clamp-2 font-sora text-lg font-semibold leading-snug text-[#FAFAFA]">
-              {{ item.name }}
-            </h3>
-            <p class="line-clamp-2 flex-1 text-sm leading-relaxed text-[#A3A3A3]">{{ item.desc }}</p>
-            <div class="mt-1 flex items-center justify-between border-t border-white/[0.07] pt-4">
-              <span class="font-sora text-lg font-semibold tracking-tight text-[#FAFAFA]">
-                {{ formatRupiah(item.price) }}
-              </span>
-              <span class="inline-flex items-center gap-2 rounded-full bg-[#D92B22] px-5 py-2.5 text-sm font-semibold text-white transition-colors group-hover:bg-[#B8201A]">
-                Pesan
-                <ArrowRight :size="14" class="transition-transform duration-200 group-hover:translate-x-0.5" />
+              <span class="brush-red bento-brush" aria-hidden="true"></span>
+              <div class="relative flex h-12 w-12 items-center justify-center rounded-xl bg-[#F4C542] text-[#2A1F00]">
+                <component :is="getIcon(bento.icon_name)" :size="22" />
+              </div>
+              <span class="relative text-2xl font-bold leading-tight tracking-tight text-white sm:text-[1.75rem]">
+                {{ bento.title }}
               </span>
             </div>
           </div>
-        </router-link>
 
-        <div
-          v-if="bestSellers.length === 0"
-          class="col-span-full rounded-3xl border border-dashed border-white/10 py-20 text-center text-sm text-[#737373]"
-        >
-          Menu belum tersedia saat ini.
-        </div>
-      </div>
-
-      <div class="mt-8 sm:hidden">
-        <router-link to="/menu" class="btn-ghost w-full px-6 py-4">
-          Lihat semua menu
-          <ArrowRight :size="16" />
-        </router-link>
-      </div>
-    </section>
-
-    <!-- ═══════════════════════════════════════════
-         5. TENTANG MASASHIMURA
-    ═══════════════════════════════════════════ -->
-    <section v-reveal class="band py-20 sm:py-28 lg:py-32">
-      <div class="mx-auto grid max-w-7xl grid-cols-1 items-center gap-14 px-5 sm:px-8 lg:grid-cols-2 lg:gap-20 lg:px-10">
-
-        <div class="relative">
-          <div class="absolute -bottom-3 -left-3 h-full w-full rounded-[2rem] border border-[#F4C542]/12 sm:-bottom-4 sm:-left-4"></div>
-          <div class="relative aspect-square overflow-hidden rounded-[2rem] bg-[#141414]">
-            <img
-              v-if="!loading.cms"
-              v-blur-img
-              :src="cms.about_image || defaultAboutImage"
-              alt="Suasana Masashimura"
-              loading="lazy"
-              class="h-full w-full object-cover"
-            />
-            <div v-else class="skeleton h-full w-full" aria-hidden="true"></div>
-          </div>
-        </div>
-
-        <div class="space-y-8 sm:space-y-10">
-          <div class="space-y-4">
-            <h2 class="section-title">Tentang Masashimura</h2>
-            <p v-if="!loading.cms" class="max-w-md text-base leading-[1.85] text-[#A3A3A3]">{{ cms.about_text }}</p>
-            <div v-else class="max-w-md space-y-2.5" aria-hidden="true">
-              <div class="skeleton h-4 w-full rounded-full"></div>
-              <div class="skeleton h-4 w-full rounded-full"></div>
-              <div class="skeleton h-4 w-4/5 rounded-full"></div>
-            </div>
-          </div>
-
-          <!-- Metrics -->
-          <div ref="metricsRef" class="grid grid-cols-3 divide-x divide-white/[0.07] overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02]">
-            <div class="space-y-1 px-3 py-5 sm:px-6">
-              <p class="font-sora text-2xl font-semibold leading-tight text-[#FAFAFA] sm:text-3xl">{{ metricDisplays.m1 }}</p>
-              <p class="text-xs text-[#A3A3A3] sm:text-sm">Berdiri</p>
-            </div>
-            <div class="space-y-1 px-3 py-5 sm:px-6">
-              <p class="font-sora text-2xl font-semibold leading-tight text-[#FAFAFA] sm:text-3xl">{{ metricDisplays.m2 }}</p>
-              <p class="text-xs text-[#A3A3A3] sm:text-sm">Varian menu</p>
-            </div>
-            <div class="space-y-1 px-3 py-5 sm:px-6">
-              <p
-                class="whitespace-nowrap font-sora font-semibold leading-tight text-[#F4C542]"
-                :class="metric3IsStars ? 'pt-1 text-[0.9rem] tracking-tighter sm:pt-0 sm:text-2xl' : 'text-2xl sm:text-3xl'"
-              >
-                {{ cms.metric_3 || "–" }}
-              </p>
-              <p class="text-xs text-[#A3A3A3] sm:text-sm">Rating</p>
-            </div>
-          </div>
-
-          <router-link to="/menu" class="group inline-flex items-center gap-2 text-sm font-semibold text-[#F4C542] transition-colors hover:text-[#FAFAFA]">
-            Lihat semua menu
-            <ArrowRight :size="15" class="transition-transform duration-200 group-hover:translate-x-1" />
-          </router-link>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══════════════════════════════════════════
-         6. BENTO FASILITAS
-    ═══════════════════════════════════════════ -->
-    <section v-reveal class="mx-auto max-w-7xl px-5 py-20 sm:px-8 sm:py-28 lg:px-10 lg:py-32">
-      <div class="mb-10 sm:mb-14">
-        <h2 class="section-title">Apa yang lo dapet</h2>
-      </div>
-
-      <!-- Skeleton -->
-      <div v-if="loading.bento" class="grid grid-cols-1 gap-3 lg:grid-cols-12" aria-hidden="true">
-        <div class="skeleton min-h-[220px] rounded-3xl sm:min-h-[260px] lg:col-span-5"></div>
-        <div class="grid auto-rows-fr grid-cols-2 gap-3 lg:col-span-7">
-          <div v-for="n in 4" :key="n" class="skeleton min-h-[112px] rounded-2xl sm:min-h-[130px]"></div>
-        </div>
-      </div>
-
-      <div v-else class="grid grid-cols-1 gap-3 lg:grid-cols-12">
-        <div v-if="bentoLarge.length" class="flex flex-col gap-3 lg:col-span-5">
           <div
-            v-for="(bento, i) in bentoLarge"
-            :key="'l' + i"
-            class="bento-large group relative flex min-h-[220px] flex-1 flex-col justify-between overflow-hidden rounded-3xl border border-white/[0.07] p-8 transition-colors duration-300 hover:border-white/20 sm:min-h-[260px] sm:p-10"
+            class="grid auto-rows-fr grid-cols-2 gap-3 sm:gap-4"
+            :class="bentoLarge.length ? 'lg:col-span-7' : 'lg:col-span-12 lg:grid-cols-4'"
           >
-            <div class="pointer-events-none absolute -bottom-10 -right-10 text-[#F4C542] opacity-[0.07] transition-opacity duration-500 group-hover:opacity-[0.14]">
-              <component :is="getIcon(bento.icon_name)" :size="220" :stroke-width="1" />
+            <div
+              v-for="(bento, i) in bentoSmall"
+              :key="'s' + i"
+              class="bento-tile flex min-h-[110px] flex-col justify-between gap-5 rounded-2xl bg-white p-5 sm:min-h-[128px] sm:p-6"
+              :class="isBentoOrphan(i) ? 'col-span-2' : ''"
+            >
+              <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#D92B22]/[0.09] text-[#D92B22]">
+                <component :is="getIcon(bento.icon_name)" :size="18" />
+              </div>
+              <span class="text-[0.9375rem] font-bold leading-snug text-[#202024] sm:text-base">
+                {{ bento.title }}
+              </span>
             </div>
-            <div class="icon-tile relative !h-12 !w-12">
-              <component :is="getIcon(bento.icon_name)" :size="22" />
-            </div>
-            <span class="relative font-sora text-2xl font-semibold leading-tight tracking-tight text-[#FAFAFA] sm:text-3xl">
-              {{ bento.title }}
-            </span>
-          </div>
-        </div>
-
-        <div
-          class="grid auto-rows-fr grid-cols-2 gap-3"
-          :class="bentoLarge.length ? 'lg:col-span-7' : 'lg:col-span-12'"
-        >
-          <div
-            v-for="(bento, i) in bentoSmall"
-            :key="'s' + i"
-            class="card-surface group flex min-h-[112px] flex-col justify-between gap-6 !p-5 transition-colors duration-300 hover:border-white/20 sm:min-h-[130px] sm:!p-6"
-            :class="isBentoOrphan(i) ? 'col-span-2' : ''"
-          >
-            <div class="icon-tile">
-              <component :is="getIcon(bento.icon_name)" :size="18" />
-            </div>
-            <span class="font-sora text-sm font-semibold text-[#FAFAFA] sm:text-base">
-              {{ bento.title }}
-            </span>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ═══════════════════════════════════════════
-         7. GALLERY
-    ═══════════════════════════════════════════ -->
-    <section v-reveal class="band py-20 sm:py-28 lg:py-32">
+    <!-- ═══════════════ 7. GALLERY (gelap) ═══════════════ -->
+    <section class="bg-[#111113] py-16 sm:py-20 lg:py-24">
       <div class="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
-        <div class="mb-8 sm:mb-10">
-          <h2 class="section-title">Gallery</h2>
-        </div>
+        <h2 class="h-section-dark mb-8 sm:mb-10">Gallery</h2>
 
         <div
           v-if="!loading.gallery && galleryCategories.length > 2"
-          class="no-scrollbar -mx-5 mb-8 flex gap-2 overflow-x-auto px-5 pb-1 sm:mx-0 sm:flex-wrap sm:px-0 md:mb-10"
+          class="no-scrollbar -mx-5 mb-8 flex gap-2 overflow-x-auto px-5 pb-1 sm:mx-0 sm:flex-wrap sm:px-0"
         >
           <button
             v-for="cat in galleryCategories"
             :key="cat"
             type="button"
             @click="setCategory(cat)"
+            :aria-pressed="activeCategory === cat"
             :class="[
               activeCategory === cat
-                ? 'border-[#D92B22] bg-[#D92B22] text-white'
-                : 'border-white/10 bg-[#141414] text-[#A3A3A3] hover:border-white/25 hover:text-[#FAFAFA]',
-              'shrink-0 cursor-pointer whitespace-nowrap rounded-full border px-4 py-2.5 text-sm font-medium transition-all'
+                ? 'bg-[#D92B22] text-white'
+                : 'bg-white/[0.07] text-[#C9C9D0] hover:bg-white/[0.12] hover:text-white',
+              'min-h-[44px] shrink-0 cursor-pointer whitespace-nowrap rounded-full px-5 text-sm font-semibold transition-colors'
             ]"
           >
             {{ cat }}
           </button>
         </div>
 
-        <!-- Skeleton -->
         <div
           v-if="loading.gallery"
           class="grid auto-rows-[150px] grid-cols-2 gap-2 sm:auto-rows-[180px] sm:grid-cols-3 sm:gap-3 md:grid-cols-4"
@@ -405,10 +341,10 @@
             @click="openLightbox(i)"
             :class="[
               isFeatured(i) ? 'col-span-2 row-span-2' : '',
-              'group relative cursor-pointer overflow-hidden rounded-2xl border-0 bg-[#141414] p-0 text-left'
+              'group relative cursor-pointer overflow-hidden rounded-2xl border-0 bg-[#1C1C1F] p-0 text-left'
             ]"
           >
-            <div class="h-full w-full transition-transform duration-700 ease-out group-hover:scale-105">
+            <div class="h-full w-full transition-transform duration-500 ease-out group-hover:scale-[1.04]">
               <img
                 v-blur-img
                 :src="img.image_url"
@@ -417,27 +353,27 @@
                 class="h-full w-full object-cover"
               />
             </div>
-            <div class="absolute inset-0 flex items-end bg-gradient-to-t from-black/80 via-black/0 to-transparent p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100 sm:p-4">
+            <div class="absolute inset-0 flex items-end bg-gradient-to-t from-black/75 via-black/0 to-transparent p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100 sm:p-4">
               <div class="min-w-0 space-y-0.5">
-                <p class="line-clamp-1 font-sora text-sm font-semibold text-white">{{ img.title || 'Masashimura' }}</p>
-                <p v-if="img.category" class="text-xs text-[#F4C542]">{{ img.category }}</p>
+                <p class="line-clamp-1 text-sm font-bold text-white">{{ img.title || 'Masashimura' }}</p>
+                <p v-if="img.category" class="text-xs font-semibold text-[#F4C542]">{{ img.category }}</p>
               </div>
             </div>
-            <div class="absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-black/55 opacity-0 backdrop-blur-md transition-opacity duration-300 group-hover:opacity-100 sm:right-3 sm:top-3">
+            <div class="absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full bg-black/55 opacity-0 backdrop-blur-md transition-opacity duration-300 group-hover:opacity-100">
               <Expand :size="14" class="text-white" />
             </div>
           </button>
 
           <div
             v-if="visibleGallery.length === 0"
-            class="col-span-full row-span-2 flex items-center justify-center rounded-2xl border border-dashed border-white/10 text-center text-sm text-[#737373]"
+            class="col-span-full row-span-2 flex items-center justify-center rounded-2xl bg-white/[0.04] text-center text-sm text-[#9A9AA3]"
           >
             Belum ada foto.
           </div>
         </div>
 
         <div v-if="!loading.gallery && filteredGallery.length > visibleGallery.length" class="mt-10 flex justify-center">
-          <button type="button" @click="galleryLimit += 8" class="btn-ghost cursor-pointer px-6 py-3.5">
+          <button type="button" @click="galleryLimit += 8" class="btn-line cursor-pointer">
             Muat lebih banyak ({{ filteredGallery.length - visibleGallery.length }})
           </button>
         </div>
@@ -448,7 +384,7 @@
     <transition name="lightbox-fade">
       <div
         v-if="lightboxIndex !== null"
-        class="fixed inset-0 z-[60] flex items-center justify-center bg-black/95 p-4 backdrop-blur-sm sm:p-10"
+        class="fixed inset-0 z-[60] flex items-center justify-center bg-[#0A0A0B]/95 p-4 backdrop-blur-sm sm:p-10"
         role="dialog" aria-modal="true" aria-label="Galeri foto"
         @click.self="closeLightbox"
         @touchstart.passive="onTouchStart"
@@ -456,24 +392,24 @@
       >
         <button
           type="button" @click="closeLightbox" aria-label="Tutup"
-          class="absolute right-4 top-4 z-10 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/5 text-white transition hover:bg-white/10 sm:right-8 sm:top-8"
+          class="absolute right-4 top-4 z-10 flex h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 sm:right-8 sm:top-8"
         >
           <X :size="18" />
         </button>
 
-        <span class="absolute left-5 top-6 text-sm font-medium tabular-nums text-[#A3A3A3] sm:left-10 sm:top-10">
+        <span class="absolute left-5 top-6 text-sm font-semibold tabular-nums text-[#B8B8C0] sm:left-10 sm:top-10">
           {{ lightboxIndex + 1 }} / {{ visibleGallery.length }}
         </span>
 
         <button
           v-if="visibleGallery.length > 1" type="button" @click.stop="prevImage" aria-label="Foto sebelumnya"
-          class="absolute left-2 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/5 text-white transition hover:bg-white/10 sm:left-8"
+          class="absolute left-2 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 sm:left-8"
         >
           <ChevronLeft :size="20" />
         </button>
         <button
           v-if="visibleGallery.length > 1" type="button" @click.stop="nextImage" aria-label="Foto berikutnya"
-          class="absolute right-2 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/5 text-white transition hover:bg-white/10 sm:right-8"
+          class="absolute right-2 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 sm:right-8"
         >
           <ChevronRight :size="20" />
         </button>
@@ -488,107 +424,89 @@
             />
           </div>
           <div class="space-y-1 text-center">
-            <p class="font-sora text-base font-semibold text-[#FAFAFA]">{{ currentLightboxImage?.title || 'Masashimura' }}</p>
-            <p v-if="currentLightboxImage?.category" class="text-sm text-[#F4C542]">{{ currentLightboxImage.category }}</p>
+            <p class="text-base font-bold text-[#F5F3EF]">{{ currentLightboxImage?.title || 'Masashimura' }}</p>
+            <p v-if="currentLightboxImage?.category" class="text-sm font-semibold text-[#F4C542]">{{ currentLightboxImage.category }}</p>
           </div>
         </div>
       </div>
     </transition>
 
-    <!-- ═══════════════════════════════════════════
-         8. REVIEW (bisa swipe di mobile)
-    ═══════════════════════════════════════════ -->
-    <section v-reveal class="mx-auto max-w-4xl px-5 py-20 sm:px-8 sm:py-28 lg:px-10 lg:py-32">
-      <div class="mb-10 sm:mb-14">
-        <h2 class="section-title">Kata pelanggan</h2>
-      </div>
+    <!-- ═══════════════ 8. REVIEW (krem) ═══════════════ -->
+    <section class="on-cream">
+      <div class="mx-auto max-w-4xl px-5 py-16 sm:px-8 sm:py-20 lg:px-10 lg:py-24">
+        <h2 class="h-section mb-10 sm:mb-12">Kata pelanggan</h2>
 
-      <!-- Skeleton -->
-      <div v-if="loading.reviews" class="space-y-6" aria-hidden="true">
-        <div class="skeleton h-8 w-8 rounded-full"></div>
-        <div class="max-w-2xl space-y-3">
-          <div class="skeleton h-5 w-full rounded-full"></div>
-          <div class="skeleton h-5 w-5/6 rounded-full"></div>
-          <div class="skeleton h-5 w-2/3 rounded-full"></div>
-        </div>
-        <div class="flex items-center gap-3">
-          <div class="skeleton h-10 w-10 rounded-full"></div>
-          <div class="space-y-2">
-            <div class="skeleton h-3 w-28 rounded-full"></div>
-            <div class="skeleton h-3 w-20 rounded-full"></div>
+        <div v-if="loading.reviews" class="space-y-6" aria-hidden="true">
+          <div class="skeleton-light h-8 w-8 rounded-full"></div>
+          <div class="max-w-2xl space-y-3">
+            <div class="skeleton-light h-5 w-full rounded-full"></div>
+            <div class="skeleton-light h-5 w-5/6 rounded-full"></div>
+            <div class="skeleton-light h-5 w-2/3 rounded-full"></div>
           </div>
         </div>
-      </div>
 
-      <div
-        v-else-if="reviews.length"
-        class="touch-pan-y select-none"
-        @touchstart.passive="onTouchStart"
-        @touchend="onReviewSwipe"
-      >
-        <div class="grid">
-          <figure
-            v-for="(review, i) in reviews"
-            :key="i"
-            :aria-hidden="i !== currentReviewIndex"
-            class="col-start-1 row-start-1 space-y-7 transition-all duration-500 ease-out"
-            :class="i === currentReviewIndex ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-3 opacity-0'"
-          >
-            <Quote :size="32" class="text-[#F4C542]/70" />
-            <blockquote class="max-w-2xl font-sora text-xl font-normal leading-relaxed text-[#FAFAFA] sm:text-2xl">
-              “{{ review.text }}”
-            </blockquote>
-            <figcaption class="flex items-center gap-3">
-              <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#F4C542]/30 bg-[#F4C542]/10 font-sora text-sm font-semibold uppercase text-[#F4C542]">
-                {{ (review.name || '?').trim().charAt(0) }}
-              </span>
-              <span class="flex min-w-0 flex-col">
-                <span class="truncate text-sm font-semibold text-[#FAFAFA]">{{ review.name }}</span>
-                <span class="text-sm text-[#737373]">{{ review.status }}</span>
-              </span>
-            </figcaption>
-          </figure>
-        </div>
+        <div
+          v-else-if="reviews.length"
+          class="touch-pan-y select-none"
+          @touchstart.passive="onTouchStart"
+          @touchend="onReviewSwipe"
+        >
+          <div class="grid">
+            <figure
+              v-for="(review, i) in reviews"
+              :key="i"
+              :aria-hidden="i !== currentReviewIndex"
+              class="col-start-1 row-start-1 space-y-7 transition-all duration-500 ease-out"
+              :class="i === currentReviewIndex ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-3 opacity-0'"
+            >
+              <Quote :size="32" class="text-[#D92B22]" />
+              <blockquote class="max-w-2xl font-[family-name:var(--font-display)] text-xl font-semibold leading-relaxed text-[#202024] sm:text-2xl">
+                “{{ review.text }}”
+              </blockquote>
+              <figcaption class="flex items-center gap-3">
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#111113] text-sm font-bold uppercase text-[#F4C542]">
+                  {{ (review.name || '?').trim().charAt(0) }}
+                </span>
+                <span class="flex min-w-0 flex-col">
+                  <span class="truncate text-sm font-bold text-[#202024]">{{ review.name }}</span>
+                  <span class="text-sm text-[#66666D]">{{ review.status }}</span>
+                </span>
+              </figcaption>
+            </figure>
+          </div>
 
-        <div v-if="reviews.length > 1" class="mt-10 flex items-center gap-2 sm:mt-12" aria-hidden="true">
-          <span
-            v-for="(r, i) in reviews"
-            :key="i"
-            class="block h-1.5 rounded-full transition-all duration-500"
-            :class="i === currentReviewIndex ? 'w-8 bg-[#D92B22]' : 'w-1.5 bg-white/20'"
-          ></span>
+          <div v-if="reviews.length > 1" class="mt-10 flex items-center gap-2" aria-hidden="true">
+            <span
+              v-for="(r, i) in reviews"
+              :key="i"
+              class="block h-1.5 rounded-full transition-all duration-500"
+              :class="i === currentReviewIndex ? 'w-8 bg-[#D92B22]' : 'w-1.5 bg-[#202024]/20'"
+            ></span>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- ═══════════════════════════════════════════
-         9. CTA
-    ═══════════════════════════════════════════ -->
-    <section v-reveal class="mx-auto max-w-7xl px-5 pb-20 sm:px-8 sm:pb-28 lg:px-10 lg:pb-32">
-      <div class="cta relative grid grid-cols-1 items-center gap-10 overflow-hidden rounded-[2rem] p-8 sm:p-12 lg:grid-cols-2 lg:gap-16 lg:p-16">
-        <div class="cta-sheen pointer-events-none absolute inset-0" aria-hidden="true"></div>
+    <!-- ═══════════════ 9. CTA ═══════════════ -->
+    <section class="bg-[#111113] px-5 pb-16 pt-4 sm:px-8 sm:pb-20 lg:px-10 lg:pb-24">
+      <div class="cta relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-8 overflow-hidden rounded-[1.75rem] p-8 sm:p-12 lg:grid-cols-2 lg:gap-16 lg:p-16">
+        <span class="brush-yellow cta-brush" aria-hidden="true"></span>
 
-        <div class="relative space-y-5">
-          <h2 class="font-sora text-4xl font-semibold leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-6xl">
+        <div class="relative space-y-4">
+          <h2 class="text-4xl font-black leading-[1.1] text-white sm:text-5xl">
             Udah laper?
           </h2>
-          <p class="max-w-xs text-base leading-relaxed text-white/75">
+          <p class="max-w-xs text-base leading-relaxed text-white/85">
             Pilih menu favorit dan nikmati langsung di kedai atau lewat web ordering.
           </p>
         </div>
 
-        <div class="relative flex flex-col gap-3 sm:flex-row sm:gap-4 lg:justify-end">
-          <router-link
-            to="/menu"
-            class="group inline-flex items-center justify-center gap-2.5 whitespace-nowrap rounded-full bg-[#FAFAFA] px-9 py-4 font-sora text-sm font-semibold text-[#2A0A0F] transition-all duration-200 hover:bg-white active:scale-[0.98]"
-          >
+        <div class="relative flex flex-col gap-3 sm:flex-row lg:justify-end">
+          <router-link to="/menu" class="btn-yellow group">
             Pesan via web
             <ArrowRight :size="16" class="transition-transform duration-200 group-hover:translate-x-1" />
           </router-link>
-          <router-link
-            to="/contact"
-            class="inline-flex items-center justify-center whitespace-nowrap rounded-full border border-white/30 px-9 py-4 font-sora text-sm font-semibold text-white transition-all duration-200 hover:border-white/70 hover:bg-white/10 active:scale-[0.98]"
-          >
+          <router-link to="/contact" class="btn-line">
             Hubungi kami
           </router-link>
         </div>
@@ -603,7 +521,7 @@ import { ref, reactive, computed, watch, onMounted, onUnmounted } from "vue"
 import {
   Coffee, Wifi, Zap, Utensils, DollarSign, Moon, Shield, Tv,
   Music, Gamepad2, Beer, BatteryCharging, Heart, Award, Smartphone,
-  Expand, X, ChevronLeft, ChevronRight, ArrowRight, Quote
+  Expand, X, ChevronLeft, ChevronRight, ArrowRight, Quote, Plus
 } from "lucide-vue-next"
 import apiClient from "@/api/client"
 import PromoSection from "@/components/ui/PromoSection.vue"
@@ -692,7 +610,7 @@ const headlineLines = computed(() => {
     .split("\n")
     .map(l => l.trim())
     .filter(Boolean)
-  return lines.map((text, i) => ({ text, accent: lines.length > 1 && i === lines.length - 1 }))
+  return lines.map((text) => ({ text, accent: false }))
 })
 
 const parallaxY = computed(() => Math.min(scrollY.value, 700) * 0.1)
@@ -1002,9 +920,9 @@ onUnmounted(() => {
 
 <style scoped>
 /*
-  Palet (sama dengan halaman Menu dan Lokasi & Kontak)
-  Warm black #080808 · Band #0D0D0D · Surface #141414 · Washi #FAFAFA
-  Crimson #D92B22 (aksi) · Champagne #F4C542 (detail premium)
+  Palet Home
+  Charcoal #111113 (hero, gallery, CTA) · Krem #F7F5F0 (konten) · Putih #FFFFFF (kartu)
+  Merah #D92B22 (aksi utama) · Kuning #F4C542 (penanda & CTA di atas gelap)
 */
 
 a:focus-visible,
@@ -1012,137 +930,189 @@ button:focus-visible {
   outline: 2px solid #F4C542;
   outline-offset: 3px;
 }
+.on-cream a:focus-visible,
+.on-cream button:focus-visible { outline-color: #202024; }
 
-/* ── Judul section ── */
-.section-title {
-  font-family: "Manrope", ui-sans-serif, system-ui, sans-serif;
-  font-size: clamp(1.75rem, 3.6vw, 2.5rem);
+/* ── Bidang krem ── */
+.on-cream { background: #F7F5F0; color: #202024; }
+
+/* ── Judul section (display serif) ── */
+.h-section,
+.h-section-dark {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 3.4vw, 2.25rem);
   font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-  color: #FAFAFA;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
 }
+.h-section { color: #202024; }
+.h-section-dark { color: #F5F3EF; }
 
-/* ── Kartu & tombol ── */
-.card-surface {
-  border-radius: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012)), #141414;
-  padding: 1.5rem;
-}
-
-.bento-large {
-  background:
-    radial-gradient(70% 70% at 100% 100%, rgba(217,43,34, 0.08), transparent 70%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012)),
-    #141414;
-}
-
-.icon-tile {
-  display: flex;
-  height: 2.5rem;
-  width: 2.5rem;
-  flex-shrink: 0;
+.link-red {
   align-items: center;
-  justify-content: center;
-  border-radius: 0.75rem;
-  border: 1px solid rgba(244,197,66, 0.22);
-  background: rgba(244,197,66, 0.1);
-  color: #F4C542;
+  gap: 0.5rem;
+  min-height: 44px;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #B8201A;
+  transition: color 0.2s;
 }
+.link-red:hover { color: #7A1410; }
 
-.btn-primary,
-.btn-ghost {
+/* ── Tombol ── */
+.btn-yellow,
+.btn-line,
+.btn-dark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  border-radius: 9999px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  transition: all 0.2s ease;
+  gap: 0.55rem;
+  min-height: 52px;
+  padding: 0 1.9rem;
+  border-radius: 12px;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s, transform 0.15s;
 }
-.btn-primary {
-  background: #D92B22;
-  color: #fff;
+.btn-yellow { background: #F4C542; color: #1F1700; }
+.btn-yellow:hover { background: #FFD65C; }
+.btn-line { border: 1.5px solid rgb(255 255 255 / 0.28); color: #F5F3EF; }
+.btn-line:hover { border-color: rgb(255 255 255 / 0.6); background: rgb(255 255 255 / 0.06); }
+.btn-dark { background: #111113; color: #fff; }
+.btn-dark:hover { background: #26262B; }
+.btn-yellow:active, .btn-line:active, .btn-dark:active { transform: translateY(1px); }
+
+/* ── Hero ── */
+.hero { min-height: clamp(34rem, 86svh, 47rem); display: flex; align-items: center; }
+.hero > .relative { width: 100%; }
+.hero-title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(2.5rem, 8.5vw, 3.5rem);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
 }
-.btn-primary:hover {
-  background: #B8201A;
-  box-shadow: 0 8px 24px -8px rgba(217,43,34, 0.6);
-  transform: translateY(-2px);
+@media (min-width: 1024px) {
+  .hero-title { font-size: clamp(3rem, 4.6vw, 4rem); }
 }
-.btn-ghost {
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  color: #FAFAFA;
+.hero-skel { height: clamp(2.1rem, 7vw, 3.6rem); }
+
+.hero-photo { box-shadow: 0 30px 60px -28px rgb(0 0 0 / 0.8); }
+.hero-brush-red {
+  right: -6%;
+  bottom: -8%;
+  width: 46%;
+  height: 78%;
+  opacity: 0.92;
+  transform: skewX(-14deg);
 }
-.btn-ghost:hover {
-  border-color: rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.06);
+.hero-brush-yellow {
+  right: -3%;
+  bottom: 0;
+  width: 15%;
+  height: 34%;
+  transform: skewX(-14deg);
 }
-.btn-primary:active,
-.btn-ghost:active {
-  transform: scale(0.98);
+@media (max-width: 1023px) {
+  .hero-brush-red { right: -20%; bottom: -4%; width: 70%; height: 46%; opacity: 0.7; }
+  .hero-brush-yellow { right: -8%; width: 26%; height: 18%; }
 }
 
+@keyframes heroIn { to { opacity: 1; transform: none; } }
+.hero-in {
+  opacity: 0;
+  transform: translateY(16px);
+  animation: heroIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: var(--d, 0ms);
+}
+
+/* ── Strip metrik ── */
+.metric-strip { box-shadow: 0 1px 2px rgb(32 32 36 / 0.04), 0 14px 34px -22px rgb(32 32 36 / 0.22); }
+.metric-num {
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 4.4vw, 1.75rem);
+  font-weight: 700;
+  line-height: 1.15;
+  color: #202024;
+  font-variant-numeric: tabular-nums;
+}
+.metric-label { margin-top: 0.15rem; font-size: 0.8125rem; color: #66666D; }
+
+/* ── Kartu menu ── */
+.menu-card {
+  display: block;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(32 32 36 / 0.05), 0 12px 28px -20px rgb(32 32 36 / 0.3);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.menu-card:hover { transform: translateY(-3px); box-shadow: 0 1px 2px rgb(32 32 36 / 0.05), 0 20px 36px -20px rgb(32 32 36 / 0.38); }
+.menu-tag {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  padding: 0.25rem 0.65rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+.menu-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #111113;
+  color: #fff;
+  transition: background-color 0.2s;
+}
+.menu-card:hover .menu-add { background: #D92B22; }
+
+/* ── Bento ── */
+.bento-feature { background: #111113; }
+.bento-brush {
+  right: -12%;
+  bottom: -18%;
+  width: 62%;
+  height: 70%;
+  opacity: 0.9;
+  transform: skewX(-14deg);
+}
+.bento-tile { box-shadow: 0 1px 2px rgb(32 32 36 / 0.05), 0 12px 28px -22px rgb(32 32 36 / 0.3); }
+
 /* ── Skeleton ── */
-.skeleton {
-  background: linear-gradient(
-    100deg,
-    rgba(255, 255, 255, 0.04) 30%,
-    rgba(255, 255, 255, 0.09) 50%,
-    rgba(255, 255, 255, 0.04) 70%
-  );
+.skeleton,
+.skeleton-light {
   background-size: 200% 100%;
   animation: shimmer 1.4s ease-in-out infinite;
+}
+.skeleton {
+  background-image: linear-gradient(100deg, rgb(255 255 255 / 0.04) 30%, rgb(255 255 255 / 0.1) 50%, rgb(255 255 255 / 0.04) 70%);
+}
+.skeleton-light {
+  background-image: linear-gradient(100deg, #ECE8DF 30%, #F6F3EC 50%, #ECE8DF 70%);
 }
 @keyframes shimmer {
   0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
-/* tinggi baris headline skeleton menyamai ukuran font hero */
-.hero-skel { height: clamp(2.1rem, 8vw, 4.4rem); }
-
-/* ── Hero ── */
-.hero {
-  min-height: 100vh;
-  min-height: 100svh;
-}
-.hero-title {
-  font-size: clamp(2.5rem, 9vw, 5rem);
-}
-@media (min-width: 1024px) {
-  .hero-title { font-size: clamp(3.25rem, 6vw, 5rem); }
-}
-.hero-glow {
-  background:
-    radial-gradient(60% 50% at 0% 100%, rgba(217,43,34, 0.12), transparent 70%),
-    radial-gradient(40% 40% at 100% 0%, rgba(244,197,66, 0.04), transparent 70%);
-}
-
-@keyframes heroIn {
-  to { opacity: 1; transform: none; }
-}
-.hero-in {
-  opacity: 0;
-  transform: translateY(18px);
-  animation: heroIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  animation-delay: var(--d, 0ms);
-}
 
 /* ── CTA ── */
-.cta {
-  background: linear-gradient(135deg, #8F0000 0%, #B8201A 45%, #5A0D1A 100%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+.cta { background: linear-gradient(135deg, #B8201A 0%, #D92B22 60%, #A31B15 100%); }
+.cta-brush {
+  right: -4%;
+  top: -12%;
+  width: 20%;
+  height: 130%;
+  opacity: 0.9;
+  transform: skewX(-14deg);
 }
-.cta-sheen {
-  background:
-    radial-gradient(60% 90% at 100% 0%, rgba(255, 214, 170, 0.22), transparent 65%),
-    radial-gradient(50% 70% at 0% 100%, rgba(0, 0, 0, 0.35), transparent 70%);
-}
-
-/* ── Band: blok tonal lembut, tepinya memudar (tanpa garis pembatas) ── */
-.band {
-  background: linear-gradient(180deg, transparent 0%, #0C0C0C 14%, #0C0C0C 86%, transparent 100%);
+@media (max-width: 1023px) {
+  .cta-brush { right: -10%; width: 34%; opacity: 0.6; }
 }
 
 /* ── Marquee ── */
@@ -1150,13 +1120,8 @@ button:focus-visible {
   0%   { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
-.animate-marquee {
-  width: max-content;
-  animation: marquee 60s linear infinite;
-}
-.marquee-wrap:hover .animate-marquee {
-  animation-play-state: paused;
-}
+.animate-marquee { width: max-content; animation: marquee 70s linear infinite; }
+.marquee-wrap:hover .animate-marquee { animation-play-state: paused; }
 .marquee-wrap { position: relative; }
 .marquee-wrap::before,
 .marquee-wrap::after {
@@ -1164,70 +1129,47 @@ button:focus-visible {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 14%;
+  width: 12%;
   z-index: 1;
   pointer-events: none;
 }
-.marquee-wrap::before { left: 0;  background: linear-gradient(90deg,  #080808, transparent); }
-.marquee-wrap::after  { right: 0; background: linear-gradient(270deg, #080808, transparent); }
+.marquee-wrap::before { left: 0;  background: linear-gradient(90deg,  #111113, transparent); }
+.marquee-wrap::after  { right: 0; background: linear-gradient(270deg, #111113, transparent); }
 
 /* ── Lightbox ── */
 .lightbox-fade-enter-active,
-.lightbox-fade-leave-active {
-  transition: opacity 0.25s ease;
-}
+.lightbox-fade-leave-active { transition: opacity 0.25s ease; }
 .lightbox-fade-enter-from,
-.lightbox-fade-leave-to {
-  opacity: 0;
-}
+.lightbox-fade-leave-to { opacity: 0; }
 @keyframes lbIn {
   from { opacity: 0; transform: scale(0.98); }
   to   { opacity: 1; transform: scale(1); }
 }
 .lb-img { animation: lbIn 0.3s ease; }
 
-/* ── Scroll reveal per section ── */
+/* ── Reveal (hanya 2 section, bukan semua) ── */
 .reveal {
   opacity: 0;
-  transform: translateY(28px);
-  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateY(20px);
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.reveal-visible {
-  opacity: 1;
-  transform: none;
-}
+.reveal-visible { opacity: 1; transform: none; }
 
-/* ── Image fade-up on load ── */
+/* ── Gambar: fade saat termuat ── */
 .img-blur {
   opacity: 0;
-  transform: scale(1.04);
-  transition: opacity 0.6s ease, transform 0.6s ease, filter 0.7s ease;
+  transition: opacity 0.5s ease;
 }
-.img-blur.img-loaded {
-  opacity: 1;
-  transform: scale(1);
-}
+.img-blur.img-loaded { opacity: 1; }
+.hero img.img-blur.img-loaded { opacity: 1; }
 
-/* ── Util ── */
 .no-scrollbar { scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
-  .reveal, .img-blur {
-    transition: none;
-    opacity: 1;
-    transform: none;
-  }
-  .hero-in {
-    animation: none;
-    opacity: 1;
-    transform: none;
-  }
-  .animate-marquee,
-  .lb-img,
-  .skeleton,
-  .animate-ping {
-    animation: none;
-  }
+  .reveal, .img-blur { transition: none; opacity: 1; transform: none; }
+  .hero-in { animation: none; opacity: 1; transform: none; }
+  .animate-marquee, .lb-img, .skeleton, .skeleton-light, .animate-ping { animation: none; }
+  .menu-card, .menu-card:hover { transition: none; transform: none; }
 }
 </style>

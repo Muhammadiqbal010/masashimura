@@ -107,7 +107,7 @@ defineExpose({ removePromo });
 </script>
 
 <style scoped>
-/* Palet: Surface #0D0D0D · Washi #FAFAFA · Crimson #D92B22 · Champagne #F4C542 */
+/* Palet: Surface #17171A · Washi #FAFAFA · Crimson #D92B22 · Champagne #F4C542 */
 
 .promo-box { display: flex; flex-direction: column; gap: 0.5rem; }
 
@@ -122,7 +122,7 @@ defineExpose({ removePromo });
 .promo-icon {
   position: absolute;
   left: 0.875rem;
-  color: #737373;
+  color: #9A9AA3;
   pointer-events: none;
 }
 
@@ -130,7 +130,7 @@ defineExpose({ removePromo });
 .promo-input {
   width: 100%;
   height: 3rem;
-  background: #0D0D0D;
+  background: #17171A;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0.75rem;
   padding: 0 1rem 0 2.5rem;
@@ -146,7 +146,7 @@ defineExpose({ removePromo });
   .promo-input { font-size: 0.875rem; }
 }
 .promo-input::placeholder {
-  color: #737373;
+  color: #9A9AA3;
   font-weight: 400;
   letter-spacing: normal;
 }
@@ -221,7 +221,7 @@ defineExpose({ removePromo });
   display: flex; align-items: center; justify-content: center;
   background: rgba(255, 255, 255, 0.06);
   border: none; border-radius: 9999px;
-  color: #A3A3A3;
+  color: #B8B8C0;
   cursor: pointer;
   transition: all 0.15s;
 }

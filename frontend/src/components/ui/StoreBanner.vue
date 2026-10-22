@@ -94,7 +94,7 @@ const todaySchedule = computed(() => {
 
 .banner-msg {
   font-size: 14px;
-  color: #A3A3A3;
+  color: #B8B8C0;
   margin-top: 4px;
   line-height: 1.55;
 }
@@ -119,7 +119,7 @@ const todaySchedule = computed(() => {
 
 .hours-label {
   font-size: 12px;
-  color: #737373;
+  color: #9A9AA3;
 }
 
 .hours-value {

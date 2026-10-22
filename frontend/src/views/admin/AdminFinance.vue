@@ -824,7 +824,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
   background: var(--bg);
   color: var(--text);
   padding: clamp(1.1rem, 3vw, 2rem) max(clamp(1rem, 3vw, 1.75rem), calc((100% - var(--page-max)) / 2)) 3rem;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
   display: flex;
   flex-direction: column;
@@ -916,14 +916,14 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 }
 .ic-green { background: rgba(34,197,94,0.1); color: var(--green-soft); }
 .ic-amber { background: rgba(244,197,66,0.1); color: var(--amber-soft); }
-.ic-red   { background: rgba(255,42,42,0.1); color: var(--red-soft); }
+.ic-red   { background: rgba(217,43,34,0.1); color: var(--red-soft); }
 .s-label { font-family: 'Manrope', system-ui, sans-serif; font-size: 0.82rem; font-weight: 600; color: var(--text-dim); flex: 1; min-width: 0; }
 .s-badge {
   font-size: 0.75rem; padding: 0.15rem 0.6rem; border-radius: 100px;
   font-family: 'Manrope', system-ui, sans-serif; font-weight: 600; white-space: nowrap;
 }
 .badge-up   { background: rgba(34,197,94,0.1); color: var(--green-soft); border: 1px solid rgba(34,197,94,0.2); }
-.badge-down { background: rgba(255,42,42,0.1); color: var(--red-soft); border: 1px solid rgba(255,42,42,0.2); }
+.badge-down { background: rgba(217,43,34,0.1); color: var(--red-soft); border: 1px solid rgba(217,43,34,0.2); }
 .s-value {
   font-family: 'Manrope', system-ui, sans-serif; font-size: clamp(1.25rem, 4.2vw, 1.7rem); overflow-wrap: anywhere;
   font-weight: 700; color: var(--text); letter-spacing: -0.02em; margin-bottom: 0.4rem;
@@ -986,7 +986,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 .field-input {
   min-height: 44px; background: rgb(var(--ink) / 0.03); border: 1px solid var(--border-strong);
   border-radius: var(--r-sm); padding: 0.7rem 1rem; color: var(--text);
-  font-size: 0.9rem; font-family: 'Inter', sans-serif; outline: none;
+  font-size: 0.9rem; font-family: var(--font-ui); outline: none;
   transition: border-color 0.15s, background 0.15s; color-scheme: inherit;
 }
 .field-input::placeholder { color: var(--text-faint); }
@@ -1086,8 +1086,8 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 }
 .edit-btn { background: rgb(var(--ink) / 0.04); border-color: var(--border-strong); color: var(--text-dim); }
 .edit-btn:hover { color: var(--text); background: rgb(var(--ink) / 0.08); }
-.delete-btn { background: rgba(255,42,42,0.07); border-color: rgba(255,42,42,0.18); color: var(--red-soft); }
-.delete-btn:hover { background: rgba(255,42,42,0.15); }
+.delete-btn { background: rgba(217,43,34,0.07); border-color: rgba(217,43,34,0.18); color: var(--red-soft); }
+.delete-btn:hover { background: rgba(217,43,34,0.15); }
 
 .empty-cell { padding: 2.75rem 1.4rem !important; text-align: center; color: var(--text-faint); }
 .empty-cell .spinner-sm { margin: 0 auto 0.6rem; }
@@ -1200,7 +1200,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 @keyframes modal-in { from { opacity: 0; transform: translateY(6px) scale(0.98); } to { opacity: 1; transform: none; } }
 .modal-icon {
   display: flex; align-items: center; justify-content: center; width: 40px; height: 40px;
-  border-radius: var(--r-sm); margin-bottom: 1rem; background: rgba(255,42,42,0.1); color: var(--red-soft);
+  border-radius: var(--r-sm); margin-bottom: 1rem; background: rgba(217,43,34,0.1); color: var(--red-soft);
 }
 .modal-title { font-family: 'Manrope', system-ui, sans-serif; font-size: 1.1rem; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 0.5rem; color: var(--text); }
 .modal-text { font-size: 0.88rem; line-height: 1.6; color: var(--text-dim); margin: 0 0 1.4rem; }

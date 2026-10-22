@@ -14,10 +14,11 @@
 <template>
   <section
     v-if="rows.length"
-    class="promo-section relative border-b border-white/[0.06]"
+    class="promo-section relative"
     aria-label="Promo dan event"
   >
-    <div class="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14 lg:px-10">
+    <div class="mx-auto max-w-7xl px-5 pb-16 sm:px-8 sm:pb-20 lg:px-10 lg:pb-24">
+     <div class="promo-panel">
       <TransitionGroup name="promo" tag="div" appear class="promo-rows">
         <div
           v-for="row in rows"
@@ -35,6 +36,7 @@
           />
         </div>
       </TransitionGroup>
+     </div>
     </div>
   </section>
 </template>
@@ -83,12 +85,17 @@ const rows = computed(() => buildRows(visible.value))
 </script>
 
 <style scoped>
-/* Latar sama dengan halaman (#080808), ditambah sorot halus supaya promo terasa menonjol */
-.promo-section {
-  background:
-    radial-gradient(50% 80% at 50% 0%, rgba(217,43,34, 0.07), transparent 70%),
-    #080808;
+/* Panel charcoal di atas bidang krem: promo jadi satu blok gelap yang jelas, tanpa garis pembatas.
+   Warna teks di dalam kartu promo tetap terang karena panelnya gelap. */
+.promo-section { background: transparent; }
+.promo-panel {
+  padding: 1.25rem;
+  border-radius: 1.5rem;
+  background: #111113;
+  color: #F5F3EF;
 }
+@media (min-width: 640px) { .promo-panel { padding: 1.75rem; } }
+@media (min-width: 1024px) { .promo-panel { padding: 2rem; } }
 
 .promo-rows { display: flex; flex-direction: column; gap: 1.25rem; }
 @media (min-width: 640px) {

@@ -19,7 +19,7 @@ import logo from "../assets/masashimura-logo.png";
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  background: #080808;
+  background: #111113;
   color: #fff;
   text-align: center;
   padding: 2rem;

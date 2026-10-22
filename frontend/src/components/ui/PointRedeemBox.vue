@@ -74,7 +74,7 @@ const totalPointsUsed = computed(() =>
 </script>
 
 <style scoped>
-/* Palet: Surface #141414 · Washi #FAFAFA · Champagne #F4C542 (poin & reward) */
+/* Palet: Surface #1C1C1F · Washi #FAFAFA · Champagne #F4C542 (poin & reward) */
 
 .point-box {
   display: flex;
@@ -82,7 +82,7 @@ const totalPointsUsed = computed(() =>
   gap: 0.75rem;
   background:
     radial-gradient(80% 100% at 100% 0%, rgba(244,197,66, 0.08), transparent 70%),
-    #0D0D0D;
+    #17171A;
   border: 1px solid rgba(244,197,66, 0.18);
   border-radius: 1rem;
   padding: 1rem;
@@ -109,7 +109,7 @@ const totalPointsUsed = computed(() =>
   flex: 1;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #A3A3A3;
+  color: #B8B8C0;
 }
 .point-balance {
   font-family: "Manrope", ui-sans-serif, system-ui, sans-serif;
@@ -184,12 +184,12 @@ const totalPointsUsed = computed(() =>
   border: 1px solid rgba(255, 255, 255, 0.06);
   opacity: 0.65;
 }
-.point-item-lock { color: #737373; flex-shrink: 0; }
-.point-item--locked .point-item-name { color: #A3A3A3; font-weight: 500; }
+.point-item-lock { color: #9A9AA3; flex-shrink: 0; }
+.point-item--locked .point-item-name { color: #B8B8C0; font-weight: 500; }
 .point-item-missing {
   font-size: 0.8125rem;
   font-variant-numeric: tabular-nums;
-  color: #737373;
+  color: #9A9AA3;
   white-space: nowrap;
 }
 

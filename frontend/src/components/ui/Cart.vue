@@ -25,7 +25,7 @@
           type="button"
           aria-label="Tutup keranjang"
           @click="$emit('close')"
-          class="flex h-10 w-10 items-center justify-center rounded-full text-[#A3A3A3] transition-all duration-150 hover:bg-white/5 hover:text-[#FAFAFA]"
+          class="flex h-10 w-10 items-center justify-center rounded-full text-[#B8B8C0] transition-all duration-150 hover:bg-white/5 hover:text-[#FAFAFA]"
         >
           <X :size="18" />
         </button>
@@ -36,12 +36,12 @@
 
         <!-- Empty state -->
         <div v-if="cartStore.isEmpty" class="flex h-full flex-col items-center justify-center gap-4 py-24">
-          <div class="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-[#141414]">
-            <ShoppingCart :size="22" class="text-[#A3A3A3]" />
+          <div class="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-[#1C1C1F]">
+            <ShoppingCart :size="22" class="text-[#B8B8C0]" />
           </div>
           <div class="space-y-1 text-center">
             <p class="font-sora text-lg font-semibold text-[#FAFAFA]">Keranjang kosong</p>
-            <p class="text-sm text-[#A3A3A3]">Tambahkan menu dulu yuk.</p>
+            <p class="text-sm text-[#B8B8C0]">Tambahkan menu dulu yuk.</p>
           </div>
           <router-link
             to="/menu"
@@ -69,12 +69,12 @@
                 type="button"
                 :aria-label="'Hapus ' + line.name + ' dari keranjang'"
                 @click="cartStore.removeBundle(line.id)"
-                class="-mr-2 -mt-1.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#737373] transition-colors hover:bg-[#D92B22]/10 hover:text-[#F0605A]"
+                class="-mr-2 -mt-1.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#9A9AA3] transition-colors hover:bg-[#D92B22]/10 hover:text-[#F0605A]"
               >
                 <X :size="16" />
               </button>
             </div>
-            <p class="text-xs text-[#A3A3A3]">{{ line.contents.map((c) => c.quantity + '× ' + c.name).join(' · ') }}</p>
+            <p class="text-xs text-[#B8B8C0]">{{ line.contents.map((c) => c.quantity + '× ' + c.name).join(' · ') }}</p>
             <p v-if="line.savings > 0" class="text-xs font-semibold text-[#F4C542]">Hemat {{ formatPrice(line.savings * line.quantity) }}</p>
             <div class="flex items-center justify-between gap-3">
               <div class="flex items-center rounded-full border border-white/10 bg-white/[0.03] p-1">
@@ -94,7 +94,7 @@
             class="item-card group flex gap-4"
           >
             <!-- Thumbnail -->
-            <div class="h-[72px] w-[72px] flex-shrink-0 overflow-hidden rounded-2xl border border-white/[0.07] bg-[#1A1A1A]">
+            <div class="h-[72px] w-[72px] flex-shrink-0 overflow-hidden rounded-2xl border border-white/[0.07] bg-[#232327]">
               <img
                 v-if="item.image_url"
                 :src="getMediaUrl(item.image_url, 160)"
@@ -117,7 +117,7 @@
                   type="button"
                   :aria-label="'Hapus ' + item.name + ' dari keranjang'"
                   @click="cartStore.removeFromCart(item.cartKey)"
-                  class="-mr-2 -mt-1.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#737373] transition-colors hover:bg-[#D92B22]/10 hover:text-[#F0605A]"
+                  class="-mr-2 -mt-1.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#9A9AA3] transition-colors hover:bg-[#D92B22]/10 hover:text-[#F0605A]"
                 >
                   <X :size="16" />
                 </button>
@@ -194,13 +194,13 @@
         <!-- Total row -->
         <div class="mb-5 flex items-end justify-between gap-4">
           <div class="space-y-1">
-            <p class="text-sm text-[#A3A3A3]">Total</p>
+            <p class="text-sm text-[#B8B8C0]">Total</p>
             <span class="block font-sora text-3xl font-semibold leading-none tracking-tight text-[#FAFAFA]">
               {{ formatPrice(cartStore.totalPrice) }}
             </span>
           </div>
           <div class="space-y-1 text-right">
-            <p class="text-sm text-[#A3A3A3]">Jumlah</p>
+            <p class="text-sm text-[#B8B8C0]">Jumlah</p>
             <span class="block text-base font-semibold tabular-nums text-[#FAFAFA]">
               {{ cartStore.cartItemCount }} porsi
             </span>
@@ -238,7 +238,7 @@
           v-else
           type="button"
           disabled
-          class="flex min-h-[56px] w-full cursor-not-allowed items-center justify-center gap-2 rounded-full border border-white/5 bg-[#1A1A1A] text-base font-semibold text-[#737373]"
+          class="flex min-h-[56px] w-full cursor-not-allowed items-center justify-center gap-2 rounded-full border border-white/5 bg-[#232327] text-base font-semibold text-[#9A9AA3]"
         >
           <span>Toko tutup</span>
         </button>
@@ -289,17 +289,17 @@ const goCheckout = async () => {
 </script>
 
 <style scoped>
-/* Palet: Surface #141414 · Washi #FAFAFA · Crimson #D92B22 · Champagne #F4C542 */
+/* Palet: Surface #1C1C1F · Washi #FAFAFA · Crimson #D92B22 · Champagne #F4C542 */
 
 .drawer {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.008)), #0D0D0D;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.008)), #17171A;
   box-shadow: -40px 0 80px -20px rgba(0, 0, 0, 0.6);
 }
 
 .item-card {
   border-radius: 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.07);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)), #141414;
+  background: #1C1C1F;
   padding: 1rem;
 }
 
@@ -309,7 +309,7 @@ const goCheckout = async () => {
   height: 2.5rem;
   border-radius: 0.75rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  background: #0D0D0D;
+  background: #17171A;
   padding: 0 0.875rem;
   font-size: 1rem;
   color: #C8C8C8;
@@ -319,7 +319,7 @@ const goCheckout = async () => {
 @media (min-width: 640px) {
   .note-input { font-size: 0.8125rem; }
 }
-.note-input::placeholder { color: #737373; }
+.note-input::placeholder { color: #9A9AA3; }
 .note-input:hover { border-color: rgba(255, 255, 255, 0.18); }
 .note-input:focus {
   border-color: rgba(244,197,66, 0.6);

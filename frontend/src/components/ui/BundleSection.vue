@@ -7,14 +7,14 @@
   <section v-if="bundles.length" class="mb-10" aria-labelledby="bundle-heading">
     <div class="mb-4 flex items-end justify-between gap-3">
       <h2 id="bundle-heading" class="font-sora text-2xl font-semibold tracking-tight text-[#FAFAFA]">Paket</h2>
-      <span class="text-sm text-[#A3A3A3]">{{ bundles.length }} paket</span>
+      <span class="text-sm text-[#B8B8C0]">{{ bundles.length }} paket</span>
     </div>
 
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <article
         v-for="b in bundles"
         :key="b.id"
-        class="flex flex-col justify-between gap-4 rounded-3xl border border-white/[0.08] bg-[#141414] p-5"
+        class="flex flex-col justify-between gap-4 rounded-3xl border border-white/[0.08] bg-[#1C1C1F] p-5"
         :class="{ 'opacity-60': b.unavailable_reason }"
       >
         <div class="space-y-3">
@@ -29,12 +29,12 @@
           <ul class="space-y-1 text-sm text-[#C8C8C8]">
             <li v-for="c in b.contents" :key="c.menu">{{ c.quantity }}× {{ c.name }}</li>
           </ul>
-          <p v-if="b.description" class="text-sm leading-relaxed text-[#A3A3A3]">{{ b.description }}</p>
+          <p v-if="b.description" class="text-sm leading-relaxed text-[#B8B8C0]">{{ b.description }}</p>
         </div>
 
         <div class="flex items-end justify-between gap-3">
           <div>
-            <p v-if="b.normal_price" class="text-xs text-[#737373] line-through">{{ rp(b.normal_price) }}</p>
+            <p v-if="b.normal_price" class="text-xs text-[#9A9AA3] line-through">{{ rp(b.normal_price) }}</p>
             <p class="font-sora text-xl font-semibold tabular-nums text-[#FAFAFA]">{{ rp(b.price) }}</p>
           </div>
 

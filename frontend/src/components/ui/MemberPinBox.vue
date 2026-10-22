@@ -169,7 +169,7 @@ const waLink = computed(() => {
 <style scoped>
 .pin-box { display: flex; flex-direction: column; gap: .6rem; }
 .pin-label { font-size: .875rem; font-weight: 500; color: #C8C8C8; }
-.pin-opt { font-weight: 400; color: #737373; font-size: .75rem; }
+.pin-opt { font-weight: 400; color: #9A9AA3; font-size: .75rem; }
 .pin-row { display: flex; gap: .6rem; }
 .pin-input { max-width: 7.5rem; text-align: center; letter-spacing: .4em; }
 .pin-btn {
@@ -184,20 +184,20 @@ const waLink = computed(() => {
 @media (prefers-reduced-motion: reduce) { .pin-spin { animation: none; } }
 .pin-error { margin: 0; font-size: .8125rem; color: #F0605A; }
 .pin-hint { margin: 0; font-size: .8125rem; color: #F4C542; }
-.pin-help { margin: 0; font-size: .75rem; line-height: 1.5; color: #A3A3A3; }
+.pin-help { margin: 0; font-size: .75rem; line-height: 1.5; color: #B8B8C0; }
 .pin-wa { display: block; margin-top: .25rem; color: #F4C542; text-decoration: underline; text-underline-offset: 2px; }
 
 .pin-head { display: flex; align-items: center; gap: .625rem; }
 .pin-tile { display: flex; height: 2rem; width: 2rem; align-items: center; justify-content: center; border-radius: .625rem; border: 1px solid rgba(244,197,66,.25); background: rgba(244,197,66,.1); color: #F4C542; flex-shrink: 0; }
 .pin-head-text { flex: 1; min-width: 0; }
-.pin-title { margin: 0; font-size: .75rem; color: #A3A3A3; }
+.pin-title { margin: 0; font-size: .75rem; color: #B8B8C0; }
 .pin-balance { margin: 0; font-family: "Manrope", ui-sans-serif, system-ui, sans-serif; font-size: 1.375rem; font-weight: 600; color: #F4C542; font-variant-numeric: tabular-nums; }
-.pin-link { min-height: 40px; padding: 0 .5rem; background: none; border: 0; color: #A3A3A3; font-size: .8125rem; cursor: pointer; text-decoration: underline; }
+.pin-link { min-height: 40px; padding: 0 .5rem; background: none; border: 0; color: #B8B8C0; font-size: .8125rem; cursor: pointer; text-decoration: underline; }
 .pin-progress { display: flex; flex-direction: column; gap: .4rem; }
 .pin-bar { height: 8px; border-radius: 999px; background: rgba(255,255,255,.08); overflow: hidden; }
 .pin-bar-fill { display: block; height: 100%; border-radius: 999px; background: #F4C542; transition: width .4s ease; }
 @media (prefers-reduced-motion: reduce) { .pin-bar-fill { transition: none; } }
 .pin-progress-text { margin: 0; font-size: .8125rem; line-height: 1.5; color: #C8C8C8; }
-.pin-expiry { margin: 0; font-size: .8125rem; line-height: 1.5; color: #A3A3A3; }
+.pin-expiry { margin: 0; font-size: .8125rem; line-height: 1.5; color: #B8B8C0; }
 .pin-expiry.is-soon { color: #F4C542; font-weight: 500; }
 </style>

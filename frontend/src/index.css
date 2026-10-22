@@ -1,37 +1,43 @@
 /* src/index.css */
 
 /* 1. CORE TAILWIND V4 & FONTS */
-@import url("https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&family=Caveat:wght@400;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@600;700;900&family=Manrope:wght@400;500;600;700;800&display=swap");
 @import "tailwindcss";
 
 /* 2. TOKEN BRAND — diambil dari logo "M" (merah #FE0000 + kuning #FFF500 di atas hitam)
    Satu sumber kebenaran: ubah di sini, seluruh situs ikut berubah. */
 @theme {
-  /* Brand */
+  /* Brand — merah, kuning, hitam (PRD 4.2) */
   --color-brand-red: #d92b22;
   --color-brand-red-hover: #b8201a;
   --color-brand-red-deep: #7a1410;
   --color-brand-red-glow: #f0524a;
   --color-brand-yellow: #f4c542;
   --color-brand-yellow-deep: #d9a82a;
-  --color-ink: #050505;
-  --color-ink-1: #0d0d0d;
-  --color-ink-2: #141414;
-  --color-ink-3: #1a1a1a;
+  --color-ink: #111113;
+  --color-ink-1: #17171a;
+  --color-ink-2: #1c1c1f;
+  --color-ink-3: #232327;
+
+  /* Netral tema terang (dipakai section krem di situs publik) */
+  --color-cream: #f7f5f0;
+  --color-paper: #ffffff;
+  --color-line: #e5e2dc;
+  --color-text-light: #202024;
+  --color-text-light-2: #66666d;
 
   /* Alias lama (dipertahankan agar kelas yang sudah ada tetap jalan) */
   --color-primary: var(--color-brand-red);
   --color-accent: var(--color-brand-yellow);
   --color-background: var(--color-ink);
-  --color-foreground: #fafafa;
+  --color-foreground: #f5f3ef;
   --color-border: rgba(255, 255, 255, 0.1);
   --color-card: rgba(255, 255, 255, 0.04);
   --color-secondary: rgba(255, 255, 255, 0.06);
 
-  /* Palet bawaan Tailwind yang dipakai di kode -> diarahkan ke warna logo,
-     jadi semua class text-red-600, bg-amber-500, dst otomatis ikut tema. */
-  --color-red-400: #ff5c5c;
-  --color-red-500: #ff2a2a;
+  /* Palet bawaan Tailwind yang dipakai di kode -> diarahkan ke warna brand */
+  --color-red-400: #ff6a60;
+  --color-red-500: #ee3b32;
   --color-red-600: #d92b22;
   --color-red-700: #b8201a;
   --color-red-900: #5c0000;
@@ -40,17 +46,22 @@
   --color-amber-500: #f4c542;
   --color-amber-600: #d9a82a;
 
-  /* Typography */
-  --font-oswald: "Oswald", sans-serif;
-  --font-manrope: "Manrope", sans-serif;
-  --font-sora: "Manrope", sans-serif;
-  --font-inter: "Manrope", sans-serif;
-  --font-caveat: "Caveat", cursive;
+  /* Tipografi: satu display (serif) + satu UI (sans) */
+  --font-display: "Noto Serif JP", "Shippori Mincho", Georgia, serif;
+  --font-ui: "Manrope", system-ui, sans-serif;
+  --font-oswald: var(--font-display);
+  --font-manrope: var(--font-ui);
+  --font-sora: var(--font-ui);
+  --font-inter: var(--font-ui);
+  --font-caveat: var(--font-ui);
 
-  /* Bentuk & kedalaman */
-  --radius-card: 1.25rem;
-  --shadow-glow-red: 0 10px 40px -10px rgba(238, 0, 0, 0.55);
-  --shadow-glow-yellow: 0 10px 40px -10px rgba(255, 245, 0, 0.35);
+  /* Bentuk & kedalaman — skala radius tunggal (PRD 4.5) */
+  --radius-control: 0.75rem;   /* tombol & input 12px */
+  --radius-card: 1rem;         /* kartu 16px */
+  --radius-modal: 1rem;
+  --shadow-raise: 0 18px 40px -22px rgba(0, 0, 0, 0.55);
+  --shadow-glow-red: 0 10px 32px -12px rgba(217, 43, 34, 0.55);
+  --shadow-glow-yellow: 0 10px 32px -14px rgba(244, 197, 66, 0.4);
 }
 
 /* 3. ATURAN DASAR (Base) */
@@ -64,20 +75,27 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: "Manrope", system-ui, sans-serif;
+    font-family: var(--font-ui);
     line-height: 1.6;
     overflow-x: hidden;
     text-rendering: optimizeLegibility;
   }
   h1,
-  h2,
+  h2 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
   h3,
   h4,
   h5,
   h6 {
-    font-family: "Oswald", sans-serif;
-    line-height: 1.12;
-    letter-spacing: 0.01em;
+    font-family: var(--font-ui);
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
     text-wrap: balance;
   }
   p {
@@ -91,7 +109,7 @@
   :focus-visible {
     outline: 2px solid var(--color-brand-yellow);
     outline-offset: 3px;
-    border-radius: 6px;
+    border-radius: 8px;
   }
   button,
   a,
@@ -167,15 +185,15 @@
 /* Toast (Sonner): kartu hitam dengan garis aksen sesuai tipe, tampil di atas layar */
 [data-sonner-toaster] {
   z-index: 9999 !important;
-  font-family: "Manrope", sans-serif !important;
+  font-family: var(--font-ui) !important;
 }
 
 [data-sonner-toast] {
-  background: #111 !important;
+  background: #1c1c1f !important;
   color: #fafafa !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
   border-left: 4px solid #f4c542 !important;
-  border-radius: 14px !important;
+  border-radius: 12px !important;
   padding: 14px 18px !important;
   font-weight: 600 !important;
   font-size: 0.875rem !important;
@@ -183,7 +201,7 @@
 }
 
 [data-sonner-toast][data-type="success"] {
-  border-left-color: #22c55e !important;
+  border-left-color: #2fb36d !important;
 }
 [data-sonner-toast][data-type="error"] {
   border-left-color: #d92b22 !important;
@@ -235,18 +253,51 @@
 }
 
 /* ==========================================================================
-   SITUS PUBLIK — tipografi satu keluarga (Manrope), heading lebih tenang
+   SITUS PUBLIK — display serif untuk judul halaman/section, UI sans untuk sisanya
    ========================================================================== */
 .site-public h1,
-.site-public h2,
+.site-public h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+}
 .site-public h3,
 .site-public h4,
 .site-public h5,
 .site-public h6 {
-  font-family: "Manrope", system-ui, sans-serif;
+  font-family: var(--font-ui);
   font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.12;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+/* Kelas font-sora bawaan kode lama dipakai untuk judul kartu & angka → tetap sans, tegas */
+.site-public .font-sora { font-family: var(--font-ui); letter-spacing: -0.01em; }
+.site-public h1.font-sora,
+.site-public h2.font-sora { font-family: var(--font-display); letter-spacing: -0.015em; }
+
+/* Ornamen sapuan kuas (CSS murni, tanpa gambar tambahan) — dipakai hemat di hero & promo */
+.brush-red,
+.brush-yellow {
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+}
+.brush-red {
+  background: linear-gradient(100deg, #b8201a 0%, #d92b22 55%, #e8473f 100%);
+  clip-path: polygon(8% 0, 100% 0, 78% 100%, 0 100%, 4% 62%, 0 30%);
+}
+.brush-yellow {
+  background: linear-gradient(100deg, #d9a82a, #f4c542);
+  clip-path: polygon(14% 0, 100% 0, 86% 100%, 0 100%, 6% 55%);
+}
+
+/* Teks vertikal Jepang sebagai aksen tepi hero */
+.jp-vertical {
+  writing-mode: vertical-rl;
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.35em;
 }
 
 /* Autofill browser jangan jadi kotak putih/biru di tema gelap */
