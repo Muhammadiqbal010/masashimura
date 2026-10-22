@@ -261,7 +261,7 @@ defineExpose({ reload: load })
 .bm-main { min-width: 0; flex: 1 1 280px; display: flex; flex-direction: column; gap: .35rem; }
 .bm-title-row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
 .bm-name { margin: 0; font-size: 1rem; font-weight: 600; }
-.bm-tag { padding: .1rem .55rem; border-radius: 999px; font-size: 0.72rem; background: rgb(var(--ink) / .07); }
+.bm-tag { padding: .1rem .55rem; border-radius: 999px; font-size: 0.75rem; background: rgb(var(--ink) / .07); }
 .bm-tag--ok { background: color-mix(in srgb, var(--green) 14%, transparent); }
 .bm-tag--warn { background: color-mix(in srgb, var(--amber) 16%, transparent); }
 .bm-tag--off { background: color-mix(in srgb, var(--accent) 14%, transparent); }

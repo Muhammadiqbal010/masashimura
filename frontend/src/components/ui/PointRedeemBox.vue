@@ -112,7 +112,7 @@ const totalPointsUsed = computed(() =>
   color: #B8B8C0;
 }
 .point-balance {
-  font-family: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-ui);
   font-weight: 600;
   font-size: 1.125rem;
   font-variant-numeric: tabular-nums;
@@ -134,7 +134,7 @@ const totalPointsUsed = computed(() =>
   text-align: left;
   border-radius: 0.75rem;
   padding: 0.625rem 0.875rem;
-  font-family: "Inter", sans-serif;
+  font-family: var(--font-ui);
   cursor: default;
 }
 

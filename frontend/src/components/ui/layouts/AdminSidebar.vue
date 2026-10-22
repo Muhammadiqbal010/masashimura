@@ -12,7 +12,8 @@
             draggable="false"
           />
         </div>
-        <p class="sb-eyebrow">Admin System</p>
+        <span class="hanko hanko--sm sb-hanko" aria-hidden="true">ま</span>
+        <p class="sb-eyebrow">Admin System <span class="sb-eyebrow-jp" aria-hidden="true">管理</span></p>
       </div>
 
       <!-- Tombol close — mobile only -->
@@ -112,6 +113,7 @@
     </nav>
 
     <!-- ── Footer: switch tema + logout ──────────────────────────── -->
+    <div class="sb-pattern pattern-seigaiha" aria-hidden="true"></div>
     <div class="sb-footer">
       <button
         type="button"
@@ -368,7 +370,7 @@ onBeforeUnmount(() => {
   background: var(--bg-sidebar);
   border-right: 1px solid var(--border);
   color: var(--text);
-  font-family: var(--font-body, 'Manrope', system-ui, sans-serif);
+  font-family: var(--font-body, system-ui, sans-serif);
   user-select: none;
 
   /* mobile: drawer tersembunyi. visibility mencegah fokus keyboard masuk ke menu yang tak terlihat */
@@ -405,6 +407,10 @@ onBeforeUnmount(() => {
 .sb-brand-main { min-width: 0; }
 
 .sb-logo-tile { display: inline-flex; }
+.sb-hanko { margin-left: 0.6rem; vertical-align: middle; }
+.sb-eyebrow-jp { margin-left: 0.35rem; font-family: var(--font-display); color: var(--accent-text); }
+.sb-pattern { height: 44px; flex-shrink: 0; opacity: 0.9; filter: invert(var(--sb-pat-invert, 0)); }
+html[data-admin-theme='light'] .sb-pattern { --sb-pat-invert: 1; opacity: 0.5; }
 .sb-logo {
   height: 2rem;
   width: auto;
@@ -418,7 +424,7 @@ onBeforeUnmount(() => {
 
 .sb-eyebrow {
   margin: 0.45rem 0 0;
-  font-family: "Manrope", system-ui, sans-serif;
+  font-family: var(--font-ui);
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -484,7 +490,7 @@ onBeforeUnmount(() => {
   display: inline-block;
   padding: 0.12rem 0.45rem;
   border-radius: 6px;
-  font-family: "Manrope", system-ui, sans-serif;
+  font-family: var(--font-ui);
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -512,7 +518,7 @@ onBeforeUnmount(() => {
 .sb-section {
   margin: 0.6rem 0 0.2rem;
   padding: 0 0.75rem;
-  font-family: "Manrope", system-ui, sans-serif;
+  font-family: var(--font-ui);
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--text-faint);
@@ -549,8 +555,8 @@ onBeforeUnmount(() => {
   border-radius: 99px;
   background: var(--brand-yellow, #f4c542);
   color: #1a1400;
-  font-family: "Manrope", system-ui, sans-serif;
-  font-size: 0.72rem;
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
   font-weight: 700;
 }
 
@@ -712,7 +718,7 @@ onBeforeUnmount(() => {
   background: var(--surface);
   color: var(--text);
   box-shadow: var(--shadow-lg);
-  font-family: 'Manrope', system-ui, sans-serif;
+  font-family: var(--font-ui);
 }
 .sb-modal-icon {
   display: flex;
@@ -729,7 +735,7 @@ onBeforeUnmount(() => {
 .sb-modal-title {
   margin: 0 0 0.4rem;
   text-align: center;
-  font-family: 'Manrope', system-ui, sans-serif;
+  font-family: var(--font-ui);
   font-size: 1.05rem;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -792,7 +798,7 @@ onBeforeUnmount(() => {
   background: var(--surface-2);
   color: var(--text-2);
   box-shadow: var(--shadow-lg);
-  font-family: 'Manrope', system-ui, sans-serif;
+  font-family: var(--font-ui);
 }
 .sb-toast.is-success { border-color: rgb(34 197 94 / 0.4); color: var(--green-soft); }
 .sb-toast.is-error   { border-color: rgb(239 68 68 / 0.45); color: var(--red-soft); }

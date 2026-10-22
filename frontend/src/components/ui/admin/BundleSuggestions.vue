@@ -180,11 +180,11 @@ const rp = (v) => 'Rp' + Math.round(Number(v) || 0).toLocaleString('id-ID')
 .bs-names { display: flex; gap: 0.65rem; min-width: 0; flex: 1 1 14rem; }
 .bs-rank {
   flex-shrink: 0; width: 1.5rem; height: 1.5rem; border-radius: 999px; display: grid; place-items: center;
-  font-size: 0.72rem; font-weight: 700; color: var(--text-dim); background: rgb(var(--ink) / 0.06);
+  font-size: 0.75rem; font-weight: 700; color: var(--text-dim); background: rgb(var(--ink) / 0.06);
 }
 .bs-pair { margin: 0 0 0.3rem; font-size: 0.88rem; font-weight: 600; color: var(--text); }
 .bs-plus { margin: 0 0.2rem; color: var(--text-faint); }
-.bs-badge { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.68rem; font-weight: 600; background: rgb(var(--ink) / 0.06); color: var(--text-dim); }
+.bs-badge { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; background: rgb(var(--ink) / 0.06); color: var(--text-dim); }
 .bs-badge.is-kuat { background: rgb(34 197 94 / 0.14); color: rgb(22 163 74); }
 .bs-badge.is-sedang { background: rgb(245 158 11 / 0.14); color: rgb(180 83 9); }
 .bs-use { min-height: 40px; }
@@ -193,9 +193,9 @@ const rp = (v) => 'Rp' + Math.round(Number(v) || 0).toLocaleString('id-ID')
 .bs-price { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.2rem 0.6rem; margin: 0; padding-left: 2.15rem; font-size: 0.9rem; color: var(--text); }
 .bs-normal { font-size: 0.75rem; color: var(--text-faint); text-decoration: line-through; }
 .bs-save { font-size: 0.75rem; font-weight: 600; color: rgb(22 163 74); }
-.bs-range { margin: 0; padding-left: 2.15rem; font-size: 0.72rem; color: var(--text-faint); }
+.bs-range { margin: 0; padding-left: 2.15rem; font-size: 0.75rem; color: var(--text-faint); }
 .bs-reasons { margin: 0; padding: 0 0 0 2.15rem; list-style: none; display: flex; flex-direction: column; gap: 0.15rem; }
-.bs-reasons li { font-size: 0.74rem; color: var(--text-dim); }
+.bs-reasons li { font-size: 0.75rem; color: var(--text-dim); }
 .bs-reasons li::before { content: '· '; color: var(--text-faint); }
-.bs-note-text { margin: 0; font-size: 0.72rem; line-height: 1.5; color: var(--text-faint); }
+.bs-note-text { margin: 0; font-size: 0.75rem; line-height: 1.5; color: var(--text-faint); }
 </style>

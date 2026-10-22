@@ -33,12 +33,12 @@ import logo from "../assets/masashimura-logo.png";
   font-size: 5rem;
   margin: 0;
   color: #ee0000;
-  font-family: 'Manrope', system-ui, sans-serif;
+  font-family: var(--font-ui);
   letter-spacing: 2px;
 }
 .not-found p {
   color: #aaa;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-ui);
 }
 .not-found__link {
   margin-top: 0.5rem;
@@ -47,7 +47,7 @@ import logo from "../assets/masashimura-logo.png";
   color: #fff;
   border-radius: 6px;
   text-decoration: none;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-ui);
   transition: opacity 0.2s;
 }
 .not-found__link:hover {

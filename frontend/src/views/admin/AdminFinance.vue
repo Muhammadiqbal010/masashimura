@@ -841,7 +841,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 }
 .fr-heading { display: flex; flex-direction: column; gap: 0.35rem; }
 .fr-title {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: clamp(1.45rem, 4vw, 1.9rem);
+  font-family: var(--font-ui); font-size: clamp(1.45rem, 4vw, 1.9rem);
   font-weight: 700; letter-spacing: -0.02em; margin: 0; line-height: 1.1;
 }
 .fr-subtitle { font-size: 0.85rem; color: var(--text-dim); margin: 0; }
@@ -854,7 +854,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 }
 .mode-btn {
   padding: 0.5rem 1.1rem; border-radius: 9px; border: none; background: transparent;
-  color: var(--text-faint); font-family: 'Manrope', system-ui, sans-serif; font-size: 0.82rem; font-weight: 600;
+  color: var(--text-faint); font-family: var(--font-ui); font-size: 0.82rem; font-weight: 600;
   cursor: pointer; transition: background 0.15s, color 0.15s;
 }
 .mode-btn:hover { color: var(--text-2); }
@@ -886,7 +886,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 .today-btn {
   padding: 0.55rem 1rem; border-radius: var(--r-md); background: transparent;
   border: 1px solid var(--line-accent, var(--border-strong)); color: var(--accent-text);
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.82rem; font-weight: 600;
+  font-family: var(--font-ui); font-size: 0.82rem; font-weight: 600;
   cursor: pointer; transition: background 0.15s;
 }
 .today-btn:hover { background: var(--tint-accent, var(--surface-hover)); }
@@ -917,15 +917,15 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 .ic-green { background: rgba(34,197,94,0.1); color: var(--green-soft); }
 .ic-amber { background: rgba(244,197,66,0.1); color: var(--amber-soft); }
 .ic-red   { background: rgba(217,43,34,0.1); color: var(--red-soft); }
-.s-label { font-family: 'Manrope', system-ui, sans-serif; font-size: 0.82rem; font-weight: 600; color: var(--text-dim); flex: 1; min-width: 0; }
+.s-label { font-family: var(--font-ui); font-size: 0.82rem; font-weight: 600; color: var(--text-dim); flex: 1; min-width: 0; }
 .s-badge {
   font-size: 0.75rem; padding: 0.15rem 0.6rem; border-radius: 100px;
-  font-family: 'Manrope', system-ui, sans-serif; font-weight: 600; white-space: nowrap;
+  font-family: var(--font-ui); font-weight: 600; white-space: nowrap;
 }
 .badge-up   { background: rgba(34,197,94,0.1); color: var(--green-soft); border: 1px solid rgba(34,197,94,0.2); }
 .badge-down { background: rgba(217,43,34,0.1); color: var(--red-soft); border: 1px solid rgba(217,43,34,0.2); }
 .s-value {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: clamp(1.25rem, 4.2vw, 1.7rem); overflow-wrap: anywhere;
+  font-family: var(--font-ui); font-size: clamp(1.25rem, 4.2vw, 1.7rem); overflow-wrap: anywhere;
   font-weight: 700; color: var(--text); letter-spacing: -0.02em; margin-bottom: 0.4rem;
   font-variant-numeric: tabular-nums;
 }
@@ -958,7 +958,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 .card-head.border-b { border-bottom: 1px solid var(--border); }
 .card-titles { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
 .card-title {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 1rem; font-weight: 700; letter-spacing: -0.01em; margin: 0; color: var(--text);
+  font-family: var(--font-ui); font-size: 1rem; font-weight: 700; letter-spacing: -0.01em; margin: 0; color: var(--text);
   overflow-wrap: anywhere;
 }
 .card-sub { margin: 0; font-size: 0.78rem; color: var(--text-faint); }
@@ -967,13 +967,13 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 .jump-btn {
   display: none; min-height: 36px; padding: 0.3rem 0.9rem; border-radius: 8px;
   background: var(--accent); border: none; color: var(--on-accent);
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.8rem; font-weight: 600;
+  font-family: var(--font-ui); font-size: 0.8rem; font-weight: 600;
   cursor: pointer;
 }
 .jump-btn:hover { background: var(--accent-hover); }
 .link-btn {
   padding: 0.25rem 0.1rem; border: 0; background: none; color: var(--accent-text);
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.82rem; font-weight: 600;
+  font-family: var(--font-ui); font-size: 0.82rem; font-weight: 600;
   text-decoration: underline; cursor: pointer; flex-shrink: 0;
 }
 .link-btn:hover { color: var(--text); }
@@ -982,7 +982,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 .form-card.is-editing { border-color: var(--amber); box-shadow: 0 0 0 1px var(--amber), var(--shadow-sm); }
 .expense-form { padding: 1.25rem 1.4rem 1.4rem; display: flex; flex-direction: column; gap: 1.15rem; }
 .field { display: flex; flex-direction: column; gap: 0.45rem; }
-.field-label { font-family: 'Manrope', system-ui, sans-serif; font-size: 0.8rem; font-weight: 600; color: var(--text-dim); }
+.field-label { font-family: var(--font-ui); font-size: 0.8rem; font-weight: 600; color: var(--text-dim); }
 .field-input {
   min-height: 44px; background: rgb(var(--ink) / 0.03); border: 1px solid var(--border-strong);
   border-radius: var(--r-sm); padding: 0.7rem 1rem; color: var(--text);
@@ -1008,7 +1008,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 }
 .method-btn {
   flex: 1; padding: 0.55rem 0.7rem; border-radius: 6px; border: none; background: transparent;
-  color: var(--text-faint); font-family: 'Manrope', system-ui, sans-serif; font-size: 0.82rem; font-weight: 600;
+  color: var(--text-faint); font-family: var(--font-ui); font-size: 0.82rem; font-weight: 600;
   cursor: pointer; transition: background 0.15s, color 0.15s;
 }
 .method-btn:hover { color: var(--text-2); }
@@ -1018,7 +1018,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
   display: flex; align-items: center; justify-content: center; gap: 0.5rem;
   min-height: 46px; padding: 0.75rem; background: var(--accent);
   border: 1px solid var(--accent); border-radius: var(--r-sm); color: var(--on-accent);
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.85rem; font-weight: 600;
+  font-family: var(--font-ui); font-size: 0.85rem; font-weight: 600;
   cursor: pointer; transition: background 0.15s, border-color 0.15s;
 }
 .submit-btn:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
@@ -1036,7 +1036,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 .table-scroll { overflow-x: auto; }
 .data-table { width: 100%; border-collapse: collapse; min-width: 420px; }
 .data-table th {
-  padding: 0.7rem 1.4rem; font-family: 'Manrope', system-ui, sans-serif; font-size: 0.78rem; font-weight: 600;
+  padding: 0.7rem 1.4rem; font-family: var(--font-ui); font-size: 0.78rem; font-weight: 600;
   color: var(--text-faint); text-align: left;
   background: rgb(var(--ink) / 0.02); border-bottom: 1px solid var(--border);
 }
@@ -1067,13 +1067,13 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 
 .total-row { background: rgb(var(--ink) / 0.03) !important; border-top: 1px solid var(--border-strong) !important; }
 .total-row td {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.82rem; font-weight: 700; color: var(--text-dim); padding: 0.85rem 1.4rem;
+  font-family: var(--font-ui); font-size: 0.82rem; font-weight: 700; color: var(--text-dim); padding: 0.85rem 1.4rem;
 }
 .total-row .td-rev, .total-row .td-exp, .total-row .td-pos, .total-row .td-neg { font-family: monospace; font-size: 0.88rem; }
 
 .method-badge {
   display: inline-block; padding: 0.15rem 0.65rem; border-radius: 100px; border: 1px solid;
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.78rem; font-weight: 600;
+  font-family: var(--font-ui); font-size: 0.78rem; font-weight: 600;
 }
 .mb-cash { color: var(--text-dim); background: rgb(var(--ink) / 0.04); border-color: var(--border-strong); }
 .mb-qris { color: var(--blue-soft); background: rgba(56,189,248,0.08); border-color: rgba(56,189,248,0.25); }
@@ -1081,7 +1081,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 .row-actions { display: inline-flex; gap: 0.4rem; }
 .edit-btn, .delete-btn {
   padding: 0.32rem 0.75rem; border-radius: 6px; border: 1px solid;
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.78rem; font-weight: 600;
+  font-family: var(--font-ui); font-size: 0.78rem; font-weight: 600;
   cursor: pointer; transition: background 0.15s, color 0.15s;
 }
 .edit-btn { background: rgb(var(--ink) / 0.04); border-color: var(--border-strong); color: var(--text-dim); }
@@ -1122,7 +1122,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 }
 .toggle-btn {
   padding: 0.45rem 1.05rem; border-radius: 6px; border: none; background: transparent; color: var(--text-faint);
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.82rem; font-weight: 600;
+  font-family: var(--font-ui); font-size: 0.82rem; font-weight: 600;
   cursor: pointer; transition: background 0.15s, color 0.15s;
 }
 .toggle-btn:hover { color: var(--text-2); }
@@ -1139,7 +1139,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 .export-btn {
   display: flex; align-items: center; justify-content: center; gap: 0.45rem; min-width: 8rem;
   padding: 0.7rem 1rem; border-radius: var(--r-sm); border: 1px solid;
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.85rem; font-weight: 600;
+  font-family: var(--font-ui); font-size: 0.85rem; font-weight: 600;
   cursor: pointer; transition: background 0.15s;
 }
 .export-btn:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -1151,7 +1151,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 /* ── Grafik ──────────────────────────────────────────────────────── */
 .chart-loading {
   display: flex; align-items: center; justify-content: center; gap: 0.6rem; padding: 3.5rem;
-  color: var(--text-faint); font-size: 0.85rem; font-family: 'Manrope', system-ui, sans-serif;
+  color: var(--text-faint); font-size: 0.85rem; font-family: var(--font-ui);
 }
 .spinner-sm {
   width: 20px; height: 20px; border: 2px solid rgb(var(--ink) / 0.07);
@@ -1202,13 +1202,13 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
   display: flex; align-items: center; justify-content: center; width: 40px; height: 40px;
   border-radius: var(--r-sm); margin-bottom: 1rem; background: rgba(217,43,34,0.1); color: var(--red-soft);
 }
-.modal-title { font-family: 'Manrope', system-ui, sans-serif; font-size: 1.1rem; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 0.5rem; color: var(--text); }
+.modal-title { font-family: var(--font-ui); font-size: 1.1rem; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 0.5rem; color: var(--text); }
 .modal-text { font-size: 0.88rem; line-height: 1.6; color: var(--text-dim); margin: 0 0 1.4rem; }
 .modal-text strong { color: var(--text); font-weight: 600; }
 .modal-actions { display: flex; gap: 0.5rem; }
 .modal-cancel, .modal-confirm {
   flex: 1; min-height: 44px; padding: 0.7rem; border-radius: var(--r-sm); border: 1px solid;
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.85rem; font-weight: 600;
+  font-family: var(--font-ui); font-size: 0.85rem; font-weight: 600;
   cursor: pointer; transition: background 0.15s;
 }
 .modal-cancel { background: rgb(var(--ink) / 0.04); border-color: var(--border-strong); color: var(--text); }

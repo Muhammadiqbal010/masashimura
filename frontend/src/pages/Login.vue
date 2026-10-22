@@ -54,12 +54,12 @@
     </div>
 
     <!-- ── PANEL KANAN (form) ─────────────────────────────────────── -->
-    <div class="form-panel">
+    <div class="form-panel pattern-seigaiha">
       <div class="form-inner">
 
         <!-- Header -->
         <div class="form-header">
-          <p class="form-eyebrow">Masashimura · Admin ERP</p>
+          <p class="form-eyebrow"><span class="hanko hanko--sm" aria-hidden="true">管</span>Masashimura · Admin ERP</p>
           <h1 class="form-title">Masuk ke Sistem</h1>
           <p class="form-subtitle">Masukkan kredensial otorisasi untuk mengakses ruang kendali.</p>
         </div>
@@ -272,7 +272,7 @@ const handleSelfResetPassword = async () => {
   min-height: 100vh;
   display: flex;
   background: #111113;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-ui);
   color: #fff;
 }
 
@@ -281,7 +281,7 @@ const handleSelfResetPassword = async () => {
   display: none;
   position: relative;
   overflow: hidden;
-  border-right: 1px solid rgba(255,255,255,0.05);
+  border-right: 4px solid #F4C542;
 }
 @media (min-width: 1024px) {
   .hero-panel { display: flex; width: 50%; }
@@ -315,15 +315,17 @@ const handleSelfResetPassword = async () => {
 .hero-badge {
   display: inline-flex; align-items: center; gap: 0.5rem;
   padding: 0.35rem 0.85rem;
-  background: rgba(217,43,34,0.12);
-  border: 1px solid rgba(217,43,34,0.25);
-  border-radius: 100px;
-  font-family: 'Manrope', system-ui, sans-serif;
-  font-size: 0.72rem; letter-spacing: -0.01em;
-  color: #ff9a9a;
+  background: #F4C542;
+  border: 2px solid #111113;
+  border-radius: 8px;
+  transform: rotate(-3deg);
+  box-shadow: 2px 2px 0 #111113;
+  font-family: var(--font-ui);
+  font-size: 0.8125rem; font-weight: 800;
+  color: #111113;
 }
 .hero-badge-dot {
-  width: 5px; height: 5px; border-radius: 50%; background: #f0524a;
+  width: 6px; height: 6px; border-radius: 50%; background: #D92B22;
   animation: pulse 2s infinite;
 }
 @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
@@ -335,7 +337,7 @@ const handleSelfResetPassword = async () => {
   user-select: none;
 }
 .hero-tagline {
-  font-family: 'Manrope', system-ui, sans-serif;
+  font-family: var(--font-ui);
   font-size: 1.1rem; font-weight: 600; letter-spacing: -0.01em;
   color: rgba(255,255,255,0.7); margin: 0;
 }
@@ -349,20 +351,20 @@ const handleSelfResetPassword = async () => {
 }
 .hero-stat { display: flex; flex-direction: column; gap: 0.15rem; }
 .stat-num {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 1rem;
+  font-family: var(--font-ui); font-size: 1rem;
   font-weight: 600; letter-spacing: -0.01em; color: #fff;
 }
-.stat-lbl { font-size: 0.72rem; color: rgba(255,255,255,0.6); letter-spacing: 0.1em; text-transform: uppercase; }
+.stat-lbl { font-size: 0.75rem; color: rgba(255,255,255,0.6); letter-spacing: 0.1em; text-transform: uppercase; }
 .hero-stat-div { width: 1px; height: 28px; background: rgba(255,255,255,0.1); }
 
-.hero-copy { font-size: 0.72rem; color: rgba(255,255,255,0.5); font-family: monospace; }
+.hero-copy { font-size: 0.75rem; color: rgba(255,255,255,0.5); font-family: monospace; }
 
 /* ── Form Panel ────────────────────────────────────────────────────── */
 .form-panel {
   flex: 1;
   display: flex; align-items: center; justify-content: center;
   padding: 3rem 1.5rem;
-  background: linear-gradient(160deg, #17171A 0%, #111113 100%);
+  background-color: #111113;
 }
 .form-inner {
   width: 100%; max-width: 380px;
@@ -371,15 +373,16 @@ const handleSelfResetPassword = async () => {
 
 .form-header { display: flex; flex-direction: column; gap: 0.5rem; }
 .form-eyebrow {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
-  letter-spacing: -0.01em; color: #d92b22;
+  display: inline-flex; align-items: center; gap: 0.6rem;
+  font-family: var(--font-ui); font-size: 0.8125rem; font-weight: 700;
+  color: #F4C542;
 }
 .form-title {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 2rem;
-  font-weight: 600; letter-spacing: -0.01em;
+  font-family: var(--font-display); font-size: 2.25rem;
+  font-weight: 400; letter-spacing: 0;
   margin: 0; color: #fff;
 }
-.form-subtitle { font-size: 0.75rem; color: rgba(255,255,255,0.6); line-height: 1.6; }
+.form-subtitle { font-size: 0.875rem; color: rgba(255,255,255,0.72); line-height: 1.6; }
 
 /* ── Form fields ───────────────────────────────────────────────────── */
 .login-form { display: flex; flex-direction: column; gap: 1rem; }
@@ -387,9 +390,8 @@ const handleSelfResetPassword = async () => {
 
 .field { display: flex; flex-direction: column; gap: 0.4rem; }
 .field-label {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
-  letter-spacing: -0.01em;
-  color: rgba(255,255,255,0.6);
+  font-family: var(--font-ui); font-size: 0.8125rem; font-weight: 700;
+  color: rgba(255,255,255,0.8);
 }
 
 .input-wrap { position: relative; display: flex; align-items: center; }
@@ -399,15 +401,15 @@ const handleSelfResetPassword = async () => {
 }
 .text-input {
   width: 100%; background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 12px; padding: 0.8rem 1rem 0.8rem 2.5rem;
-  color: #fff; font-size: 0.85rem;
-  font-family: 'Inter', monospace; outline: none;
+  border: 2px solid rgba(255,255,255,0.16);
+  border-radius: 14px; padding: 0.8rem 1rem 0.8rem 2.5rem;
+  color: #fff; font-size: 1rem;
+  font-family: var(--font-ui); outline: none;
   transition: border-color 0.15s, background 0.15s;
   -webkit-appearance: none;
 }
 .text-input::placeholder { color: rgba(255,255,255,0.5); }
-.text-input:focus { border-color: rgba(217,43,34,0.5); background: rgba(255,255,255,0.06); }
+.text-input:focus { border-color: #F4C542; background: rgba(255,255,255,0.06); }
 .text-input:disabled { opacity: 0.45; cursor: not-allowed; }
 .pr-input { padding-right: 2.75rem; }
 
@@ -422,15 +424,15 @@ const handleSelfResetPassword = async () => {
 /* ── Submit btn ────────────────────────────────────────────────────── */
 .submit-btn {
   width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-  padding: 0.9rem; border-radius: 12px; border: none;
-  background: #d92b22; color: #fff;
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.78rem;
-  letter-spacing: -0.01em;
-  cursor: pointer; transition: background 0.15s, opacity 0.15s;
-  box-shadow: 0 4px 20px rgba(217,43,34,0.2);
-  margin-top: 0.25rem;
+  padding: 0.95rem; border-radius: 999px; border: 2px solid #111113;
+  background: #F4C542; color: #111113;
+  font-family: var(--font-ui); font-size: 0.9375rem; font-weight: 800;
+  cursor: pointer; transition: transform 0.12s, box-shadow 0.12s, background 0.15s, opacity 0.15s;
+  box-shadow: 0 4px 0 #fff;
+  margin-top: 0.5rem;
 }
-.submit-btn:hover:not(:disabled) { background: #b8201a; }
+.submit-btn:hover:not(:disabled) { background: #FFD65C; }
+.submit-btn:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 #fff; }
 .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .btn-spinner {
@@ -445,7 +447,7 @@ const handleSelfResetPassword = async () => {
 .forgot-wrap { text-align: center; }
 .forgot-btn {
   background: none; border: none;
-  font-size: 0.72rem; color: rgba(255,255,255,0.5);
+  font-size: 0.75rem; color: rgba(255,255,255,0.5);
   cursor: pointer; transition: color 0.15s;
   text-decoration: underline; text-underline-offset: 3px;
   text-decoration-color: rgba(255,255,255,0.1);
@@ -453,7 +455,7 @@ const handleSelfResetPassword = async () => {
 .forgot-btn:hover { color: #ff9a9a; text-decoration-color: rgba(217,43,34,0.4); }
 
 .form-footer {
-  text-align: center; font-size: 0.72rem;
+  text-align: center; font-size: 0.75rem;
   color: rgba(255,255,255,0.5); margin: 0;
   font-family: monospace; letter-spacing: 0.05em;
 }
@@ -484,12 +486,12 @@ const handleSelfResetPassword = async () => {
   display: flex; align-items: flex-start; justify-content: space-between;
 }
 .modal-eyebrow {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
+  font-family: var(--font-ui); font-size: 0.75rem;
   letter-spacing: -0.01em;
   color: #d92b22; margin: 0 0 0.25rem;
 }
 .modal-title {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 1.15rem;
+  font-family: var(--font-ui); font-size: 1.15rem;
   font-weight: 600; letter-spacing: -0.01em; margin: 0;
 }
 .modal-close {
@@ -501,14 +503,14 @@ const handleSelfResetPassword = async () => {
 }
 .modal-close:hover { background: rgba(255,255,255,0.1); color: #fff; }
 
-.modal-desc { font-size: 0.74rem; color: rgba(255,255,255,0.6); line-height: 1.65; margin: 0; }
+.modal-desc { font-size: 0.75rem; color: rgba(255,255,255,0.6); line-height: 1.65; margin: 0; }
 
 .modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-top: 0.25rem; }
 .cancel-btn {
   padding: 0.85rem; border-radius: 12px;
   background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
   color: rgba(255,255,255,0.6);
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
+  font-family: var(--font-ui); font-size: 0.75rem;
   letter-spacing: -0.01em;
   cursor: pointer; transition: all 0.15s;
 }

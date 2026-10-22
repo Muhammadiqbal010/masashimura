@@ -560,14 +560,14 @@ const confirmDelete = async () => {
   border-bottom: 1px solid var(--border);
 }
 .dash-eyebrow {
-  font-family: 'Manrope', system-ui, sans-serif;
-  font-size: 0.72rem;
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
   letter-spacing: -0.01em;
   color: var(--accent-text);
   margin: 0 0 0.25rem;
 }
 .dash-title {
-  font-family: 'Manrope', system-ui, sans-serif;
+  font-family: var(--font-ui);
   font-size: 1.75rem;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -579,8 +579,8 @@ const confirmDelete = async () => {
   display: flex; align-items: center; gap: 0.4rem;
   padding: 0.7rem 1.25rem;
   background: var(--accent); border: none; border-radius: var(--r-md);
-  color: var(--on-accent); font-family: 'Manrope', system-ui, sans-serif;
-  font-size: 0.72rem; letter-spacing: -0.01em;
+  color: var(--on-accent); font-family: var(--font-ui);
+  font-size: 0.75rem; letter-spacing: -0.01em;
   cursor: pointer; transition: background 0.15s;
   flex-shrink: 0;
 }
@@ -610,7 +610,7 @@ const confirmDelete = async () => {
 .ic-green { background: rgba(34,197,94,0.1);  color: var(--green-soft); }
 .ic-amber { background: rgba(244,197,66,0.1); color: var(--amber-soft); }
 .stat-value { font-family: monospace; font-size: 1.25rem; font-weight: 700; color: var(--text); margin: 0 0 0.15rem; line-height: 1; }
-.stat-label { font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; letter-spacing: -0.01em; color: var(--text-dim); margin: 0; }
+.stat-label { font-family: var(--font-ui); font-size: 0.75rem; letter-spacing: -0.01em; color: var(--text-dim); margin: 0; }
 
 /* ── Pengaturan rate poin ────────────────────────────────────────── */
 .settings-card {
@@ -632,13 +632,13 @@ const confirmDelete = async () => {
   margin-top: 0.1rem;
 }
 .settings-label {
-  font-family: 'Manrope', system-ui, sans-serif;
+  font-family: var(--font-ui);
   font-size: 0.75rem;
   letter-spacing: -0.01em;
   color: var(--text);
   margin: 0 0 0.2rem;
 }
-.settings-hint { font-size: 0.72rem; color: var(--text-dim); margin: 0; max-width: 420px; }
+.settings-hint { font-size: 0.75rem; color: var(--text-dim); margin: 0; max-width: 420px; }
 
 .settings-input-row {
   display: flex;
@@ -696,7 +696,7 @@ const confirmDelete = async () => {
 .chip-btn {
   padding: 0.42rem 0.85rem; border-radius: 8px; border: none; background: transparent;
   color: var(--text-faint);
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
+  font-family: var(--font-ui); font-size: 0.75rem;
   letter-spacing: -0.01em; cursor: pointer; transition: all 0.15s;
 }
 .chip-btn:hover { color: var(--text-2); }
@@ -713,8 +713,8 @@ const confirmDelete = async () => {
 .promo-table thead th {
   text-align: left;
   padding: 0.9rem 1.25rem;
-  font-family: 'Manrope', system-ui, sans-serif;
-  font-size: 0.72rem;
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
   letter-spacing: -0.01em;
   color: var(--text-faint);
   background: rgb(var(--ink) / 0.015);
@@ -749,7 +749,7 @@ const confirmDelete = async () => {
 
 .status-badge {
   padding: 0.3rem 0.7rem; border-radius: 100px; border: 1px solid;
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
+  font-family: var(--font-ui); font-size: 0.75rem;
   letter-spacing: -0.01em;
   cursor: pointer; transition: opacity 0.15s; white-space: nowrap;
 }
@@ -769,7 +769,7 @@ const confirmDelete = async () => {
 .retry-btn {
   margin-top: 0.5rem; padding: 0.5rem 1.25rem; border-radius: 8px;
   background: var(--accent); border: none; color: var(--on-accent);
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
+  font-family: var(--font-ui); font-size: 0.75rem;
   letter-spacing: -0.01em; cursor: pointer;
 }
 .retry-btn:hover { background: var(--accent-hover); }
@@ -796,7 +796,7 @@ const confirmDelete = async () => {
   border-bottom: 1px solid var(--border);
 }
 .modal-title {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 1rem; font-weight: 600; letter-spacing: -0.01em; margin: 0;
+  font-family: var(--font-ui); font-size: 1rem; font-weight: 600; letter-spacing: -0.01em; margin: 0;
 }
 .modal-close-btn {
   width: 28px; height: 28px; border-radius: 7px;
@@ -810,10 +810,10 @@ const confirmDelete = async () => {
 
 .field { display: flex; flex-direction: column; gap: 0.4rem; }
 .field-label {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
+  font-family: var(--font-ui); font-size: 0.75rem;
   letter-spacing: -0.01em; color: var(--text-dim);
 }
-.field-hint { font-size: 0.72rem; color: var(--text-faint); margin: 0.1rem 0 0; }
+.field-hint { font-size: 0.75rem; color: var(--text-faint); margin: 0.1rem 0 0; }
 
 .form-input {
   background: rgb(var(--ink) / 0.04); border: 1px solid rgb(var(--ink) / 0.1);
@@ -873,7 +873,7 @@ const confirmDelete = async () => {
 .modal-actions { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 0.25rem; }
 .btn-secondary, .btn-primary {
   padding: 0.65rem 1.25rem; border-radius: 9px; border: none;
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.7rem;
+  font-family: var(--font-ui); font-size: 0.7rem;
   letter-spacing: -0.01em; cursor: pointer;
   transition: all 0.15s;
 }
@@ -969,7 +969,7 @@ const confirmDelete = async () => {
   .promo-table tbody td[data-label]::before {
     content: attr(data-label);
     display: block; margin-bottom: 0.15rem;
-    font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
+    font-family: var(--font-ui); font-size: 0.75rem;
     letter-spacing: -0.01em; color: var(--text-faint);
   }
   .promo-table { font-size: 0.8rem; }

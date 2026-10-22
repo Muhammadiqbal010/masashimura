@@ -265,13 +265,13 @@ const metricsMismatch = computed(
 }
 
 .pi-label {
-  font-family: 'Manrope', system-ui, sans-serif;
+  font-family: var(--font-ui);
   font-size: 0.75rem;
   letter-spacing: -0.01em;
   color: var(--text-2);
 }
 .pi-title {
-  font-family: 'Manrope', system-ui, sans-serif;
+  font-family: var(--font-ui);
   font-size: 0.75rem;
   letter-spacing: -0.01em;
   color: var(--text-2);
@@ -291,7 +291,7 @@ const metricsMismatch = computed(
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-ui);
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--text);
@@ -309,14 +309,14 @@ const metricsMismatch = computed(
 .pi-bars i.on { background: var(--text-2); }
 
 .pi-text {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-ui);
   font-size: 0.78rem;
   line-height: 1.55;
   color: var(--text-2);
   margin: 0;
 }
 .pi-meta {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-ui);
   font-size: 0.7rem;
   color: var(--text-faint);
   margin: 0.5rem 0 0;
@@ -328,7 +328,7 @@ const metricsMismatch = computed(
   align-items: baseline;
   gap: 0.5rem;
   margin-top: 0.6rem;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-ui);
   font-size: 1.35rem;
   font-weight: 600;
   color: var(--text);
@@ -349,13 +349,13 @@ const metricsMismatch = computed(
 .pi-table {
   width: 100%;
   border-collapse: collapse;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-ui);
   font-size: 0.78rem;
   font-variant-numeric: tabular-nums;
 }
 .pi-table th {
   text-align: left;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -385,7 +385,7 @@ const metricsMismatch = computed(
   padding: 0.1rem 0.5rem;
   border: 1px solid var(--border-strong);
   border-radius: 999px;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: var(--text-dim);
 }
 .pi-chip-active { margin-left: 0.4rem; color: var(--text-2); }
@@ -394,7 +394,7 @@ const metricsMismatch = computed(
 .pi-details summary {
   cursor: pointer;
   list-style: none;
-  font-family: 'Manrope', system-ui, sans-serif;
+  font-family: var(--font-ui);
   font-size: 0.75rem;
   letter-spacing: -0.01em;
   color: var(--text-2);
@@ -405,8 +405,8 @@ const metricsMismatch = computed(
 .pi-details-body { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.85rem; }
 .pi-text strong { color: var(--text); font-weight: 600; }
 .pi-note {
-  font-family: 'Inter', sans-serif;
-  font-size: 0.72rem;
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
   line-height: 1.5;
   color: var(--text-dim);
   margin: 0;

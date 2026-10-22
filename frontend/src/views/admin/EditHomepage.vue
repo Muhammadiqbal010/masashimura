@@ -1188,7 +1188,7 @@ onMounted(fetchHomepageData)
 .eh-opt.is-selected { border-color: var(--accent); background: var(--tint-accent); color: var(--text); }
 .eh-opt--text { align-items: flex-start; text-align: left; padding: 0.75rem 0.85rem; gap: 0.2rem; }
 .eh-opt-main { font-size: 0.8125rem; font-weight: 700; }
-.eh-opt-sub { font-size: 0.72rem; line-height: 1.35; opacity: 0.75; }
+.eh-opt-sub { font-size: 0.75rem; line-height: 1.35; opacity: 0.75; }
 .eh-ratio-box { display: block; border: 2px solid currentColor; border-radius: 3px; opacity: 0.7; }
 .eh-opt.is-selected .eh-ratio-box { opacity: 1; border-color: var(--accent); }
 
@@ -1203,7 +1203,7 @@ onMounted(fetchHomepageData)
 
 /* Preset label */
 .eh-presets { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.5rem; }
-.eh-preset { padding: 0.3rem 0.65rem; border: 1px solid var(--border); border-radius: 999px; background: transparent; color: var(--text-dim); font-size: 0.72rem; cursor: pointer; transition: all 0.15s; }
+.eh-preset { padding: 0.3rem 0.65rem; border: 1px solid var(--border); border-radius: 999px; background: transparent; color: var(--text-dim); font-size: 0.75rem; cursor: pointer; transition: all 0.15s; }
 .eh-preset:hover { border-color: var(--accent); color: var(--text); }
 
 /* Warna aksen */
@@ -1238,13 +1238,13 @@ span.eh-ptab { cursor: default; }
 .eh-ptab-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .eh-ptab-main { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
 .eh-ptab-main b { font-size: 0.78rem; font-weight: 700; }
-.eh-ptab-main small { font-size: 0.72rem; opacity: 0.7; }
+.eh-ptab-main small { font-size: 0.75rem; opacity: 0.7; }
 .eh-pactions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; padding-top: 0.25rem; }
 .eh-pactions-main, .eh-pactions-side { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
 
 /* ── Pratinjau promo (selalu gelap, meniru homepage) ── */
 .pv { border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-2); padding: 0.85rem; }
-.pv-cap { margin: 0 0 0.6rem; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); }
+.pv-cap { margin: 0 0 0.6rem; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); }
 .pv-empty { padding: 1.2rem; text-align: center; font-size: 0.78rem; color: var(--text-faint); border: 1px dashed var(--border); border-radius: var(--r-sm); }
 .pv-stage { padding: 1rem; border-radius: var(--r-sm); background: #0a0a0a; color: #fff; overflow: hidden; }
 .pv-wrap { display: flex; gap: 1rem; align-items: center; }
@@ -1260,13 +1260,13 @@ span.eh-ptab { cursor: default; }
 .pv-wrap--overlay .pv-copy { justify-content: flex-end; padding: 0.9rem; }
 .pv-wrap--poster .pv-copy { flex: none; width: 100%; max-width: 22rem; }
 .pv-copy.is-center { align-items: center; text-align: center; }
-.pv-eyebrow { display: flex; align-items: center; gap: 0.5rem; margin: 0; font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--pa); }
+.pv-eyebrow { display: flex; align-items: center; gap: 0.5rem; margin: 0; font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--pa); }
 .pv-eyebrow i { display: block; width: 1.2rem; height: 1px; background: var(--pa); }
 .pv-title { margin: 0; font-weight: 800; text-transform: uppercase; line-height: 1.15; font-size: 0.95rem; overflow-wrap: anywhere; }
 .pv-title--split, .pv-title--overlay { font-size: 1.15rem; }
-.pv-text { margin: 0; font-size: 0.74rem; color: #a1a1aa; line-height: 1.5; }
-.pv-meta { margin: 0; font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--pa); }
-.pv-btn { align-self: flex-start; margin-top: 0.4rem; padding: 0.45rem 0.85rem; background: var(--pa); color: var(--pa-ink); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; }
+.pv-text { margin: 0; font-size: 0.75rem; color: #a1a1aa; line-height: 1.5; }
+.pv-meta { margin: 0; font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--pa); }
+.pv-btn { align-self: flex-start; margin-top: 0.4rem; padding: 0.45rem 0.85rem; background: var(--pa); color: var(--pa-ink); font-size: 0.75rem; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; }
 .pv-copy.is-center .pv-btn { align-self: center; }
 .pv-wrap--text { justify-content: space-between; }
 
@@ -1305,7 +1305,7 @@ span.eh-ptab { cursor: default; }
   background: linear-gradient(to top, rgb(0 0 0 / 0.78), transparent); color: #fff;
 }
 .eh-tile-caption p { margin: 0; font-size: 0.75rem; font-weight: 600; }
-.eh-tile-caption span { font-size: 0.72rem; opacity: 0.75; }
+.eh-tile-caption span { font-size: 0.75rem; opacity: 0.75; }
 .eh-tile-actions { position: absolute; top: 0.4rem; right: 0.4rem; display: flex; gap: 0.3rem; transition: opacity 0.15s; }
 .eh-tile-btn {
   display: flex; align-items: center; justify-content: center; width: 32px; height: 32px;

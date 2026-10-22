@@ -90,9 +90,11 @@ const rows = computed(() => buildRows(visible.value))
 .promo-section { background: transparent; }
 .promo-panel {
   padding: 1.25rem;
-  border-radius: 1.5rem;
+  border: 3px solid #111113;
+  border-radius: 1.75rem;
   background: #111113;
   color: #F5F3EF;
+  box-shadow: 8px 8px 0 #D92B22, 8px 8px 0 3px #111113;
 }
 @media (min-width: 640px) { .promo-panel { padding: 1.75rem; } }
 @media (min-width: 1024px) { .promo-panel { padding: 2rem; } }

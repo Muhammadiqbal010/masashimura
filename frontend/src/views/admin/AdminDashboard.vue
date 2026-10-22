@@ -893,12 +893,12 @@ const formatPrice = (value) =>
 }
 .stat-hero {
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 2px solid var(--pop-line);
   border-radius: 16px;
   padding: clamp(1.25rem, 3vw, 1.75rem) clamp(1.25rem, 3vw, 2rem);
   position: relative;
   overflow: hidden;
-  box-shadow: var(--shadow-card);
+  box-shadow: 5px 5px 0 var(--pop-line);
 }
 .stat-hero::before {
   content: '';
@@ -984,10 +984,10 @@ const formatPrice = (value) =>
 
 .stat-card {
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 2px solid var(--pop-line);
   border-radius: 16px;
   padding: 1.15rem 1.3rem;
-  box-shadow: var(--shadow-card);
+  box-shadow: 4px 4px 0 var(--pop-line);
   position: relative;
   overflow: hidden;
   min-width: 0;

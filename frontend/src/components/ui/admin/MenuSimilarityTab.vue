@@ -169,7 +169,7 @@ const formatRp = (n) =>
 <style src="@/assets/report-tabs.css"></style>
 <style scoped>
 .ms-field { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem; }
-.ms-label { font-size: 0.72rem; color: var(--text-faint); }
+.ms-label { font-size: 0.75rem; color: var(--text-faint); }
 /* 16px di HP supaya iOS tidak zoom otomatis saat select difokuskan */
 .ms-select {
   width: 100%; min-height: 44px; padding: 0 0.85rem;
@@ -190,7 +190,7 @@ const formatRp = (n) =>
 .ms-name { font-size: 0.85rem; font-weight: 600; color: var(--text); min-width: 0; }
 .ms-score { flex-shrink: 0; font-size: 0.95rem; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
 .ms-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.6rem; }
-.ms-terms { font-size: 0.72rem; color: var(--text-faint); }
+.ms-terms { font-size: 0.75rem; color: var(--text-faint); }
 .ms-price { margin-left: auto; font-size: 0.78rem; color: var(--text-dim); font-variant-numeric: tabular-nums; }
 .ms-plus { margin: 0 0.25rem; color: var(--text-faint); }
 .ms-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

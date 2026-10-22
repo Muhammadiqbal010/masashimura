@@ -85,7 +85,7 @@ const todaySchedule = computed(() => {
 .banner-content { flex: 1; min-width: 0; }
 
 .banner-title {
-  font-family: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-ui);
   font-size: 16px;
   font-weight: 600;
   color: #FAFAFA;

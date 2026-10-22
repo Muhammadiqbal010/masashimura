@@ -191,7 +191,7 @@ const waLink = computed(() => {
 .pin-tile { display: flex; height: 2rem; width: 2rem; align-items: center; justify-content: center; border-radius: .625rem; border: 1px solid rgba(244,197,66,.25); background: rgba(244,197,66,.1); color: #F4C542; flex-shrink: 0; }
 .pin-head-text { flex: 1; min-width: 0; }
 .pin-title { margin: 0; font-size: .75rem; color: #B8B8C0; }
-.pin-balance { margin: 0; font-family: "Manrope", ui-sans-serif, system-ui, sans-serif; font-size: 1.375rem; font-weight: 600; color: #F4C542; font-variant-numeric: tabular-nums; }
+.pin-balance { margin: 0; font-family: var(--font-ui); font-size: 1.375rem; font-weight: 600; color: #F4C542; font-variant-numeric: tabular-nums; }
 .pin-link { min-height: 40px; padding: 0 .5rem; background: none; border: 0; color: #B8B8C0; font-size: .8125rem; cursor: pointer; text-decoration: underline; }
 .pin-progress { display: flex; flex-direction: column; gap: .4rem; }
 .pin-bar { height: 8px; border-radius: 999px; background: rgba(255,255,255,.08); overflow: hidden; }

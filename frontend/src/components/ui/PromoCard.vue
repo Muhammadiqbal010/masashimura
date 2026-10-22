@@ -261,7 +261,7 @@ const metaText = computed(() => {
 
 .promo-title {
   margin: 0;
-  font-family: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-ui);
   font-weight: 600; letter-spacing: -0.02em;
   line-height: 1.15; color: #FAFAFA; overflow-wrap: anywhere;
   font-size: clamp(1.25rem, 1.05rem + 1vw, 1.75rem);

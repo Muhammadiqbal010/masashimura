@@ -69,6 +69,9 @@ html[data-admin-theme='dark'] {
 
   /* Logo brand dirancang untuk latar gelap */
   --brand-tile: transparent;
+  --btn-shadow: #7a1410;
+  --pop-line: #3a3a40;
+  --pop-offset: 0 0 0 transparent;
 }
 
 /* ── Tema TERANG — krem hangat, kartu putih ────────────────────────── */
@@ -107,6 +110,8 @@ html[data-admin-theme='light'] {
   --ring: #111113;
 
   --brand-tile: #111113;
+  --btn-shadow: #111113;
+  --pop-line: #111113;
 }
 
 /* ── Aturan global area admin ──────────────────────────────────────── */

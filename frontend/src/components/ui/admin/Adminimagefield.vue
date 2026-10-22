@@ -89,13 +89,13 @@ const onChange = (e) => {
 .imgf-empty {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.3rem;
   width: 100%; height: 100%; padding: 0.5rem;
-  font-size: 0.72rem; line-height: 1.3; text-align: center;
+  font-size: 0.75rem; line-height: 1.3; text-align: center;
 }
 .imgf-overlay {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center; gap: 0.3rem;
   background: rgb(0 0 0 / 0.55); color: #fff;
-  font-size: 0.72rem; font-weight: 600;
+  font-size: 0.75rem; font-weight: 600;
   opacity: 0; transition: opacity 0.15s;
 }
 .imgf-thumb:hover .imgf-overlay, .imgf-thumb:focus-visible .imgf-overlay { opacity: 1; }

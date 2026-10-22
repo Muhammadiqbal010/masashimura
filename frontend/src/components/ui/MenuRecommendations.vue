@@ -120,7 +120,7 @@ defineEmits(["select", "add"])
   font-size: 0.8125rem; font-weight: 600; line-height: 1.3; color: #FAFAFA;
 }
 .reco-price { font-size: 0.8125rem; font-weight: 600; color: #C8C8C8; font-variant-numeric: tabular-nums; }
-.reco-reason { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.6875rem; color: #9A9AA3; }
+.reco-reason { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.75rem; color: #9A9AA3; }
 
 /* ── Tombol tambah: 40px di HP (mudah ditekan jempol), 36px di layar lebar ── */
 .reco-add {

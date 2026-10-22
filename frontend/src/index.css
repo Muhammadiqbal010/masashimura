@@ -1,7 +1,7 @@
 /* src/index.css */
 
 /* 1. CORE TAILWIND V4 & FONTS */
-@import url("https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@600;700;900&family=Manrope:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
 @import "tailwindcss";
 
 /* 2. TOKEN BRAND — diambil dari logo "M" (merah #FE0000 + kuning #FFF500 di atas hitam)
@@ -23,6 +23,8 @@
   --color-cream: #f7f5f0;
   --color-paper: #ffffff;
   --color-line: #e5e2dc;
+  --color-pink: #ffc8dd;
+  --color-sky: #7cc4f5;
   --color-text-light: #202024;
   --color-text-light-2: #66666d;
 
@@ -47,8 +49,8 @@
   --color-amber-600: #d9a82a;
 
   /* Tipografi: satu display (serif) + satu UI (sans) */
-  --font-display: "Noto Serif JP", "Shippori Mincho", Georgia, serif;
-  --font-ui: "Manrope", system-ui, sans-serif;
+  --font-display: "Dela Gothic One", "Zen Kaku Gothic New", system-ui, sans-serif;
+  --font-ui: "Plus Jakarta Sans", system-ui, sans-serif;
   --font-oswald: var(--font-display);
   --font-manrope: var(--font-ui);
   --font-sora: var(--font-ui);
@@ -83,7 +85,7 @@
   h1,
   h2 {
     font-family: var(--font-display);
-    font-weight: 700;
+    font-weight: 400;
     line-height: 1.15;
     letter-spacing: -0.01em;
     text-wrap: balance;
@@ -258,8 +260,8 @@
 .site-public h1,
 .site-public h2 {
   font-family: var(--font-display);
-  font-weight: 700;
-  letter-spacing: -0.015em;
+  font-weight: 400;
+  letter-spacing: 0;
   line-height: 1.15;
 }
 .site-public h3,
@@ -274,30 +276,135 @@
 /* Kelas font-sora bawaan kode lama dipakai untuk judul kartu & angka → tetap sans, tegas */
 .site-public .font-sora { font-family: var(--font-ui); letter-spacing: -0.01em; }
 .site-public h1.font-sora,
-.site-public h2.font-sora { font-family: var(--font-display); letter-spacing: -0.015em; }
+.site-public h2.font-sora { font-family: var(--font-display); font-weight: 400; letter-spacing: 0; }
 
-/* Ornamen sapuan kuas (CSS murni, tanpa gambar tambahan) — dipakai hemat di hero & promo */
-.brush-red,
-.brush-yellow {
-  position: absolute;
-  pointer-events: none;
-  z-index: 0;
-}
-.brush-red {
-  background: linear-gradient(100deg, #b8201a 0%, #d92b22 55%, #e8473f 100%);
-  clip-path: polygon(8% 0, 100% 0, 78% 100%, 0 100%, 4% 62%, 0 30%);
-}
-.brush-yellow {
-  background: linear-gradient(100deg, #d9a82a, #f4c542);
-  clip-path: polygon(14% 0, 100% 0, 86% 100%, 0 100%, 6% 55%);
+/* ==========================================================================
+   KIT "NEO-TOKYO POP" — dipakai Navbar, Footer, Home (dan sebagian admin)
+   Ciri: border tebal, bayangan keras (tanpa blur), stiker miring, segel hanko,
+   pola gelombang seigaiha, pita ticker. Semua CSS murni.
+   ========================================================================== */
+:root {
+  --pop-ink: #111113;
+  --pop-red: #d92b22;
+  --pop-yellow: #f4c542;
+  --pop-cream: #f7f5f0;
 }
 
-/* Teks vertikal Jepang sebagai aksen tepi hero */
-.jp-vertical {
-  writing-mode: vertical-rl;
+@layer components {
+/* Latar krem berpola titik */
+.dot-grid {
+  background-color: var(--pop-cream);
+  background-image: radial-gradient(rgb(17 17 19 / 0.08) 1.2px, transparent 1.3px);
+  background-size: 18px 18px;
+}
+
+/* Pola gelombang seigaiha (garis tipis, dipakai di atas bidang gelap/merah) */
+.pattern-seigaiha {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='24' viewBox='0 0 48 24'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='.05' stroke-width='1.2'%3E%3Ccircle cx='0' cy='24' r='6'/%3E%3Ccircle cx='0' cy='24' r='12'/%3E%3Ccircle cx='0' cy='24' r='18'/%3E%3Ccircle cx='24' cy='24' r='6'/%3E%3Ccircle cx='24' cy='24' r='12'/%3E%3Ccircle cx='24' cy='24' r='18'/%3E%3Ccircle cx='48' cy='24' r='6'/%3E%3Ccircle cx='48' cy='24' r='12'/%3E%3Ccircle cx='48' cy='24' r='18'/%3E%3Ccircle cx='12' cy='12' r='6'/%3E%3Ccircle cx='12' cy='12' r='12'/%3E%3Ccircle cx='36' cy='12' r='6'/%3E%3Ccircle cx='36' cy='12' r='12'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 48px 24px;
+}
+
+/* Kartu pop: border hitam + bayangan keras */
+.pop-card {
+  border: 2px solid var(--pop-ink);
+  border-radius: 20px;
+  background: #fff;
+  color: #202024;
+  box-shadow: 6px 6px 0 var(--pop-ink);
+}
+.pop-card--yellow { background: var(--pop-yellow); }
+.pop-card--red { background: var(--pop-red); color: #fff; }
+
+/* Tombol keycap */
+.pop-btn {
+  --pop-shadow: var(--pop-ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  min-height: 52px;
+  padding: 0 1.5rem;
+  border: 2px solid var(--pop-ink);
+  border-radius: 999px;
+  background: var(--pop-yellow);
+  color: var(--pop-ink);
+  font-family: var(--font-ui);
+  font-size: 0.9375rem;
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 0 4px 0 var(--pop-shadow);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.15s;
+}
+.pop-btn:hover { background: #ffd65c; }
+.pop-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--pop-shadow); }
+.pop-btn--on-dark { --pop-shadow: #fff; }
+.pop-btn--ghost { background: transparent; color: #fff; border-color: rgb(255 255 255 / 0.55); box-shadow: none; }
+.pop-btn--ghost:hover { background: rgb(255 255 255 / 0.1); border-color: #fff; }
+.pop-btn--ghost:active { transform: translateY(1px); box-shadow: none; }
+.pop-btn-dot { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: var(--pop-ink); color: #fff; }
+
+/* Stiker miring */
+.sticker {
+  display: inline-block;
+  padding: 0.25rem 0.7rem;
+  border: 2px solid var(--pop-ink);
+  border-radius: 8px;
+  background: var(--pop-yellow);
+  color: var(--pop-ink);
+  font-family: var(--font-ui);
+  font-size: 0.8125rem;
+  font-weight: 800;
+  line-height: 1.3;
+  transform: rotate(-3deg);
+  box-shadow: 2px 2px 0 var(--pop-ink);
+}
+.sticker--red { background: var(--pop-red); color: #fff; }
+.sticker--pink { background: var(--color-pink); }
+
+/* Segel hanko (kotak merah dengan kanji) */
+.hanko {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--pop-red);
+  color: #fff;
   font-family: var(--font-display);
-  font-weight: 700;
-  letter-spacing: 0.35em;
+  font-size: 0.8125rem;
+  line-height: 1;
+  transform: rotate(-6deg);
+  box-shadow: 2px 2px 0 rgb(17 17 19 / 0.35);
+}
+.hanko--sm { width: 24px; height: 24px; font-size: 0.6875rem; border-radius: 6px; }
+
+/* Eyebrow section: hanko + label Indonesia */
+.eyebrow-jp { display: inline-flex; align-items: center; gap: 0.6rem; font-size: 0.8125rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--pop-red); }
+.eyebrow-jp--yellow { color: var(--pop-yellow); }
+
+/* Pita ticker miring */
+.tape {
+  background: var(--pop-yellow);
+  color: var(--pop-ink);
+  border-block: 2px solid var(--pop-ink);
+  transform: rotate(-1.4deg);
+}
+
+/* Tepi belang merah-kuning */
+.stripe-edge {
+  height: 12px;
+  background: repeating-linear-gradient(135deg, var(--pop-red) 0 14px, var(--pop-ink) 14px 18px, var(--pop-yellow) 18px 32px, var(--pop-ink) 32px 36px);
+}
+
+/* Teks vertikal & teks raksasa kontur */
+.jp-vertical { writing-mode: vertical-rl; font-family: var(--font-display); letter-spacing: 0.35em; }
+.jp-outline { font-family: var(--font-display); color: transparent; -webkit-text-stroke: 2px rgb(255 255 255 / 0.12); user-select: none; pointer-events: none; }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pop-btn, .pop-btn:active { transition: none; }
 }
 
 /* Autofill browser jangan jadi kotak putih/biru di tema gelap */

@@ -120,5 +120,5 @@ const chartOpts = computed(() => {
 .ch-pay-list li { display: grid; grid-template-columns: 96px 1fr 76px; align-items: center; gap: 0.6rem; font-size: 0.76rem; }
 .ch-pay-name { color: var(--text-dim); }
 .ch-pay-n { text-align: right; color: var(--text-faint); font-variant-numeric: tabular-nums; }
-.ch-note { margin-top: 1rem; font-size: 0.72rem; }
+.ch-note { margin-top: 1rem; font-size: 0.75rem; }
 </style>

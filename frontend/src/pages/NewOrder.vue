@@ -1556,7 +1556,7 @@ onBeforeUnmount(() => clearTimeout(debounceTimeout));
   min-height: 100vh; min-height: 100dvh;
   background: var(--bg);
   color: var(--text);
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-ui);
   padding: 1.5rem;
   align-items: flex-start;
 }
@@ -1566,7 +1566,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 
 /* ── Shared tokens ───────────────────────────────────────────────── */
 .pos-eyebrow {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
+  font-family: var(--font-ui); font-size: 0.75rem;
   letter-spacing: -0.01em; color: var(--accent-text);
   margin: 0 0 0.2rem;
 }
@@ -1584,17 +1584,17 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
   border-bottom: 1px solid rgb(var(--ink) / 0.06);
 }
 .pos-title {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 1.6rem; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 0.2rem;
+  font-family: var(--font-ui); font-size: 1.6rem; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 0.2rem;
   color: var(--text);
 }
-.pos-date { font-size: 0.72rem; color: var(--text-faint); margin: 0; }
+.pos-date { font-size: 0.75rem; color: var(--text-faint); margin: 0; }
 
 .unpaid-trigger {
   display: flex; align-items: center; gap: 0.45rem;
   padding: 0.55rem 1rem;
   background: var(--surface); border: 1px solid rgb(var(--ink) / 0.08);
   border-radius: 10px; color: var(--text-dim);
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
+  font-family: var(--font-ui); font-size: 0.75rem;
   letter-spacing: -0.01em;
   cursor: pointer; transition: all 0.15s; position: relative;
   white-space: nowrap;
@@ -1609,7 +1609,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
   padding: 0.55rem 1rem;
   background: var(--surface); border: 1px solid rgb(var(--ink) / 0.08);
   border-radius: 10px; color: var(--text-dim);
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
+  font-family: var(--font-ui); font-size: 0.75rem;
   letter-spacing: -0.01em;
   cursor: pointer; transition: all 0.15s; white-space: nowrap;
 }
@@ -1625,7 +1625,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
   box-shadow: var(--shadow-lg);
 }
 .time-pop-title {
-  margin: 0; font-size: 0.72rem; letter-spacing: 0.14em;
+  margin: 0; font-size: 0.75rem; letter-spacing: 0.14em;
   text-transform: uppercase; color: var(--text-faint);
 }
 .time-pop .time-box { margin-top: 0; }
@@ -1641,7 +1641,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .unpaid-badge {
   display: inline-flex; align-items: center; justify-content: center;
   width: 18px; height: 18px; border-radius: 50%;
-  background: #d92b22; color: #fff; font-size: 0.72rem; font-weight: 700;
+  background: #d92b22; color: #fff; font-size: 0.75rem; font-weight: 700;
 }
 
 /* ── Banner mode tambah ke tagihan ───────────────────────────────── */
@@ -1652,7 +1652,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
   background: color-mix(in srgb, var(--green) 12%, var(--bg)); border: 1px solid color-mix(in srgb, var(--green) 40%, transparent);
   border-radius: 12px; backdrop-filter: blur(6px);
 }
-.add-banner-eyebrow { margin: 0 0 0.15rem; font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--green-soft); }
+.add-banner-eyebrow { margin: 0 0 0.15rem; font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--green-soft); }
 .add-banner-title { margin: 0; font-family: monospace; font-weight: 700; font-size: 0.85rem; color: var(--text); }
 .add-banner-title span { font-family: inherit; font-weight: 400; color: var(--text-dim); }
 .add-banner-right { display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0; }
@@ -1670,7 +1670,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .search-input {
   width: 100%; background: var(--surface); border: 1px solid rgb(var(--ink) / 0.08);
   border-radius: 10px; padding: 0.65rem 2.2rem 0.65rem 2.3rem;
-  color: var(--text); font-size: 0.82rem; font-family: 'Inter', sans-serif;
+  color: var(--text); font-size: 0.82rem; font-family: var(--font-ui);
   outline: none; transition: border-color 0.15s;
 }
 .search-input::placeholder { color: var(--text-faint); }
@@ -1711,7 +1711,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .retry-btn {
   padding: 0.5rem 1.25rem; border-radius: 8px;
   background: #d92b22; border: none; color: #fff;
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
+  font-family: var(--font-ui); font-size: 0.75rem;
   letter-spacing: -0.01em;
   cursor: pointer; transition: background 0.15s;
 }
@@ -1736,7 +1736,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
   position: absolute; top: 0.5rem; right: 0.5rem; z-index: 2;
   min-width: 1.6rem; padding: 0.1rem 0.4rem; text-align: center;
   background: #d92b22; color: #fff; border-radius: 999px;
-  font-family: monospace; font-size: 0.72rem; font-weight: 700;
+  font-family: monospace; font-size: 0.75rem; font-weight: 700;
 }
 .menu-count-added { background: #16a34a; }
 
@@ -1746,7 +1746,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
   display: flex; align-items: center; justify-content: center;
 }
 .habis-badge {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; font-weight: 600;
+  font-family: var(--font-ui); font-size: 0.75rem; font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--red-soft); border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
   padding: 0.2rem 0.65rem; border-radius: 100px;
@@ -1754,7 +1754,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 /* Tag sekarang di dalam alur kartu (bukan absolute) supaya tidak menimpa nama menu */
 .menu-tags { display: flex; gap: 0.25rem; margin-bottom: 0.4rem; }
 .menu-tag {
-  font-family: monospace; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em;
+  font-family: monospace; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em;
   padding: 0.1rem 0.35rem; border-radius: 4px; line-height: 1.3;
 }
 .menu-tag-secret { background: #7c3aed; color: #fff; }
@@ -1789,13 +1789,13 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 }
 .order-panel-title {
   display: flex; align-items: center; gap: 0.5rem;
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 1rem; font-weight: 600; letter-spacing: -0.01em; margin: 0;
+  font-family: var(--font-ui); font-size: 1rem; font-weight: 600; letter-spacing: -0.01em; margin: 0;
   color: var(--text);
 }
 .order-panel-count {
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 20px; height: 20px; padding: 0 0.35rem; border-radius: 999px;
-  background: #d92b22; color: #fff; font-family: monospace; font-size: 0.72rem; font-weight: 700;
+  background: #d92b22; color: #fff; font-family: monospace; font-size: 0.75rem; font-weight: 700;
   letter-spacing: 0;
 }
 .order-panel-close { display: none; }
@@ -1826,11 +1826,11 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 
 .field { display: flex; flex-direction: column; gap: 0.35rem; }
 .field-label {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
+  font-family: var(--font-ui); font-size: 0.75rem;
   letter-spacing: -0.01em; color: var(--text-faint);
 }
-.field-optional { font-size: 0.72rem; color: var(--text-faint); }
-.field-hint { margin: 0; font-size: 0.72rem; color: var(--text-faint); }
+.field-optional { font-size: 0.75rem; color: var(--text-faint); }
+.field-hint { margin: 0; font-size: 0.75rem; color: var(--text-faint); }
 
 .phone-input-row { display: flex; align-items: center; gap: 0.6rem; }
 .phone-avatar {
@@ -1843,7 +1843,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .pos-input {
   background: rgb(var(--ink) / 0.04); border: 1px solid rgb(var(--ink) / 0.08);
   border-radius: 10px; padding: 0.65rem 0.85rem;
-  color: var(--text); font-size: 0.82rem; font-family: 'Inter', sans-serif;
+  color: var(--text); font-size: 0.82rem; font-family: var(--font-ui);
   outline: none; transition: border-color 0.15s; width: 100%;
 }
 .pos-input::placeholder { color: var(--text-faint); }
@@ -1853,7 +1853,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .loyalty-status {
   display: flex; align-items: center; gap: 0.5rem;
   padding: 0.6rem 0.85rem; border-radius: 10px; border: 1px solid;
-  font-size: 0.72rem; line-height: 1.4;
+  font-size: 0.75rem; line-height: 1.4;
 }
 .ls-loading { background: rgb(var(--ink) / 0.02); border-color: rgb(var(--ink) / 0.06); color: var(--text-dim); }
 .ls-loyal   { background: color-mix(in srgb, var(--green) 7%, transparent);  border-color: color-mix(in srgb, var(--green) 18%, transparent); color: var(--green-soft); }
@@ -1868,7 +1868,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 /* Cart */
 /* ── Paket (POS) ───────────────────────────────────────────────────── */
 .bundle-strip { margin-bottom: 0.9rem; }
-.bundle-strip-title { margin: 0 0 0.45rem; font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-faint); }
+.bundle-strip-title { margin: 0 0 0.45rem; font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-faint); }
 .bundle-strip-list { display: flex; gap: 0.6rem; overflow-x: auto; padding-bottom: 0.25rem; -webkit-overflow-scrolling: touch; }
 .bundle-chip {
   position: relative; flex: 0 0 auto; min-width: 190px; max-width: 240px; min-height: 44px; text-align: left;
@@ -1878,12 +1878,12 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .bundle-chip:disabled { opacity: 0.5; cursor: not-allowed; }
 .bundle-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .bundle-chip-name { font-size: 0.82rem; font-weight: 600; }
-.bundle-chip-items { font-size: 0.72rem; color: var(--text-faint); }
+.bundle-chip-items { font-size: 0.75rem; color: var(--text-faint); }
 .bundle-chip-price { font-family: monospace; font-size: 0.78rem; color: var(--amber-soft); }
-.bundle-chip-normal { margin-left: 0.4rem; font-size: 0.72rem; color: var(--text-faint); }
-.bundle-chip-off { font-size: 0.72rem; color: var(--red-soft); }
+.bundle-chip-normal { margin-left: 0.4rem; font-size: 0.75rem; color: var(--text-faint); }
+.bundle-chip-off { font-size: 0.75rem; color: var(--red-soft); }
 .bundle-chip-count { position: absolute; top: 6px; right: 8px; font-size: 0.7rem; font-weight: 700; color: var(--accent); }
-.cart-bundle-tag { display: inline-block; padding: 0 0.35rem; margin-right: 0.2rem; border-radius: 4px; font-size: 0.72rem; letter-spacing: 0.12em; background: color-mix(in srgb, var(--amber) 18%, transparent); color: var(--amber-soft); vertical-align: middle; }
+.cart-bundle-tag { display: inline-block; padding: 0 0.35rem; margin-right: 0.2rem; border-radius: 4px; font-size: 0.75rem; letter-spacing: 0.12em; background: color-mix(in srgb, var(--amber) 18%, transparent); color: var(--amber-soft); vertical-align: middle; }
 
 .cart-empty {
   padding: 1.5rem 0; text-align: center;
@@ -1892,12 +1892,12 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 }
 .cart-empty p { margin: 0; }
 .cart-empty-icon { font-size: 1.75rem; margin-bottom: 0.25rem; }
-.cart-empty-hint { font-size: 0.72rem; color: var(--text-faint); }
+.cart-empty-hint { font-size: 0.75rem; color: var(--text-faint); }
 
 .cart-head { display: flex; align-items: center; justify-content: space-between; }
 .cart-clear {
   background: none; border: none; padding: 0.2rem 0.1rem; cursor: pointer;
-  font-size: 0.72rem; color: var(--text-faint); text-decoration: underline; text-underline-offset: 2px;
+  font-size: 0.75rem; color: var(--text-faint); text-decoration: underline; text-underline-offset: 2px;
 }
 .cart-clear:hover { color: var(--red-soft); }
 
@@ -1905,7 +1905,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 
 .suggest { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; padding-top: 0.85rem; border-top: 1px dashed rgb(var(--ink) / 0.1); }
 .suggest-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
-.suggest-hint { font-size: 0.68rem; color: var(--text-faint); }
+.suggest-hint { font-size: 0.75rem; color: var(--text-faint); }
 .suggest-list { display: flex; flex-direction: column; gap: 0.4rem; margin: 0; padding: 0; list-style: none; }
 /* Seluruh baris = satu tombol (min 48px) supaya mudah ditekan kasir saat sibuk, di tablet maupun HP */
 .suggest-row {
@@ -1913,7 +1913,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
   width: 100%; min-height: 48px; padding: 0.5rem 0.5rem 0.5rem 0.85rem;
   background: var(--surface); border: 1px solid rgb(var(--ink) / 0.08);
   border-radius: 12px; color: var(--text);
-  font-family: 'Manrope', system-ui, sans-serif; text-align: left;
+  font-family: var(--font-ui); text-align: left;
   cursor: pointer; transition: border-color 0.15s, background-color 0.15s;
 }
 .suggest-row:hover { border-color: rgb(var(--ink) / 0.2); }
@@ -1921,7 +1921,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .suggest-text { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
 .suggest-name { font-size: 0.82rem; font-weight: 600; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .suggest-meta { display: flex; align-items: center; gap: 0.4rem; }
-.suggest-price { font-family: monospace; font-size: 0.74rem; font-weight: 700; color: var(--accent-text); }
+.suggest-price { font-family: monospace; font-size: 0.75rem; font-weight: 700; color: var(--accent-text); }
 .suggest-plus {
   display: flex; flex-shrink: 0; align-items: center; justify-content: center;
   width: 32px; height: 32px; border-radius: 9px;
@@ -1956,15 +1956,15 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .qty-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .qty-val { font-family: monospace; font-size: 0.78rem; font-weight: 700; min-width: 18px; text-align: center; }
 
-.cart-item-opts { font-size: 0.72rem; color: var(--amber-soft); margin: 0.15rem 0 0; }
+.cart-item-opts { font-size: 0.75rem; color: var(--amber-soft); margin: 0.15rem 0 0; }
 
 /* ── Picker opsi menu ───────────────────────────────────────────── */
 .opt-groups { display: flex; flex-direction: column; gap: 1.1rem; }
 .opt-group-hint { margin-left: 0.4rem; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text-faint); }
 .opt-choices { display: flex; flex-direction: column; gap: 0.4rem; }
 .opt-choice { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; text-align: left; width: 100%; }
-.opt-choice-price { font-family: monospace; font-size: 0.72rem; color: var(--amber-soft); }
-.opt-missing { font-size: 0.72rem; color: var(--text-faint); margin: 0 0 0.5rem; }
+.opt-choice-price { font-family: monospace; font-size: 0.75rem; color: var(--amber-soft); }
+.opt-missing { font-size: 0.75rem; color: var(--text-faint); margin: 0 0 0.5rem; }
 .opt-footer-row { display: flex; align-items: center; gap: 0.75rem; }
 .opt-confirm { flex: 1; justify-content: center; }
 .opt-confirm:disabled { opacity: 0.45; cursor: not-allowed; }
@@ -1972,7 +1972,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .cart-notes-input {
   background: rgb(var(--ink) / 0.06); border: 1px solid rgb(var(--ink) / 0.05);
   border-radius: 7px; padding: 0.45rem 0.65rem;
-  font-size: 0.72rem; color: var(--amber-soft); font-family: 'Inter', sans-serif;
+  font-size: 0.75rem; color: var(--amber-soft); font-family: var(--font-ui);
   outline: none; transition: border-color 0.15s; width: 100%;
 }
 .cart-notes-input::placeholder { color: var(--text-faint); font-style: italic; }
@@ -1983,7 +1983,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .toggle-btn {
   display: flex; align-items: center; justify-content: center; gap: 0.35rem;
   padding: 0.65rem 0.6rem; border-radius: 9px; border: 1px solid;
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
+  font-family: var(--font-ui); font-size: 0.75rem;
   letter-spacing: -0.01em;
   cursor: pointer; transition: all 0.15s;
 }
@@ -2025,9 +2025,9 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 }
 .time-fields { display: grid; grid-template-columns: 1.4fr 1fr; gap: 0.5rem; }
 .time-fields .pos-input { min-width: 0; }  /* color-scheme ikut tema dari <html> */
-.time-note { margin: 0; font-size: 0.72rem; line-height: 1.5; color: var(--text-dim); }
+.time-note { margin: 0; font-size: 0.75rem; line-height: 1.5; color: var(--text-dim); }
 .time-note strong { color: var(--amber-soft); font-weight: 600; }
-.time-error { margin: 0; font-size: 0.72rem; line-height: 1.5; color: var(--red-soft); }
+.time-error { margin: 0; font-size: 0.75rem; line-height: 1.5; color: var(--red-soft); }
 
 .kasir-strip {
   padding: 0.7rem 1.4rem;
@@ -2048,7 +2048,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
   border-radius: 10px !important;
   padding: 0.65rem 0.85rem !important;
   font-size: 0.82rem !important;
-  font-family: 'Inter', sans-serif !important;
+  font-family: var(--font-ui);
   outline: none;
   box-shadow: none !important;
 }
@@ -2059,8 +2059,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
   color: #fff !important;
   border: none !important;
   border-radius: 10px !important;
-  font-family: 'Manrope', system-ui, sans-serif;
-  font-size: 0.72rem !important;
+  font-family: var(--font-ui);
+  font-size: 0.75rem !important;
   letter-spacing: -0.01em !important;
   cursor: pointer;
   opacity: 1 !important;
@@ -2080,7 +2080,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .price-discount { color: var(--green-soft); }
 .price-total {
   display: flex; justify-content: space-between; align-items: baseline;
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.8rem;
+  font-family: var(--font-ui); font-size: 0.8rem;
   letter-spacing: -0.01em;
   color: var(--text-2); font-weight: 600;
 }
@@ -2091,7 +2091,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
   display: flex; align-items: center; justify-content: center; gap: 0.45rem;
   padding: 0.85rem; border-radius: 12px; border: none;
   background: #d92b22; color: #fff;
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.8rem;
+  font-family: var(--font-ui); font-size: 0.8rem;
   letter-spacing: -0.01em;
   cursor: pointer; transition: background 0.15s;
   box-shadow: 0 4px 20px color-mix(in srgb, var(--accent) 20%, transparent);
@@ -2131,7 +2131,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
   border-bottom: 1px solid rgb(var(--ink) / 0.06);
 }
 .drawer-title {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; margin: 0;
+  font-family: var(--font-ui); font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; margin: 0;
   color: var(--text);
 }
 .drawer-close {
@@ -2186,10 +2186,10 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .drawer-order-top { display: flex; justify-content: space-between; gap: 0.5rem; }
 .drawer-order-num { font-family: monospace; font-weight: 700; font-size: 0.82rem; color: var(--text); margin: 0 0 0.2rem; }
 .drawer-order-name { font-size: 0.76rem; color: var(--text-dim); margin: 0 0 0.15rem; }
-.drawer-order-phone { font-family: monospace; font-size: 0.72rem; color: var(--text-faint); margin: 0; }
+.drawer-order-phone { font-family: monospace; font-size: 0.75rem; color: var(--text-faint); margin: 0; }
 .drawer-order-right { text-align: right; flex-shrink: 0; }
 .drawer-order-total { font-family: monospace; font-weight: 700; color: var(--accent-text); font-size: 0.9rem; margin: 0 0 0.2rem; }
-.drawer-order-items { font-size: 0.72rem; color: var(--text-faint); margin: 0; }
+.drawer-order-items { font-size: 0.75rem; color: var(--text-faint); margin: 0; }
 
 .drawer-items {
   list-style: none; margin: 0.25rem 0 0; padding: 0.6rem 0 0.1rem;
@@ -2199,7 +2199,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .drawer-item { display: flex; align-items: center; gap: 0.6rem; font-size: 0.78rem; }
 .drawer-item-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .drawer-item-name { color: var(--text-2); }
-.drawer-item-note { font-size: 0.72rem; color: var(--text-faint); }
+.drawer-item-note { font-size: 0.75rem; color: var(--text-faint); }
 .drawer-item-qty { color: var(--text-dim); font-family: monospace; }
 .drawer-item-price { font-family: monospace; color: var(--text-2); min-width: 4.5rem; text-align: right; }
 
@@ -2215,7 +2215,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .drawer-add-btn {
   width: 100%; min-height: 2.5rem; border-radius: 9px; cursor: pointer;
   border: 1px dashed color-mix(in srgb, var(--green) 50%, transparent); background: color-mix(in srgb, var(--green) 8%, transparent);
-  color: var(--green-soft); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--green-soft); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
 }
 .drawer-add-btn:hover { background: color-mix(in srgb, var(--green) 15%, transparent); }
 
@@ -2224,14 +2224,14 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
   border: 1px dashed rgb(var(--ink) / 0.15); border-radius: 0.6rem;
   display: flex; flex-direction: column; gap: 0.5rem;
 }
-.drawer-hint { font-size: 0.72rem; color: var(--text-dim); margin: 0; }
+.drawer-hint { font-size: 0.75rem; color: var(--text-dim); margin: 0; }
 .drawer-split-total { display: flex; justify-content: space-between; font-size: 0.8rem; font-family: monospace; color: var(--text); }
 
 /* Baris aksi: [Ubah] [Pisah] [Bayar ........] */
 .drawer-actions { display: flex; gap: 0.5rem; align-items: stretch; }
 .drawer-ghost-btn {
   flex: 0 0 auto; padding: 0 0.85rem; min-height: 2.4rem;
-  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
   border-radius: 9px; border: 1px solid rgb(var(--ink) / 0.15);
   background: transparent; color: var(--text-2); cursor: pointer;
   transition: background 0.15s, color 0.15s, border-color 0.15s;
@@ -2243,7 +2243,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
   display: flex; align-items: center; justify-content: center; gap: 0.4rem;
   width: 100%; padding: 0.6rem; border-radius: 9px; border: none;
   background: #d92b22; color: #fff;
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
+  font-family: var(--font-ui); font-size: 0.75rem;
   letter-spacing: -0.01em;
   cursor: pointer; transition: background 0.15s;
 }
@@ -2274,7 +2274,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
   padding: 1.5rem 1.5rem 1rem; border-bottom: 1px solid rgb(var(--ink) / 0.05);
 }
 .modal-title {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 0.2rem;
+  font-family: var(--font-ui); font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 0.2rem;
   color: var(--text);
 }
 .modal-ordnum { font-family: monospace; font-size: 0.78rem; color: var(--text-faint); margin: 0; }
@@ -2288,7 +2288,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 
 .modal-customer { padding: 0.85rem 1.5rem; border-bottom: 1px solid rgb(var(--ink) / 0.04); }
 .modal-cust-name { font-weight: 600; font-size: 0.88rem; margin: 0 0 0.15rem; }
-.modal-cust-phone { font-family: monospace; font-size: 0.72rem; color: var(--text-faint); margin: 0; }
+.modal-cust-phone { font-family: monospace; font-size: 0.75rem; color: var(--text-faint); margin: 0; }
 
 .modal-items {
   padding: 0.85rem 1.5rem; border-bottom: 1px solid rgb(var(--ink) / 0.04);
@@ -2298,7 +2298,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .modal-item-left { flex: 1; min-width: 0; }
 .modal-item-name { font-size: 0.82rem; font-weight: 600; color: var(--text-2); margin: 0 0 0.15rem; }
 .modal-item-qty { color: var(--text-dim); font-weight: 400; font-size: 0.75rem; }
-.modal-item-note { font-size: 0.72rem; color: var(--amber-soft); font-style: italic; margin: 0; }
+.modal-item-note { font-size: 0.75rem; color: var(--amber-soft); font-style: italic; margin: 0; }
 .modal-item-price { font-family: monospace; font-size: 0.8rem; color: var(--text-2); flex-shrink: 0; }
 
 .modal-totals {
@@ -2310,7 +2310,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .modal-total-final {
   display: flex; justify-content: space-between;
   padding-top: 0.5rem; border-top: 1px solid rgb(var(--ink) / 0.07);
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.82rem; letter-spacing: -0.01em; color: var(--text-2); font-weight: 600;
+  font-family: var(--font-ui); font-size: 0.82rem; letter-spacing: -0.01em; color: var(--text-2); font-weight: 600;
 }
 .modal-total-final span:last-child { font-family: monospace; font-size: 1.05rem; font-weight: 800; color: var(--accent-text); }
 
@@ -2363,8 +2363,8 @@ input[type="number"] { -moz-appearance: textfield; }
     justify-content: center; font-size: 0.7rem; font-weight: 800;
   }
   .mcf-label {
-    flex: 1; text-align: left; font-family: 'Manrope', system-ui, sans-serif;
-    font-size: 0.72rem; letter-spacing: -0.01em;
+    flex: 1; text-align: left; font-family: var(--font-ui);
+    font-size: 0.75rem; letter-spacing: -0.01em;
   }
   .mcf-total { font-family: monospace; font-weight: 800; font-size: 0.85rem; }
 }

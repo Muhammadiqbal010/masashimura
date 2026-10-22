@@ -1,7 +1,7 @@
 <template>
   <div class="page relative min-h-screen overflow-x-hidden bg-[#111113] font-inter text-[#FAFAFA]">
     <!-- Atmosfer latar: glow halus, tidak mengganggu konten -->
-    <div class="page-glow pointer-events-none absolute inset-x-0 top-0 h-[520px]" aria-hidden="true"></div>
+    <div class="pattern-seigaiha pointer-events-none absolute inset-x-0 top-0 h-[460px] [mask-image:linear-gradient(to_bottom,black,transparent)]" aria-hidden="true"></div>
 
     <div class="relative mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
 
@@ -20,7 +20,8 @@
           {{ isOpen ? "Buka sekarang" : "Sedang tutup" }}
         </div>
 
-        <h1 class="font-sora text-4xl font-semibold leading-[1.05] tracking-tight text-[#FAFAFA] sm:text-5xl lg:text-6xl">
+        <p class="eyebrow-jp eyebrow-jp--yellow mb-4"><span class="hanko" aria-hidden="true">連絡</span>Kontak</p>
+        <h1 class="font-sora text-4xl leading-[1.1] text-[#FAFAFA] sm:text-5xl lg:text-6xl">
           Lokasi dan kontak
         </h1>
         <p class="mt-4 max-w-md text-base leading-relaxed text-[#B8B8C0] sm:text-lg">
@@ -336,15 +337,10 @@ const copyAddress = async () => {
   - Champagne   #F4C542  → detail premium (ikon, landmark, hover)
 */
 
-.page-glow {
-  background:
-    radial-gradient(60% 70% at 15% 0%, rgba(217,43,34, 0.09), transparent 70%),
-    radial-gradient(40% 50% at 90% 10%, rgba(244,197,66, 0.03), transparent 70%);
-}
-
 .card {
   border-radius: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 2px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 6px 6px 0 rgb(0 0 0 / 0.55);
   background: #1C1C1F;
   padding: 1.5rem;
 }
@@ -360,9 +356,10 @@ const copyAddress = async () => {
   align-items: center;
   justify-content: center;
   border-radius: 0.75rem;
-  border: 1px solid rgba(244,197,66, 0.22);
-  background: rgba(244,197,66, 0.1);
-  color: #F4C542;
+  border: 2px solid #111113;
+  background: #F4C542;
+  color: #111113;
+  box-shadow: 2px 2px 0 rgb(255 255 255 / 0.9);
 }
 
 .btn-primary,
@@ -373,34 +370,32 @@ const copyAddress = async () => {
   gap: 0.5rem;
   border-radius: 9999px;
   padding: 0.75rem 1.25rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  transition: all 0.2s ease;
+  font-size: 0.9375rem;
+  font-weight: 800;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.2s;
 }
 .btn-primary {
   background: #D92B22;
   color: #fff;
+  border: 2px solid #111113;
+  box-shadow: 0 4px 0 #7A1410;
 }
-.btn-primary:hover {
-  background: #B8201A;
-  box-shadow: 0 8px 24px -8px rgba(217,43,34, 0.6);
-}
+.btn-primary:hover { background: #E8362D; }
 .btn-ghost {
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   color: #FAFAFA;
 }
 .btn-ghost:hover {
   border-color: rgba(255, 255, 255, 0.35);
   background: rgba(255, 255, 255, 0.05);
 }
-.btn-primary:active,
-.btn-ghost:active {
-  transform: scale(0.98);
-}
+.btn-primary:active { transform: translateY(4px); box-shadow: 0 0 0 transparent; }
+.btn-ghost:active { transform: translateY(1px); }
 
 .cta {
-  background: linear-gradient(135deg, #8F0000 0%, #B8201A 45%, #5A0D1A 100%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(120deg, #B8201A, #D92B22 60%);
+  border: 3px solid #fff;
+  box-shadow: 8px 8px 0 #F4C542, 8px 8px 0 3px #111113;
 }
 .cta-sheen {
   background:

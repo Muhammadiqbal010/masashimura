@@ -10,8 +10,8 @@
 
 /* ── Token turunan (tint transparan dari warna semantik) ───────────── */
 html[data-admin-theme] {
-  --font-display: 'Noto Serif JP', 'Shippori Mincho', Georgia, serif;
-  --font-body: 'Manrope', system-ui, sans-serif;
+  --font-display: 'Dela Gothic One', 'Zen Kaku Gothic New', system-ui, sans-serif;
+  --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
 
   --tint-accent: color-mix(in srgb, var(--accent) 12%, transparent);
   --tint-green:  color-mix(in srgb, var(--green) 13%, transparent);
@@ -95,9 +95,9 @@ html[data-admin-theme] {
   transition: background 0.15s, border-color 0.15s, color 0.15s, opacity 0.15s;
 }
 .adm-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-.adm-btn--primary { background: var(--accent); color: var(--on-accent); }
+.adm-btn--primary { background: var(--accent); color: var(--on-accent); border-color: var(--btn-shadow); box-shadow: 0 3px 0 var(--btn-shadow); }
 .adm-btn--primary:hover:not(:disabled) { background: var(--accent-hover); }
-.adm-btn--primary:active:not(:disabled) { transform: translateY(1px); }
+.adm-btn--primary:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 0 0 var(--btn-shadow); }
 /* Danger: sengaja BEDA dari primary — outline/tint merah, penuh hanya saat hover/fokus */
 .adm-btn--danger { background: var(--tint-accent); border-color: var(--line-accent); color: var(--red-soft); }
 .adm-btn--danger:hover:not(:disabled) { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
@@ -498,3 +498,12 @@ html[data-admin-theme='light'] img[src*='masashimura-logo'] {
 .adm-status--delivery { background: var(--tint-amber);  color: var(--amber-soft); }
 .adm-status--done     { background: var(--tint-green);  color: var(--green-soft); }
 .adm-status--cancel   { background: rgb(var(--ink) / 0.07); color: var(--text-dim); }
+
+/* ── Gaya "pop": kartu statistik & modal dengan garis tegas + bayangan keras ── */
+.adm-stat { border-width: 2px; border-color: var(--pop-line); box-shadow: 4px 4px 0 var(--pop-line); }
+html[data-admin-theme='dark'] .adm-stat { box-shadow: 4px 4px 0 rgb(0 0 0 / 0.55); }
+.adm-modal { border: 2px solid var(--pop-line); box-shadow: 8px 8px 0 var(--pop-line); }
+html[data-admin-theme='dark'] .adm-modal { box-shadow: 8px 8px 0 rgb(0 0 0 / 0.6); }
+.adm-title { font-weight: 400; letter-spacing: 0; }
+.adm-eyebrow::before { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 0.5rem; background: var(--accent); transform: rotate(45deg); vertical-align: 1px; }
+.adm-badge, .adm-status { border: 1.5px solid currentColor; }

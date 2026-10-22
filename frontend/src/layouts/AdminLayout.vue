@@ -134,7 +134,8 @@ onUnmounted(() => {
   background: color-mix(in srgb, var(--bg) 88%, transparent);
   backdrop-filter: blur(12px);
 }
-.admin-topbar-date { margin: 0; font-size: 0.875rem; color: var(--text-dim); white-space: nowrap; }
+.admin-topbar-date { margin: 0; padding: 0.45rem 0.9rem; white-space: nowrap; border: 1.5px solid var(--border-strong); border-radius: 999px; background: var(--surface); font-size: 0.8125rem; font-weight: 700; color: var(--text-2); }
+.admin-topbar-date::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 0.55rem; background: var(--accent); transform: rotate(45deg); }
 .admin-topbar-search { flex: 1; min-width: 0; display: flex; justify-content: center; }
 .admin-topbar-actions { display: flex; align-items: center; gap: 0.5rem; }
 .admin-topbar-btn {
@@ -148,7 +149,7 @@ onUnmounted(() => {
   position: absolute; top: -5px; right: -5px; min-width: 18px; height: 18px; padding: 0 4px;
   display: inline-flex; align-items: center; justify-content: center;
   border-radius: 99px; background: var(--accent); color: var(--on-accent);
-  font-size: 0.6875rem; font-weight: 700; line-height: 1;
+  font-size: 0.75rem; font-weight: 700; line-height: 1;
 }
 .admin-topbar-user {
   display: inline-flex; align-items: center; gap: 0.6rem; height: 40px; padding: 0 0.85rem 0 0.35rem;

@@ -3,11 +3,9 @@
 
     <!-- ═══════════════ 1. HERO ═══════════════ -->
     <section class="hero relative overflow-hidden bg-[#111113]">
+      <div class="pattern-seigaiha absolute inset-0" aria-hidden="true"></div>
       <div class="absolute inset-0" aria-hidden="true">
-        <div
-          class="absolute inset-x-0 -top-[10%] h-[120%] will-change-transform"
-          :style="{ transform: `translate3d(0, ${parallaxY}px, 0)` }"
-        >
+        <div class="absolute inset-x-0 -top-[10%] h-[120%] will-change-transform" :style="{ transform: `translate3d(0, ${parallaxY}px, 0)` }">
           <img
             v-if="!loading.cms"
             v-blur-img
@@ -15,58 +13,40 @@
             alt=""
             fetchpriority="high"
             decoding="async"
-            class="h-full w-full object-cover opacity-[0.28]"
+            class="h-full w-full object-cover opacity-[0.16]"
           />
         </div>
-        <div class="absolute inset-0 bg-gradient-to-r from-[#111113] via-[#111113]/85 to-[#111113]/40"></div>
-        <div class="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#111113] to-transparent"></div>
-        <!-- Ornamen sapuan kuas: satu merah, satu kuning, hanya di sisi foto -->
-        <span class="brush-red hero-brush-red"></span>
-        <span class="brush-yellow hero-brush-yellow"></span>
+        <div class="absolute inset-0 bg-gradient-to-r from-[#111113] via-[#111113]/85 to-[#111113]/30"></div>
+        <!-- Bentuk geometri: lingkaran merah + balok kuning miring -->
+        <span class="hero-sun"></span>
+        <span class="hero-slab-red"></span>
+        <span class="hero-slab-yellow"></span>
       </div>
 
-      <div class="relative z-10 mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-10 px-5 pb-16 pt-32 sm:px-8 sm:pb-20 sm:pt-36 lg:grid-cols-12 lg:gap-6 lg:px-10 lg:pb-24">
+      <div class="relative z-10 mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-12 px-5 pb-28 pt-36 sm:px-8 sm:pt-40 lg:grid-cols-12 lg:gap-6 lg:px-10 lg:pb-32">
         <div class="space-y-6 lg:col-span-6">
 
-          <!-- Status + lokasi -->
-          <div class="hero-in flex flex-wrap items-center gap-2" style="--d: 0ms">
-            <div class="flex w-fit items-center gap-2.5 rounded-full bg-white/[0.08] px-3.5 py-2" role="status">
+          <div class="hero-in flex flex-wrap items-center gap-3" style="--d: 0ms">
+            <div class="flex w-fit items-center gap-2.5 rounded-full border-2 border-white/15 bg-white/[0.05] px-3.5 py-2" role="status">
               <span class="relative flex h-2 w-2 shrink-0">
-                <span
-                  v-if="openStatus.isOpen"
-                  class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60"
-                ></span>
-                <span
-                  class="relative inline-flex h-2 w-2 rounded-full"
-                  :class="openStatus.isOpen ? 'bg-emerald-400' : 'bg-[#D92B22]'"
-                ></span>
+                <span v-if="openStatus.isOpen" class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60"></span>
+                <span class="relative inline-flex h-2 w-2 rounded-full" :class="openStatus.isOpen ? 'bg-emerald-400' : 'bg-[#D92B22]'"></span>
               </span>
-              <span class="text-[0.8125rem] font-semibold text-[#F5F3EF]">{{ openStatus.label }}</span>
+              <span class="text-[0.8125rem] font-bold text-[#F5F3EF]">{{ openStatus.label }}</span>
               <span v-if="openStatus.detail" class="text-[0.8125rem] text-[#B8B8C0]">{{ openStatus.detail }}</span>
             </div>
-            <span class="rounded-full bg-[#F4C542]/12 px-3.5 py-2 text-[0.8125rem] font-semibold text-[#F4C542]">
-              Bekasi, sejak 2024
-            </span>
+            <span class="sticker">Bekasi, sejak 2024</span>
           </div>
 
-          <!-- Headline -->
-          <h1
-            v-if="!loading.cms"
-            class="hero-title hero-in break-words text-[#F5F3EF]"
-            style="--d: 100ms"
-          >
-            <span v-for="(line, i) in headlineLines" :key="i" class="block">{{ line.text }}</span>
+          <h1 v-if="!loading.cms" class="hero-title hero-in break-words" style="--d: 100ms">
+            <span v-for="(line, i) in headlineLines" :key="i" class="block" :class="line.accent ? 'hero-accent' : 'text-[#F5F3EF]'">{{ line.text }}</span>
           </h1>
           <div v-else class="space-y-3" aria-hidden="true">
             <div class="skeleton hero-skel w-[85%] rounded-xl"></div>
             <div class="skeleton hero-skel w-[60%] rounded-xl"></div>
           </div>
 
-          <p
-            v-if="!loading.cms"
-            class="hero-in max-w-md text-base leading-relaxed text-[#C9C9D0] sm:text-lg"
-            style="--d: 220ms"
-          >
+          <p v-if="!loading.cms" class="hero-in max-w-md text-base leading-relaxed text-[#D2D2D8] sm:text-lg" style="--d: 220ms">
             {{ cms.hero_subheadline }}
           </p>
           <div v-else class="max-w-md space-y-2" aria-hidden="true">
@@ -74,92 +54,97 @@
             <div class="skeleton h-4 w-2/3 rounded-full"></div>
           </div>
 
-          <div class="hero-in flex flex-col gap-3 pt-2 sm:flex-row" style="--d: 320ms">
-            <router-link to="/menu" class="btn-yellow group">
+          <div class="hero-in flex flex-col gap-4 pt-3 sm:flex-row sm:items-center" style="--d: 320ms">
+            <router-link to="/menu" class="pop-btn pop-btn--on-dark">
               Lihat menu
-              <ArrowRight :size="16" class="transition-transform duration-200 group-hover:translate-x-1" />
+              <span class="pop-btn-dot" aria-hidden="true"><ArrowUpRight :size="15" /></span>
             </router-link>
-            <router-link to="/contact" class="btn-line">
-              Kontak kami
-            </router-link>
+            <router-link to="/contact" class="pop-btn pop-btn--ghost">Kontak kami</router-link>
           </div>
         </div>
 
-        <!-- Foto makanan -->
+        <!-- Foto makanan: kartu miring + stiker + segel -->
         <div class="hero-in relative lg:col-span-6" style="--d: 260ms">
-          <div class="hero-photo relative mx-auto aspect-[5/4] w-full max-w-[34rem] overflow-hidden rounded-[1.75rem] bg-[#1C1C1F] lg:ml-auto lg:mr-10">
-            <img
-              v-if="!loading.cms"
-              v-blur-img
-              :src="cms.hero_food_image || defaultHeroFood"
-              alt="Menu andalan Masashimura"
-              class="h-full w-full object-cover"
-            />
+          <div class="hero-card-back" aria-hidden="true"></div>
+          <div class="hero-frame relative mx-auto aspect-[5/4] w-full max-w-[34rem] overflow-hidden bg-[#1C1C1F] lg:ml-auto lg:mr-12">
+            <img v-if="!loading.cms" v-blur-img :src="cms.hero_food_image || defaultHeroFood" alt="Menu andalan Masashimura" class="h-full w-full object-cover" />
             <div v-else class="skeleton h-full w-full" aria-hidden="true"></div>
           </div>
-          <!-- Aksen tepi: teks vertikal Jepang -->
-          <p class="jp-vertical absolute right-0 top-1/2 hidden -translate-y-1/2 text-xl text-white/85 xl:block" aria-hidden="true">
-            まさしむら
-          </p>
+          <span class="sticker sticker--red absolute left-1 top-3 z-10 text-[0.9375rem] sm:left-4" aria-hidden="true">おいしい！</span>
+          <span class="hanko absolute -bottom-3 right-2 z-10 !h-12 !w-12 !rounded-xl !text-xl sm:right-8" aria-hidden="true">ま</span>
+
+          <!-- Lencana berputar -->
+          <svg class="hero-badge absolute -bottom-6 left-0 z-10 h-28 w-28 sm:left-4" viewBox="0 0 120 120" aria-hidden="true">
+            <circle cx="60" cy="60" r="57" fill="#F4C542" stroke="#111113" stroke-width="3" />
+            <defs><path id="badge-circle" d="M60,60 m-42,0 a42,42 0 1,1 84,0 a42,42 0 1,1 -84,0" /></defs>
+            <g class="hero-badge-ring">
+              <text font-size="8.6" font-weight="800" letter-spacing="1.5" fill="#111113" font-family="var(--font-ui)">
+                <textPath href="#badge-circle">GOOD FOOD • GOOD VIBES • BEKASI •</textPath>
+              </text>
+            </g>
+            <text x="60" y="73" text-anchor="middle" font-size="34" fill="#D92B22" font-family="var(--font-display)">味</text>
+          </svg>
+
+          <p class="jp-vertical absolute -right-1 top-1/4 hidden text-lg text-[#F4C542] xl:block" aria-hidden="true">まさしむら</p>
         </div>
       </div>
     </section>
 
-    <!-- Marquee: satu baris tenang di bawah hero (teks dari CMS) -->
-    <div v-if="cms.marquee_text" class="marquee-wrap overflow-hidden bg-[#111113] pb-6 pt-1" aria-hidden="true">
-      <div class="animate-marquee flex">
-        <div v-for="g in 2" :key="g" class="flex shrink-0 items-center">
-          <template v-for="m in 4" :key="m">
-            <span class="mx-8 whitespace-nowrap text-[0.8125rem] font-semibold tracking-[0.14em] text-[#9A9AA3]">
-              {{ cms.marquee_text }}
-            </span>
-            <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-[#F4C542]"></span>
-          </template>
+    <!-- Pita ticker miring -->
+    <div class="relative z-20 -mt-14 mb-0 overflow-hidden pb-10 pt-6" aria-hidden="true">
+      <div class="tape marquee-wrap overflow-hidden py-3">
+        <div class="animate-marquee flex">
+          <div v-for="g in 2" :key="g" class="flex shrink-0 items-center">
+            <template v-for="m in 3" :key="m">
+              <template v-if="cms.marquee_text">
+                <span class="mx-6 whitespace-nowrap text-sm font-extrabold tracking-wide sm:text-base">{{ cms.marquee_text }}</span>
+                <span class="h-2.5 w-2.5 shrink-0 rotate-45 bg-[#D92B22]"></span>
+              </template>
+              <template v-for="w in tickerJp" :key="w">
+                <span class="mx-6 whitespace-nowrap font-[family-name:var(--font-display)] text-sm sm:text-base">{{ w }}</span>
+                <span class="h-2.5 w-2.5 shrink-0 rotate-45 bg-[#D92B22]"></span>
+              </template>
+            </template>
+          </div>
         </div>
       </div>
     </div>
-    <div v-else class="bg-[#111113] pb-6" aria-hidden="true"></div>
 
-    <!-- ═══════════════ 2. RINGKASAN (krem) ═══════════════ -->
-    <section class="on-cream">
-      <div ref="metricsRef" class="mx-auto max-w-7xl px-5 pt-10 sm:px-8 lg:px-10">
-        <div class="metric-strip grid grid-cols-3 divide-x divide-[#E5E2DC] rounded-2xl bg-white">
-          <div class="px-3 py-5 text-center sm:px-8 sm:py-6 sm:text-left">
+    <!-- ═══════════════ 2. KRUNCI (krem berpola titik) ═══════════════ -->
+    <section class="dot-grid on-cream">
+      <div ref="metricsRef" class="mx-auto max-w-7xl px-5 pt-14 sm:px-8 lg:px-10">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
+          <div class="pop-card px-6 py-5">
             <p class="metric-num">{{ metricDisplays.m1 }}</p>
             <p class="metric-label">Berdiri sejak</p>
           </div>
-          <div class="px-3 py-5 text-center sm:px-8 sm:py-6 sm:text-left">
+          <div class="pop-card pop-card--yellow px-6 py-5">
             <p class="metric-num">{{ metricDisplays.m2 }}</p>
             <p class="metric-label">Varian menu</p>
           </div>
-          <div class="px-3 py-5 text-center sm:px-8 sm:py-6 sm:text-left">
-            <p
-              class="metric-num whitespace-nowrap"
-              :class="metric3IsStars ? '!text-[1rem] !tracking-tighter text-[#C7901A] sm:!text-[1.5rem]' : ''"
-            >{{ cms.metric_3 || "–" }}</p>
-            <p class="metric-label">Rating pelanggan</p>
+          <div class="pop-card pop-card--red px-6 py-5">
+            <p class="metric-num whitespace-nowrap" :class="metric3IsStars ? '!text-[1.5rem] !tracking-tight' : ''">{{ cms.metric_3 || "–" }}</p>
+            <p class="metric-label !text-white">Rating pelanggan</p>
           </div>
         </div>
       </div>
 
       <!-- ═══════════════ 3. MENU TERLARIS ═══════════════ -->
-      <div v-reveal class="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20 lg:px-10 lg:py-24">
+      <div v-reveal class="mx-auto max-w-7xl px-5 py-20 sm:px-8 sm:py-24 lg:px-10">
         <div class="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-12">
-          <div class="space-y-4 lg:col-span-4 lg:pt-4">
+          <div class="space-y-4 lg:col-span-4 lg:pt-3">
+            <p class="eyebrow-jp"><span class="hanko" aria-hidden="true">人気</span>Favorit</p>
             <h2 class="h-section">Menu terlaris</h2>
-            <p class="max-w-xs text-base leading-relaxed text-[#66666D]">
-              Yang paling sering dipesan pelanggan kami.
-            </p>
-            <router-link to="/menu" class="link-red group hidden lg:inline-flex">
+            <p class="max-w-xs text-base leading-relaxed text-[#5A5A62]">Yang paling sering dipesan pelanggan kami.</p>
+            <router-link to="/menu" class="link-pop hidden lg:inline-flex">
               Lihat semua menu
-              <ArrowRight :size="15" class="transition-transform duration-200 group-hover:translate-x-1" />
+              <ArrowUpRight :size="16" aria-hidden="true" />
             </router-link>
           </div>
 
           <div class="lg:col-span-8">
-            <!-- Skeleton -->
-            <div v-if="loading.best" class="grid grid-cols-2 gap-4 sm:grid-cols-3" aria-hidden="true">
-              <div v-for="n in 3" :key="n" class="overflow-hidden rounded-2xl bg-white">
+            <div v-if="loading.best" class="grid grid-cols-2 gap-5 sm:grid-cols-3" aria-hidden="true">
+              <div v-for="n in 3" :key="n" class="pop-card overflow-hidden">
                 <div class="skeleton-light aspect-[4/3] w-full"></div>
                 <div class="space-y-2.5 p-4">
                   <div class="skeleton-light h-4 w-3/4 rounded-full"></div>
@@ -168,45 +153,34 @@
               </div>
             </div>
 
-            <div v-else class="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5">
+            <div v-else class="grid grid-cols-2 gap-5 sm:grid-cols-3 sm:gap-6">
               <router-link
                 v-for="(item, idx) in topBestSellers"
                 :key="idx"
                 to="/menu"
-                class="menu-card group"
+                class="menu-card pop-card group"
                 :aria-label="`${item.name}, ${formatRupiah(item.price)}. Buka halaman menu`"
               >
-                <div class="relative aspect-[4/3] w-full overflow-hidden bg-[#E9E5DC]">
-                  <img
-                    v-blur-img
-                    :src="item.image"
-                    :alt="item.name"
-                    loading="lazy"
-                    class="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
-                  />
-                  <span v-if="idx === 0" class="menu-tag bg-[#D92B22] text-white">Terlaris</span>
-                  <span v-else-if="idx === 1" class="menu-tag bg-[#F4C542] text-[#2A1F00]">Favorit</span>
+                <div class="relative aspect-[4/3] w-full overflow-hidden rounded-t-[18px] bg-[#E9E5DC]">
+                  <img v-blur-img :src="item.image" :alt="item.name" loading="lazy" class="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.05]" />
+                  <span v-if="idx === 0" class="sticker sticker--red absolute left-2.5 top-2.5">Terlaris</span>
+                  <span v-else-if="idx === 1" class="sticker absolute left-2.5 top-2.5">Favorit</span>
                 </div>
-                <div class="flex items-end justify-between gap-2 p-3.5 sm:p-4">
+                <div class="flex items-end justify-between gap-2 border-t-2 border-[#111113] p-3.5 sm:p-4">
                   <div class="min-w-0">
-                    <h3 class="line-clamp-2 text-[0.9375rem] font-bold leading-snug text-[#202024]">{{ item.name }}</h3>
-                    <p class="mt-1 text-sm font-semibold tabular-nums text-[#66666D]">{{ formatRupiah(item.price) }}</p>
+                    <h3 class="line-clamp-2 text-[0.9375rem] font-extrabold leading-snug text-[#111113]">{{ item.name }}</h3>
+                    <p class="mt-1 text-sm font-extrabold tabular-nums text-[#D92B22]">{{ formatRupiah(item.price) }}</p>
                   </div>
-                  <span class="menu-add" aria-hidden="true"><Plus :size="16" /></span>
+                  <span class="menu-add" aria-hidden="true"><Plus :size="18" :stroke-width="3" /></span>
                 </div>
               </router-link>
 
-              <div
-                v-if="bestSellers.length === 0"
-                class="col-span-full rounded-2xl bg-white py-16 text-center text-sm text-[#66666D]"
-              >
-                Menu belum tersedia saat ini.
-              </div>
+              <div v-if="bestSellers.length === 0" class="pop-card col-span-full py-16 text-center text-sm text-[#5A5A62]">Menu belum tersedia saat ini.</div>
             </div>
 
-            <router-link to="/menu" class="btn-dark mt-8 w-full lg:hidden">
+            <router-link to="/menu" class="pop-btn mt-8 w-full lg:hidden">
               Lihat semua menu
-              <ArrowRight :size="16" />
+              <span class="pop-btn-dot" aria-hidden="true"><ArrowUpRight :size="15" /></span>
             </router-link>
           </div>
         </div>
@@ -217,81 +191,66 @@
 
       <!-- ═══════════════ 5. TENTANG ═══════════════ -->
       <div v-reveal class="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20 lg:px-10 lg:py-24">
-        <div class="grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-16">
+        <div class="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-16">
           <div class="space-y-5 lg:col-span-5">
+            <p class="eyebrow-jp"><span class="hanko" aria-hidden="true">物語</span>Cerita kami</p>
             <h2 class="h-section">Tentang Masashimura</h2>
-            <p v-if="!loading.cms" class="max-w-md text-base leading-[1.85] text-[#4A4A52]">{{ cms.about_text }}</p>
+            <p v-if="!loading.cms" class="max-w-md text-base leading-[1.85] text-[#3F3F46]">{{ cms.about_text }}</p>
             <div v-else class="max-w-md space-y-2.5" aria-hidden="true">
               <div class="skeleton-light h-4 w-full rounded-full"></div>
               <div class="skeleton-light h-4 w-full rounded-full"></div>
               <div class="skeleton-light h-4 w-4/5 rounded-full"></div>
             </div>
-            <router-link to="/contact" class="link-red group inline-flex">
+            <router-link to="/contact" class="link-pop inline-flex">
               Lokasi &amp; kontak
-              <ArrowRight :size="15" class="transition-transform duration-200 group-hover:translate-x-1" />
+              <ArrowUpRight :size="16" aria-hidden="true" />
             </router-link>
           </div>
 
-          <div class="lg:col-span-7">
-            <div class="relative aspect-[16/10] overflow-hidden rounded-[1.5rem] bg-[#E9E5DC]">
-              <img
-                v-if="!loading.cms"
-                v-blur-img
-                :src="cms.about_image || defaultAboutImage"
-                alt="Suasana Masashimura"
-                loading="lazy"
-                class="h-full w-full object-cover"
-              />
+          <div class="relative lg:col-span-7">
+            <div class="about-photo relative aspect-[16/10] overflow-hidden bg-[#E9E5DC]">
+              <img v-if="!loading.cms" v-blur-img :src="cms.about_image || defaultAboutImage" alt="Suasana Masashimura" loading="lazy" class="h-full w-full object-cover" />
               <div v-else class="skeleton-light h-full w-full" aria-hidden="true"></div>
             </div>
+            <span class="sticker sticker--pink absolute -top-4 right-4 z-10 rotate-[4deg] text-[0.875rem]" aria-hidden="true">nongkrong yuk!</span>
           </div>
         </div>
       </div>
 
       <!-- ═══════════════ 6. FASILITAS ═══════════════ -->
-      <div class="mx-auto max-w-7xl px-5 pb-20 sm:px-8 sm:pb-24 lg:px-10 lg:pb-28">
-        <h2 class="h-section mb-8 sm:mb-10">Apa yang lo dapet</h2>
+      <div class="mx-auto max-w-7xl px-5 pb-24 sm:px-8 sm:pb-28 lg:px-10">
+        <p class="eyebrow-jp mb-4"><span class="hanko" aria-hidden="true">設備</span>Fasilitas</p>
+        <h2 class="h-section mb-10">Apa yang lo dapet</h2>
 
-        <div v-if="loading.bento" class="grid grid-cols-1 gap-3 lg:grid-cols-12" aria-hidden="true">
-          <div class="skeleton-light min-h-[200px] rounded-2xl lg:col-span-5"></div>
-          <div class="grid auto-rows-fr grid-cols-2 gap-3 lg:col-span-7">
-            <div v-for="n in 4" :key="n" class="skeleton-light min-h-[110px] rounded-2xl"></div>
+        <div v-if="loading.bento" class="grid grid-cols-1 gap-4 lg:grid-cols-12" aria-hidden="true">
+          <div class="skeleton-light min-h-[220px] rounded-3xl lg:col-span-5"></div>
+          <div class="grid auto-rows-fr grid-cols-2 gap-4 lg:col-span-7">
+            <div v-for="n in 4" :key="n" class="skeleton-light min-h-[110px] rounded-3xl"></div>
           </div>
         </div>
 
-        <div v-else class="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-12">
-          <div v-if="bentoLarge.length" class="flex flex-col gap-3 sm:gap-4 lg:col-span-5">
+        <div v-else class="grid grid-cols-1 gap-5 sm:gap-6 lg:grid-cols-12">
+          <div v-if="bentoLarge.length" class="flex flex-col gap-5 lg:col-span-5">
             <div
               v-for="(bento, i) in bentoLarge"
               :key="'l' + i"
-              class="bento-feature relative flex min-h-[200px] flex-1 flex-col justify-between overflow-hidden rounded-2xl p-7 sm:min-h-[240px] sm:p-9"
+              class="bento-feature pattern-seigaiha relative flex min-h-[220px] flex-1 flex-col justify-between overflow-hidden p-7 sm:min-h-[260px] sm:p-9"
             >
-              <span class="brush-red bento-brush" aria-hidden="true"></span>
-              <div class="relative flex h-12 w-12 items-center justify-center rounded-xl bg-[#F4C542] text-[#2A1F00]">
-                <component :is="getIcon(bento.icon_name)" :size="22" />
-              </div>
-              <span class="relative text-2xl font-bold leading-tight tracking-tight text-white sm:text-[1.75rem]">
-                {{ bento.title }}
-              </span>
+              <span class="bento-slab" aria-hidden="true"></span>
+              <div class="icon-tile-yellow relative"><component :is="getIcon(bento.icon_name)" :size="22" /></div>
+              <span class="relative font-[family-name:var(--font-display)] text-2xl leading-tight text-white sm:text-[1.75rem]">{{ bento.title }}</span>
             </div>
           </div>
 
-          <div
-            class="grid auto-rows-fr grid-cols-2 gap-3 sm:gap-4"
-            :class="bentoLarge.length ? 'lg:col-span-7' : 'lg:col-span-12 lg:grid-cols-4'"
-          >
+          <div class="grid auto-rows-fr grid-cols-2 gap-5 sm:gap-6" :class="bentoLarge.length ? 'lg:col-span-7' : 'lg:col-span-12 lg:grid-cols-4'">
             <div
               v-for="(bento, i) in bentoSmall"
               :key="'s' + i"
-              class="bento-tile flex min-h-[110px] flex-col justify-between gap-5 rounded-2xl bg-white p-5 sm:min-h-[128px] sm:p-6"
+              class="pop-card flex min-h-[116px] flex-col justify-between gap-5 p-5 sm:min-h-[132px] sm:p-6"
               :class="isBentoOrphan(i) ? 'col-span-2' : ''"
             >
-              <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#D92B22]/[0.09] text-[#D92B22]">
-                <component :is="getIcon(bento.icon_name)" :size="18" />
-              </div>
-              <span class="text-[0.9375rem] font-bold leading-snug text-[#202024] sm:text-base">
-                {{ bento.title }}
-              </span>
+              <div class="icon-tile-red"><component :is="getIcon(bento.icon_name)" :size="18" /></div>
+              <span class="text-[0.9375rem] font-extrabold leading-snug text-[#111113] sm:text-base">{{ bento.title }}</span>
             </div>
           </div>
         </div>
@@ -299,14 +258,12 @@
     </section>
 
     <!-- ═══════════════ 7. GALLERY (gelap) ═══════════════ -->
-    <section class="bg-[#111113] py-16 sm:py-20 lg:py-24">
+    <section class="pattern-seigaiha relative bg-[#111113] py-20 sm:py-24">
       <div class="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
-        <h2 class="h-section-dark mb-8 sm:mb-10">Gallery</h2>
+        <p class="eyebrow-jp eyebrow-jp--yellow mb-4"><span class="hanko" aria-hidden="true">写真</span>Dokumentasi</p>
+        <h2 class="h-section-dark mb-8">Gallery</h2>
 
-        <div
-          v-if="!loading.gallery && galleryCategories.length > 2"
-          class="no-scrollbar -mx-5 mb-8 flex gap-2 overflow-x-auto px-5 pb-1 sm:mx-0 sm:flex-wrap sm:px-0"
-        >
+        <div v-if="!loading.gallery && galleryCategories.length > 2" class="no-scrollbar -mx-5 mb-8 flex gap-2.5 overflow-x-auto px-5 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
           <button
             v-for="cat in galleryCategories"
             :key="cat"
@@ -314,66 +271,44 @@
             @click="setCategory(cat)"
             :aria-pressed="activeCategory === cat"
             :class="[
-              activeCategory === cat
-                ? 'bg-[#D92B22] text-white'
-                : 'bg-white/[0.07] text-[#C9C9D0] hover:bg-white/[0.12] hover:text-white',
-              'min-h-[44px] shrink-0 cursor-pointer whitespace-nowrap rounded-full px-5 text-sm font-semibold transition-colors'
+              activeCategory === cat ? 'border-[#F4C542] bg-[#F4C542] text-[#111113]' : 'border-white/25 bg-transparent text-white hover:border-white/60',
+              'min-h-[46px] shrink-0 cursor-pointer whitespace-nowrap rounded-full border-2 px-5 text-sm font-extrabold transition-colors'
             ]"
-          >
-            {{ cat }}
-          </button>
+          >{{ cat }}</button>
         </div>
 
-        <div
-          v-if="loading.gallery"
-          class="grid auto-rows-[150px] grid-cols-2 gap-2 sm:auto-rows-[180px] sm:grid-cols-3 sm:gap-3 md:grid-cols-4"
-          aria-hidden="true"
-        >
+        <div v-if="loading.gallery" class="grid auto-rows-[150px] grid-cols-2 gap-3 sm:auto-rows-[180px] sm:grid-cols-3 md:grid-cols-4" aria-hidden="true">
           <div v-for="n in 8" :key="n" class="skeleton rounded-2xl" :class="n === 1 ? 'col-span-2 row-span-2' : ''"></div>
         </div>
 
-        <div v-else class="grid auto-rows-[150px] grid-flow-row-dense grid-cols-2 gap-2 sm:auto-rows-[180px] sm:grid-cols-3 sm:gap-3 md:grid-cols-4">
+        <div v-else class="grid auto-rows-[150px] grid-flow-row-dense grid-cols-2 gap-3 sm:auto-rows-[180px] sm:grid-cols-3 md:grid-cols-4">
           <button
             v-for="(img, i) in visibleGallery"
             :key="img.id ?? img.image_url"
             type="button"
             :aria-label="'Buka foto: ' + (img.title || 'Masashimura')"
             @click="openLightbox(i)"
-            :class="[
-              isFeatured(i) ? 'col-span-2 row-span-2' : '',
-              'group relative cursor-pointer overflow-hidden rounded-2xl border-0 bg-[#1C1C1F] p-0 text-left'
-            ]"
+            :class="[isFeatured(i) ? 'col-span-2 row-span-2' : '', 'gallery-tile group relative cursor-pointer overflow-hidden bg-[#1C1C1F] p-0 text-left']"
           >
-            <div class="h-full w-full transition-transform duration-500 ease-out group-hover:scale-[1.04]">
-              <img
-                v-blur-img
-                :src="img.image_url"
-                :alt="img.title || 'Dokumentasi Masashimura'"
-                loading="lazy"
-                class="h-full w-full object-cover"
-              />
+            <div class="h-full w-full transition-transform duration-500 ease-out group-hover:scale-[1.05]">
+              <img v-blur-img :src="img.image_url" :alt="img.title || 'Dokumentasi Masashimura'" loading="lazy" class="h-full w-full object-cover" />
             </div>
-            <div class="absolute inset-0 flex items-end bg-gradient-to-t from-black/75 via-black/0 to-transparent p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100 sm:p-4">
+            <div class="absolute inset-0 flex items-end bg-gradient-to-t from-black/80 via-black/0 to-transparent p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100 sm:p-4">
               <div class="min-w-0 space-y-0.5">
-                <p class="line-clamp-1 text-sm font-bold text-white">{{ img.title || 'Masashimura' }}</p>
-                <p v-if="img.category" class="text-xs font-semibold text-[#F4C542]">{{ img.category }}</p>
+                <p class="line-clamp-1 text-sm font-extrabold text-white">{{ img.title || 'Masashimura' }}</p>
+                <p v-if="img.category" class="text-xs font-bold text-[#F4C542]">{{ img.category }}</p>
               </div>
             </div>
-            <div class="absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full bg-black/55 opacity-0 backdrop-blur-md transition-opacity duration-300 group-hover:opacity-100">
-              <Expand :size="14" class="text-white" />
+            <div class="absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full bg-[#F4C542] text-[#111113] opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+              <Expand :size="14" />
             </div>
           </button>
 
-          <div
-            v-if="visibleGallery.length === 0"
-            class="col-span-full row-span-2 flex items-center justify-center rounded-2xl bg-white/[0.04] text-center text-sm text-[#9A9AA3]"
-          >
-            Belum ada foto.
-          </div>
+          <div v-if="visibleGallery.length === 0" class="col-span-full row-span-2 flex items-center justify-center rounded-2xl border-2 border-dashed border-white/20 text-center text-sm text-[#B8B8C0]">Belum ada foto.</div>
         </div>
 
         <div v-if="!loading.gallery && filteredGallery.length > visibleGallery.length" class="mt-10 flex justify-center">
-          <button type="button" @click="galleryLimit += 8" class="btn-line cursor-pointer">
+          <button type="button" @click="galleryLimit += 8" class="pop-btn pop-btn--ghost cursor-pointer">
             Muat lebih banyak ({{ filteredGallery.length - visibleGallery.length }})
           </button>
         </div>
@@ -390,54 +325,31 @@
         @touchstart.passive="onTouchStart"
         @touchend="handleSwipe($event, nextImage, prevImage)"
       >
-        <button
-          type="button" @click="closeLightbox" aria-label="Tutup"
-          class="absolute right-4 top-4 z-10 flex h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 sm:right-8 sm:top-8"
-        >
+        <button type="button" @click="closeLightbox" aria-label="Tutup" class="absolute right-4 top-4 z-10 flex h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-[#F4C542] text-[#111113] transition hover:bg-[#FFD65C] sm:right-8 sm:top-8">
           <X :size="18" />
         </button>
-
-        <span class="absolute left-5 top-6 text-sm font-semibold tabular-nums text-[#B8B8C0] sm:left-10 sm:top-10">
-          {{ lightboxIndex + 1 }} / {{ visibleGallery.length }}
-        </span>
-
-        <button
-          v-if="visibleGallery.length > 1" type="button" @click.stop="prevImage" aria-label="Foto sebelumnya"
-          class="absolute left-2 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 sm:left-8"
-        >
-          <ChevronLeft :size="20" />
-        </button>
-        <button
-          v-if="visibleGallery.length > 1" type="button" @click.stop="nextImage" aria-label="Foto berikutnya"
-          class="absolute right-2 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 sm:right-8"
-        >
-          <ChevronRight :size="20" />
-        </button>
-
+        <span class="absolute left-5 top-6 text-sm font-bold tabular-nums text-[#B8B8C0] sm:left-10 sm:top-10">{{ lightboxIndex + 1 }} / {{ visibleGallery.length }}</span>
+        <button v-if="visibleGallery.length > 1" type="button" @click.stop="prevImage" aria-label="Foto sebelumnya" class="absolute left-2 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 sm:left-8"><ChevronLeft :size="20" /></button>
+        <button v-if="visibleGallery.length > 1" type="button" @click.stop="nextImage" aria-label="Foto berikutnya" class="absolute right-2 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 sm:right-8"><ChevronRight :size="20" /></button>
         <div class="w-full max-w-4xl space-y-4" @click.stop>
           <div class="flex max-h-[75vh] items-center justify-center overflow-hidden">
-            <img
-              :key="lightboxIndex"
-              :src="currentLightboxImage?.image_url"
-              :alt="currentLightboxImage?.title || 'Masashimura'"
-              class="lb-img max-h-[75vh] max-w-full rounded-2xl object-contain"
-            />
+            <img :key="lightboxIndex" :src="currentLightboxImage?.image_url" :alt="currentLightboxImage?.title || 'Masashimura'" class="lb-img max-h-[75vh] max-w-full rounded-2xl border-2 border-white/20 object-contain" />
           </div>
           <div class="space-y-1 text-center">
-            <p class="text-base font-bold text-[#F5F3EF]">{{ currentLightboxImage?.title || 'Masashimura' }}</p>
-            <p v-if="currentLightboxImage?.category" class="text-sm font-semibold text-[#F4C542]">{{ currentLightboxImage.category }}</p>
+            <p class="text-base font-extrabold text-[#F5F3EF]">{{ currentLightboxImage?.title || 'Masashimura' }}</p>
+            <p v-if="currentLightboxImage?.category" class="text-sm font-bold text-[#F4C542]">{{ currentLightboxImage.category }}</p>
           </div>
         </div>
       </div>
     </transition>
 
     <!-- ═══════════════ 8. REVIEW (krem) ═══════════════ -->
-    <section class="on-cream">
-      <div class="mx-auto max-w-4xl px-5 py-16 sm:px-8 sm:py-20 lg:px-10 lg:py-24">
-        <h2 class="h-section mb-10 sm:mb-12">Kata pelanggan</h2>
+    <section class="dot-grid on-cream">
+      <div class="mx-auto max-w-4xl px-5 py-20 sm:px-8 sm:py-24 lg:px-10">
+        <p class="eyebrow-jp mb-4"><span class="hanko" aria-hidden="true">声</span>Testimoni</p>
+        <h2 class="h-section mb-10">Kata pelanggan</h2>
 
-        <div v-if="loading.reviews" class="space-y-6" aria-hidden="true">
-          <div class="skeleton-light h-8 w-8 rounded-full"></div>
+        <div v-if="loading.reviews" class="pop-card p-8" aria-hidden="true">
           <div class="max-w-2xl space-y-3">
             <div class="skeleton-light h-5 w-full rounded-full"></div>
             <div class="skeleton-light h-5 w-5/6 rounded-full"></div>
@@ -445,70 +357,50 @@
           </div>
         </div>
 
-        <div
-          v-else-if="reviews.length"
-          class="touch-pan-y select-none"
-          @touchstart.passive="onTouchStart"
-          @touchend="onReviewSwipe"
-        >
+        <div v-else-if="reviews.length" class="pop-card touch-pan-y select-none p-7 sm:p-10" @touchstart.passive="onTouchStart" @touchend="onReviewSwipe">
           <div class="grid">
             <figure
               v-for="(review, i) in reviews"
               :key="i"
               :aria-hidden="i !== currentReviewIndex"
-              class="col-start-1 row-start-1 space-y-7 transition-all duration-500 ease-out"
+              class="col-start-1 row-start-1 space-y-6 transition-all duration-500 ease-out"
               :class="i === currentReviewIndex ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-3 opacity-0'"
             >
-              <Quote :size="32" class="text-[#D92B22]" />
-              <blockquote class="max-w-2xl font-[family-name:var(--font-display)] text-xl font-semibold leading-relaxed text-[#202024] sm:text-2xl">
-                “{{ review.text }}”
-              </blockquote>
+              <Quote :size="30" class="text-[#D92B22]" />
+              <blockquote class="max-w-2xl text-xl font-extrabold leading-relaxed text-[#111113] sm:text-2xl">“{{ review.text }}”</blockquote>
               <figcaption class="flex items-center gap-3">
-                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#111113] text-sm font-bold uppercase text-[#F4C542]">
-                  {{ (review.name || '?').trim().charAt(0) }}
-                </span>
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2 border-[#111113] bg-[#F4C542] text-sm font-extrabold uppercase text-[#111113]">{{ (review.name || '?').trim().charAt(0) }}</span>
                 <span class="flex min-w-0 flex-col">
-                  <span class="truncate text-sm font-bold text-[#202024]">{{ review.name }}</span>
-                  <span class="text-sm text-[#66666D]">{{ review.status }}</span>
+                  <span class="truncate text-sm font-extrabold text-[#111113]">{{ review.name }}</span>
+                  <span class="text-sm text-[#5A5A62]">{{ review.status }}</span>
                 </span>
               </figcaption>
             </figure>
           </div>
-
-          <div v-if="reviews.length > 1" class="mt-10 flex items-center gap-2" aria-hidden="true">
-            <span
-              v-for="(r, i) in reviews"
-              :key="i"
-              class="block h-1.5 rounded-full transition-all duration-500"
-              :class="i === currentReviewIndex ? 'w-8 bg-[#D92B22]' : 'w-1.5 bg-[#202024]/20'"
-            ></span>
+          <div v-if="reviews.length > 1" class="mt-8 flex items-center gap-2" aria-hidden="true">
+            <span v-for="(r, i) in reviews" :key="i" class="block h-2 rounded-full transition-all duration-500" :class="i === currentReviewIndex ? 'w-8 bg-[#D92B22]' : 'w-2 bg-[#111113]/20'"></span>
           </div>
         </div>
       </div>
     </section>
 
     <!-- ═══════════════ 9. CTA ═══════════════ -->
-    <section class="bg-[#111113] px-5 pb-16 pt-4 sm:px-8 sm:pb-20 lg:px-10 lg:pb-24">
-      <div class="cta relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-8 overflow-hidden rounded-[1.75rem] p-8 sm:p-12 lg:grid-cols-2 lg:gap-16 lg:p-16">
-        <span class="brush-yellow cta-brush" aria-hidden="true"></span>
+    <section class="bg-[#111113] px-5 pb-20 pt-16 sm:px-8 sm:pb-24 lg:px-10">
+      <div class="cta pattern-seigaiha relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-8 overflow-hidden p-8 sm:p-12 lg:grid-cols-2 lg:gap-16 lg:p-14">
+        <span class="cta-sun" aria-hidden="true"></span>
+        <p class="jp-outline pointer-events-none absolute -bottom-4 left-4 whitespace-nowrap text-[5.5rem] leading-none sm:text-[8rem]" aria-hidden="true">腹減った</p>
 
         <div class="relative space-y-4">
-          <h2 class="text-4xl font-black leading-[1.1] text-white sm:text-5xl">
-            Udah laper?
-          </h2>
-          <p class="max-w-xs text-base leading-relaxed text-white/85">
-            Pilih menu favorit dan nikmati langsung di kedai atau lewat web ordering.
-          </p>
+          <h2 class="font-[family-name:var(--font-display)] text-4xl leading-[1.1] text-white sm:text-5xl">Udah laper?</h2>
+          <p class="max-w-xs text-base leading-relaxed text-white/90">Pilih menu favorit dan nikmati langsung di kedai atau lewat web ordering.</p>
         </div>
 
-        <div class="relative flex flex-col gap-3 sm:flex-row lg:justify-end">
-          <router-link to="/menu" class="btn-yellow group">
+        <div class="relative flex flex-col gap-4 sm:flex-row lg:justify-end">
+          <router-link to="/menu" class="pop-btn pop-btn--on-dark">
             Pesan via web
-            <ArrowRight :size="16" class="transition-transform duration-200 group-hover:translate-x-1" />
+            <span class="pop-btn-dot" aria-hidden="true"><ArrowUpRight :size="15" /></span>
           </router-link>
-          <router-link to="/contact" class="btn-line">
-            Hubungi kami
-          </router-link>
+          <router-link to="/contact" class="pop-btn pop-btn--ghost">Hubungi kami</router-link>
         </div>
       </div>
     </section>
@@ -521,7 +413,7 @@ import { ref, reactive, computed, watch, onMounted, onUnmounted } from "vue"
 import {
   Coffee, Wifi, Zap, Utensils, DollarSign, Moon, Shield, Tv,
   Music, Gamepad2, Beer, BatteryCharging, Heart, Award, Smartphone,
-  Expand, X, ChevronLeft, ChevronRight, ArrowRight, Quote, Plus
+  Expand, X, ChevronLeft, ChevronRight, ArrowRight, ArrowUpRight, Quote, Plus
 } from "lucide-vue-next"
 import apiClient from "@/api/client"
 import PromoSection from "@/components/ui/PromoSection.vue"
@@ -604,13 +496,15 @@ const vBlurImg = {
   }
 }
 
+const tickerJp = ["美味しい", "最高", "乾杯", "夜ふかし", "青春"]
+
 // ── Hero ─────────────────────────────────────────────────────────────────
 const headlineLines = computed(() => {
   const lines = String(cms.value.hero_headline || "")
     .split("\n")
     .map(l => l.trim())
     .filter(Boolean)
-  return lines.map((text) => ({ text, accent: false }))
+  return lines.map((text, i) => ({ text, accent: lines.length > 1 && i === lines.length - 1 }))
 })
 
 const parallaxY = computed(() => Math.min(scrollY.value, 700) * 0.1)
@@ -919,105 +813,106 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/*
-  Palet Home
-  Charcoal #111113 (hero, gallery, CTA) · Krem #F7F5F0 (konten) · Putih #FFFFFF (kartu)
-  Merah #D92B22 (aksi utama) · Kuning #F4C542 (penanda & CTA di atas gelap)
-*/
-
 a:focus-visible,
-button:focus-visible {
-  outline: 2px solid #F4C542;
-  outline-offset: 3px;
-}
+button:focus-visible { outline: 3px solid #F4C542; outline-offset: 3px; }
 .on-cream a:focus-visible,
-.on-cream button:focus-visible { outline-color: #202024; }
+.on-cream button:focus-visible { outline-color: #111113; }
 
-/* ── Bidang krem ── */
-.on-cream { background: #F7F5F0; color: #202024; }
+.on-cream { color: #202024; }
 
-/* ── Judul section (display serif) ── */
+/* ── Judul section: Dela Gothic One (satu bobot) ── */
 .h-section,
 .h-section-dark {
   font-family: var(--font-display);
-  font-size: clamp(1.75rem, 3.4vw, 2.25rem);
-  font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: -0.015em;
+  font-weight: 400;
+  font-size: clamp(1.9rem, 4vw, 2.6rem);
+  line-height: 1.15;
+  letter-spacing: 0;
 }
-.h-section { color: #202024; }
+.h-section { color: #111113; }
 .h-section-dark { color: #F5F3EF; }
 
-.link-red {
+.link-pop {
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
   min-height: 44px;
   font-size: 0.9375rem;
-  font-weight: 700;
+  font-weight: 800;
   color: #B8201A;
-  transition: color 0.2s;
+  border-bottom: 3px solid #D92B22;
+  align-self: flex-start;
+  transition: color 0.2s, border-color 0.2s;
 }
-.link-red:hover { color: #7A1410; }
-
-/* ── Tombol ── */
-.btn-yellow,
-.btn-line,
-.btn-dark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.55rem;
-  min-height: 52px;
-  padding: 0 1.9rem;
-  border-radius: 12px;
-  font-size: 0.9375rem;
-  font-weight: 700;
-  white-space: nowrap;
-  transition: background-color 0.2s, border-color 0.2s, color 0.2s, transform 0.15s;
-}
-.btn-yellow { background: #F4C542; color: #1F1700; }
-.btn-yellow:hover { background: #FFD65C; }
-.btn-line { border: 1.5px solid rgb(255 255 255 / 0.28); color: #F5F3EF; }
-.btn-line:hover { border-color: rgb(255 255 255 / 0.6); background: rgb(255 255 255 / 0.06); }
-.btn-dark { background: #111113; color: #fff; }
-.btn-dark:hover { background: #26262B; }
-.btn-yellow:active, .btn-line:active, .btn-dark:active { transform: translateY(1px); }
+.link-pop:hover { color: #111113; border-color: #111113; }
 
 /* ── Hero ── */
-.hero { min-height: clamp(34rem, 86svh, 47rem); display: flex; align-items: center; }
+.hero { min-height: clamp(36rem, 92svh, 50rem); display: flex; align-items: center; }
 .hero > .relative { width: 100%; }
 .hero-title {
   font-family: var(--font-display);
-  font-weight: 900;
-  font-size: clamp(2.5rem, 8.5vw, 3.5rem);
+  font-weight: 400;
+  font-size: clamp(2.4rem, 8vw, 3.4rem);
   line-height: 1.12;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
-@media (min-width: 1024px) {
-  .hero-title { font-size: clamp(3rem, 4.6vw, 4rem); }
-}
+@media (min-width: 1024px) { .hero-title { font-size: clamp(3rem, 4.4vw, 4rem); } }
+.hero-accent { color: #F4C542; text-shadow: 3px 3px 0 #D92B22; }
 .hero-skel { height: clamp(2.1rem, 7vw, 3.6rem); }
 
-.hero-photo { box-shadow: 0 30px 60px -28px rgb(0 0 0 / 0.8); }
-.hero-brush-red {
-  right: -6%;
-  bottom: -8%;
-  width: 46%;
-  height: 78%;
-  opacity: 0.92;
-  transform: skewX(-14deg);
+.hero-sun {
+  position: absolute;
+  right: -8%;
+  top: 12%;
+  width: 46vw;
+  max-width: 40rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #E8473F, #D92B22 55%, #A31B15);
 }
-.hero-brush-yellow {
-  right: -3%;
+.hero-slab-red {
+  position: absolute;
+  right: -4%;
   bottom: 0;
-  width: 15%;
+  width: 30%;
   height: 34%;
-  transform: skewX(-14deg);
+  background: #D92B22;
+  clip-path: polygon(18% 0, 100% 0, 100% 100%, 0 100%);
+  opacity: 0.9;
+}
+.hero-slab-yellow {
+  position: absolute;
+  right: -2%;
+  bottom: 0;
+  width: 18%;
+  height: 26%;
+  background: #F4C542;
+  clip-path: polygon(30% 0, 100% 0, 100% 100%, 0 100%);
 }
 @media (max-width: 1023px) {
-  .hero-brush-red { right: -20%; bottom: -4%; width: 70%; height: 46%; opacity: 0.7; }
-  .hero-brush-yellow { right: -8%; width: 26%; height: 18%; }
+  .hero-sun { right: -30%; top: 38%; width: 90vw; opacity: 0.85; }
+  .hero-slab-red, .hero-slab-yellow { display: none; }
 }
+
+.hero-card-back {
+  position: absolute;
+  inset: 0;
+  margin: 0 auto;
+  max-width: 34rem;
+  border: 3px solid #111113;
+  border-radius: 28px;
+  background: #F4C542;
+  transform: translate(14px, 12px) rotate(2deg);
+}
+@media (min-width: 1024px) { .hero-card-back { margin-right: 3rem; margin-left: auto; } }
+.hero-frame {
+  border: 4px solid #fff;
+  border-radius: 28px;
+  transform: rotate(2deg);
+  box-shadow: 0 0 0 3px #111113;
+}
+.hero-badge { filter: drop-shadow(3px 3px 0 #111113); }
+.hero-badge-ring { transform-origin: 60px 60px; animation: spin-slow 22s linear infinite; }
+@keyframes spin-slow { to { transform: rotate(360deg); } }
 
 @keyframes heroIn { to { opacity: 1; transform: none; } }
 .hero-in {
@@ -1027,141 +922,110 @@ button:focus-visible {
   animation-delay: var(--d, 0ms);
 }
 
-/* ── Strip metrik ── */
-.metric-strip { box-shadow: 0 1px 2px rgb(32 32 36 / 0.04), 0 14px 34px -22px rgb(32 32 36 / 0.22); }
-.metric-num {
-  font-family: var(--font-display);
-  font-size: clamp(1.25rem, 4.4vw, 1.75rem);
-  font-weight: 700;
-  line-height: 1.15;
-  color: #202024;
-  font-variant-numeric: tabular-nums;
-}
-.metric-label { margin-top: 0.15rem; font-size: 0.8125rem; color: #66666D; }
+/* ── Metrik ── */
+.metric-num { font-family: var(--font-display); font-size: clamp(1.6rem, 4vw, 2rem); line-height: 1.15; color: inherit; }
+.metric-label { margin-top: 0.2rem; font-size: 0.875rem; font-weight: 800; color: #111113; }
 
 /* ── Kartu menu ── */
-.menu-card {
-  display: block;
-  overflow: hidden;
-  border-radius: 16px;
-  background: #fff;
-  box-shadow: 0 1px 2px rgb(32 32 36 / 0.05), 0 12px 28px -20px rgb(32 32 36 / 0.3);
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-}
-.menu-card:hover { transform: translateY(-3px); box-shadow: 0 1px 2px rgb(32 32 36 / 0.05), 0 20px 36px -20px rgb(32 32 36 / 0.38); }
-.menu-tag {
-  position: absolute;
-  left: 10px;
-  top: 10px;
-  padding: 0.25rem 0.65rem;
-  border-radius: 8px;
-  font-size: 0.75rem;
-  font-weight: 800;
-}
+.menu-card { display: block; overflow: hidden; transition: transform 0.18s ease, box-shadow 0.18s ease; }
+.menu-card:hover { transform: translate(-2px, -2px); box-shadow: 9px 9px 0 #111113; }
 .menu-add {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: #111113;
-  color: #fff;
+  width: 38px;
+  height: 38px;
+  border: 2px solid #111113;
+  border-radius: 50%;
+  background: #F4C542;
+  color: #111113;
   transition: background-color 0.2s;
 }
-.menu-card:hover .menu-add { background: #D92B22; }
+.menu-card:hover .menu-add { background: #D92B22; color: #fff; }
+
+/* ── Tentang ── */
+.about-photo {
+  border: 3px solid #111113;
+  border-radius: 28px;
+  box-shadow: 12px 12px 0 #D92B22, 12px 12px 0 3px #111113;
+}
 
 /* ── Bento ── */
-.bento-feature { background: #111113; }
-.bento-brush {
-  right: -12%;
-  bottom: -18%;
-  width: 62%;
-  height: 70%;
-  opacity: 0.9;
-  transform: skewX(-14deg);
+.bento-feature {
+  border: 2px solid #111113;
+  border-radius: 28px;
+  background-color: #111113;
+  box-shadow: 8px 8px 0 #F4C542, 8px 8px 0 2px #111113;
 }
-.bento-tile { box-shadow: 0 1px 2px rgb(32 32 36 / 0.05), 0 12px 28px -22px rgb(32 32 36 / 0.3); }
+.bento-slab {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 58%;
+  height: 52%;
+  background: #D92B22;
+  clip-path: polygon(22% 0, 100% 0, 100% 100%, 0 100%);
+  border-bottom-right-radius: 26px;
+}
+.icon-tile-yellow,
+.icon-tile-red {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #111113;
+  border-radius: 14px;
+  box-shadow: 2px 2px 0 #fff;
+}
+.icon-tile-yellow { width: 52px; height: 52px; background: #F4C542; color: #111113; }
+.icon-tile-red { width: 42px; height: 42px; background: #D92B22; color: #fff; box-shadow: 2px 2px 0 #111113; }
 
-/* ── Skeleton ── */
-.skeleton,
-.skeleton-light {
-  background-size: 200% 100%;
-  animation: shimmer 1.4s ease-in-out infinite;
-}
-.skeleton {
-  background-image: linear-gradient(100deg, rgb(255 255 255 / 0.04) 30%, rgb(255 255 255 / 0.1) 50%, rgb(255 255 255 / 0.04) 70%);
-}
-.skeleton-light {
-  background-image: linear-gradient(100deg, #ECE8DF 30%, #F6F3EC 50%, #ECE8DF 70%);
-}
-@keyframes shimmer {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
+/* ── Gallery ── */
+.gallery-tile { border: 2px solid rgb(255 255 255 / 0.18); border-radius: 20px; transition: border-color 0.2s, transform 0.18s; }
+.gallery-tile:hover { border-color: #F4C542; }
 
 /* ── CTA ── */
-.cta { background: linear-gradient(135deg, #B8201A 0%, #D92B22 60%, #A31B15 100%); }
-.cta-brush {
-  right: -4%;
-  top: -12%;
-  width: 20%;
-  height: 130%;
-  opacity: 0.9;
-  transform: skewX(-14deg);
+.cta {
+  border: 3px solid #fff;
+  border-radius: 28px;
+  background-color: #D92B22;
+  background-image: linear-gradient(120deg, #B8201A, #D92B22 60%);
+  box-shadow: 9px 9px 0 #F4C542, 9px 9px 0 3px #111113;
 }
-@media (max-width: 1023px) {
-  .cta-brush { right: -10%; width: 34%; opacity: 0.6; }
+.cta-sun {
+  position: absolute;
+  right: -5rem;
+  top: -5rem;
+  width: 17rem;
+  height: 17rem;
+  border-radius: 50%;
+  background: #F4C542;
+  border: 3px solid #111113;
 }
 
-/* ── Marquee ── */
-@keyframes marquee {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-.animate-marquee { width: max-content; animation: marquee 70s linear infinite; }
+/* ── Skeleton ── */
+.skeleton, .skeleton-light { background-size: 200% 100%; animation: shimmer 1.4s ease-in-out infinite; }
+.skeleton { background-image: linear-gradient(100deg, rgb(255 255 255 / 0.04) 30%, rgb(255 255 255 / 0.1) 50%, rgb(255 255 255 / 0.04) 70%); }
+.skeleton-light { background-image: linear-gradient(100deg, #ECE8DF 30%, #F6F3EC 50%, #ECE8DF 70%); }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* ── Ticker ── */
+@keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+.animate-marquee { width: max-content; animation: marquee 60s linear infinite; }
 .marquee-wrap:hover .animate-marquee { animation-play-state: paused; }
-.marquee-wrap { position: relative; }
-.marquee-wrap::before,
-.marquee-wrap::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 12%;
-  z-index: 1;
-  pointer-events: none;
-}
-.marquee-wrap::before { left: 0;  background: linear-gradient(90deg,  #111113, transparent); }
-.marquee-wrap::after  { right: 0; background: linear-gradient(270deg, #111113, transparent); }
 
 /* ── Lightbox ── */
-.lightbox-fade-enter-active,
-.lightbox-fade-leave-active { transition: opacity 0.25s ease; }
-.lightbox-fade-enter-from,
-.lightbox-fade-leave-to { opacity: 0; }
-@keyframes lbIn {
-  from { opacity: 0; transform: scale(0.98); }
-  to   { opacity: 1; transform: scale(1); }
-}
+.lightbox-fade-enter-active, .lightbox-fade-leave-active { transition: opacity 0.25s ease; }
+.lightbox-fade-enter-from, .lightbox-fade-leave-to { opacity: 0; }
+@keyframes lbIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
 .lb-img { animation: lbIn 0.3s ease; }
 
-/* ── Reveal (hanya 2 section, bukan semua) ── */
-.reveal {
-  opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-}
+/* ── Reveal ── */
+.reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
 .reveal-visible { opacity: 1; transform: none; }
 
-/* ── Gambar: fade saat termuat ── */
-.img-blur {
-  opacity: 0;
-  transition: opacity 0.5s ease;
-}
+.img-blur { opacity: 0; transition: opacity 0.5s ease; }
 .img-blur.img-loaded { opacity: 1; }
-.hero img.img-blur.img-loaded { opacity: 1; }
 
 .no-scrollbar { scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -1169,7 +1033,7 @@ button:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .reveal, .img-blur { transition: none; opacity: 1; transform: none; }
   .hero-in { animation: none; opacity: 1; transform: none; }
-  .animate-marquee, .lb-img, .skeleton, .skeleton-light, .animate-ping { animation: none; }
+  .animate-marquee, .hero-badge-ring, .lb-img, .skeleton, .skeleton-light, .animate-ping { animation: none; }
   .menu-card, .menu-card:hover { transition: none; transform: none; }
 }
 </style>

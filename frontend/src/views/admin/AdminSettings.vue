@@ -585,7 +585,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', onBeforeUnload)
 .set-code {
   padding: 1px 6px; border-radius: 4px;
   background: rgb(var(--ink) / 0.07); color: var(--text-2);
-  font-family: var(--font-mono); font-size: 0.72rem;
+  font-family: var(--font-mono); font-size: 0.75rem;
 }
 .set-preview {
   display: flex; align-items: center; gap: 0.75rem;
@@ -593,7 +593,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', onBeforeUnload)
   border: 1px solid var(--border); border-radius: var(--r-md);
   background: rgb(var(--ink) / 0.03);
 }
-.set-preview-label { flex-shrink: 0; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); }
+.set-preview-label { flex-shrink: 0; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); }
 .set-preview-link { min-width: 0; font-size: 0.78rem; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .set-preview-link strong { color: var(--green-soft); font-weight: 600; }
 
@@ -637,14 +637,14 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', onBeforeUnload)
 }
 .hours-day { font-size: 0.875rem; font-weight: 700; color: var(--text); }
 .hours-toggle { display: flex; align-items: center; gap: 0.6rem; }
-.hours-state { font-size: 0.72rem; font-weight: 600; color: var(--text-faint); }
+.hours-state { font-size: 0.75rem; font-weight: 600; color: var(--text-faint); }
 .hours-state.is-on { color: var(--green-soft); }
 .hours-off { font-size: 0.78rem; font-style: italic; color: var(--text-faint); }
 .hours-error { padding: 0 0 0.6rem 3.6rem; }
 
 .time-fields { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 0.5rem 1.25rem; }
 .time-group { display: flex; flex-direction: column; gap: 0.2rem; }
-.time-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); }
+.time-label { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); }
 .time-inputs { display: flex; align-items: center; gap: 0.25rem; }
 .time-sep { font-weight: 700; color: var(--text-faint); }
 .time-select {

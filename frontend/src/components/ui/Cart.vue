@@ -8,15 +8,16 @@
     />
 
     <!-- Panel -->
-    <div class="drawer relative flex h-full w-full max-w-md flex-col border-l border-white/[0.08] sm:rounded-l-[2rem]">
+    <div class="drawer relative flex h-full w-full max-w-md flex-col sm:rounded-l-[2rem]">
 
       <!-- HEADER -->
-      <div class="flex items-center justify-between border-b border-white/[0.07] px-6 py-5">
+      <div class="flex items-center justify-between border-b-2 border-dashed border-white/15 px-6 py-5">
         <div class="flex items-center gap-3">
-          <h2 class="font-sora text-xl font-semibold tracking-tight text-[#FAFAFA]">Keranjang</h2>
+          <span class="hanko" aria-hidden="true">買</span>
+          <h2 class="font-sora text-xl text-[#FAFAFA]">Keranjang</h2>
           <span
             v-if="!cartStore.isEmpty"
-            class="rounded-full border border-[#F4C542]/25 bg-[#F4C542]/10 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-[#F4C542]"
+            class="sticker !rotate-0 !shadow-none tabular-nums"
           >
             {{ Object.values(cartStore.cart).length + cartStore.bundleLines.length }} item
           </span>
@@ -46,7 +47,7 @@
           <router-link
             to="/menu"
             @click="$emit('close')"
-            class="mt-2 inline-flex items-center justify-center rounded-full bg-[#D92B22] px-7 py-3 text-sm font-semibold text-white transition-all duration-150 hover:bg-[#B8201A]"
+            class="pop-btn mt-2"
           >
             Lihat menu
           </router-link>
@@ -190,12 +191,12 @@
       </div>
 
       <!-- FOOTER TOTAL + CTA -->
-      <div v-if="!cartStore.isEmpty" class="footer-safe border-t border-white/[0.07] bg-black/25 px-6 pt-5">
+      <div v-if="!cartStore.isEmpty" class="footer-safe border-t-2 border-dashed border-white/15 bg-black/25 px-6 pt-5">
         <!-- Total row -->
         <div class="mb-5 flex items-end justify-between gap-4">
           <div class="space-y-1">
             <p class="text-sm text-[#B8B8C0]">Total</p>
-            <span class="block font-sora text-3xl font-semibold leading-none tracking-tight text-[#FAFAFA]">
+            <span class="block font-[family-name:var(--font-display)] text-3xl leading-none text-[#F4C542]">
               {{ formatPrice(cartStore.totalPrice) }}
             </span>
           </div>
@@ -225,13 +226,13 @@
           v-if="isStoreOpen"
           type="button"
           :disabled="navigating"
-          class="cta-btn flex min-h-[56px] w-full items-center justify-center gap-2 rounded-full bg-[#D92B22] text-base font-semibold text-white transition-all duration-200 hover:bg-[#B8201A] hover:shadow-[0_10px_28px_-10px_rgba(217,43,34,0.6)] active:scale-[0.98] disabled:opacity-70"
+          class="cta-btn pop-btn !min-h-[58px] w-full !text-base disabled:opacity-70"
           @click="goCheckout"
         >
           <span v-if="navigating" class="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden="true"></span>
           <template v-else>
             <span>Pesan sekarang</span>
-            <ArrowRight :size="18" />
+            <span class="pop-btn-dot" aria-hidden="true"><ArrowRight :size="15" /></span>
           </template>
         </button>
         <button
@@ -292,13 +293,15 @@ const goCheckout = async () => {
 /* Palet: Surface #1C1C1F · Washi #FAFAFA · Crimson #D92B22 · Champagne #F4C542 */
 
 .drawer {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.008)), #17171A;
+  background: #17171A;
+  border-left: 3px solid #F4C542;
   box-shadow: -40px 0 80px -20px rgba(0, 0, 0, 0.6);
 }
 
 .item-card {
-  border-radius: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 1.25rem;
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 4px 4px 0 rgb(0 0 0 / 0.5);
   background: #1C1C1F;
   padding: 1rem;
 }
@@ -308,7 +311,7 @@ const goCheckout = async () => {
   width: 100%;
   height: 2.5rem;
   border-radius: 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.12);
   background: #17171A;
   padding: 0 0.875rem;
   font-size: 1rem;

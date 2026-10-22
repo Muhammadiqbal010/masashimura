@@ -1,11 +1,12 @@
 <template>
   <div class="page relative min-h-screen bg-[#111113] font-inter text-[#FAFAFA]">
     <!-- Atmosfer latar -->
-    <div class="page-glow pointer-events-none absolute inset-x-0 top-0 h-[480px]" aria-hidden="true"></div>
+    <div class="pattern-seigaiha pointer-events-none absolute inset-x-0 top-0 h-[420px] [mask-image:linear-gradient(to_bottom,black,transparent)]" aria-hidden="true"></div>
 
     <!-- ── HEADER ──────────────────────────────────────────────────────────── -->
     <header class="relative mx-auto max-w-7xl px-5 pb-8 pt-28 sm:px-8 sm:pb-10 sm:pt-32 lg:px-10">
-      <h1 class="font-sora text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
+      <p class="eyebrow-jp eyebrow-jp--yellow mb-4"><span class="hanko" aria-hidden="true">品</span>Menu</p>
+      <h1 class="font-sora text-4xl leading-[1.1] sm:text-5xl lg:text-6xl">
         Pilih menu
       </h1>
       <p class="mt-4 max-w-md text-base leading-relaxed text-[#B8B8C0] sm:text-lg">
@@ -15,7 +16,7 @@
     </header>
 
     <!-- ── STICKY SEARCH + FILTER BAR ─────────────────────────────────────────── -->
-    <div class="sticky top-[60px] z-30 bg-[#111113]/80 backdrop-blur-xl sm:top-[68px]">
+    <div class="sticky top-[76px] z-30 bg-[#111113]/85 backdrop-blur-xl sm:top-[84px]">
       <div class="mx-auto max-w-7xl space-y-3 px-5 py-3 sm:px-8 sm:py-4 lg:px-10">
 
         <!-- Search + Sort -->
@@ -30,7 +31,7 @@
               autocomplete="off"
               placeholder="Cari menu favoritmu"
               aria-label="Cari menu"
-              class="h-12 w-full rounded-xl border border-white/10 bg-[#1C1C1F] pl-11 pr-11 text-base text-[#FAFAFA] transition-colors placeholder:text-[#9A9AA3] focus:border-[#F4C542]/60 focus:outline-none sm:text-sm"
+              class="h-12 w-full rounded-2xl border-2 border-white/15 bg-[#1C1C1F] pl-11 pr-11 text-base text-[#FAFAFA] transition-colors placeholder:text-[#9A9AA3] focus:border-[#F4C542] focus:outline-none sm:text-sm"
             />
             <button
               v-if="searchQuery"
@@ -47,7 +48,7 @@
             <select
               v-model="sortBy"
               aria-label="Urutkan menu"
-              class="h-12 cursor-pointer appearance-none rounded-xl border border-white/10 bg-[#1C1C1F] pl-4 pr-10 text-base font-medium text-[#FAFAFA] transition-colors focus:border-[#F4C542]/60 focus:outline-none sm:text-sm"
+              class="h-12 cursor-pointer appearance-none rounded-2xl border-2 border-white/15 bg-[#1C1C1F] pl-4 pr-10 text-base font-medium text-[#FAFAFA] transition-colors focus:border-[#F4C542] focus:outline-none sm:text-sm"
             >
               <option value="default">Urutkan</option>
               <option value="price_asc">Termurah</option>
@@ -83,10 +84,10 @@
                 :title="cat.value === FILTER_FAVORITE ? 'Favorit tersimpan di HP ini' : undefined"
                 @click="selectCategoryWithScroll(cat.value)"
                 :class="[
-                  'inline-flex min-h-[40px] flex-shrink-0 items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-medium transition-all duration-200',
+                  'inline-flex min-h-[44px] flex-shrink-0 items-center gap-1.5 rounded-full border-2 px-4 py-2 text-sm font-bold transition-all duration-200',
                   selectedCategory === cat.value
-                    ? 'border-[#D92B22] bg-[#D92B22] text-white'
-                    : 'border-white/10 bg-[#1C1C1F] text-[#B8B8C0] hover:border-white/25 hover:text-[#FAFAFA]'
+                    ? 'border-[#F4C542] bg-[#F4C542] text-[#111113]'
+                    : 'border-white/15 bg-transparent text-[#D2D2D8] hover:border-white/50 hover:text-white'
                 ]"
               >
                 <ThumbsUp v-if="cat.value === FILTER_RECOMMENDED" :size="13" />
@@ -94,7 +95,7 @@
                 {{ cat.label }}
                 <span
                   class="rounded-full px-1.5 text-xs tabular-nums"
-                  :class="selectedCategory === cat.value ? 'bg-white/20 text-white' : 'bg-white/[0.06] text-[#9A9AA3]'"
+                  :class="selectedCategory === cat.value ? 'bg-[#111113] text-[#F4C542]' : 'bg-white/[0.08] text-[#B8B8C0]'"
                 >{{ getCategoryCount(cat.value) }}</span>
               </button>
             </template>
@@ -240,7 +241,7 @@
         <div
           v-for="menu in filteredMenus"
           :key="menu.id"
-          class="menu-card group relative flex flex-col overflow-hidden rounded-3xl border border-white/[0.07] transition-all duration-300 hover:border-[#F4C542]/35 sm:hover:-translate-y-1 sm:hover:shadow-[0_28px_48px_-30px_rgba(217,43,34,0.5)]"
+          class="menu-card group relative flex flex-col overflow-hidden"
         >
           <!-- Foto 16:9 (klik → detail) -->
           <button
@@ -269,25 +270,25 @@
             <div class="absolute left-3 top-3 z-10 flex flex-col items-start gap-1.5">
               <div
                 v-if="!menu.is_available"
-                class="rounded-full border border-white/10 bg-black/70 px-2.5 py-1 backdrop-blur-md"
+                class="sticker !bg-[#232327] !text-white !shadow-none"
               >
-                <span class="text-[11px] font-semibold text-[#FAFAFA]">Habis</span>
+                <span class="text-xs font-extrabold">Habis</span>
               </div>
               <div
                 v-if="menu.is_recommended"
-                class="flex items-center gap-1 rounded-full bg-[#D92B22] px-2.5 py-1 text-white"
+                class="sticker sticker--red inline-flex items-center gap-1"
                 title="Rekomendasi"
               >
                 <ThumbsUp :size="11" />
-                <span class="text-[11px] font-semibold">Rekomendasi</span>
+                <span class="text-xs font-extrabold">Rekomendasi</span>
               </div>
               <div
                 v-if="bestSellerIds.has(menu.id)"
-                class="flex items-center gap-1 rounded-full bg-[#F4C542] px-2.5 py-1 text-[#2A1F00]"
+                class="sticker inline-flex items-center gap-1"
                 title="Terlaris"
               >
                 <Flame :size="11" />
-                <span class="text-[11px] font-semibold">Terlaris</span>
+                <span class="text-xs font-extrabold">Terlaris</span>
               </div>
             </div>
           </button>
@@ -297,10 +298,10 @@
             type="button"
             :aria-pressed="isFavorite(menu.id)"
             :aria-label="(isFavorite(menu.id) ? 'Hapus dari favorit: ' : 'Simpan ke favorit: ') + menu.name"
-            class="absolute right-3 top-3 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/55 backdrop-blur-md transition-colors hover:bg-black/80"
+            class="absolute right-3 top-3 z-20 flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#111113] bg-white transition-colors hover:bg-[#F4C542]"
             @click.stop="toggleFavorite(menu.id)"
           >
-            <Heart :size="16" :class="isFavorite(menu.id) ? 'fill-[#D92B22] text-[#D92B22]' : 'text-white/85'" />
+            <Heart :size="16" :class="isFavorite(menu.id) ? 'fill-[#D92B22] text-[#D92B22]' : 'text-[#111113]'" />
           </button>
 
           <!-- Info -->
@@ -317,7 +318,7 @@
                 <span class="block text-xs font-medium text-[#F4C542]">
                   {{ menu.category_name }}
                 </span>
-                <h3 class="line-clamp-2 font-sora text-lg font-semibold leading-snug text-[#FAFAFA] transition-colors group-hover:text-white">
+                <h3 class="line-clamp-2 text-lg font-extrabold leading-snug text-[#FAFAFA]">
                   {{ menu.name }}
                 </h3>
                 <p class="line-clamp-2 text-sm leading-relaxed text-[#B8B8C0]">
@@ -335,15 +336,15 @@
             </div>
 
             <!-- Harga + tombol -->
-            <div class="mt-auto flex items-center justify-between gap-3 border-t border-white/[0.07] pt-4">
-              <span class="font-sora text-lg font-semibold leading-none tracking-tight text-[#FAFAFA]">
+            <div class="mt-auto flex items-center justify-between gap-3 border-t-2 border-dashed border-white/15 pt-4">
+              <span class="text-lg font-extrabold leading-none tabular-nums text-[#F4C542]">
                 {{ formatPrice(menu.price_web) }}
               </span>
 
               <!-- Stepper -->
               <div
                 v-if="cartStore.quantityOfMenu(menu.id) > 0"
-                class="flex items-center rounded-full border border-white/10 bg-white/[0.03] p-1"
+                class="flex items-center rounded-full border-2 border-white/20 bg-white/[0.03] p-1"
               >
                 <button
                   type="button"
@@ -360,7 +361,7 @@
                   type="button"
                   :aria-label="'Tambah ' + menu.name"
                   :disabled="!menu.is_available || !isStoreOpen"
-                  class="flex h-9 w-9 items-center justify-center rounded-full bg-[#D92B22] text-white transition-colors hover:bg-[#B8201A] disabled:opacity-40"
+                  class="flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#111113] bg-[#D92B22] text-white transition-colors hover:bg-[#B8201A] disabled:opacity-40"
                   @click="requestAdd(menu)"
                 >
                   <Plus :size="15" />
@@ -374,10 +375,10 @@
                 :disabled="!menu.is_available || !isStoreOpen"
                 :aria-label="'Tambah ' + menu.name + ' ke keranjang'"
                 :class="[
-                  'flex min-h-[44px] items-center justify-center gap-1.5 rounded-full px-5 text-sm font-semibold transition-all duration-200',
+                  'add-btn flex min-h-[44px] items-center justify-center gap-1.5 rounded-full px-5 text-sm font-extrabold',
                   menu.is_available && isStoreOpen
-                    ? 'bg-[#D92B22] text-white hover:bg-[#B8201A] hover:shadow-[0_8px_24px_-8px_rgba(217,43,34,0.6)] active:scale-95'
-                    : 'cursor-not-allowed border border-white/5 bg-[#232327] text-[#9A9AA3]'
+                    ? 'add-btn--on'
+                    : 'cursor-not-allowed border-2 border-white/10 bg-[#232327] text-[#9A9AA3]'
                 ]"
               >
                 <Plus :size="15" />
@@ -810,21 +811,31 @@ onUnmounted(() => clearTimeout(bumpTimer))
   Crimson #D92B22 (aksi) · Champagne #F4C542 (detail premium)
 */
 
-.page-glow {
-  background:
-    radial-gradient(60% 70% at 15% 0%, rgba(217,43,34, 0.09), transparent 70%),
-    radial-gradient(40% 50% at 90% 10%, rgba(244,197,66, 0.03), transparent 70%);
-}
-
+/* Kartu menu: border tegas + bayangan keras, naik & berwarna kuning saat hover */
 .menu-card {
   background: #1C1C1F;
+  border: 2px solid rgb(255 255 255 / 0.16);
+  border-radius: 24px;
+  box-shadow: 5px 5px 0 rgb(0 0 0 / 0.55);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
+@media (hover: hover) {
+  .menu-card:hover { transform: translate(-2px, -2px); border-color: #F4C542; box-shadow: 8px 8px 0 #F4C542; }
+}
+
+/* Tombol "Tambah" keycap */
+.add-btn { transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.15s; }
+.add-btn--on { background: #D92B22; color: #fff; border: 2px solid #111113; box-shadow: 0 3px 0 #7A1410; }
+.add-btn--on:hover { background: #E8362D; }
+.add-btn--on:active { transform: translateY(3px); box-shadow: 0 0 0 #7A1410; }
 
 .cart-bar {
   background: #D92B22;
+  border: 2px solid #111113;
+  box-shadow: 0 5px 0 #7A1410, 0 16px 30px -12px rgb(0 0 0 / 0.6);
 }
 .cart-bar:hover {
-  filter: brightness(1.08);
+  filter: brightness(1.06);
 }
 
 .scrollbar-none::-webkit-scrollbar { display: none; }
@@ -853,5 +864,6 @@ select:focus-visible {
 
 @media (prefers-reduced-motion: reduce) {
   .fab-bump { animation: none; }
+  .menu-card, .add-btn { transition: none; }
 }
 </style>

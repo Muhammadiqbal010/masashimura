@@ -75,7 +75,7 @@
                 >
                   <span class="text-[11px] font-semibold text-[#FAFAFA]">Habis</span>
                 </div>
-                <div v-if="menu.is_recommended" class="flex items-center gap-1.5 rounded-full bg-[#D92B22] px-2.5 py-1 text-white">
+                <div v-if="menu.is_recommended" class="sticker sticker--red inline-flex items-center gap-1.5">
                   <ThumbsUp :size="11" />
                   <span class="text-[11px] font-semibold">Rekomendasi</span>
                 </div>
@@ -142,9 +142,9 @@
                 @click="handleAdd"
                 :disabled="!menu.is_available || !isStoreOpen"
                 :class="[
-                  'flex min-h-[48px] flex-shrink-0 items-center gap-2 rounded-full px-6 text-sm font-semibold transition-all duration-200',
+                  'add-btn flex min-h-[50px] flex-shrink-0 items-center gap-2 rounded-full px-6 text-sm font-extrabold',
                   menu.is_available && isStoreOpen
-                    ? 'bg-[#D92B22] text-white hover:bg-[#B8201A] hover:shadow-[0_8px_24px_-8px_rgba(217,43,34,0.6)] active:scale-95'
+                    ? 'add-btn--on'
                     : 'cursor-not-allowed border border-white/5 bg-[#232327] text-[#9A9AA3]'
                 ]"
               >
@@ -199,7 +199,8 @@ const handleAdd = () => {
 
 .modal-sheet {
   background: #1C1C1F;
-  box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.7);
+  border: 3px solid #F4C542;
+  box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.7), 8px 8px 0 rgb(0 0 0 / 0.5);
 }
 
 .icon-btn {
@@ -209,14 +210,21 @@ const handleAdd = () => {
   align-items: center;
   justify-content: center;
   border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(0, 0, 0, 0.55);
+  border: 2px solid #111113;
+  background: #fff;
+  color: #111113;
   backdrop-filter: blur(12px);
   transition: background-color 0.2s ease;
 }
 .icon-btn:hover {
-  background: rgba(0, 0, 0, 0.8);
+  background: #F4C542;
 }
+
+/* Tombol tambah keycap */
+.add-btn { transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.15s; }
+.add-btn--on { background: #D92B22; color: #fff; border: 2px solid #111113; box-shadow: 0 3px 0 #7A1410; }
+.add-btn--on:hover { background: #E8362D; }
+.add-btn--on:active { transform: translateY(3px); box-shadow: 0 0 0 #7A1410; }
 
 /* Footer aman dari home-indicator di HP */
 .footer-safe {

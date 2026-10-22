@@ -1561,7 +1561,7 @@ const confirmDelete = async () => {
 }
 .ao-stat-label { font-size: 0.7rem; font-weight: 600; color: var(--text-dim); }
 .ao-stat-value { font-family: var(--font-mono); font-size: 1.05rem; font-weight: 800; color: var(--text); overflow-wrap: anywhere; }
-.ao-stat-hint { font-size: 0.72rem; color: var(--text-faint); }
+.ao-stat-hint { font-size: 0.75rem; color: var(--text-faint); }
 .ao-stat.is-alert { border-color: var(--line-accent); background: var(--tint-accent); }
 .ao-stat.is-alert .ao-stat-value { color: var(--red-soft); }
 .ao-stat--cash { box-shadow: inset 3px 0 0 #eab308; }
@@ -1598,7 +1598,7 @@ const confirmDelete = async () => {
 .ao-count {
   min-width: 1.25rem; padding: 0 0.35rem; border-radius: 99px;
   background: rgb(var(--ink) / 0.1);
-  font-family: var(--font-mono); font-size: 0.72rem; line-height: 1.35rem; text-align: center;
+  font-family: var(--font-mono); font-size: 0.75rem; line-height: 1.35rem; text-align: center;
 }
 .adm-seg-btn[aria-pressed='true'] .ao-count { background: rgb(255 255 255 / 0.22); }
 .ao-count.is-alert,
@@ -1637,7 +1637,7 @@ const confirmDelete = async () => {
 .ao-head {
   padding-block: 0.65rem;
   border-bottom: 1px solid var(--border);
-  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
   color: var(--text-faint);
 }
 .ao-head .ao-a-bill { text-align: right; }
@@ -1650,7 +1650,7 @@ const confirmDelete = async () => {
 .ao-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; background: var(--surface-hover); }
 
 .ao-id { font-family: var(--font-mono); font-weight: 700; color: var(--accent-text); white-space: nowrap; }
-.ao-new-tag { display: inline-block; margin-left: 0.4rem; padding: 0.05rem 0.4rem; border-radius: 99px; background: var(--green); color: #fff; font-family: var(--font-body); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; vertical-align: middle; }
+.ao-new-tag { display: inline-block; margin-left: 0.4rem; padding: 0.05rem 0.4rem; border-radius: 99px; background: var(--green); color: #fff; font-family: var(--font-body); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; vertical-align: middle; }
 
 /* Belum lunas: disorot; makin lama makin tegas */
 .ao-row--unpaid { background: var(--tint-accent); box-shadow: inset 3px 0 0 var(--accent); }
@@ -1668,14 +1668,14 @@ const confirmDelete = async () => {
 /* Customer */
 .ao-cust-name { display: block; font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
 .ao-cust-phone { display: block; font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-faint); }
-.ao-guest { padding-block: 0.1rem; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.ao-guest { padding-block: 0.1rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; }
 
 /* Menu */
 .ao-items { display: flex; flex-direction: column; gap: 0.15rem; margin: 0; padding: 0; list-style: none; }
 .ao-items li { display: flex; gap: 0.4rem; font-size: 0.8rem; line-height: 1.35; min-width: 0; }
 .ao-items-qty { flex-shrink: 0; font-family: var(--font-mono); font-weight: 700; color: var(--accent-text); }
 .ao-items-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
-.ao-items-more { display: inline-block; margin-top: 0.25rem; padding: 0.05rem 0.5rem; border-radius: 99px; background: rgb(var(--ink) / 0.08); font-size: 0.72rem; font-weight: 600; color: var(--text-dim); }
+.ao-items-more { display: inline-block; margin-top: 0.25rem; padding: 0.05rem 0.5rem; border-radius: 99px; background: rgb(var(--ink) / 0.08); font-size: 0.75rem; font-weight: 600; color: var(--text-dim); }
 .ao-items-empty { color: var(--text-faint); font-size: 0.78rem; }
 
 /* Tagihan */
@@ -1700,9 +1700,9 @@ html[data-admin-theme='light'] .ao-method--qris { color: #1d4ed8; background: rg
 
 /* Waktu */
 .ao-time { display: flex; flex-direction: column; align-items: center; font-family: var(--font-mono); color: var(--text-dim); white-space: nowrap; }
-.ao-age { margin-top: 2px; font-family: var(--font-body); font-size: 0.72rem; color: var(--text-dim); }
+.ao-age { margin-top: 2px; font-family: var(--font-body); font-size: 0.75rem; color: var(--text-dim); }
 .ao-age.is-old { font-weight: 700; color: var(--red-soft); }
-.ao-late { margin-top: 2px; font-family: var(--font-body); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--amber-soft); }
+.ao-late { margin-top: 2px; font-family: var(--font-body); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--amber-soft); }
 
 /* Aksi (desktop): satu baris, rata kanan, tidak pernah turun baris */
 .ao-actions { display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-end; gap: 0.4rem; min-width: 0; }
@@ -1736,7 +1736,7 @@ html[data-admin-theme='light'] .ao-method--qris { color: #1d4ed8; background: rg
 
   /* Baris 1: #order · nama · jam (+ "Input susulan" kecil di bawah jam) */
   .ao-a-time { align-items: flex-end; gap: 0.1rem; text-align: right; }
-  .ao-age, .ao-late { margin-top: 0; font-size: 0.68rem; line-height: 1.2; }
+  .ao-age, .ao-late { margin-top: 0; font-size: 0.75rem; line-height: 1.2; }
   .ao-cust-name { font-size: 0.9rem; }
 
   /* Baris 2: menu + tombol hapus sejajar dengan nama item pertama */
@@ -1761,7 +1761,7 @@ html[data-admin-theme='light'] .ao-method--qris { color: #1d4ed8; background: rg
 /* ── Footer modal struk ──────────────────────────────────────────── */
 .ao-foot { display: flex; align-items: center; flex-wrap: wrap; gap: 0.6rem; width: 100%; }
 .ao-paper { display: flex; align-items: center; gap: 0.5rem; }
-.ao-paper-label { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); }
+.ao-paper-label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); }
 .ao-foot-actions { display: flex; gap: 0.5rem; margin-left: auto; }
 @media (max-width: 560px) {
   .ao-paper { width: 100%; justify-content: space-between; }
@@ -1777,20 +1777,20 @@ html[data-admin-theme='light'] .ao-method--qris { color: #1d4ed8; background: rg
 .rcpt-head { text-align: center; }
 .rcpt-logo { display: block; height: 50px; margin: 0 auto 0.5rem; object-fit: contain; }
 :global(html[data-admin-theme='light']) .rcpt-logo { filter: drop-shadow(0 0 1px rgb(24 24 27 / 0.55)) drop-shadow(0 1px 1px rgb(24 24 27 / 0.2)); }
-.rcpt-address { margin: 0; font-size: 0.72rem; color: var(--text-faint); }
+.rcpt-address { margin: 0; font-size: 0.75rem; color: var(--text-faint); }
 .rcpt-div { margin: 0.85rem 0; border: 0; border-top: 1px dashed var(--border-strong); }
 .rcpt-rows { display: flex; flex-direction: column; gap: 0.25rem; }
 .rcpt-row { display: flex; justify-content: space-between; gap: 1rem; }
 .rcpt-row > :last-child { text-align: right; }
 .rcpt-row b { color: var(--text); font-weight: 600; }
 .rcpt-copy { cursor: copy; text-decoration: underline dotted; text-underline-offset: 3px; }
-.rcpt-heading { margin: 0 0 0.6rem; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); }
+.rcpt-heading { margin: 0 0 0.6rem; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); }
 .rcpt-item { margin-bottom: 0.5rem; }
 .rcpt-item-main { display: flex; gap: 0.4rem; }
 .rcpt-qty { min-width: 1.8rem; color: var(--text-faint); }
 .rcpt-name { flex: 1; color: var(--text); }
 .rcpt-sub { font-weight: 600; }
-.rcpt-note { padding-left: 2.2rem; font-size: 0.72rem; font-style: italic; color: var(--amber-soft); }
+.rcpt-note { padding-left: 2.2rem; font-size: 0.75rem; font-style: italic; color: var(--amber-soft); }
 .rcpt-discount { color: var(--red-soft); }
 .rcpt-final { margin-top: 0.25rem; padding-top: 0.45rem; border-top: 1px dashed var(--border-strong); font-size: 0.95rem; font-weight: 800; color: var(--text); }
 .rcpt-final > :last-child { color: var(--accent-text); }
@@ -1820,7 +1820,7 @@ html[data-admin-theme='light'] .ao-method--qris { color: #1d4ed8; background: rg
 .ao-oi-price { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-dim); white-space: nowrap; }
 
 .ao-total { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.8rem 1rem; border: 1px solid var(--line-accent); border-radius: var(--r-md); background: var(--tint-accent); }
-.ao-total span { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); }
+.ao-total span { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); }
 .ao-total strong { font-family: var(--font-mono); font-size: 1.2rem; font-weight: 800; color: var(--accent-text); }
 
 .ao-payrow { display: flex; align-items: center; gap: 0.5rem; }

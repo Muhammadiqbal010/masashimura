@@ -615,12 +615,12 @@ onMounted(() => {
   flex-wrap: wrap;
 }
 .lc-eyebrow {
-  font-family: 'Manrope', system-ui, sans-serif;
-  font-size: 0.72rem; letter-spacing: -0.01em; color: var(--accent-text);
+  font-family: var(--font-ui);
+  font-size: 0.75rem; letter-spacing: -0.01em; color: var(--accent-text);
   margin: 0 0 0.3rem;
 }
 .lc-title {
-  font-family: 'Manrope', system-ui, sans-serif;
+  font-family: var(--font-ui);
   font-size: 1.75rem; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 0.3rem;
 }
 .lc-subtitle { font-size: 0.7rem; color: var(--text-faint); margin: 0; }
@@ -631,7 +631,7 @@ onMounted(() => {
   background: rgb(var(--ink) / 0.04);
   border: 1px solid rgb(var(--ink) / 0.08);
   border-radius: 10px; color: var(--text-dim);
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
+  font-family: var(--font-ui); font-size: 0.75rem;
   letter-spacing: -0.01em;
   cursor: pointer; transition: all 0.15s;
 }
@@ -661,7 +661,7 @@ onMounted(() => {
 
 .stat-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.65rem; }
 .stat-label {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
+  font-family: var(--font-ui); font-size: 0.75rem;
   letter-spacing: -0.01em;
   color: var(--text-faint);
 }
@@ -676,7 +676,7 @@ onMounted(() => {
 }
 .val-green { color: var(--green-soft); }
 .val-amber { color: var(--amber-soft); }
-.stat-note { font-size: 0.72rem; color: var(--text-faint); }
+.stat-note { font-size: 0.75rem; color: var(--text-faint); }
 
 /* ── Loading ─────────────────────────────────────────────────────── */
 .loading-state {
@@ -684,7 +684,7 @@ onMounted(() => {
   justify-content: center; gap: 1rem; padding: 5rem 2rem;
   background: var(--surface); border: 1px solid rgb(var(--ink) / 0.05);
   border-radius: 16px;
-  color: var(--text-faint); font-family: 'Manrope', system-ui, sans-serif;
+  color: var(--text-faint); font-family: var(--font-ui);
   font-size: 0.7rem; letter-spacing: -0.01em;
 }
 .spinner {
@@ -705,12 +705,12 @@ onMounted(() => {
   border-bottom: 1px solid rgb(var(--ink) / 0.05);
 }
 .card-eyebrow {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
+  font-family: var(--font-ui); font-size: 0.75rem;
   letter-spacing: -0.01em;
   color: var(--accent-text); margin: 0 0 0.15rem;
 }
 .card-title-sm {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.82rem;
+  font-family: var(--font-ui); font-size: 0.82rem;
   font-weight: 600;
   letter-spacing: -0.01em; color: var(--text-dim); margin: 0;
 }
@@ -720,7 +720,7 @@ onMounted(() => {
 
 .lc-table th {
   padding: 0.65rem 1.25rem;
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; font-weight: 600;
+  font-family: var(--font-ui); font-size: 0.75rem; font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--text-faint); text-align: left;
   background: rgb(var(--ink) / 0.015);
@@ -741,14 +741,14 @@ onMounted(() => {
 
 .td-phone .phone-val { font-family: monospace; font-weight: 700; color: var(--text); letter-spacing: 0.04em; }
 .td-phone { display: flex; flex-direction: column; gap: 0.15rem; }
-.td-phone .phone-name { font-size: 0.72rem; color: var(--text-dim); }
+.td-phone .phone-name { font-size: 0.75rem; color: var(--text-dim); }
 .td-period { font-size: 0.75rem; color: var(--text-faint); font-family: monospace; }
 .td-center { text-align: center; }
 .td-right  { text-align: right; }
 .td-spend  { font-family: monospace; font-weight: 700; color: var(--amber-soft); }
 
 .order-count { font-family: monospace; font-size: 1.1rem; font-weight: 700; color: var(--text); }
-.order-unit  { font-size: 0.72rem; color: var(--text-faint); margin-left: 0.25rem; }
+.order-unit  { font-size: 0.75rem; color: var(--text-faint); margin-left: 0.25rem; }
 
 /* Discount badge */
 .discount-badge {
@@ -758,21 +758,21 @@ onMounted(() => {
 .badge-red  { background: color-mix(in srgb, var(--accent) 8%, transparent);  border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent); }
 .badge-green{ background: color-mix(in srgb, var(--green) 8%, transparent);  border: 1px solid color-mix(in srgb, var(--green) 18%, transparent); }
 .discount-pct {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 1rem; font-weight: 600; line-height: 1;
+  font-family: var(--font-ui); font-size: 1rem; font-weight: 600; line-height: 1;
 }
 .badge-red  .discount-pct { color: var(--red-soft); }
 .badge-green .discount-pct { color: var(--green-soft); }
 .discount-lbl {
-  font-size: 0.72rem; letter-spacing: -0.01em;
-  color: var(--text-faint); font-family: 'Manrope', system-ui, sans-serif;
+  font-size: 0.75rem; letter-spacing: -0.01em;
+  color: var(--text-faint); font-family: var(--font-ui);
 }
 .no-discount { color: var(--text-faint); font-size: 0.85rem; }
 
 /* Status pill */
 .status-pill {
   display: inline-block; padding: 0.22rem 0.7rem;
-  border-radius: 100px; font-size: 0.72rem;
-  font-family: 'Manrope', system-ui, sans-serif; letter-spacing: -0.01em;
+  border-radius: 100px; font-size: 0.75rem;
+  font-family: var(--font-ui); letter-spacing: -0.01em;
 }
 .pill-loyal   { background: color-mix(in srgb, var(--green) 10%, transparent);  color: var(--green-soft); border: 1px solid color-mix(in srgb, var(--green) 20%, transparent); }
 .pill-regular { background: rgb(var(--ink) / 0.04); color: var(--text-faint); border: 1px solid rgb(var(--ink) / 0.08); }
@@ -780,7 +780,7 @@ onMounted(() => {
 /* Action button */
 .action-btn {
   padding: 0.35rem 0.85rem; border-radius: 8px;
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
+  font-family: var(--font-ui); font-size: 0.75rem;
   letter-spacing: -0.01em; cursor: pointer;
   transition: all 0.15s; border: 1px solid;
 }
@@ -821,12 +821,12 @@ onMounted(() => {
   display: flex; align-items: flex-start; justify-content: space-between;
 }
 .modal-eyebrow {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
+  font-family: var(--font-ui); font-size: 0.75rem;
   letter-spacing: -0.01em;
   color: var(--accent-text); margin: 0 0 0.2rem;
 }
 .modal-title {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 1.1rem;
+  font-family: var(--font-ui); font-size: 1.1rem;
   font-weight: 600; letter-spacing: -0.01em; margin: 0 0 0.2rem;
 }
 .modal-phone { font-family: monospace; font-size: 0.78rem; color: var(--text-faint); margin: 0; }
@@ -845,13 +845,13 @@ onMounted(() => {
   border-radius: 12px; padding: 1rem 1.1rem;
 }
 .current-label {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
+  font-family: var(--font-ui); font-size: 0.75rem;
   letter-spacing: -0.01em;
   color: var(--text-faint); margin: 0 0 0.4rem;
 }
 .current-val-wrap { display: flex; align-items: baseline; gap: 0.6rem; }
 .current-pct {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 1.6rem; font-weight: 600;
+  font-family: var(--font-ui); font-size: 1.6rem; font-weight: 600;
 }
 .current-red   { color: var(--red-soft); }
 .current-green { color: var(--green-soft); }
@@ -860,7 +860,7 @@ onMounted(() => {
 /* Modal field */
 .modal-field { display: flex; flex-direction: column; gap: 0.4rem; }
 .modal-field-label {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
+  font-family: var(--font-ui); font-size: 0.75rem;
   letter-spacing: -0.01em; color: var(--text-faint);
 }
 .modal-input {
@@ -871,7 +871,7 @@ onMounted(() => {
 }
 .modal-input::placeholder { color: var(--text-faint); }
 .modal-input:focus { border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
-.modal-hint { font-size: 0.72rem; color: var(--text-faint); margin: 0; }
+.modal-hint { font-size: 0.75rem; color: var(--text-faint); margin: 0; }
 
 /* Modal actions */
 .modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
@@ -879,7 +879,7 @@ onMounted(() => {
   display: flex; align-items: center; justify-content: center; gap: 0.4rem;
   padding: 0.8rem; border-radius: 10px; border: none;
   background: var(--accent); color: #fff;
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
+  font-family: var(--font-ui); font-size: 0.75rem;
   letter-spacing: -0.01em;
   cursor: pointer; transition: background 0.15s;
 }
@@ -889,7 +889,7 @@ onMounted(() => {
   padding: 0.8rem; border-radius: 10px;
   background: rgb(var(--ink) / 0.04); border: 1px solid rgb(var(--ink) / 0.08);
   color: var(--text-dim);
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
+  font-family: var(--font-ui); font-size: 0.75rem;
   letter-spacing: -0.01em;
   cursor: pointer; transition: all 0.15s;
 }
@@ -899,7 +899,7 @@ onMounted(() => {
   display: flex; align-items: center; justify-content: center; gap: 0.35rem;
   width: 100%; background: none; border: none;
   color: var(--text-faint);
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
+  font-family: var(--font-ui); font-size: 0.75rem;
   letter-spacing: -0.01em;
   cursor: pointer; transition: color 0.15s; padding: 0.25rem;
 }
@@ -931,7 +931,7 @@ input[type="number"] { -moz-appearance: textfield; }
   .lc-table--stack, .lc-table--stack tbody, .lc-table--stack tr, .lc-table--stack td { display: block; width: 100%; }
   .lc-table--stack tr.lc-row { padding: 0.6rem 0; border-bottom: 1px solid var(--border); }
   .lc-table--stack td { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.35rem 1.1rem; border: none !important; text-align: right !important; }
-  .lc-table--stack td[data-label]::before { content: attr(data-label); flex-shrink: 0; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); }
+  .lc-table--stack td[data-label]::before { content: attr(data-label); flex-shrink: 0; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); }
   .lc-table--stack td.td-first { flex-direction: column; align-items: flex-start; gap: 0.1rem; text-align: left !important; padding-top: 0.5rem; }
   .lc-table--stack td.td-action { padding-top: 0.6rem; }
   .lc-table--stack td.td-action .action-btn { width: 100%; min-height: 44px; }

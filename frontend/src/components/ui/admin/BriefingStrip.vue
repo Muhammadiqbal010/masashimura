@@ -239,11 +239,11 @@ defineExpose({ reload: load })
   gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem;
 }
 .bf-eyebrow {
-  margin: 0 0 0.2rem; font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem;
+  margin: 0 0 0.2rem; font-family: var(--font-ui); font-size: 0.75rem;
   letter-spacing: -0.01em; color: var(--accent-text);
 }
 .bf-title { margin: 0; font-size: 1.15rem; font-weight: 600; color: var(--text); }
-.bf-status { font-size: 0.72rem; color: var(--text-faint); }
+.bf-status { font-size: 0.75rem; color: var(--text-faint); }
 .bf-status--warn { color: var(--amber-soft); }
 
 .bf-grid {
@@ -258,9 +258,9 @@ defineExpose({ reload: load })
   border-radius: 12px;
 }
 .bf-label {
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.72rem; letter-spacing: -0.01em; color: var(--text-dim);
+  font-family: var(--font-ui); font-size: 0.75rem; letter-spacing: -0.01em; color: var(--text-dim);
 }
-.bf-label-note { margin-left: 0.4rem; letter-spacing: 0.02em; text-transform: none; font-family: 'Inter', sans-serif; color: var(--text-faint); }
+.bf-label-note { margin-left: 0.4rem; letter-spacing: 0.02em; text-transform: none; font-family: var(--font-ui); color: var(--text-faint); }
 .bf-value {
   font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em; color: var(--text);
   line-height: 1.2; overflow-wrap: anywhere;
@@ -272,7 +272,7 @@ defineExpose({ reload: load })
 
 .bf-chip {
   margin-top: 0.15rem; padding: 0.12rem 0.55rem; border-radius: 999px;
-  font-size: 0.72rem; font-weight: 600; letter-spacing: 0.02em;
+  font-size: 0.75rem; font-weight: 600; letter-spacing: 0.02em;
   border: 1px solid rgb(var(--ink) / 0.14); color: var(--text-dim);
 }
 .bf-chip.is-good { color: var(--green-soft); border-color: color-mix(in srgb, var(--green-soft) 45%, transparent); }
@@ -310,7 +310,7 @@ defineExpose({ reload: load })
 .bf-rec.tone-warn .bf-bullet { background: var(--amber-soft); }
 .bf-rec.tone-good .bf-bullet { background: var(--green-soft); }
 .bf-rec-text { margin: 0; font-size: 0.88rem; color: var(--text); line-height: 1.45; }
-.bf-rec-reason { margin: 0.15rem 0 0; font-size: 0.72rem; color: var(--text-faint); line-height: 1.4; }
+.bf-rec-reason { margin: 0.15rem 0 0; font-size: 0.75rem; color: var(--text-faint); line-height: 1.4; }
 
 .bf-note {
   margin: 1rem 0 0; padding: 0.55rem 0.8rem; font-size: 0.76rem; color: var(--amber-soft);
@@ -333,7 +333,7 @@ defineExpose({ reload: load })
 .bf-btn {
   padding: 0.4rem 0.9rem; border-radius: 8px; cursor: pointer;
   border: 1px solid rgb(var(--ink) / 0.18); background: transparent; color: var(--text);
-  font-family: 'Manrope', system-ui, sans-serif; font-size: 0.7rem; letter-spacing: -0.01em;
+  font-family: var(--font-ui); font-size: 0.7rem; letter-spacing: -0.01em;
 }
 .bf-btn:hover { border-color: rgb(var(--ink) / 0.35); }
 

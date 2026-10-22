@@ -97,8 +97,8 @@ const multiPct = computed(() => {
 <style src="@/assets/report-tabs.css"></style>
 <style scoped>
 .mp-plus { margin: 0 0.25rem; color: var(--text-faint); }
-.mp-conf { display: block; margin-top: 0.2rem; font-size: 0.72rem; font-weight: 400; line-height: 1.4; color: var(--text-faint); }
+.mp-conf { display: block; margin-top: 0.2rem; font-size: 0.75rem; font-weight: 400; line-height: 1.4; color: var(--text-faint); }
 .mp-dash { color: var(--text-faint); }
-.mp-note { margin-top: 0.9rem; font-size: 0.72rem; }
+.mp-note { margin-top: 0.9rem; font-size: 0.75rem; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 </style>

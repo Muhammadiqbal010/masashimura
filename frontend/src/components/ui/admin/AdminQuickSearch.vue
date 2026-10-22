@@ -181,7 +181,7 @@ onUnmounted(() => window.removeEventListener('keydown', onGlobalKeydown))
 .qs-kbd {
   display: inline-block; padding: 0.1rem 0.4rem; border-radius: var(--r-xs);
   border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text-dim);
-  font-family: var(--font-mono); font-size: 0.6875rem; line-height: 1.4;
+  font-family: var(--font-mono); font-size: 0.75rem; line-height: 1.4;
 }
 
 .qs-overlay {
@@ -207,7 +207,7 @@ onUnmounted(() => window.removeEventListener('keydown', onGlobalKeydown))
 .qs-esc {
   min-height: 32px; padding: 0 0.6rem; border-radius: var(--r-sm);
   border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text-dim);
-  font-family: var(--font-mono); font-size: 0.6875rem; cursor: pointer;
+  font-family: var(--font-mono); font-size: 0.75rem; cursor: pointer;
 }
 
 .qs-list { list-style: none; margin: 0; padding: 0.4rem; overflow-y: auto; }

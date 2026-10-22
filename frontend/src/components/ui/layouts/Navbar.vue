@@ -1,25 +1,10 @@
 <template>
-  <nav
-    v-if="!isAdminRoute"
-    :class="[
-      'site-nav fixed top-0 z-50 w-full transition-[padding,background-color] duration-300',
-      isScrolled || isOpen ? 'is-solid py-2.5' : 'py-4',
-    ]"
-  >
-    <div class="mx-auto flex max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10">
+  <nav v-if="!isAdminRoute" class="site-nav fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-6 sm:pt-4" aria-label="Navigasi utama">
+    <div class="nav-pill mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2 sm:px-5" :class="{ 'is-solid': isScrolled || isOpen }">
 
       <!-- Logo -->
-      <router-link
-        to="/"
-        class="flex shrink-0 items-center"
-        @click="closeMenu"
-        aria-label="Masashimura – Beranda"
-      >
-        <img
-          src="@/assets/masashimura-logo.png"
-          alt="Masashimura"
-          class="w-[128px] object-contain transition-all duration-300 md:w-[148px]"
-        />
+      <router-link to="/" class="flex shrink-0 items-center" @click="closeMenu" aria-label="Masashimura – Beranda">
+        <img src="@/assets/masashimura-logo.png" alt="Masashimura" class="h-7 w-auto object-contain sm:h-8" />
       </router-link>
 
       <!-- Desktop Nav -->
@@ -32,33 +17,29 @@
           :class="{ 'is-active': isExact(link.path) }"
           :aria-current="isExact(link.path) ? 'page' : undefined"
         >
-          {{ link.name }}
+          <span class="nav-link-label">{{ link.name }}</span>
+          <span class="nav-link-jp" aria-hidden="true">{{ link.jp }}</span>
         </router-link>
-        <router-link to="/menu" class="nav-cta ml-4">
+      </div>
+
+      <div class="hidden md:block">
+        <router-link to="/menu" class="pop-btn pop-btn--on-dark nav-cta">
           Pesan sekarang
+          <span class="pop-btn-dot" aria-hidden="true"><ArrowUpRight :size="15" /></span>
         </router-link>
       </div>
 
       <!-- Hamburger -->
       <button
-        class="relative flex h-11 w-11 flex-col items-center justify-center gap-[5px] rounded-xl border border-white/12 bg-white/[0.05] md:hidden"
+        class="flex h-11 w-11 flex-col items-center justify-center gap-[5px] rounded-full border-2 border-[#F4C542] bg-[#F4C542] md:hidden"
         @click="toggleMenu"
         :aria-expanded="isOpen"
         aria-controls="mobile-menu"
         aria-label="Buka atau tutup navigasi"
       >
-        <span
-          class="block h-0.5 w-5 origin-center rounded bg-white transition-all duration-300"
-          :class="isOpen ? 'translate-y-[7px] rotate-45' : ''"
-        />
-        <span
-          class="block h-0.5 rounded bg-[#F4C542] transition-all duration-200"
-          :class="isOpen ? 'w-0 opacity-0' : 'w-3.5 opacity-90'"
-        />
-        <span
-          class="block h-0.5 w-5 origin-center rounded bg-white transition-all duration-300"
-          :class="isOpen ? '-translate-y-[7px] -rotate-45' : ''"
-        />
+        <span class="block h-0.5 w-5 origin-center rounded bg-[#111113] transition-all duration-300" :class="isOpen ? 'translate-y-[7px] rotate-45' : ''" />
+        <span class="block h-0.5 w-5 rounded bg-[#111113] transition-all duration-200" :class="isOpen ? 'opacity-0' : ''" />
+        <span class="block h-0.5 w-5 origin-center rounded bg-[#111113] transition-all duration-300" :class="isOpen ? '-translate-y-[7px] -rotate-45' : ''" />
       </button>
     </div>
 
@@ -71,33 +52,22 @@
       leave-from-class="opacity-100 translate-y-0"
       leave-to-class="opacity-0 -translate-y-2"
     >
-      <div
-        v-if="isOpen"
-        id="mobile-menu"
-        class="absolute left-0 top-full w-full bg-[#111113] pb-6 md:hidden"
-      >
-        <div class="mx-auto max-w-7xl space-y-1 px-5 pt-2 sm:px-8">
-          <router-link
-            v-for="link in navLinks"
-            :key="link.path"
-            :to="link.path"
-            class="flex min-h-[52px] items-center justify-between rounded-xl px-4 text-base font-semibold transition-colors duration-200"
-            :class="isExact(link.path)
-              ? 'bg-[#F4C542]/12 text-[#F4C542]'
-              : 'text-white/80 hover:bg-white/[0.05] hover:text-white'"
-            @click="closeMenu"
-          >
-            {{ link.name }}
-            <span v-if="isExact(link.path)" class="h-2 w-2 rounded-full bg-[#F4C542]" aria-hidden="true"></span>
-          </router-link>
-          <router-link
-            to="/menu"
-            class="nav-cta mt-3 flex w-full !min-h-[52px] justify-center text-base"
-            @click="closeMenu"
-          >
-            Pesan sekarang
-          </router-link>
-        </div>
+      <div v-if="isOpen" id="mobile-menu" class="mobile-sheet mx-auto mt-2 max-w-6xl p-3 md:hidden">
+        <router-link
+          v-for="link in navLinks"
+          :key="link.path"
+          :to="link.path"
+          class="flex min-h-[56px] items-center justify-between rounded-2xl px-4 transition-colors"
+          :class="isExact(link.path) ? 'bg-[#F4C542] text-[#111113]' : 'text-white/85 hover:bg-white/[0.07]'"
+          @click="closeMenu"
+        >
+          <span class="text-base font-extrabold">{{ link.name }}</span>
+          <span class="text-xs font-semibold opacity-70" aria-hidden="true">{{ link.jp }}</span>
+        </router-link>
+        <router-link to="/menu" class="pop-btn pop-btn--on-dark mt-3 w-full" @click="closeMenu">
+          Pesan sekarang
+          <span class="pop-btn-dot" aria-hidden="true"><ArrowUpRight :size="15" /></span>
+        </router-link>
       </div>
     </Transition>
   </nav>
@@ -106,6 +76,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from "vue"
 import { useRoute } from "vue-router"
+import { ArrowUpRight } from "lucide-vue-next"
 import { useScrollLock } from "@/composables/useScrollLock"
 
 const route = useRoute()
@@ -117,9 +88,9 @@ const isScrolled = ref(false)
 const isAdminRoute = computed(() => route.path.startsWith("/admin"))
 
 const navLinks = [
-  { name: "Home",   path: "/" },
-  { name: "Menu",   path: "/menu" },
-  { name: "Kontak", path: "/contact" },
+  { name: "Home",   jp: "ホーム",  path: "/" },
+  { name: "Menu",   jp: "メニュー", path: "/menu" },
+  { name: "Kontak", jp: "連絡",    path: "/contact" },
 ]
 
 // Exact match — "/" harus exact agar tidak aktif di semua halaman
@@ -152,48 +123,39 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* Bar charcoal menyatu dengan hero gelap — tanpa garis pemisah */
-.site-nav { background: linear-gradient(180deg, #111113 0%, rgb(17 17 19 / 0.88) 100%); }
-.site-nav.is-solid { background: rgb(17 17 19 / 0.94); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.nav-pill {
+  border: 2px solid rgb(255 255 255 / 0.12);
+  border-radius: 999px;
+  background: rgb(17 17 19 / 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: background-color 0.25s, border-color 0.25s;
+}
+.nav-pill.is-solid { background: rgb(17 17 19 / 0.95); border-color: rgb(255 255 255 / 0.2); }
 
 .nav-link {
-  position: relative;
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
-  min-height: 44px;
-  padding: 0 0.95rem;
-  border-radius: 10px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: rgb(255 255 255 / 0.78);
-  transition: color 0.2s;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 1.15rem;
+  border-radius: 999px;
+  color: rgb(255 255 255 / 0.82);
+  line-height: 1.1;
+  transition: background-color 0.2s, color 0.2s;
 }
-.nav-link:hover { color: #fff; }
-.nav-link.is-active { color: #F4C542; }
-.nav-link.is-active::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: 4px;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: #F4C542;
-  transform: translateX(-50%);
-}
+.nav-link:hover { color: #fff; background: rgb(255 255 255 / 0.08); }
+.nav-link-label { font-size: 0.9375rem; font-weight: 800; }
+.nav-link-jp { margin-top: 2px; font-size: 0.6875rem; font-weight: 500; opacity: 0.6; }
+.nav-link.is-active { background: #F4C542; color: #111113; }
+.nav-link.is-active:hover { background: #F4C542; }
+.nav-cta { min-height: 46px; padding: 0 0.5rem 0 1.25rem; font-size: 0.875rem; }
 
-.nav-cta {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  padding: 0 1.4rem;
-  border-radius: 12px;
-  background: #D92B22;
-  color: #fff;
-  font-size: 0.875rem;
-  font-weight: 700;
-  transition: background 0.2s, transform 0.15s;
+.mobile-sheet {
+  border: 2px solid rgb(255 255 255 / 0.14);
+  border-radius: 28px;
+  background: rgb(17 17 19 / 0.97);
+  backdrop-filter: blur(14px);
 }
-.nav-cta:hover { background: #B8201A; }
-.nav-cta:active { transform: translateY(1px); }
 </style>

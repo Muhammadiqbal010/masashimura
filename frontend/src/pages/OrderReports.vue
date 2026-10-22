@@ -598,7 +598,7 @@ const chartTheme = computed(() => isDark.value
 
 const barOpts = computed(() => {
   const c = chartTheme.value;
-  const tick = { color: c.tick, font: { size: 11, family: "Manrope" } };
+  const tick = { color: c.tick, font: { size: 11, family: "Plus Jakarta Sans" } };
   return {
     responsive: true,
     maintainAspectRatio: false,
@@ -606,7 +606,7 @@ const barOpts = computed(() => {
       legend: { display: false },
       tooltip: {
         backgroundColor: c.tipBg, borderColor: c.tipBorder, borderWidth: 1,
-        titleColor: c.tipTitle, titleFont: { family: "Manrope" },
+        titleColor: c.tipTitle, titleFont: { family: "Plus Jakarta Sans" },
         bodyColor: c.tipBody, padding: 10, cornerRadius: 8,
       },
     },

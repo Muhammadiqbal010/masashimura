@@ -873,7 +873,7 @@ onMounted(async () => {
 .mm-info { grid-area: info; min-width: 0; }
 .mm-name { display: flex; align-items: center; gap: 0.4rem; margin: 0; font-size: 0.875rem; font-weight: 600; color: var(--text); }
 .mm-warn { flex-shrink: 0; color: var(--red-soft); }
-.mm-cat { margin: 0.15rem 0 0; font-size: 0.72rem; color: var(--text-faint); }
+.mm-cat { margin: 0.15rem 0 0; font-size: 0.75rem; color: var(--text-faint); }
 .mm-price { grid-area: price; margin: 0; font-size: 0.8125rem; font-weight: 600; color: var(--text-2); text-align: right; font-variant-numeric: tabular-nums; }
 .mm-status { grid-area: status; justify-self: end; }
 .mm-reactivate { grid-area: status; justify-self: end; padding: 0.3rem 0.75rem; font-size: 0.75rem; gap: 0.35rem; }
