@@ -1,5 +1,5 @@
 <template>
-  <div class="page relative min-h-screen bg-[#111113] pb-24 pt-28 font-inter text-[#FAFAFA] sm:pt-32">
+  <div class="page relative min-h-screen bg-[#080808] pb-24 pt-28 font-inter text-[#FAFAFA] sm:pt-32">
     <div class="page-glow pointer-events-none absolute inset-x-0 top-0 h-[420px]" aria-hidden="true"></div>
 
     <div class="relative mx-auto max-w-6xl px-5 sm:px-8 lg:px-10">
@@ -9,7 +9,7 @@
         <h1 class="font-sora text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl">
           Pesanan Kamu
         </h1>
-        <p class="mt-3 text-base text-[#B8B8C0]">Cek item, isi data, lalu pilih cara bayar.</p>
+        <p class="mt-3 text-base text-[#A3A3A3]">Cek item, isi data, lalu pilih cara bayar.</p>
       </header>
 
       <!-- ══ PANEL STATUS PEMBAYARAN ONLINE (muncul setelah order gateway dibuat) ══ -->
@@ -33,16 +33,16 @@
 
         <div class="space-y-2">
           <h2 class="font-sora text-2xl font-semibold tracking-tight text-[#FAFAFA]">{{ phaseTitle }}</h2>
-          <p class="text-sm leading-relaxed text-[#B8B8C0]">{{ phaseDescription }}</p>
+          <p class="text-sm leading-relaxed text-[#A3A3A3]">{{ phaseDescription }}</p>
         </div>
 
         <div class="summary-box space-y-2.5 text-left">
           <div class="flex items-center justify-between">
-            <span class="text-sm text-[#B8B8C0]">No. order</span>
+            <span class="text-sm text-[#A3A3A3]">No. order</span>
             <span class="text-sm font-semibold tabular-nums text-[#FAFAFA]">#{{ payment.orderNumber }}</span>
           </div>
           <div class="flex items-center justify-between">
-            <span class="text-sm text-[#B8B8C0]">Total</span>
+            <span class="text-sm text-[#A3A3A3]">Total</span>
             <span class="font-sora text-lg font-semibold text-[#FAFAFA]">{{ formatPrice(payment.total) }}</span>
           </div>
 
@@ -56,10 +56,10 @@
               :key="i"
               class="flex justify-between gap-3 text-sm"
             >
-              <span class="truncate text-[#B8B8C0]">
+              <span class="truncate text-[#A3A3A3]">
                 {{ it.quantity }}x {{ it.name }}<template v-if="it.optionText"> ({{ it.optionText }})</template>
               </span>
-              <span class="flex-shrink-0 tabular-nums text-[#9A9AA3]">{{ formatPrice(it.price * it.quantity) }}</span>
+              <span class="flex-shrink-0 tabular-nums text-[#737373]">{{ formatPrice(it.price * it.quantity) }}</span>
             </div>
           </div>
         </div>
@@ -95,7 +95,7 @@
             <button type="button" class="btn-ghost" @click="onCheckStatusClick">
               Cek status
             </button>
-            <p class="pt-1 text-xs text-[#9A9AA3]">
+            <p class="pt-1 text-xs text-[#737373]">
               Order otomatis dibatalkan kalau tidak dibayar dalam 30 menit.
             </p>
           </template>
@@ -115,18 +115,18 @@
 
         <div class="space-y-2">
           <h2 class="font-sora text-2xl font-semibold tracking-tight text-[#FAFAFA]">Pesanan dibuat</h2>
-          <p class="text-sm leading-relaxed text-[#B8B8C0]">
+          <p class="text-sm leading-relaxed text-[#A3A3A3]">
             Bayar langsung di toko, kasir yang mengonfirmasi pembayaranmu. Kabari admin lewat WhatsApp supaya pesananmu cepat diproses.
           </p>
         </div>
 
         <div class="summary-box space-y-2.5 text-left">
           <div class="flex items-center justify-between">
-            <span class="text-sm text-[#B8B8C0]">No. order</span>
+            <span class="text-sm text-[#A3A3A3]">No. order</span>
             <span class="text-sm font-semibold tabular-nums text-[#FAFAFA]">#{{ cashDone.orderNumber }}</span>
           </div>
           <div class="flex items-center justify-between">
-            <span class="text-sm text-[#B8B8C0]">Total</span>
+            <span class="text-sm text-[#A3A3A3]">Total</span>
             <span class="font-sora text-lg font-semibold text-[#FAFAFA]">{{ formatPrice(cashDone.total) }}</span>
           </div>
 
@@ -139,10 +139,10 @@
               :key="i"
               class="flex justify-between gap-3 text-sm"
             >
-              <span class="truncate text-[#B8B8C0]">
+              <span class="truncate text-[#A3A3A3]">
                 {{ it.quantity }}x {{ it.name }}<template v-if="it.optionText"> ({{ it.optionText }})</template>
               </span>
-              <span class="flex-shrink-0 tabular-nums text-[#9A9AA3]">{{ formatPrice(it.price * it.quantity) }}</span>
+              <span class="flex-shrink-0 tabular-nums text-[#737373]">{{ formatPrice(it.price * it.quantity) }}</span>
             </div>
           </div>
         </div>
@@ -172,11 +172,11 @@
               v-if="cartStore.isEmpty"
               class="space-y-4 rounded-3xl border border-dashed border-white/10 px-6 py-20 text-center"
             >
-              <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-[#1C1C1F]">
-                <ShoppingCart :size="22" class="text-[#B8B8C0]" />
+              <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-[#141414]">
+                <ShoppingCart :size="22" class="text-[#A3A3A3]" />
               </div>
               <p class="font-sora text-lg font-semibold text-[#FAFAFA]">Keranjang masih kosong</p>
-              <p class="text-sm text-[#B8B8C0]">Pilih menu favoritmu dulu, lalu balik ke sini.</p>
+              <p class="text-sm text-[#A3A3A3]">Pilih menu favoritmu dulu, lalu balik ke sini.</p>
               <router-link to="/menu" class="btn-primary !inline-flex !w-auto px-7">
                 Lihat menu
               </router-link>
@@ -197,17 +197,17 @@
                   type="button"
                   :aria-label="'Hapus ' + line.name + ' dari keranjang'"
                   @click="cartStore.removeBundle(line.id)"
-                  class="-mr-2 -mt-1.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#9A9AA3] transition-colors duration-150 hover:bg-[#D92B22]/10 hover:text-[#F0605A]"
+                  class="-mr-2 -mt-1.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#737373] transition-colors duration-150 hover:bg-[#D92B22]/10 hover:text-[#F0605A]"
                 >
                   <X :size="16" />
                 </button>
               </div>
-              <p class="text-sm text-[#B8B8C0]">
+              <p class="text-sm text-[#A3A3A3]">
                 {{ line.quantity }} × {{ formatPrice(line.price) }}
-                <span v-if="line.normal_price && line.savings > 0" class="ml-1 text-xs text-[#9A9AA3] line-through">{{ formatPrice(line.normal_price) }}</span>
+                <span v-if="line.normal_price && line.savings > 0" class="ml-1 text-xs text-[#737373] line-through">{{ formatPrice(line.normal_price) }}</span>
               </p>
               <p v-if="line.savings > 0" class="text-xs font-semibold text-[#F4C542]">Kamu hemat {{ formatPrice(line.savings * line.quantity) }}</p>
-              <p class="text-xs text-[#B8B8C0]">{{ line.contents.map((c) => c.quantity * line.quantity + '× ' + c.name).join(' · ') }}</p>
+              <p class="text-xs text-[#A3A3A3]">{{ line.contents.map((c) => c.quantity * line.quantity + '× ' + c.name).join(' · ') }}</p>
             </div>
 
             <!-- Items -->
@@ -217,7 +217,7 @@
               class="card-item flex gap-4"
             >
               <!-- Thumbnail -->
-              <div class="h-[72px] w-[72px] flex-shrink-0 overflow-hidden rounded-2xl border border-white/[0.07] bg-[#232327] sm:h-20 sm:w-20">
+              <div class="h-[72px] w-[72px] flex-shrink-0 overflow-hidden rounded-2xl border border-white/[0.07] bg-[#1A1A1A] sm:h-20 sm:w-20">
                 <img
                   v-if="item.image_url"
                   :src="getMediaUrl(item.image_url, 160)"
@@ -237,13 +237,13 @@
                     type="button"
                     :aria-label="'Hapus ' + item.name + ' dari keranjang'"
                     @click="cartStore.removeFromCart(item.cartKey)"
-                    class="-mr-2 -mt-1.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#9A9AA3] transition-colors duration-150 hover:bg-[#D92B22]/10 hover:text-[#F0605A]"
+                    class="-mr-2 -mt-1.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#737373] transition-colors duration-150 hover:bg-[#D92B22]/10 hover:text-[#F0605A]"
                   >
                     <X :size="16" />
                   </button>
                 </div>
 
-                <p class="mt-1 text-sm text-[#B8B8C0]">
+                <p class="mt-1 text-sm text-[#A3A3A3]">
                   {{ item.quantity }} × {{ formatPrice(item.price) }}
                 </p>
 
@@ -308,7 +308,7 @@
               <p
                 id="co-name-help"
                 class="text-xs leading-relaxed"
-                :class="nameErrorText ? 'text-[#F0605A]' : 'text-[#9A9AA3]'"
+                :class="nameErrorText ? 'text-[#F0605A]' : 'text-[#737373]'"
                 :role="nameErrorText ? 'alert' : undefined"
               >
                 {{ nameErrorText || `Huruf saja, ${NAME_MIN}-${NAME_MAX} karakter, tanpa angka atau tanda.` }}
@@ -341,14 +341,14 @@
               <p
                 id="co-phone-help"
                 class="text-xs leading-relaxed"
-                :class="phoneErrorText ? 'text-[#F0605A]' : 'text-[#9A9AA3]'"
+                :class="phoneErrorText ? 'text-[#F0605A]' : 'text-[#737373]'"
                 :role="phoneErrorText ? 'alert' : undefined"
               >
                 {{ phoneErrorText || `Diawali 08, ${PHONE_MIN}-${PHONE_MAX} digit angka.` }}
               </p>
 
               <!-- PIN member: terlihat oleh semua pelanggan supaya status member nomor lain tidak bocor -->
-              <div class="mt-3 rounded-2xl border border-white/[0.07] bg-[#17171A] p-3.5">
+              <div class="mt-3 rounded-2xl border border-white/[0.07] bg-[#0D0D0D] p-3.5">
                 <MemberPinBox
                   :phone="phone"
                   :info="memberInfo"
@@ -375,7 +375,7 @@
                   ]"
                 >
                   <span class="block font-sora text-sm font-semibold text-[#FAFAFA]">Cash</span>
-                  <span class="block text-xs text-[#B8B8C0]">Bayar di toko</span>
+                  <span class="block text-xs text-[#A3A3A3]">Bayar di toko</span>
                 </button>
                 <button
                   type="button"
@@ -390,10 +390,10 @@
                   ]"
                 >
                   <span class="block font-sora text-sm font-semibold text-[#FAFAFA]">QRIS</span>
-                  <span class="block text-xs text-[#B8B8C0]">Bayar online</span>
+                  <span class="block text-xs text-[#A3A3A3]">Bayar online</span>
                 </button>
               </div>
-              <p class="pt-0.5 text-xs leading-relaxed text-[#9A9AA3]">
+              <p class="pt-0.5 text-xs leading-relaxed text-[#737373]">
                 <template v-if="paymentMethod === 'cash'">
                   Bayar langsung di toko. Kasir yang mengonfirmasi pembayaranmu.
                 </template>
@@ -411,7 +411,7 @@
             <!-- Ringkasan Harga -->
             <div class="space-y-3">
               <div class="flex items-center justify-between text-sm">
-                <span class="text-[#B8B8C0]">Subtotal</span>
+                <span class="text-[#A3A3A3]">Subtotal</span>
                 <span class="tabular-nums text-[#FAFAFA]">{{ formatPrice(cartStore.subtotal) }}</span>
               </div>
 
@@ -442,11 +442,11 @@
                 class="flex items-center justify-between gap-3 text-sm"
               >
                 <span class="text-[#F4C542]">🎁 {{ reward.menu_name }} (gratis)</span>
-                <span class="flex-shrink-0 tabular-nums text-[#9A9AA3]">−{{ reward.point_cost.toLocaleString("id-ID") }} poin</span>
+                <span class="flex-shrink-0 tabular-nums text-[#737373]">−{{ reward.point_cost.toLocaleString("id-ID") }} poin</span>
               </div>
 
               <div class="flex items-end justify-between border-t border-white/[0.07] pt-4">
-                <span class="text-sm font-medium text-[#B8B8C0]">Total bayar</span>
+                <span class="text-sm font-medium text-[#A3A3A3]">Total bayar</span>
                 <span class="font-sora text-3xl font-semibold leading-none tracking-tight text-[#FAFAFA]">
                   {{ formatPrice(finalTotal) }}
                 </span>
@@ -1178,7 +1178,7 @@ onBeforeUnmount(() => {
 <style scoped>
 /*
   Palet (sama dengan Home, Menu, dan Lokasi & Kontak)
-  Warm black #111113 · Surface #1C1C1F · Washi #FAFAFA
+  Warm black #080808 · Surface #141414 · Washi #FAFAFA
   Crimson #D92B22 (aksi) · Champagne #F4C542 (detail premium)
   Hijau hanya untuk status sukses dan tombol WhatsApp.
 */
@@ -1192,7 +1192,7 @@ onBeforeUnmount(() => {
 .card {
   border-radius: 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.07);
-  background: #1C1C1F;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012)), #141414;
   padding: 1.5rem;
 }
 @media (min-width: 640px) {
@@ -1202,7 +1202,7 @@ onBeforeUnmount(() => {
 .card-item {
   border-radius: 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.07);
-  background: #1C1C1F;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)), #141414;
   padding: 1rem;
 }
 @media (min-width: 640px) {
@@ -1222,7 +1222,7 @@ onBeforeUnmount(() => {
   height: 3rem;
   border-radius: 0.75rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background: #17171A;
+  background: #0D0D0D;
   padding: 0 1rem;
   font-size: 1rem;
   color: #FAFAFA;
@@ -1232,7 +1232,7 @@ onBeforeUnmount(() => {
 @media (min-width: 640px) {
   .field { font-size: 0.875rem; }
 }
-.field::placeholder { color: #9A9AA3; }
+.field::placeholder { color: #737373; }
 .field:hover { border-color: rgba(255, 255, 255, 0.2); }
 .field:focus {
   border-color: rgba(244,197,66, 0.6);
