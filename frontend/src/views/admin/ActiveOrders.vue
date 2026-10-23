@@ -837,7 +837,7 @@ import AdminModal from '@/components/ui/admin/Adminmodal.vue'
 import OrderItemTools from '@/components/ui/admin/OrderItemTools.vue'
 import NotifyCustomerModal from '@/components/ui/admin/NotifyCustomerModal.vue'
 import { groupReceiptLines } from '@/utils/receiptLines'
-import { msgReceipt } from '@/utils/friendlyMessages'
+import { msgReceipt, chatUrl, isMobileDevice } from '@/utils/friendlyMessages'
 // Di-import (bukan "/src/assets/…") supaya path-nya ikut di-hash & tetap jalan di build production.
 import logoUrl from '@/assets/masashimura-logo.png'
 
@@ -1594,23 +1594,36 @@ const shareReceiptAsImage = async (caption = RECEIPT_CAPTION) => {
     const order = selectedOrder.value
     const file = new File([blob], `struk-${order.order_number}.png`, { type: 'image/png' })
 
-    if (navigator.share && navigator.canShare?.({ files: [file] })) {
+    // HP: menu share bawaan (WhatsApp tidak punya cara mengirim GAMBAR ke nomor tertentu, jadi
+    // kasir tetap memilih kontak sekali). Desktop: langsung buka chat pelanggan.
+    if (isMobileDevice() && navigator.share && navigator.canShare?.({ files: [file] })) {
       try {
         await navigator.share({ files: [file], text: caption })
       } catch (e) {
         if (e?.name !== 'AbortError') throw e   // user menutup menu share = bukan error
       }
     } else {
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = file.name
-      a.click()
-      setTimeout(() => URL.revokeObjectURL(url), 1000)   // jangan dicabut seketika: unduhan bisa gagal
-      const phone = normalizePhone(order.customer_phone)
-      const text = encodeURIComponent(caption)
-      setTimeout(() => window.open(phone ? `https://wa.me/${phone}?text=${text}` : `https://wa.me/?text=${text}`, '_blank', 'noopener'), 500)
-      toast.info('Gambar diunduh. Lampirkan ke WhatsApp secara manual jika perlu.')
+      // Gambar disalin ke clipboard supaya tinggal Ctrl+V di chat; kalau ditolak browser, diunduh.
+      let copied = false
+      try {
+        if (navigator.clipboard?.write && typeof ClipboardItem !== 'undefined') {
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
+          copied = true
+        }
+      } catch { copied = false }
+      if (!copied) {
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = file.name
+        a.click()
+        setTimeout(() => URL.revokeObjectURL(url), 1000)   // jangan dicabut seketika: unduhan bisa gagal
+      }
+      const chat = chatUrl(order.customer_phone, caption)
+      if (chat) window.open(chat, '_blank', 'noopener')
+      toast.info(copied
+        ? 'Struk sudah disalin. Di chat WhatsApp tekan Ctrl+V, lalu Kirim.'
+        : 'Struk diunduh. Lampirkan ke chat WhatsApp (ikon klip).', { duration: 10000 })
     }
   } catch (err) {
     console.error(err)
@@ -1991,13 +2004,14 @@ const confirmDelete = async () => {
     margin: 0.35rem 0.6rem;
     grid-template-columns: auto minmax(0, 1fr) auto;
     grid-template-areas:
-      'id    cust  time'
-      'menu  menu  menu'
-      'bill  bill  status'
-      'act   act   act';
+      'id     cust   time'
+      'menu   menu   menu'
+      'bill   bill   bill'
+      'status status status'
+      'act    act    act';
     align-items: center;
     column-gap: 0.6rem;
-    row-gap: 0.55rem;
+    row-gap: 0.5rem;
     padding: 0.8rem 0.9rem;
     border: 1px solid var(--border); border-radius: var(--r-md);
     background: var(--surface-2);
@@ -2008,20 +2022,28 @@ const confirmDelete = async () => {
   /* Baris 1: #order · nama · jam (+ "Input susulan" kecil di bawah jam) */
   .ao-a-time { align-items: flex-end; gap: 0.1rem; text-align: right; }
   .ao-age, .ao-late { margin-top: 0; font-size: 0.75rem; line-height: 1.2; }
-  .ao-cust-name { font-size: 0.9rem; }
+  /* Semua sel boleh menyempit (tanpa ini, isi yang panjang melebarkan kolom & menjepit nama) */
+  .ao-row > * { min-width: 0; }
+  .ao-pills .adm-badge, .ao-flag, .ao-method { white-space: nowrap; }
+  .ao-a-id { align-self: start; }
+  .ao-a-cust { align-self: start; }
+  .ao-cust-name { font-size: 0.95rem; overflow-wrap: break-word; word-break: normal; }
 
   /* Baris 2: daftar menu selebar kartu */
   .ao-a-menu { align-self: start; }
   .ao-items-name { white-space: normal; }
   .ao-actions { display: contents; }          /* anak-anaknya jadi item grid */
 
-  /* Baris 3: harga + metode di kiri, status di kanan */
-  .ao-bill { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
-  .ao-status { align-items: flex-end; justify-self: end; }
-  .ao-pills { flex-direction: row; flex-wrap: wrap; justify-content: flex-end; }
-  .ao-flags { align-items: flex-end; }
-  .ao-flag { text-align: right; }
-  .ao-a-status { justify-content: flex-end; }
+  /* Baris 3: harga + metode, satu baris sendiri (tidak berebut tempat dengan pill) */
+  .ao-bill { flex-direction: row; align-items: center; justify-content: flex-start; flex-wrap: wrap; gap: 0.6rem; }
+  .ao-price { font-size: 1.05rem; }
+
+  /* Baris 4: pill status + catatan kecil, rata kiri, boleh turun baris */
+  .ao-a-status { justify-content: flex-start; }
+  .ao-status { flex-direction: row; flex-wrap: wrap; align-items: center; justify-self: start; gap: 0.35rem 0.7rem; }
+  .ao-pills { flex-direction: row; flex-wrap: wrap; justify-content: flex-start; }
+  .ao-flags { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 0.1rem 0.7rem; }
+  .ao-flag { text-align: left; }
 
   /* Baris 4: tombol utama selebar kartu */
   .ao-act-main { grid-area: act; flex-wrap: nowrap; justify-content: stretch; padding-top: 0.6rem; border-top: 1px dashed var(--border); }

@@ -69,3 +69,29 @@ export const msgPaymentReminder = (o) => [
   'Kakak bisa membayar di kasir, bisa cash atau QRIS ya.',
   'Terima kasih banyak kak 🙏',
 ].join('\n')
+<<<<<<< HEAD:frontend/src/utils/friendlyMessages.js
+=======
+
+// ── Link WhatsApp ───────────────────────────────────────────────────
+// wa.me: membuka chat langsung ke nomor pelanggan (aplikasi WhatsApp / WhatsApp Web, sesuai yang dipakai di perangkat).
+export const isMobileDevice = () => {
+  if (typeof navigator === 'undefined') return false
+  const ua = navigator.userAgent || ''
+  return /Android|iPhone|iPad|iPod/i.test(ua) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(ua))
+}
+
+export const normalizePhone = (raw) => {
+  const digits = String(raw || '').replace(/\D/g, '')
+  if (!digits) return ''
+  if (digits.startsWith('0')) return '62' + digits.slice(1)
+  if (digits.startsWith('8')) return '62' + digits
+  return digits
+}
+
+export const chatUrl = (phone, text = '') => {
+  const p = normalizePhone(phone)
+  if (!p) return ''
+  const t = encodeURIComponent(text)
+  return `https://wa.me/${p}?text=${t}`
+}
+>>>>>>> cddb711 (ui/ux):frontend/src/utils/friendlymessages.js
