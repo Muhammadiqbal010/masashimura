@@ -1,3 +1,6 @@
+// Teks pesan WhatsApp ke pelanggan: ramah, pakai "kakak", dan sapaannya mengikuti jam.
+// Dipakai oleh NotifyCustomerModal.vue dan ActiveOrders.vue.
+
 export const greetingByTime = (d = new Date()) => {
   const h = d.getHours()
   if (h >= 4 && h < 11) return 'pagi'
@@ -69,8 +72,6 @@ export const msgPaymentReminder = (o) => [
   'Kakak bisa membayar di kasir, bisa cash atau QRIS ya.',
   'Terima kasih banyak kak 🙏',
 ].join('\n')
-<<<<<<< HEAD:frontend/src/utils/friendlyMessages.js
-=======
 
 // ── Link WhatsApp ───────────────────────────────────────────────────
 // wa.me: membuka chat langsung ke nomor pelanggan (aplikasi WhatsApp / WhatsApp Web, sesuai yang dipakai di perangkat).
@@ -94,4 +95,3 @@ export const chatUrl = (phone, text = '') => {
   const t = encodeURIComponent(text)
   return `https://wa.me/${p}?text=${t}`
 }
->>>>>>> cddb711 (ui/ux):frontend/src/utils/friendlymessages.js
