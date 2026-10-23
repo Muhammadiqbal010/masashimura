@@ -259,4 +259,24 @@ defineExpose({ reload: () => load({ force: true }) })
   .today-methods { flex-direction: row; flex-wrap: wrap; justify-content: center; }
   .legend { width: auto; min-width: 11rem; }
 }
+
+/* HP: tabel jadi daftar kartu (tanpa geser samping) */
+@media (max-width: 640px) {
+  .today-table { min-width: 0; width: 100%; }
+  .today-table thead { display: none; }
+  .today-table tbody, .today-table tr, .today-table td { display: block; }
+  .today-table tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.2rem 0.75rem;
+    padding: 0.85rem 1.25rem;
+    border-top: 1px solid var(--border);
+  }
+  .today-table td { padding: 0; border: 0; }
+  .today-table td:nth-child(2) { grid-column: 1; grid-row: 1; font-weight: 700; }
+  .today-table td:nth-child(3) { grid-column: 2; grid-row: 1; text-align: right; font-weight: 700; }
+  .today-table td:nth-child(1) { grid-column: 1; grid-row: 2; }
+  .today-table td:nth-child(5) { grid-column: 2; grid-row: 2; text-align: right; }
+  .today-table td:nth-child(4) { grid-column: 1 / -1; grid-row: 3; margin-top: 0.4rem; }
+}
 </style>
