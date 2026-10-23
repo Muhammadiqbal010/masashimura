@@ -6,9 +6,9 @@
 
       <div class="catalog-header">
         <div>
-          <p class="pos-eyebrow">Masashimura · Kasir</p>
-          <h1 class="pos-title">New Order (POS)</h1>
-          <p class="pos-date">{{ liveFormattedDate }}</p>
+          <p class="adm-eyebrow">Masashimura · Kasir</p>
+          <h1 class="adm-title">New Order (POS)</h1>
+          <p class="adm-sub">{{ liveFormattedDate }}</p>
         </div>
         <div class="header-actions">
 
@@ -176,7 +176,7 @@
     <div class="order-panel" :class="{ 'mobile-cart-open': showMobileCart }">
       <div class="order-panel-head">
         <div>
-          <p class="pos-eyebrow">Transaksi Aktif</p>
+          <p class="adm-eyebrow">Transaksi Aktif</p>
           <h2 class="order-panel-title">
             Ringkasan Pesanan
             <span v-if="cartItemCount" class="order-panel-count">{{ cartItemCount }}</span>
@@ -487,7 +487,7 @@
 
         <div class="drawer-head">
           <div>
-            <p class="pos-eyebrow">Antrian Kasir</p>
+            <p class="adm-eyebrow">Antrian Kasir</p>
             <h2 class="drawer-title">Tagihan Belum Lunas</h2>
           </div>
           <button class="drawer-close" @click="showUnpaidDrawer = false" aria-label="Tutup">
@@ -614,7 +614,7 @@
       <div class="modal-box" role="dialog" aria-modal="true" :aria-label="`Pilih opsi ${pickerMenu.name}`">
         <div class="modal-head">
           <div>
-            <p class="pos-eyebrow">Pilih Opsi</p>
+            <p class="adm-eyebrow">Pilih Opsi</p>
             <h2 class="modal-title">{{ pickerMenu.name }}</h2>
             <p class="modal-ordnum">{{ formatPrice(pickerMenu.price) }}</p>
           </div>
@@ -684,7 +684,7 @@
 
         <div class="modal-head">
           <div>
-            <p class="pos-eyebrow">Konfirmasi Transaksi</p>
+            <p class="adm-eyebrow">Konfirmasi Transaksi</p>
             <h2 class="modal-title">Pembayaran Order</h2>
             <p class="modal-ordnum">{{ selectedUnpaidOrder.order_number }}</p>
           </div>
@@ -1556,20 +1556,13 @@ onBeforeUnmount(() => clearTimeout(debounceTimeout));
   min-height: 100vh; min-height: 100dvh;
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-ui);
+  font-family: var(--font-body);
   padding: 1.5rem;
   align-items: flex-start;
 }
 @media (max-width: 1024px) { .pos-root { flex-direction: column; padding: 1rem; padding-bottom: 6.5rem; } }
 
 button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 60%, transparent); outline-offset: 2px; }
-
-/* ── Shared tokens ───────────────────────────────────────────────── */
-.pos-eyebrow {
-  font-family: var(--font-ui); font-size: 0.75rem;
-  letter-spacing: -0.01em; color: var(--accent-text);
-  margin: 0 0 0.2rem;
-}
 
 /* ── Catalog panel ───────────────────────────────────────────────── */
 .catalog-panel {
@@ -1580,21 +1573,15 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .catalog-header {
   display: flex; align-items: flex-start; justify-content: space-between;
   gap: 1rem; flex-wrap: wrap;
-  padding-bottom: 1.25rem;
-  border-bottom: 1px solid rgb(var(--ink) / 0.06);
 }
-.pos-title {
-  font-family: var(--font-ui); font-size: 1.6rem; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 0.2rem;
-  color: var(--text);
-}
-.pos-date { font-size: 0.75rem; color: var(--text-faint); margin: 0; }
+.catalog-header .adm-title { font-size: clamp(1.5rem, 1.3rem + 0.6vw, 1.875rem); }
 
 .unpaid-trigger {
   display: flex; align-items: center; gap: 0.45rem;
   padding: 0.55rem 1rem;
   background: var(--surface); border: 1px solid rgb(var(--ink) / 0.08);
   border-radius: 10px; color: var(--text-dim);
-  font-family: var(--font-ui); font-size: 0.75rem;
+  font-family: var(--font-body); font-size: 0.75rem;
   letter-spacing: -0.01em;
   cursor: pointer; transition: all 0.15s; position: relative;
   white-space: nowrap;
@@ -1609,7 +1596,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
   padding: 0.55rem 1rem;
   background: var(--surface); border: 1px solid rgb(var(--ink) / 0.08);
   border-radius: 10px; color: var(--text-dim);
-  font-family: var(--font-ui); font-size: 0.75rem;
+  font-family: var(--font-body); font-size: 0.75rem;
   letter-spacing: -0.01em;
   cursor: pointer; transition: all 0.15s; white-space: nowrap;
 }
@@ -1641,7 +1628,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .unpaid-badge {
   display: inline-flex; align-items: center; justify-content: center;
   width: 18px; height: 18px; border-radius: 50%;
-  background: #d92b22; color: #fff; font-size: 0.75rem; font-weight: 700;
+  background: var(--accent); color: var(--on-accent); font-size: 0.75rem; font-weight: 700;
 }
 
 /* ── Banner mode tambah ke tagihan ───────────────────────────────── */
@@ -1653,16 +1640,16 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
   border-radius: 12px; backdrop-filter: blur(6px);
 }
 .add-banner-eyebrow { margin: 0 0 0.15rem; font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--green-soft); }
-.add-banner-title { margin: 0; font-family: monospace; font-weight: 700; font-size: 0.85rem; color: var(--text); }
+.add-banner-title { margin: 0; font-family: var(--font-mono); font-weight: 700; font-size: 0.85rem; color: var(--text); }
 .add-banner-title span { font-family: inherit; font-weight: 400; color: var(--text-dim); }
 .add-banner-right { display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0; }
-.add-banner-total { margin: 0; font-family: monospace; font-weight: 700; font-size: 0.95rem; color: var(--text); }
+.add-banner-total { margin: 0; font-family: var(--font-mono); font-weight: 700; font-size: 0.95rem; color: var(--text); }
 .add-banner-done {
   padding: 0.5rem 0.9rem; border: none; border-radius: 9px; cursor: pointer;
-  background: #16a34a; color: #fff; font-size: 0.7rem; font-weight: 700;
+  background: var(--green); color: var(--on-accent); font-size: 0.7rem; font-weight: 700;
   letter-spacing: 0.08em; text-transform: uppercase;
 }
-.add-banner-done:hover { background: #15803d; }
+.add-banner-done:hover { background: color-mix(in srgb, var(--green) 85%, black); }
 
 /* ── Search bar ──────────────────────────────────────────────────── */
 .search-bar { position: relative; display: flex; align-items: center; }
@@ -1670,7 +1657,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .search-input {
   width: 100%; background: var(--surface); border: 1px solid rgb(var(--ink) / 0.08);
   border-radius: 10px; padding: 0.65rem 2.2rem 0.65rem 2.3rem;
-  color: var(--text); font-size: 0.82rem; font-family: var(--font-ui);
+  color: var(--text); font-size: 0.82rem; font-family: var(--font-body);
   outline: none; transition: border-color 0.15s;
 }
 .search-input::placeholder { color: var(--text-faint); }
@@ -1710,12 +1697,12 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .empty-hint { color: var(--text-faint); margin: 0; font-size: 0.7rem; }
 .retry-btn {
   padding: 0.5rem 1.25rem; border-radius: 8px;
-  background: #d92b22; border: none; color: #fff;
-  font-family: var(--font-ui); font-size: 0.75rem;
+  background: var(--accent); border: none; color: var(--on-accent);
+  font-family: var(--font-body); font-size: 0.75rem;
   letter-spacing: -0.01em;
   cursor: pointer; transition: background 0.15s;
 }
-.retry-btn:hover { background: #b8201a; }
+.retry-btn:hover { background: var(--accent-hover); }
 
 .menu-card {
   position: relative; background: var(--surface);
@@ -1735,10 +1722,10 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .menu-count-badge {
   position: absolute; top: 0.5rem; right: 0.5rem; z-index: 2;
   min-width: 1.6rem; padding: 0.1rem 0.4rem; text-align: center;
-  background: #d92b22; color: #fff; border-radius: 999px;
-  font-family: monospace; font-size: 0.75rem; font-weight: 700;
+  background: var(--accent); color: var(--on-accent); border-radius: 999px;
+  font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700;
 }
-.menu-count-added { background: #16a34a; }
+.menu-count-added { background: var(--green); }
 
 .menu-habis-overlay {
   position: absolute; inset: 0; z-index: 10;
@@ -1746,7 +1733,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
   display: flex; align-items: center; justify-content: center;
 }
 .habis-badge {
-  font-family: var(--font-ui); font-size: 0.75rem; font-weight: 600;
+  font-family: var(--font-body); font-size: 0.75rem; font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--red-soft); border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
   padding: 0.2rem 0.65rem; border-radius: 100px;
@@ -1754,14 +1741,14 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 /* Tag sekarang di dalam alur kartu (bukan absolute) supaya tidak menimpa nama menu */
 .menu-tags { display: flex; gap: 0.25rem; margin-bottom: 0.4rem; }
 .menu-tag {
-  font-family: monospace; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em;
+  font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em;
   padding: 0.1rem 0.35rem; border-radius: 4px; line-height: 1.3;
 }
-.menu-tag-secret { background: #7c3aed; color: #fff; }
+.menu-tag-secret { background: var(--tint-purple); color: var(--purple-soft); }
 .menu-tag-opt { background: rgb(var(--ink) / 0.1); color: var(--text-2); }
 .menu-card-body { flex: 1; }
 .menu-name { font-weight: 600; font-size: 0.82rem; color: var(--text-2); margin: 0 0 0.35rem; line-height: 1.3; }
-.menu-price { font-family: monospace; font-size: 0.78rem; font-weight: 700; color: var(--accent-text); margin: 0; }
+.menu-price { font-family: var(--font-mono); font-size: 0.78rem; font-weight: 700; color: var(--accent-text); margin: 0; }
 .menu-add-indicator {
   display: flex; align-items: center; justify-content: center;
   width: 22px; height: 22px; border-radius: 6px;
@@ -1789,13 +1776,13 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 }
 .order-panel-title {
   display: flex; align-items: center; gap: 0.5rem;
-  font-family: var(--font-ui); font-size: 1rem; font-weight: 600; letter-spacing: -0.01em; margin: 0;
+  font-family: var(--font-body); font-size: 1rem; font-weight: 600; letter-spacing: -0.01em; margin: 0;
   color: var(--text);
 }
 .order-panel-count {
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 20px; height: 20px; padding: 0 0.35rem; border-radius: 999px;
-  background: #d92b22; color: #fff; font-family: monospace; font-size: 0.75rem; font-weight: 700;
+  background: var(--accent); color: var(--on-accent); font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700;
   letter-spacing: 0;
 }
 .order-panel-close { display: none; }
@@ -1826,7 +1813,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 
 .field { display: flex; flex-direction: column; gap: 0.35rem; }
 .field-label {
-  font-family: var(--font-ui); font-size: 0.75rem;
+  font-family: var(--font-body); font-size: 0.75rem;
   letter-spacing: -0.01em; color: var(--text-faint);
 }
 .field-optional { font-size: 0.75rem; color: var(--text-faint); }
@@ -1837,13 +1824,13 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
   width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
   background: color-mix(in srgb, var(--accent) 10%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
   display: flex; align-items: center; justify-content: center;
-  font-family: monospace; font-size: 0.75rem; font-weight: 700; color: var(--accent-text);
+  font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700; color: var(--accent-text);
 }
 
 .pos-input {
   background: rgb(var(--ink) / 0.04); border: 1px solid rgb(var(--ink) / 0.08);
   border-radius: 10px; padding: 0.65rem 0.85rem;
-  color: var(--text); font-size: 0.82rem; font-family: var(--font-ui);
+  color: var(--text); font-size: 0.82rem; font-family: var(--font-body);
   outline: none; transition: border-color 0.15s; width: 100%;
 }
 .pos-input::placeholder { color: var(--text-faint); }
@@ -1879,7 +1866,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .bundle-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .bundle-chip-name { font-size: 0.82rem; font-weight: 600; }
 .bundle-chip-items { font-size: 0.75rem; color: var(--text-faint); }
-.bundle-chip-price { font-family: monospace; font-size: 0.78rem; color: var(--amber-soft); }
+.bundle-chip-price { font-family: var(--font-mono); font-size: 0.78rem; color: var(--amber-soft); }
 .bundle-chip-normal { margin-left: 0.4rem; font-size: 0.75rem; color: var(--text-faint); }
 .bundle-chip-off { font-size: 0.75rem; color: var(--red-soft); }
 .bundle-chip-count { position: absolute; top: 6px; right: 8px; font-size: 0.7rem; font-weight: 700; color: var(--accent); }
@@ -1913,7 +1900,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
   width: 100%; min-height: 48px; padding: 0.5rem 0.5rem 0.5rem 0.85rem;
   background: var(--surface); border: 1px solid rgb(var(--ink) / 0.08);
   border-radius: 12px; color: var(--text);
-  font-family: var(--font-ui); text-align: left;
+  font-family: var(--font-body); text-align: left;
   cursor: pointer; transition: border-color 0.15s, background-color 0.15s;
 }
 .suggest-row:hover { border-color: rgb(var(--ink) / 0.2); }
@@ -1921,14 +1908,14 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .suggest-text { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
 .suggest-name { font-size: 0.82rem; font-weight: 600; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .suggest-meta { display: flex; align-items: center; gap: 0.4rem; }
-.suggest-price { font-family: monospace; font-size: 0.75rem; font-weight: 700; color: var(--accent-text); }
+.suggest-price { font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700; color: var(--accent-text); }
 .suggest-plus {
   display: flex; flex-shrink: 0; align-items: center; justify-content: center;
   width: 32px; height: 32px; border-radius: 9px;
   background: rgb(var(--ink) / 0.07); color: var(--text-dim);
   transition: background-color 0.15s, color 0.15s;
 }
-.suggest-row:hover .suggest-plus { background: var(--accent); color: #fff; }
+.suggest-row:hover .suggest-plus { background: var(--accent); color: var(--on-accent); }
 @media (hover: none) { .suggest-row:hover .suggest-plus { background: rgb(var(--ink) / 0.07); color: var(--text-dim); } }
 
 .cart-item {
@@ -1938,7 +1925,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .cart-item-top { display: flex; align-items: flex-start; gap: 0.5rem; }
 .cart-item-info { flex: 1; min-width: 0; }
 .cart-item-name { font-size: 0.8rem; font-weight: 600; color: var(--text-2); margin: 0 0 0.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cart-item-price { font-family: monospace; font-size: 0.7rem; color: var(--text-faint); margin: 0; }
+.cart-item-price { font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-faint); margin: 0; }
 .cart-item-sub { color: var(--text-dim); font-weight: 700; }
 
 .qty-control {
@@ -1954,7 +1941,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 }
 .qty-btn:hover:not(:disabled) { background: rgb(var(--ink) / 0.1); color: var(--text); }
 .qty-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-.qty-val { font-family: monospace; font-size: 0.78rem; font-weight: 700; min-width: 18px; text-align: center; }
+.qty-val { font-family: var(--font-mono); font-size: 0.78rem; font-weight: 700; min-width: 18px; text-align: center; }
 
 .cart-item-opts { font-size: 0.75rem; color: var(--amber-soft); margin: 0.15rem 0 0; }
 
@@ -1963,7 +1950,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .opt-group-hint { margin-left: 0.4rem; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text-faint); }
 .opt-choices { display: flex; flex-direction: column; gap: 0.4rem; }
 .opt-choice { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; text-align: left; width: 100%; }
-.opt-choice-price { font-family: monospace; font-size: 0.75rem; color: var(--amber-soft); }
+.opt-choice-price { font-family: var(--font-mono); font-size: 0.75rem; color: var(--amber-soft); }
 .opt-missing { font-size: 0.75rem; color: var(--text-faint); margin: 0 0 0.5rem; }
 .opt-footer-row { display: flex; align-items: center; gap: 0.75rem; }
 .opt-confirm { flex: 1; justify-content: center; }
@@ -1972,7 +1959,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .cart-notes-input {
   background: rgb(var(--ink) / 0.06); border: 1px solid rgb(var(--ink) / 0.05);
   border-radius: 7px; padding: 0.45rem 0.65rem;
-  font-size: 0.75rem; color: var(--amber-soft); font-family: var(--font-ui);
+  font-size: 0.75rem; color: var(--amber-soft); font-family: var(--font-body);
   outline: none; transition: border-color 0.15s; width: 100%;
 }
 .cart-notes-input::placeholder { color: var(--text-faint); font-style: italic; }
@@ -1983,14 +1970,14 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .toggle-btn {
   display: flex; align-items: center; justify-content: center; gap: 0.35rem;
   padding: 0.65rem 0.6rem; border-radius: 9px; border: 1px solid;
-  font-family: var(--font-ui); font-size: 0.75rem;
+  font-family: var(--font-body); font-size: 0.75rem;
   letter-spacing: -0.01em;
   cursor: pointer; transition: all 0.15s;
 }
 .toggle-inactive { background: transparent; border-color: rgb(var(--ink) / 0.08); color: var(--text-faint); }
 .toggle-inactive:hover { border-color: rgb(var(--ink) / 0.2); color: var(--text-2); }
-.toggle-active-red   { background: color-mix(in srgb, var(--accent) 12%, transparent); border-color: #d92b22; color: var(--text); }
-.toggle-active-amber { background: color-mix(in srgb, var(--amber) 12%, transparent); border-color: #d97706; color: var(--amber-soft); }
+.toggle-active-red   { background: color-mix(in srgb, var(--accent) 12%, transparent); border-color: var(--accent); color: var(--text); }
+.toggle-active-amber { background: color-mix(in srgb, var(--amber) 12%, transparent); border-color: var(--amber); color: var(--amber-soft); }
 .toggle-active-white { background: rgb(var(--ink) / 0.08); border-color: rgb(var(--ink) / 0.2); color: var(--text); }
 .toggle-disabled { background: transparent; border-color: rgb(var(--ink) / 0.04); color: var(--text-faint); cursor: not-allowed; opacity: 0.6; }
 
@@ -1999,20 +1986,20 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .quick-cash-btn {
   padding: 0.4rem 0.7rem; border-radius: 8px; cursor: pointer;
   background: rgb(var(--ink) / 0.04); border: 1px solid rgb(var(--ink) / 0.1);
-  color: var(--text-2); font-family: monospace; font-size: 0.7rem; font-weight: 700;
+  color: var(--text-2); font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700;
   transition: all 0.12s;
 }
 .quick-cash-btn:hover { border-color: rgb(var(--ink) / 0.25); color: var(--text); }
 .quick-cash-btn.is-active {
   background: color-mix(in srgb, var(--accent) 12%, transparent);
-  border-color: #d92b22; color: var(--text);
+  border-color: var(--accent); color: var(--text);
 }
 
 /* Change box */
 .change-box {
   display: flex; justify-content: space-between;
   padding: 0.55rem 0.85rem; border-radius: 9px;
-  font-family: monospace; font-size: 0.78rem; font-weight: 700; border: 1px solid;
+  font-family: var(--font-mono); font-size: 0.78rem; font-weight: 700; border: 1px solid;
 }
 .change-ok  { background: color-mix(in srgb, var(--green) 7%, transparent);  border-color: color-mix(in srgb, var(--green) 20%, transparent);  color: var(--green-soft); }
 .change-err { background: color-mix(in srgb, var(--accent) 7%, transparent);  border-color: color-mix(in srgb, var(--accent) 20%, transparent);  color: var(--red-soft); }
@@ -2048,24 +2035,24 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
   border-radius: 10px !important;
   padding: 0.65rem 0.85rem !important;
   font-size: 0.82rem !important;
-  font-family: var(--font-ui);
+  font-family: var(--font-body);
   outline: none;
   box-shadow: none !important;
 }
 .promo-slot :deep(input::placeholder) { color: var(--text-faint) !important; opacity: 1; }
 .promo-slot :deep(input:focus) { border-color: color-mix(in srgb, var(--accent) 45%, transparent) !important; }
 .promo-slot :deep(button) {
-  background: #d92b22 !important;
-  color: #fff !important;
+  background: var(--accent) !important;
+  color: var(--on-accent) !important;
   border: none !important;
   border-radius: 10px !important;
-  font-family: var(--font-ui);
+  font-family: var(--font-body);
   font-size: 0.75rem !important;
   letter-spacing: -0.01em !important;
   cursor: pointer;
   opacity: 1 !important;
 }
-.promo-slot :deep(button:hover:not(:disabled)) { background: #b8201a !important; }
+.promo-slot :deep(button:hover:not(:disabled)) { background: var(--accent-hover) !important; }
 .promo-slot :deep(button:disabled) {
   background: rgb(var(--ink) / 0.06) !important;
   color: var(--text-faint) !important;
@@ -2075,32 +2062,32 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 /* Price rows */
 .price-row {
   display: flex; justify-content: space-between;
-  font-size: 0.78rem; font-family: monospace; color: var(--text-dim);
+  font-size: 0.78rem; font-family: var(--font-mono); color: var(--text-dim);
 }
 .price-discount { color: var(--green-soft); }
 .price-total {
   display: flex; justify-content: space-between; align-items: baseline;
-  font-family: var(--font-ui); font-size: 0.8rem;
+  font-family: var(--font-body); font-size: 0.8rem;
   letter-spacing: -0.01em;
   color: var(--text-2); font-weight: 600;
 }
-.total-val { font-family: monospace; font-size: 1.3rem; font-weight: 800; color: var(--accent-text); letter-spacing: 0; }
+.total-val { font-family: var(--font-mono); font-size: 1.3rem; font-weight: 800; color: var(--accent-text); letter-spacing: 0; }
 
 /* Submit */
 .submit-btn {
   display: flex; align-items: center; justify-content: center; gap: 0.45rem;
   padding: 0.85rem; border-radius: 12px; border: none;
-  background: #d92b22; color: #fff;
-  font-family: var(--font-ui); font-size: 0.8rem;
+  background: var(--accent); color: var(--on-accent);
+  font-family: var(--font-body); font-size: 0.8rem;
   letter-spacing: -0.01em;
   cursor: pointer; transition: background 0.15s;
   box-shadow: 0 4px 20px color-mix(in srgb, var(--accent) 20%, transparent);
 }
-.submit-btn:hover:not(:disabled) { background: #b8201a; }
+.submit-btn:hover:not(:disabled) { background: var(--accent-hover); }
 .submit-btn:disabled { background: rgb(var(--ink) / 0.06); color: var(--text-faint); cursor: not-allowed; box-shadow: none; }
 .btn-spinner {
   width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
-  border: 2px solid rgb(var(--ink) / 0.3); border-top-color: #fff;
+  border: 2px solid rgb(var(--ink) / 0.3); border-top-color: var(--on-accent);
   animation: spin 0.75s linear infinite;
 }
 
@@ -2131,7 +2118,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
   border-bottom: 1px solid rgb(var(--ink) / 0.06);
 }
 .drawer-title {
-  font-family: var(--font-ui); font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; margin: 0;
+  font-family: var(--font-body); font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; margin: 0;
   color: var(--text);
 }
 .drawer-close {
@@ -2159,7 +2146,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
   text-transform: uppercase; color: var(--text-dim);
   background: color-mix(in srgb, var(--accent) 6%, transparent); border-bottom: 1px solid rgb(var(--ink) / 0.05);
 }
-.drawer-summary strong { font-family: monospace; font-size: 0.8rem; color: var(--text); letter-spacing: 0; }
+.drawer-summary strong { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text); letter-spacing: 0; }
 
 .drawer-empty {
   flex: 1; display: flex; flex-direction: column; align-items: center;
@@ -2184,11 +2171,11 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
   border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; gap: 0.6rem;
 }
 .drawer-order-top { display: flex; justify-content: space-between; gap: 0.5rem; }
-.drawer-order-num { font-family: monospace; font-weight: 700; font-size: 0.82rem; color: var(--text); margin: 0 0 0.2rem; }
+.drawer-order-num { font-family: var(--font-mono); font-weight: 700; font-size: 0.82rem; color: var(--text); margin: 0 0 0.2rem; }
 .drawer-order-name { font-size: 0.76rem; color: var(--text-dim); margin: 0 0 0.15rem; }
-.drawer-order-phone { font-family: monospace; font-size: 0.75rem; color: var(--text-faint); margin: 0; }
+.drawer-order-phone { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-faint); margin: 0; }
 .drawer-order-right { text-align: right; flex-shrink: 0; }
-.drawer-order-total { font-family: monospace; font-weight: 700; color: var(--accent-text); font-size: 0.9rem; margin: 0 0 0.2rem; }
+.drawer-order-total { font-family: var(--font-mono); font-weight: 700; color: var(--accent-text); font-size: 0.9rem; margin: 0 0 0.2rem; }
 .drawer-order-items { font-size: 0.75rem; color: var(--text-faint); margin: 0; }
 
 .drawer-items {
@@ -2200,10 +2187,10 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .drawer-item-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .drawer-item-name { color: var(--text-2); }
 .drawer-item-note { font-size: 0.75rem; color: var(--text-faint); }
-.drawer-item-qty { color: var(--text-dim); font-family: monospace; }
-.drawer-item-price { font-family: monospace; color: var(--text-2); min-width: 4.5rem; text-align: right; }
+.drawer-item-qty { color: var(--text-dim); font-family: var(--font-mono); }
+.drawer-item-price { font-family: var(--font-mono); color: var(--text-2); min-width: 4.5rem; text-align: right; }
 
-.qty-stepper { display: flex; align-items: center; gap: 0.4rem; font-family: monospace; font-size: 0.75rem; color: var(--text); }
+.qty-stepper { display: flex; align-items: center; gap: 0.4rem; font-family: var(--font-mono); font-size: 0.75rem; color: var(--text); }
 .qty-stepper button {
   width: 1.9rem; height: 1.9rem; font-size: 0.95rem;   /* target sentuh lebih besar */
   border-radius: 0.4rem; border: 1px solid rgb(var(--ink) / 0.15);
@@ -2225,7 +2212,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
   display: flex; flex-direction: column; gap: 0.5rem;
 }
 .drawer-hint { font-size: 0.75rem; color: var(--text-dim); margin: 0; }
-.drawer-split-total { display: flex; justify-content: space-between; font-size: 0.8rem; font-family: monospace; color: var(--text); }
+.drawer-split-total { display: flex; justify-content: space-between; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text); }
 
 /* Baris aksi: [Ubah] [Pisah] [Bayar ........] */
 .drawer-actions { display: flex; gap: 0.5rem; align-items: stretch; }
@@ -2242,12 +2229,12 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .drawer-pay-btn {
   display: flex; align-items: center; justify-content: center; gap: 0.4rem;
   width: 100%; padding: 0.6rem; border-radius: 9px; border: none;
-  background: #d92b22; color: #fff;
-  font-family: var(--font-ui); font-size: 0.75rem;
+  background: var(--accent); color: var(--on-accent);
+  font-family: var(--font-body); font-size: 0.75rem;
   letter-spacing: -0.01em;
   cursor: pointer; transition: background 0.15s;
 }
-.drawer-pay-btn:hover:not(:disabled) { background: #b8201a; }
+.drawer-pay-btn:hover:not(:disabled) { background: var(--accent-hover); }
 .drawer-pay-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .drawer-actions .drawer-pay-btn { flex: 1; width: auto; min-height: 2.4rem; padding: 0 0.75rem; }
 
@@ -2274,10 +2261,10 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
   padding: 1.5rem 1.5rem 1rem; border-bottom: 1px solid rgb(var(--ink) / 0.05);
 }
 .modal-title {
-  font-family: var(--font-ui); font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 0.2rem;
+  font-family: var(--font-body); font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 0.2rem;
   color: var(--text);
 }
-.modal-ordnum { font-family: monospace; font-size: 0.78rem; color: var(--text-faint); margin: 0; }
+.modal-ordnum { font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-faint); margin: 0; }
 .modal-close-btn {
   width: 30px; height: 30px; border-radius: 8px;
   background: rgb(var(--ink) / 0.05); border: 1px solid rgb(var(--ink) / 0.08);
@@ -2288,7 +2275,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 
 .modal-customer { padding: 0.85rem 1.5rem; border-bottom: 1px solid rgb(var(--ink) / 0.04); }
 .modal-cust-name { font-weight: 600; font-size: 0.88rem; margin: 0 0 0.15rem; }
-.modal-cust-phone { font-family: monospace; font-size: 0.75rem; color: var(--text-faint); margin: 0; }
+.modal-cust-phone { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-faint); margin: 0; }
 
 .modal-items {
   padding: 0.85rem 1.5rem; border-bottom: 1px solid rgb(var(--ink) / 0.04);
@@ -2299,20 +2286,20 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .modal-item-name { font-size: 0.82rem; font-weight: 600; color: var(--text-2); margin: 0 0 0.15rem; }
 .modal-item-qty { color: var(--text-dim); font-weight: 400; font-size: 0.75rem; }
 .modal-item-note { font-size: 0.75rem; color: var(--amber-soft); font-style: italic; margin: 0; }
-.modal-item-price { font-family: monospace; font-size: 0.8rem; color: var(--text-2); flex-shrink: 0; }
+.modal-item-price { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-2); flex-shrink: 0; }
 
 .modal-totals {
   padding: 0.85rem 1.5rem; border-bottom: 1px solid rgb(var(--ink) / 0.04);
   display: flex; flex-direction: column; gap: 0.35rem;
 }
-.modal-total-row { display: flex; justify-content: space-between; font-size: 0.78rem; font-family: monospace; color: var(--text-dim); }
+.modal-total-row { display: flex; justify-content: space-between; font-size: 0.78rem; font-family: var(--font-mono); color: var(--text-dim); }
 .modal-discount { color: var(--green-soft); }
 .modal-total-final {
   display: flex; justify-content: space-between;
   padding-top: 0.5rem; border-top: 1px solid rgb(var(--ink) / 0.07);
-  font-family: var(--font-ui); font-size: 0.82rem; letter-spacing: -0.01em; color: var(--text-2); font-weight: 600;
+  font-family: var(--font-body); font-size: 0.82rem; letter-spacing: -0.01em; color: var(--text-2); font-weight: 600;
 }
-.modal-total-final span:last-child { font-family: monospace; font-size: 1.05rem; font-weight: 800; color: var(--accent-text); }
+.modal-total-final span:last-child { font-family: var(--font-mono); font-size: 1.05rem; font-weight: 800; color: var(--accent-text); }
 
 .modal-section { padding: 0.85rem 1.5rem; border-bottom: 1px solid rgb(var(--ink) / 0.04); display: flex; flex-direction: column; gap: 0.55rem; }
 .modal-box > .submit-btn { margin: 1rem 1.5rem 1.25rem; }
@@ -2353,9 +2340,9 @@ input[type="number"] { -moz-appearance: textfield; }
     display: flex; align-items: center; gap: 0.65rem;
     position: fixed; left: 1rem; right: 1rem; bottom: 1rem;
     z-index: 55; padding: 0.85rem 1.1rem;
-    background: #d92b22; border: none; border-radius: 14px;
+    background: var(--accent); border: none; border-radius: 14px;
     box-shadow: 0 8px 28px color-mix(in srgb, var(--accent) 40%, transparent);
-    cursor: pointer; color: #fff;
+    cursor: pointer; color: var(--on-accent);
   }
   .mcf-count {
     width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
@@ -2363,10 +2350,10 @@ input[type="number"] { -moz-appearance: textfield; }
     justify-content: center; font-size: 0.7rem; font-weight: 800;
   }
   .mcf-label {
-    flex: 1; text-align: left; font-family: var(--font-ui);
+    flex: 1; text-align: left; font-family: var(--font-body);
     font-size: 0.75rem; letter-spacing: -0.01em;
   }
-  .mcf-total { font-family: monospace; font-weight: 800; font-size: 0.85rem; }
+  .mcf-total { font-family: var(--font-mono); font-weight: 800; font-size: 0.85rem; }
 }
 
 @media (max-width: 480px) {

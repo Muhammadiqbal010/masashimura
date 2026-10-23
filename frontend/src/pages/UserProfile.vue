@@ -1,252 +1,191 @@
 <template>
-  <div class="max-w-4xl mx-auto p-4 sm:p-6 text-[color:var(--text)] box-border space-y-6 sm:space-y-8">
+  <div class="adm-page adm-page--form">
 
-    <!-- 👤 HEADER PROFIL -->
-    <div>
-      <div class="flex items-center gap-2 mb-2">
-        <span class="w-1 h-1 rounded-full bg-red-600"></span>
-        <p class="text-[color:var(--text-faint)] text-[11px] font-manrope font-bold tracking-normal">Masashimura · Akun</p>
+    <header class="adm-header">
+      <div>
+        <p class="adm-eyebrow">Masashimura · Akun</p>
+        <h1 class="adm-title">My Profile</h1>
+        <p class="adm-sub">Kelola kredensial login dan keamanan akun operasional kamu.</p>
       </div>
-      <h1 class="font-manrope font-bold text-3xl sm:text-4xl tracking-tighter text-[color:var(--text)]">
-        My Profile
-      </h1>
-      <p class="text-[color:var(--text-faint)] text-xs sm:text-sm font-light mt-1">
-        Kelola kredensial login dan keamanan akun operasional kamu
-      </p>
-    </div>
+    </header>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 items-start">
+    <div class="up-grid">
 
-      <!-- CARD INFORMASI AKUN -->
-      <div class="md:col-span-1 bg-[color:var(--surface)] border border-[color:rgb(var(--ink)/0.05)] rounded-2xl p-6 text-center space-y-4 shadow-xl md:sticky md:top-6">
-        <div class="w-20 h-20 rounded-full bg-red-600/10 border-2 border-red-600/20 flex items-center justify-center text-3xl font-bold text-[color:var(--accent-text)] mx-auto font-manrope font-bold select-none">
-          {{ userInitial }}
-        </div>
-        <div>
-          <h3 class="font-bold text-lg text-[color:var(--text-2)] truncate">{{ auth.user?.name || 'Staff Masashimura' }}</h3>
-          <p class="text-xs text-[color:var(--text-faint)] font-mono mt-0.5 truncate">{{ auth.user?.email }}</p>
-        </div>
-        <div class="pt-3 border-t border-[color:rgb(var(--ink)/0.05)] flex justify-center">
-          <span
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider font-mono"
-            :class="roleStyle.badge"
-          >
-            <component :is="roleStyle.icon" :size="11" />
-            {{ userRole }}
-          </span>
+      <!-- Ringkasan akun -->
+      <aside class="adm-card up-summary">
+        <div class="up-avatar" aria-hidden="true">{{ userInitial }}</div>
+        <div class="up-who">
+          <h2 class="adm-card-title adm-truncate">{{ auth.user?.name || 'Staff Masashimura' }}</h2>
+          <p class="adm-hint adm-mono adm-truncate">{{ auth.user?.email }}</p>
         </div>
 
-        <div class="pt-3 border-t border-[color:rgb(var(--ink)/0.05)] text-left space-y-2">
-          <div class="flex items-center justify-between">
-            <span class="text-[11px] text-[color:var(--text-faint)] uppercase tracking-wider">Username</span>
-            <span class="text-xs text-[color:var(--text-dim)] font-mono truncate max-w-[110px]">{{ auth.user?.username || '—' }}</span>
+        <span class="adm-badge up-role" :class="roleStyle.badge">
+          <component :is="roleStyle.icon" :size="12" />
+          {{ userRole }}
+        </span>
+
+        <dl class="up-facts">
+          <div class="up-fact">
+            <dt>Username</dt>
+            <dd class="adm-mono adm-truncate">{{ auth.user?.username || '—' }}</dd>
           </div>
-          <div class="flex items-center justify-between">
-            <span class="text-[11px] text-[color:var(--text-faint)] uppercase tracking-wider">Status</span>
-            <span class="inline-flex items-center gap-1 text-xs text-[color:var(--green-soft)]">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Aktif
-            </span>
+          <div class="up-fact">
+            <dt>Status</dt>
+            <dd class="up-active"><span class="adm-dot"></span> Aktif</dd>
           </div>
-        </div>
-      </div>
+        </dl>
+      </aside>
 
-      <!-- FORM UPDATE DATA KREDENSIAL -->
-      <div class="md:col-span-2 bg-[color:var(--surface)] border border-[color:rgb(var(--ink)/0.05)] rounded-2xl p-5 sm:p-8 shadow-2xl shadow-black/30">
+      <!-- Form kredensial -->
+      <form class="adm-card up-form" @submit.prevent="handleUpdateProfile">
 
-        <form @submit.prevent="handleUpdateProfile" class="space-y-7">
+        <section class="up-section">
+          <div class="up-section-head">
+            <IdCard :size="15" class="up-section-icon" />
+            <h2 class="adm-card-title">Informasi Akun</h2>
+          </div>
 
-          <!-- ── Section: Informasi Akun ───────────────────────────────── -->
-          <section class="space-y-5">
-            <div class="flex items-center gap-2 pb-3 border-b border-[color:rgb(var(--ink)/0.05)]">
-              <IdCard :size="14" class="text-[color:var(--accent-text)]" />
-              <h2 class="font-manrope font-bold text-sm tracking-normal text-[color:var(--text-2)]">Informasi Akun</h2>
+          <div class="adm-field">
+            <label class="adm-label" for="profile-email">Alamat Email</label>
+            <div class="up-affix">
+              <input id="profile-email" :value="auth.user?.email" type="email" disabled readonly class="adm-input adm-input--mono up-pr" />
+              <Lock :size="14" class="up-icon up-icon--end" />
             </div>
+            <p class="adm-hint">Email terkunci dan tidak dapat diubah. Hubungi owner jika perlu mengganti email akun kamu.</p>
+          </div>
 
-            <div class="space-y-1.5">
-              <label class="text-[11px] uppercase font-bold tracking-wider text-[color:var(--text-faint)]">Alamat Email</label>
-              <div class="relative">
-                <input
-                  :value="auth.user?.email"
-                  type="email"
-                  disabled
-                  readonly
-                  class="w-full bg-[color:rgb(var(--ink)/0.02)] border border-[color:rgb(var(--ink)/0.05)] rounded-xl py-3.5 pl-4 pr-12 text-sm font-mono text-[color:var(--text-faint)] cursor-not-allowed"
-                />
-                <Lock :size="14" class="absolute right-4 top-1/2 -translate-y-1/2 text-[color:var(--text-faint)]" />
-              </div>
-              <p class="text-[11px] text-[color:var(--text-faint)] italic pt-0.5">
-                Email terkunci dan tidak dapat diubah. Hubungi owner jika perlu mengganti email akun kamu.
-              </p>
+          <div class="adm-field">
+            <label class="adm-label" for="profile-username">Username</label>
+            <div class="up-affix">
+              <UserRound :size="14" class="up-icon" />
+              <input
+                id="profile-username"
+                v-model="profileForm.username"
+                type="text"
+                required
+                :disabled="isSaving"
+                placeholder="Masukkan username baru kamu..."
+                class="adm-input adm-input--mono up-pl"
+              />
             </div>
+          </div>
+        </section>
 
-            <div class="space-y-1.5">
-              <label for="profile-username" class="text-[11px] uppercase font-bold tracking-wider text-[color:var(--text-faint)]">
-                Username
-              </label>
-              <div class="relative">
-                <UserRound :size="14" class="absolute left-4 top-1/2 -translate-y-1/2 text-[color:var(--text-faint)]" />
-                <input
-                  id="profile-username"
-                  v-model="profileForm.username"
-                  type="text"
-                  required
-                  :disabled="isSaving"
-                  placeholder="Masukkan username baru kamu..."
-                  class="w-full bg-[color:rgb(var(--ink)/0.05)] border border-[color:rgb(var(--ink)/0.1)] rounded-xl py-3.5 pl-11 pr-4 text-sm focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600/30 font-mono transition text-[color:var(--text)] disabled:opacity-50"
-                />
-              </div>
-            </div>
-          </section>
+        <section class="up-section">
+          <div class="up-section-head">
+            <ShieldCheck :size="15" class="up-section-icon" />
+            <h2 class="adm-card-title">Keamanan Password</h2>
+            <span class="adm-opt up-optional">Opsional</span>
+          </div>
 
-          <!-- ── Section: Keamanan Password ────────────────────────────── -->
-          <section class="space-y-5">
-            <div class="flex items-center gap-2 pb-3 border-b border-[color:rgb(var(--ink)/0.05)]">
-              <ShieldCheck :size="14" class="text-[color:var(--accent-text)]" />
-              <h2 class="font-manrope font-bold text-sm tracking-normal text-[color:var(--text-2)]">Keamanan Password</h2>
-              <span class="text-[11px] text-[color:var(--text-faint)] italic ml-auto">Opsional</span>
-            </div>
+          <p class="adm-hint">Isi kolom di bawah hanya jika kamu ingin mengganti password akun operasional.</p>
 
-            <p class="text-[11px] text-[color:var(--text-faint)] -mt-1">
-              Isi kolom di bawah hanya jika kamu ingin mengganti password akun operasional.
-            </p>
-
-            <!-- Toggle metode verifikasi -->
-            <div v-if="profileForm.newPassword" class="verify-toggle">
-              <button type="button"
-                :class="['verify-btn', verifyMethod === 'password' && 'verify-btn-active']"
-                @click="verifyMethod = 'password'">
-                Password Lama
-              </button>
-              <button type="button"
-                :class="['verify-btn', verifyMethod === 'pin' && 'verify-btn-active']"
-                @click="verifyMethod = 'pin'">
-                PIN Keamanan
-              </button>
-            </div>
-
-            <!-- Password Saat Ini -->
-            <div v-if="verifyMethod === 'password'" class="space-y-1.5">
-              <label for="profile-current-password" class="text-[11px] uppercase font-bold tracking-wider text-[color:var(--text-faint)]">
-                Password Saat Ini
-              </label>
-              <div class="relative">
-                <Lock :size="14" class="absolute left-4 top-1/2 -translate-y-1/2 text-[color:var(--text-faint)]" />
-                <input
-                  id="profile-current-password"
-                  v-model="profileForm.currentPassword"
-                  :type="showCurrentPassword ? 'text' : 'password'"
-                  :disabled="isSaving"
-                  placeholder="Wajib diisi kalau mau ganti password..."
-                  class="w-full bg-[color:rgb(var(--ink)/0.05)] border border-[color:rgb(var(--ink)/0.1)] rounded-xl py-3.5 pl-11 pr-12 text-sm focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600/30 font-mono transition text-[color:var(--text)] disabled:opacity-50"
-                />
-                <button type="button" tabindex="-1" @click="showCurrentPassword = !showCurrentPassword" class="absolute right-4 top-1/2 -translate-y-1/2 text-[color:var(--text-faint)] hover:text-[color:var(--text)] transition-colors">
-                  <component :is="showCurrentPassword ? EyeOff : Eye" :size="16" />
-                </button>
-              </div>
-            </div>
-
-            <!-- PIN Keamanan -->
-            <div v-else class="space-y-1.5">
-              <label for="profile-pin" class="text-[11px] uppercase font-bold tracking-wider text-[color:var(--text-faint)]">
-                PIN Keamanan
-              </label>
-              <div class="relative">
-                <Lock :size="14" class="absolute left-4 top-1/2 -translate-y-1/2 text-[color:var(--text-faint)]" />
-                <input
-                  id="profile-pin"
-                  v-model="profileForm.securityPin"
-                  type="text" inputmode="numeric" maxlength="6"
-                  :disabled="isSaving"
-                  placeholder="6 digit PIN kamu..."
-                  class="w-full bg-[color:rgb(var(--ink)/0.05)] border border-[color:rgb(var(--ink)/0.1)] rounded-xl py-3.5 pl-11 pr-4 text-sm focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600/30 font-mono tracking-widest transition text-[color:var(--text)] disabled:opacity-50"
-                  @input="profileForm.securityPin = profileForm.securityPin.replace(/\D/g, '').slice(0, 6)"
-                />
-              </div>
-            </div>
-
-            <!-- Password Baru -->
-            <div class="space-y-1.5">
-              <label for="profile-new-password" class="text-[11px] uppercase font-bold tracking-wider text-[color:var(--text-faint)]">
-                Password Baru
-              </label>
-              <div class="relative">
-                <Lock :size="14" class="absolute left-4 top-1/2 -translate-y-1/2 text-[color:var(--text-faint)]" />
-                <input
-                  id="profile-new-password"
-                  v-model="profileForm.newPassword"
-                  :type="showNewPassword ? 'text' : 'password'"
-                  :disabled="isSaving"
-                  placeholder="Masukkan password baru jika ingin diganti..."
-                  class="w-full bg-[color:rgb(var(--ink)/0.05)] border border-[color:rgb(var(--ink)/0.1)] rounded-xl py-3.5 pl-11 pr-12 text-sm focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600/30 font-mono transition text-[color:var(--text)] disabled:opacity-50"
-                />
-                <button type="button" tabindex="-1" @click="showNewPassword = !showNewPassword" class="absolute right-4 top-1/2 -translate-y-1/2 text-[color:var(--text-faint)] hover:text-[color:var(--text)] transition-colors">
-                  <component :is="showNewPassword ? EyeOff : Eye" :size="16" />
-                </button>
-              </div>
-
-              <div v-if="profileForm.newPassword" class="flex items-center gap-2 pt-1">
-                <div class="flex gap-1 flex-1">
-                  <span
-                    v-for="i in 4" :key="i"
-                    class="h-1 flex-1 rounded-full transition-colors"
-                    :class="i <= passwordStrength.score ? passwordStrength.color : 'bg-[color:rgb(var(--ink)/0.08)]'"
-                  ></span>
-                </div>
-                <span class="text-[11px] uppercase tracking-wider shrink-0" :class="passwordStrength.textColor">
-                  {{ passwordStrength.label }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Konfirmasi Password -->
-            <div class="space-y-1.5">
-              <label for="profile-confirm-password" class="text-[11px] uppercase font-bold tracking-wider text-[color:var(--text-faint)]">
-                Konfirmasi Password Baru
-              </label>
-              <div class="relative">
-                <Lock :size="14" class="absolute left-4 top-1/2 -translate-y-1/2 text-[color:var(--text-faint)]" />
-                <input
-                  id="profile-confirm-password"
-                  v-model="profileForm.confirmPassword"
-                  :type="showConfirmPassword ? 'text' : 'password'"
-                  :disabled="isSaving || !profileForm.newPassword"
-                  placeholder="Ulangi password baru kamu..."
-                  :class="[
-                    'w-full bg-[color:rgb(var(--ink)/0.05)] border rounded-xl py-3.5 pl-11 pr-12 text-sm focus:outline-none font-mono transition text-[color:var(--text)] disabled:opacity-50',
-                    confirmMismatch
-                      ? 'border-red-500/60 focus:border-red-500 focus:ring-1 focus:ring-red-500/30'
-                      : 'border-[color:rgb(var(--ink)/0.1)] focus:border-red-600 focus:ring-1 focus:ring-red-600/30'
-                  ]"
-                />
-                <button type="button" tabindex="-1" @click="showConfirmPassword = !showConfirmPassword" class="absolute right-4 top-1/2 -translate-y-1/2 text-[color:var(--text-faint)] hover:text-[color:var(--text)] transition-colors">
-                  <component :is="showConfirmPassword ? EyeOff : Eye" :size="16" />
-                </button>
-              </div>
-              <p v-if="confirmMismatch" class="text-[color:color-mix(in_srgb,var(--red-soft)_80%,transparent)] text-[11px] pl-1">
-                Konfirmasi password tidak cocok
-              </p>
-              <p v-else-if="profileForm.newPassword && profileForm.confirmPassword" class="flex items-center gap-1 text-[color:color-mix(in_srgb,var(--green-soft)_80%,transparent)] text-[11px] pl-1">
-                <CheckCircle2 :size="12" /> Password cocok
-              </p>
-            </div>
-          </section>
-
-          <!-- Tombol Submit -->
-          <div class="flex justify-end pt-2 border-t border-[color:rgb(var(--ink)/0.05)]">
-            <button
-              type="submit"
-              :disabled="isSaving || !canSubmit"
-              class="w-full sm:w-fit flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white font-manrope font-bold px-8 py-3.5 rounded-xl text-xs font-bold tracking-normal transition disabled:opacity-40 disabled:hover:bg-red-600 cursor-pointer disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-            >
-              <span v-if="isSaving" class="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
-              <Save v-else :size="14" />
-              {{ isSaving ? 'Menyimpan...' : 'Simpan Kredensial Baru' }}
+          <!-- Toggle metode verifikasi -->
+          <div v-if="profileForm.newPassword" class="adm-seg adm-seg--fill" role="group" aria-label="Metode verifikasi">
+            <button type="button" class="adm-seg-btn" :aria-pressed="verifyMethod === 'password'" @click="verifyMethod = 'password'">
+              Password Lama
+            </button>
+            <button type="button" class="adm-seg-btn" :aria-pressed="verifyMethod === 'pin'" @click="verifyMethod = 'pin'">
+              PIN Keamanan
             </button>
           </div>
 
-        </form>
-      </div>
+          <!-- Password Saat Ini -->
+          <div v-if="verifyMethod === 'password'" class="adm-field">
+            <label class="adm-label" for="profile-current-password">Password Saat Ini</label>
+            <div class="up-affix">
+              <Lock :size="14" class="up-icon" />
+              <input
+                id="profile-current-password"
+                v-model="profileForm.currentPassword"
+                :type="showCurrentPassword ? 'text' : 'password'"
+                :disabled="isSaving"
+                placeholder="Wajib diisi kalau mau ganti password..."
+                class="adm-input adm-input--mono up-pl up-pr"
+              />
+              <button type="button" tabindex="-1" class="adm-icon-btn up-eye" :aria-label="showCurrentPassword ? 'Sembunyikan password' : 'Tampilkan password'" @click="showCurrentPassword = !showCurrentPassword">
+                <component :is="showCurrentPassword ? EyeOff : Eye" :size="16" />
+              </button>
+            </div>
+          </div>
 
+          <!-- PIN Keamanan -->
+          <div v-else class="adm-field">
+            <label class="adm-label" for="profile-pin">PIN Keamanan</label>
+            <div class="up-affix">
+              <Lock :size="14" class="up-icon" />
+              <input
+                id="profile-pin"
+                v-model="profileForm.securityPin"
+                type="text" inputmode="numeric" maxlength="6"
+                :disabled="isSaving"
+                placeholder="6 digit PIN kamu..."
+                class="adm-input adm-input--mono up-pl up-pin"
+                @input="profileForm.securityPin = profileForm.securityPin.replace(/\D/g, '').slice(0, 6)"
+              />
+            </div>
+          </div>
+
+          <!-- Password Baru -->
+          <div class="adm-field">
+            <label class="adm-label" for="profile-new-password">Password Baru</label>
+            <div class="up-affix">
+              <Lock :size="14" class="up-icon" />
+              <input
+                id="profile-new-password"
+                v-model="profileForm.newPassword"
+                :type="showNewPassword ? 'text' : 'password'"
+                :disabled="isSaving"
+                placeholder="Masukkan password baru jika ingin diganti..."
+                class="adm-input adm-input--mono up-pl up-pr"
+              />
+              <button type="button" tabindex="-1" class="adm-icon-btn up-eye" :aria-label="showNewPassword ? 'Sembunyikan password' : 'Tampilkan password'" @click="showNewPassword = !showNewPassword">
+                <component :is="showNewPassword ? EyeOff : Eye" :size="16" />
+              </button>
+            </div>
+
+            <div v-if="profileForm.newPassword" class="up-strength" :class="passwordStrength.tone">
+              <div class="up-strength-bars">
+                <span v-for="i in 4" :key="i" :class="{ on: i <= passwordStrength.score }"></span>
+              </div>
+              <span class="up-strength-label">{{ passwordStrength.label }}</span>
+            </div>
+          </div>
+
+          <!-- Konfirmasi Password -->
+          <div class="adm-field">
+            <label class="adm-label" for="profile-confirm-password">Konfirmasi Password Baru</label>
+            <div class="up-affix">
+              <Lock :size="14" class="up-icon" />
+              <input
+                id="profile-confirm-password"
+                v-model="profileForm.confirmPassword"
+                :type="showConfirmPassword ? 'text' : 'password'"
+                :disabled="isSaving || !profileForm.newPassword"
+                placeholder="Ulangi password baru kamu..."
+                class="adm-input adm-input--mono up-pl up-pr"
+                :class="{ 'is-invalid': confirmMismatch }"
+              />
+              <button type="button" tabindex="-1" class="adm-icon-btn up-eye" :aria-label="showConfirmPassword ? 'Sembunyikan password' : 'Tampilkan password'" @click="showConfirmPassword = !showConfirmPassword">
+                <component :is="showConfirmPassword ? EyeOff : Eye" :size="16" />
+              </button>
+            </div>
+            <p v-if="confirmMismatch" class="adm-error">Konfirmasi password tidak cocok</p>
+            <p v-else-if="profileForm.newPassword && profileForm.confirmPassword" class="up-match">
+              <CheckCircle2 :size="13" /> Password cocok
+            </p>
+          </div>
+        </section>
+
+        <div class="up-actions">
+          <button type="submit" class="adm-btn adm-btn--primary" :disabled="isSaving || !canSubmit">
+            <span v-if="isSaving" class="adm-spinner"></span>
+            <Save v-else :size="14" />
+            {{ isSaving ? 'Menyimpan...' : 'Simpan Kredensial Baru' }}
+          </button>
+        </div>
+
+      </form>
     </div>
   </div>
 </template>
@@ -285,9 +224,9 @@ const userRole = computed(() => auth.user?.role?.toLowerCase() || "kasir");
 
 const roleStyle = computed(() => {
   const map = {
-    owner: { badge: "bg-amber-500/10 text-[color:var(--amber-soft)] border border-amber-500/20", icon: Crown },
-    admin: { badge: "bg-blue-500/10 text-[color:var(--blue-soft)] border border-blue-500/20", icon: UserCog },
-    kasir: { badge: "bg-emerald-500/10 text-[color:var(--green-soft)] border border-emerald-500/20", icon: ChefHat },
+    owner: { badge: "adm-badge--amber", icon: Crown },
+    admin: { badge: "adm-badge--blue", icon: UserCog },
+    kasir: { badge: "adm-badge--green", icon: ChefHat },
   };
   return map[userRole.value] || map.kasir;
 });
@@ -307,11 +246,11 @@ const passwordStrength = computed(() => {
   if (/[^A-Za-z0-9]/.test(p) && p.length >= 10) score++;
 
   const levels = [
-    { label: "Lemah", color: "bg-red-500", textColor: "text-[color:var(--red-soft)]" },
-    { label: "Lemah", color: "bg-red-500", textColor: "text-[color:var(--red-soft)]" },
-    { label: "Cukup", color: "bg-amber-500", textColor: "text-[color:var(--amber-soft)]" },
-    { label: "Kuat", color: "bg-emerald-500", textColor: "text-[color:var(--green-soft)]" },
-    { label: "Sangat Kuat", color: "bg-emerald-500", textColor: "text-[color:var(--green-soft)]" },
+    { label: "Lemah", tone: "is-weak" },
+    { label: "Lemah", tone: "is-weak" },
+    { label: "Cukup", tone: "is-mid" },
+    { label: "Kuat", tone: "is-strong" },
+    { label: "Sangat Kuat", tone: "is-strong" },
   ];
   return { score, ...levels[score] };
 });
@@ -403,18 +342,49 @@ const handleUpdateProfile = async () => {
 </script>
 
 <style scoped>
-.verify-toggle {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;
+.up-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+@media (min-width: 768px) { .up-grid { grid-template-columns: minmax(0, 17rem) minmax(0, 1fr); } .up-summary { position: sticky; top: 1.5rem; } }
+
+.up-summary { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 1.5rem 1.25rem; text-align: center; }
+.up-avatar {
+  display: flex; align-items: center; justify-content: center; width: 80px; height: 80px; border-radius: 50%;
+  background: var(--tint-accent); border: 2px solid var(--line-accent); color: var(--accent-text);
+  font-family: var(--font-display); font-size: 1.875rem; user-select: none;
 }
-.verify-btn {
-  padding: 0.6rem; border-radius: 10px;
-  background: rgb(var(--ink) / 0.03); border: 1px solid rgb(var(--ink) / 0.08);
-  color: var(--text-dim);
-  font-family: var(--font-ui); font-size: 0.75rem;
-  letter-spacing: -0.01em;
-  cursor: pointer; transition: all 0.15s;
-}
-.verify-btn-active {
-  background: color-mix(in srgb, var(--accent) 12%, transparent); border-color: color-mix(in srgb, var(--accent) 40%, transparent); color: var(--red-soft);
-}
+.up-who { width: 100%; min-width: 0; }
+.up-who .adm-hint { margin-top: 0.2rem; }
+.up-role { text-transform: uppercase; letter-spacing: 0.06em; }
+
+.up-facts { width: 100%; margin: 0; padding-top: 1rem; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.6rem; text-align: left; }
+.up-fact { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.up-fact dt { font-size: 0.8125rem; color: var(--text-faint); }
+.up-fact dd { margin: 0; max-width: 8rem; font-size: 0.8125rem; color: var(--text-2); }
+.up-active { display: inline-flex; align-items: center; gap: 0.4rem; color: var(--green-soft) !important; }
+
+.up-form { display: flex; flex-direction: column; gap: 1.5rem; padding: 1.25rem; }
+@media (min-width: 640px) { .up-form { padding: 1.75rem; } }
+.up-section { display: flex; flex-direction: column; gap: 1rem; }
+.up-section-head { display: flex; align-items: center; gap: 0.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
+.up-section-icon { color: var(--accent-text); }
+.up-optional { margin-left: auto; font-size: 0.8125rem; }
+
+.up-affix { position: relative; display: flex; align-items: center; }
+.up-icon { position: absolute; left: 0.85rem; color: var(--text-faint); pointer-events: none; }
+.up-icon--end { left: auto; right: 0.85rem; }
+.up-pl { padding-left: 2.5rem; }
+.up-pr { padding-right: 2.75rem; }
+.up-eye { position: absolute; right: 0.3rem; }
+.up-pin { letter-spacing: 0.3em; }
+
+.up-strength { display: flex; align-items: center; gap: 0.6rem; padding-top: 0.25rem; --lvl: var(--red-soft); }
+.up-strength.is-mid { --lvl: var(--amber-soft); }
+.up-strength.is-strong { --lvl: var(--green-soft); }
+.up-strength-bars { display: flex; flex: 1; gap: 4px; }
+.up-strength-bars span { flex: 1; height: 4px; border-radius: 99px; background: rgb(var(--ink) / 0.1); transition: background 0.15s; }
+.up-strength-bars span.on { background: var(--lvl); }
+.up-strength-label { flex-shrink: 0; font-size: 0.75rem; font-weight: 600; color: var(--lvl); }
+.up-match { display: flex; align-items: center; gap: 0.35rem; margin: 0; font-size: 0.8125rem; color: var(--green-soft); }
+
+.up-actions { display: flex; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid var(--border); }
+@media (max-width: 640px) { .up-actions .adm-btn { width: 100%; } }
 </style>

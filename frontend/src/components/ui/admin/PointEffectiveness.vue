@@ -91,8 +91,8 @@ const n = (v) => Math.round(v || 0).toLocaleString("id-ID")
 .pe { margin-top: 1.25rem; }
 .pe-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; }
 .pe-h { margin: 0; }
-.pe-periods { display: inline-flex; gap: 4px; padding: 3px; border-radius: 12px; background: rgb(var(--ink) / 0.06); }
-.pe-period { min-height: 36px; padding: 0 .9rem; border: 0; border-radius: 9px; background: transparent; color: var(--text-dim); font: inherit; font-size: .75rem; cursor: pointer; }
+.pe-periods { display: inline-flex; gap: 4px; padding: 3px; border-radius: var(--r-md); background: rgb(var(--ink) / 0.06); }
+.pe-period { min-height: 36px; padding: 0 .9rem; border: 0; border-radius: var(--r-sm); background: transparent; color: var(--text-dim); font: inherit; font-size: .75rem; cursor: pointer; }
 .pe-period[aria-pressed="true"] { background: var(--surface); color: var(--text); font-weight: 600; }
 .pe-period:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .pt-note { margin-top: .8rem; }

@@ -130,7 +130,7 @@ onMounted(load)
 
 <style scoped>
 .sim-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
-.sim-card { background: var(--surface-2); border: 1px solid rgb(var(--ink) / 0.05); border-radius: 12px; padding: 1.1rem 1.2rem; min-width: 0; display: flex; flex-direction: column; gap: .7rem; }
+.sim-card { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-md); padding: 1.1rem 1.2rem; min-width: 0; display: flex; flex-direction: column; gap: .7rem; }
 .sim-title { margin: 0; font-size: .85rem; font-weight: 600; color: var(--text); display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
 .sim-badge { padding: .1rem .5rem; border-radius: 999px; font-size: 0.75rem; letter-spacing: .08em; text-transform: uppercase; background: color-mix(in srgb, var(--amber-soft) 18%, transparent); color: var(--amber-soft); }
 .sim-label { font-size: .8rem; color: var(--text-2); }
@@ -149,7 +149,7 @@ onMounted(load)
 .sim-facts dt { color: var(--text-faint); }
 .sim-facts dd { margin: 0; color: var(--text-2); font-variant-numeric: tabular-nums; }
 .sim-foot { margin: auto 0 0; padding-top: .5rem; font-size: 0.75rem; line-height: 1.5; color: var(--text-faint); border-top: 1px solid rgb(var(--ink) / 0.06); }
-.sim-skel { height: 220px; border-radius: 12px; background: rgb(var(--ink) / 0.05); }
+.sim-skel { height: 220px; border-radius: var(--r-md); background: rgb(var(--ink) / 0.05); }
 .sim-empty { padding: 2rem 1rem; text-align: center; color: var(--text-dim); font-size: .85rem; }
-.sim-btn { min-height: 40px; padding: 0 1rem; border-radius: 8px; border: 1px solid rgb(var(--ink) / 0.15); background: transparent; color: var(--text); cursor: pointer; }
+.sim-btn { min-height: 40px; padding: 0 1rem; border-radius: var(--r-sm); border: 1px solid var(--border-strong); background: transparent; color: var(--text); cursor: pointer; }
 </style>

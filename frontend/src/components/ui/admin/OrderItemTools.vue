@@ -399,7 +399,7 @@ watch(
 .oit { display: flex; flex-direction: column; gap: 0.9rem; }
 .oit-hint { font-size: 0.85rem; color: var(--text-2); line-height: 1.55; margin: 0; }
 .oit-warn { font-size: 0.82rem; color: var(--red-soft); margin: 0; }
-.oit-ok { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; font-weight: 700; color: var(--green-soft, #16a34a); margin: 0; }
+.oit-ok { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; font-weight: 700; color: var(--green-soft); margin: 0; }
 .oit-faint { color: var(--text-faint); font-size: 0.78rem; }
 .oit-search { position: relative; display: flex; align-items: center; gap: 0.5rem; }
 .oit-search svg { position: absolute; left: 0.75rem; color: var(--text-faint); pointer-events: none; }

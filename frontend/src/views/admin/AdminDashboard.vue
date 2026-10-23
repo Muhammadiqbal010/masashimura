@@ -1,19 +1,19 @@
 <template>
-  <div class="dashboard-root">
+  <div class="adm-page dashboard-root">
     <!-- HEADER -->
-    <div class="dash-header">
+    <header class="adm-header">
       <div>
-        <p class="dash-eyebrow">Masashimura</p>
-        <h1 class="dash-title">Admin Dashboard</h1>
+        <p class="adm-eyebrow">Masashimura · Admin</p>
+        <h1 class="adm-title">Admin Dashboard</h1>
+        <p v-if="lastUpdated" class="adm-sub">Diperbarui {{ lastUpdated }}</p>
       </div>
-      <div class="dash-meta">
-        <span v-if="lastUpdated" class="dash-updated">Diperbarui {{ lastUpdated }}</span>
-        <button type="button" class="refresh-btn" :disabled="loading || predictionLoading" @click="refreshAll">
+      <div class="adm-header-actions">
+        <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" :disabled="loading || predictionLoading" @click="refreshAll">
           <svg class="refresh-icon" :class="{ spinning: loading || predictionLoading }" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 11-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
           <span>Muat ulang</span>
         </button>
       </div>
-    </div>
+    </header>
 
     <!-- BRIEFING HARI INI (independen dari filter tanggal; dimuat sendiri) -->
     <BriefingStrip ref="briefingRef" />
@@ -753,44 +753,6 @@ const formatPrice = (value) =>
 </script>
 
 <style scoped>
-/* ── Root ─────────────────────────────────────────────────────────── */
-.dashboard-root {
-  --page-max: 1280px;
-  min-height: 100%;
-  background: var(--bg);
-  color: var(--text);
-  /* konten dibatasi --page-max, tapi latar tetap full-width */
-  padding: clamp(1.1rem, 3vw, 2.5rem) max(clamp(1rem, 3vw, 1.5rem), calc((100% - var(--page-max)) / 2));
-  font-family: var(--font-body);
-  -webkit-font-smoothing: antialiased;
-  padding-top: 0.5rem;
-}
-
-/* ── Header ──────────────────────────────────────────────────────── */
-.dash-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-  margin-bottom: 1.75rem;
-}
-.dash-eyebrow {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--accent-text);
-  margin: 0 0 0.25rem;
-}
-.dash-title {
-  font-family: var(--font-display);
-  font-size: clamp(1.75rem, 1.4rem + 1vw, 2.25rem);
-  font-weight: 700;
-  line-height: 1.15;
-  letter-spacing: -0.015em;
-  color: var(--text);
-  margin: 0;
-}
-
 /* ── Filter Bar ───────────────────────────────────────────────────── */
 .filter-bar {
   display: flex;
@@ -801,7 +763,7 @@ const formatPrice = (value) =>
   padding: 0.85rem 1.25rem;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--r-lg);
   box-shadow: var(--shadow-card);
 }
 .date-inputs {
@@ -894,7 +856,7 @@ const formatPrice = (value) =>
 .stat-hero {
   background: var(--surface);
   border: 2px solid var(--pop-line);
-  border-radius: 16px;
+  border-radius: var(--r-lg);
   padding: clamp(1.25rem, 3vw, 1.75rem) clamp(1.25rem, 3vw, 2rem);
   position: relative;
   overflow: hidden;
@@ -985,7 +947,7 @@ const formatPrice = (value) =>
 .stat-card {
   background: var(--surface);
   border: 2px solid var(--pop-line);
-  border-radius: 16px;
+  border-radius: var(--r-lg);
   padding: 1.15rem 1.3rem;
   box-shadow: 4px 4px 0 var(--pop-line);
   position: relative;
@@ -1050,7 +1012,7 @@ const formatPrice = (value) =>
 .table-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--r-lg);
   box-shadow: var(--shadow-card);
   overflow: hidden;
   margin-bottom: 1.5rem;
@@ -1165,7 +1127,7 @@ const formatPrice = (value) =>
 }
 .bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #d92b22, #f0524a);
+  background: linear-gradient(90deg, var(--accent), var(--red-soft));
   border-radius: 99px;
   transition: width 0.7s ease;
 }
@@ -1185,7 +1147,7 @@ const formatPrice = (value) =>
 .predict-section {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--r-lg);
   padding: 1.5rem 1.75rem;
   margin-bottom: 2.5rem;
 }
@@ -1239,8 +1201,8 @@ const formatPrice = (value) =>
 .retrain-btn {
   padding: 0.45rem 1rem;
   border-radius: 8px;
-  border: 1px solid rgba(217,43,34,0.3);
-  background: rgba(217,43,34,0.08);
+  border: 1px solid var(--line-accent);
+  background: var(--tint-accent);
   color: var(--red-soft);
   font-family: var(--font-body);
   font-size: 0.8125rem;
@@ -1249,7 +1211,7 @@ const formatPrice = (value) =>
   transition: all 0.18s ease;
   white-space: nowrap;
 }
-.retrain-btn:hover:not(:disabled) { background: rgba(217,43,34,0.18); }
+.retrain-btn:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 20%, transparent); }
 .retrain-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .predict-notice {
   margin: -0.75rem 0 1.25rem;
@@ -1293,8 +1255,6 @@ const formatPrice = (value) =>
 
 /* ── Responsive tweaks ───────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .dashboard-root { padding: 1.5rem 1rem; }
-  .dash-title { font-size: 1.4rem; }
   .filter-bar { flex-direction: column; align-items: flex-start; }
   .shortcuts { margin-left: 0; }
   .table-header { flex-direction: column; gap: 0.25rem; }
@@ -1305,42 +1265,29 @@ const formatPrice = (value) =>
 
 
 /* ══ Tambahan: tema, UX, responsif ═════════════════════════════════ */
-.stat-card, .stat-hero, .table-card, .predict-section, .filter-bar { box-shadow: var(--shadow-sm); }
-.stat-hero { border-color: rgb(220 38 38 / 0.3); }
+.table-card, .predict-section, .filter-bar { box-shadow: var(--shadow-card); }
+html[data-admin-theme='dark'] .stat-card { box-shadow: 4px 4px 0 rgb(0 0 0 / 0.55); }
+html[data-admin-theme='dark'] .stat-hero { box-shadow: 5px 5px 0 rgb(0 0 0 / 0.55); }
 .stat-hero-value, .stat-value, .qty-val, .td-revenue, .bar-pct { font-variant-numeric: tabular-nums; }
 
-/* meta header: info update + tombol muat ulang */
-.dash-meta { display: flex; align-items: center; gap: 0.75rem; }
-.dash-updated { font-size: 0.8125rem; color: var(--text-dim); white-space: nowrap; }
-.refresh-btn {
-  display: inline-flex; align-items: center; gap: 0.45rem;
-  min-height: 36px; padding: 0.4rem 0.85rem;
-  border-radius: 10px; border: 1px solid var(--border-strong);
-  background: transparent; color: var(--text-2);
-  font-family: var(--font-body); font-size: 0.78rem;
-  letter-spacing: -0.01em;
-  cursor: pointer; transition: all 0.15s;
-}
-.refresh-btn:hover:not(:disabled) { background: var(--surface-hover); color: var(--text); }
-.refresh-btn:disabled { opacity: 0.55; cursor: progress; }
 .refresh-icon.spinning { animation: spin 0.9s linear infinite; }
 
 /* error banner */
 .error-banner {
   display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
-  margin-bottom: 1.5rem; padding: 0.9rem 1.1rem; border-radius: 12px;
-  background: rgb(239 68 68 / 0.08); border: 1px solid rgb(239 68 68 / 0.35);
+  margin-bottom: 1.5rem; padding: 0.9rem 1.1rem; border-radius: var(--r-md);
+  background: var(--tint-accent); border: 1px solid var(--line-accent);
 }
 .error-text { flex: 1 1 260px; min-width: 0; }
 .error-title { margin: 0 0 0.2rem; font-size: 0.85rem; font-weight: 600; color: var(--red-soft); }
 .error-msg { margin: 0; font-size: 0.75rem; line-height: 1.5; color: var(--text-2); }
 .retry-btn {
   min-height: 36px; padding: 0.45rem 1rem; border-radius: 8px; flex-shrink: 0;
-  background: transparent; border: 1px solid rgb(239 68 68 / 0.5); color: var(--red-soft);
+  background: transparent; border: 1px solid var(--line-accent); color: var(--red-soft);
   font-family: var(--font-body); font-size: 0.78rem; letter-spacing: -0.01em;
   cursor: pointer; transition: background 0.15s;
 }
-.retry-btn:hover { background: rgb(239 68 68 / 0.12); }
+.retry-btn:hover { background: var(--tint-accent); }
 
 /* filter bar */
 .date-input { color-scheme: inherit; }
@@ -1363,7 +1310,6 @@ const formatPrice = (value) =>
 @media (min-width: 1100px) { .chart-wrap { height: 300px; } }
 
 @media (max-width: 768px) {
-  .dash-header { align-items: flex-start; gap: 0.75rem; margin-bottom: 1.5rem; padding-bottom: 1.1rem; }
   .filter-bar { align-items: stretch; margin-bottom: 1.5rem; padding: 0.9rem; }
   .date-inputs { width: 100%; }
   .date-field { flex: 1; min-width: 0; }
@@ -1381,9 +1327,6 @@ const formatPrice = (value) =>
 }
 
 @media (max-width: 640px) {
-  .dash-updated { display: none; }
-  .refresh-btn span { display: none; }
-  .refresh-btn { padding: 0.4rem 0.6rem; }
 
   /* tabel top menu: sembunyikan kolom proporsi, rapatkan padding */
   .menu-table { min-width: 0; }
@@ -1400,7 +1343,7 @@ const formatPrice = (value) =>
 }
 
 @media (pointer: coarse) {
-  .shortcut-btn, .refresh-btn, .retrain-btn { min-height: 44px; }
+  .shortcut-btn, .retrain-btn { min-height: 44px; }
 }
 
 
@@ -1434,7 +1377,7 @@ const formatPrice = (value) =>
   transition: background 0.18s ease, color 0.18s ease;
 }
 .view-toggle-btn:hover { color: var(--text-2); }
-.view-toggle-btn.active { background: #d92b22; color: var(--on-accent); }
+.view-toggle-btn.active { background: var(--accent); color: var(--on-accent); }
 
 .level-chip {
   display: inline-block;
@@ -1465,4 +1408,7 @@ const formatPrice = (value) =>
   line-height: 1.45;
   color: var(--text-faint);
 }
+
+/* Ritme vertikal dipegang oleh .adm-page (gap), bukan margin tiap blok */
+.adm-page.dashboard-root > * { margin-bottom: 0; }
 </style>

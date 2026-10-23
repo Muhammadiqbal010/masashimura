@@ -256,31 +256,31 @@ const rangeText = computed(() => {
 .bh-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; }
 .bh-lead { margin: 0; font-size: 0.8rem; color: var(--text-faint); }
 .bh-lead strong { color: var(--text-dim); font-weight: 600; }
-.bh-weeks { display: flex; gap: 0.25rem; padding: 0.25rem; background: var(--surface); border: 1px solid rgb(var(--ink) / 0.08); border-radius: 12px; }
+.bh-weeks { display: flex; gap: 0.25rem; padding: 0.25rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); }
 .bh-week {
-  min-height: 40px; padding: 0.4rem 0.9rem; border-radius: 9px; border: 0; cursor: pointer; background: transparent;
-  font-family: var(--font-ui); font-size: 0.75rem; letter-spacing: -0.01em; color: var(--text-faint);
+  min-height: 40px; padding: 0.4rem 0.9rem; border-radius: var(--r-sm); border: 0; cursor: pointer; background: transparent;
+  font-family: var(--font-body); font-size: 0.75rem; letter-spacing: -0.01em; color: var(--text-faint);
 }
 .bh-week:hover { color: var(--text-dim); }
 .bh-week.is-on { background: rgb(var(--ink) / 0.1); color: var(--text); }
 .bh-week:focus-visible, .bh-retry:focus-visible, .bh-scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .bh-banner {
-  padding: 0.8rem 1rem; border-radius: 12px; font-size: 0.8rem; line-height: 1.5;
+  padding: 0.8rem 1rem; border-radius: var(--r-md); font-size: 0.8rem; line-height: 1.5;
   background: color-mix(in srgb, var(--amber) 10%, transparent);
   border: 1px solid color-mix(in srgb, var(--amber) 35%, transparent); color: var(--amber-soft);
 }
 
 .bh-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
 .bh-kpi, .bh-card {
-  background: var(--surface); border: 1px solid rgb(var(--ink) / 0.05); border-radius: 16px; padding: 1rem 1.1rem;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 1rem 1.1rem;
 }
-.bh-kpi-value { margin: 0; font-family: var(--font-ui); font-size: 1.25rem; font-weight: 700; color: var(--text); }
+.bh-kpi-value { margin: 0; font-family: var(--font-body); font-size: 1.25rem; font-weight: 700; color: var(--text); }
 .bh-kpi-label { margin: 0.25rem 0 0; font-size: 0.75rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-faint); }
 .bh-kpi-sub { margin: 0.4rem 0 0; font-size: 0.7rem; color: var(--text-faint); }
 
 .bh-card-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.9rem; }
-.bh-card-title { margin: 0 0 0.9rem; font-family: var(--font-ui); font-size: 0.75rem; letter-spacing: -0.01em; color: var(--text-faint); font-weight: 600; }
+.bh-card-title { margin: 0 0 0.9rem; font-family: var(--font-body); font-size: 0.75rem; letter-spacing: -0.01em; color: var(--text-faint); font-weight: 600; }
 .bh-card-head .bh-card-title { margin: 0; }
 
 .bh-legend { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: var(--text-faint); }
@@ -316,11 +316,11 @@ const rangeText = computed(() => {
 .bh-days-val { text-align: right; color: var(--text); font-variant-numeric: tabular-nums; }
 
 .bh-empty { padding: 4rem 1rem; text-align: center; }
-.bh-empty-title { margin: 0 0 0.25rem; font-family: var(--font-ui); font-size: 0.85rem; letter-spacing: -0.01em; color: var(--text); }
+.bh-empty-title { margin: 0 0 0.25rem; font-family: var(--font-body); font-size: 0.85rem; letter-spacing: -0.01em; color: var(--text); }
 .bh-empty-sub { margin: 0 0 1rem; font-size: 0.75rem; color: var(--text-faint); }
-.bh-retry { min-height: 44px; padding: 0.6rem 1.2rem; border: 0; border-radius: 12px; cursor: pointer; background: var(--accent); color: #fff; font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; }
+.bh-retry { min-height: 44px; padding: 0.6rem 1.2rem; border: 0; border-radius: var(--r-md); cursor: pointer; background: var(--accent); color: var(--on-accent); font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; }
 
-.bh-skel-row, .bh-skel-grid { background: var(--surface); border-radius: 16px; animation: bh-pulse 1.4s ease-in-out infinite; }
+.bh-skel-row, .bh-skel-grid { background: var(--surface); border-radius: var(--r-lg); animation: bh-pulse 1.4s ease-in-out infinite; }
 .bh-skel-row { height: 88px; margin-bottom: 0.75rem; }
 .bh-skel-grid { height: 280px; }
 @keyframes bh-pulse { 50% { opacity: 0.55; } }

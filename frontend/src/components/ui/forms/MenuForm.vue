@@ -1,206 +1,78 @@
 <template>
-  <!-- Overlay -->
-  <div
-    class="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
-    @click.self="emit('close')"
-  >
-    <!-- Modal -->
-    <div
-      class="w-full max-w-2xl bg-[#111] rounded-2xl border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
-    >
-      <!-- Header -->
-      <div class="flex items-center justify-between px-8 py-5 border-b border-white/10 bg-[#161616]">
-        <div>
-          <h2 class="text-xl font-manrope font-bold tracking-normal text-white">
-            {{ editingMenu ? "Edit Menu" : "Tambah Menu Baru" }}
-          </h2>
-          <p class="text-xs text-white/60 mt-1">Lengkapi data menu di bawah ini.</p>
-        </div>
-        <button type="button" @click="emit('close')" class="text-white/50 hover:text-white text-xl transition">
-          ✕
-        </button>
+  <AdminModal v-model="isOpen" :title="editingMenu ? 'Edit Menu' : 'Tambah Menu Baru'" size="lg" :persistent="loading || showCropper">
+    <form id="menu-form" class="mf-form" @submit.prevent="handleSubmit">
+      <p class="adm-hint">Lengkapi data menu di bawah ini.</p>
+
+      <div class="adm-field">
+        <label class="adm-label" for="mf-name">Nama Menu <span class="adm-req">*</span></label>
+        <input id="mf-name" v-model="form.name" data-autofocus type="text" required placeholder="Contoh: Mie Jebew Spesial" class="adm-input" />
       </div>
 
-      <!-- Form -->
-      <form @submit.prevent="handleSubmit" class="flex flex-col flex-1 overflow-hidden">
+      <div class="adm-field">
+        <label class="adm-label" for="mf-desc">Deskripsi <span class="adm-opt">(opsional)</span></label>
+        <textarea id="mf-desc" v-model="form.description" rows="3" placeholder="Jelaskan menu ini..." class="adm-input"></textarea>
+      </div>
 
-        <!-- Body -->
-        <div class="flex-1 overflow-y-auto p-8 space-y-6 custom-scroll">
-
-          <!-- Nama -->
-          <div>
-            <label class="block mb-2 text-[11px] tracking-normal text-white/60 font-manrope font-bold">
-              Nama Menu
-            </label>
-            <input
-              v-model="form.name"
-              type="text"
-              required
-              placeholder="Contoh: Mie Jebew Spesial"
-              class="w-full rounded-xl border border-white/10 bg-black px-5 py-3 text-white outline-none transition focus:border-red-600 focus:ring-1 focus:ring-red-600"
-            />
-          </div>
-
-          <!-- Deskripsi -->
-          <div>
-            <label class="block mb-2 text-[11px] tracking-normal text-white/60 font-manrope font-bold">
-              Deskripsi
-            </label>
-            <textarea
-              v-model="form.description"
-              rows="3"
-              placeholder="Jelaskan menu ini..."
-              class="w-full rounded-xl border border-white/10 bg-black px-5 py-3 text-white outline-none transition focus:border-red-600"
-            />
-          </div>
-
-          <!-- Category + Price -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-            <!-- Category -->
-            <div class="relative">
-              <label class="block mb-2 text-[11px] tracking-normal text-white/60 font-manrope font-bold">
-                Kategori
-              </label>
-              <button
-                type="button"
-                @click="showCatDropdown = !showCatDropdown"
-                class="w-full rounded-xl border border-white/10 bg-black px-5 py-3 text-left text-white flex items-center justify-between hover:border-red-600 transition"
-              >
-                <span>{{ getCategoryLabel() }}</span>
-                <svg
-                  class="w-4 h-4 transition"
-                  :class="{ 'rotate-180': showCatDropdown }"
-                  fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
-                >
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              <div
-                v-if="showCatDropdown"
-                class="absolute left-0 right-0 mt-2 rounded-xl border border-white/10 bg-[#181818] overflow-hidden shadow-2xl z-50"
-              >
-                <button
-                  v-for="cat in categories"
-                  :key="cat.id"
-                  type="button"
-                  @click="form.category = cat.id; showCatDropdown = false"
-                  class="block w-full text-left px-5 py-3 hover:bg-red-600/20 transition text-white"
-                >
-                  {{ cat.name }}
-                </button>
-              </div>
-            </div>
-
-            <!-- Price -->
-            <div>
-              <label class="block mb-2 text-[11px] tracking-normal text-white/60 font-manrope font-bold">
-                Harga (Rp)
-              </label>
-              <input
-                v-model="form.price"
-                type="number"
-                required
-                min="0"
-                placeholder="25000"
-                class="no-spinner w-full rounded-xl border border-white/10 bg-black px-5 py-3 text-white outline-none transition focus:border-red-600"
-              />
-            </div>
-
-          </div>
-
-          <!-- Foto Menu -->
-          <div>
-            <label class="block mb-3 text-[11px] tracking-normal text-white/60 font-manrope font-bold">
-              Foto Menu
-            </label>
-
-            <!-- Preview foto — klik untuk ganti/crop -->
-            <div
-              v-if="previewImage"
-              @click="openFilePicker"
-              class="mb-3 overflow-hidden rounded-xl border border-white/10 cursor-pointer group relative"
-              title="Klik untuk ganti atau crop ulang foto"
-            >
-              <img :src="previewImage" class="h-56 w-full object-cover transition group-hover:opacity-60" />
-              <!-- Overlay hint -->
-              <div class="absolute inset-0 flex flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition bg-black/40">
-                <span class="text-2xl">✏️</span>
-                <span class="font-manrope font-bold text-xs tracking-normal text-white">Klik untuk ganti foto</span>
-              </div>
-            </div>
-
-            <!-- Hidden file input -->
-            <input
-              ref="fileInput"
-              type="file"
-              accept="image/*"
-              class="hidden"
-              @change="onFileChange"
-            />
-
-            <!-- Tombol upload — muncul jika belum ada foto -->
-            <button
-              v-if="!previewImage"
-              type="button"
-              @click="openFilePicker"
-              class="w-full rounded-xl border border-dashed border-white/20 py-8 flex flex-col items-center gap-2 text-xs uppercase tracking-widest text-white/60 transition hover:border-red-600 hover:text-white"
-            >
-              <span class="text-2xl">📷</span>
-              <span>Unggah Foto Menu</span>
-              <span class="text-[11px] normal-case text-white/60 tracking-normal">Klik untuk pilih gambar · Akan dicrop otomatis</span>
-            </button>
-
-            <!-- Tombol ganti — muncul jika sudah ada foto, sebagai alternatif klik gambar -->
-            <button
-              v-if="previewImage"
-              type="button"
-              @click="openFilePicker"
-              class="mt-2 w-full rounded-xl border border-white/10 py-2.5 text-[11px] uppercase tracking-widest text-white/60 transition hover:border-red-600 hover:text-white"
-            >
-              Ganti Foto
-            </button>
-          </div>
-
+      <div class="adm-grid-2">
+        <div class="adm-field">
+          <label class="adm-label" for="mf-cat">Kategori <span class="adm-req">*</span></label>
+          <select id="mf-cat" v-model="form.category" class="adm-input">
+            <option value="" disabled>Pilih Kategori</option>
+            <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+          </select>
         </div>
 
-        <!-- Footer -->
-        <div class="border-t border-white/10 bg-[#161616] px-8 py-5 flex gap-4">
-          <button
-            type="button"
-            @click="emit('close')"
-            class="flex-1 rounded-xl border border-white/10 py-4 text-xs uppercase tracking-widest text-white/50 transition hover:bg-white/5 hover:text-white"
-          >
-            Batal
-          </button>
-          <button
-            type="submit"
-            :disabled="loading"
-            class="flex-1 rounded-xl bg-red-600 py-4 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-red-500 disabled:opacity-50"
-          >
-            {{ loading ? "Menyimpan..." : editingMenu ? "Simpan Perubahan" : "Tambah Menu" }}
-          </button>
+        <div class="adm-field">
+          <label class="adm-label" for="mf-price">Harga (Rp) <span class="adm-req">*</span></label>
+          <input id="mf-price" v-model="form.price" type="number" required min="0" placeholder="25000" class="adm-input" />
         </div>
+      </div>
 
-      </form>
-    </div>
+      <div class="adm-field">
+        <span class="adm-label">Foto Menu</span>
 
-    <!-- ImageCropper — ditaruh di luar modal agar z-index tidak konflik -->
-    <ImageCropper
-      v-if="showCropper"
-      :image="rawImageForCrop"
-      type="menu"
-      @crop-complete="onCropComplete"
-      @cancel="onCropCancel"
-    />
+        <input ref="fileInput" type="file" accept="image/*" class="adm-sr" tabindex="-1" @change="onFileChange" />
 
-  </div>
+        <button v-if="previewImage" type="button" class="mf-preview" title="Klik untuk ganti atau crop ulang foto" @click="openFilePicker">
+          <img :src="previewImage" alt="Pratinjau foto menu" />
+          <span class="mf-preview-hint"><Pencil :size="18" /> Klik untuk ganti foto</span>
+        </button>
+
+        <button v-else type="button" class="mf-drop" @click="openFilePicker">
+          <Camera :size="24" />
+          <span class="mf-drop-title">Unggah Foto Menu</span>
+          <span class="adm-hint">Klik untuk pilih gambar · Akan dicrop otomatis</span>
+        </button>
+
+        <button v-if="previewImage" type="button" class="adm-btn adm-btn--ghost adm-btn--sm" @click="openFilePicker">Ganti Foto</button>
+      </div>
+    </form>
+
+    <template #footer>
+      <button type="button" class="adm-btn adm-btn--ghost" :disabled="loading" @click="emit('close')">Batal</button>
+      <button type="submit" form="menu-form" class="adm-btn adm-btn--primary" :disabled="loading">
+        <span v-if="loading" class="adm-spinner"></span>
+        {{ loading ? "Menyimpan..." : editingMenu ? "Simpan Perubahan" : "Tambah Menu" }}
+      </button>
+    </template>
+  </AdminModal>
+
+  <!-- ImageCropper di luar modal agar z-index tidak konflik (ter-teleport ke body) -->
+  <ImageCropper
+    v-if="showCropper"
+    :image="rawImageForCrop"
+    type="menu"
+    @crop-complete="onCropComplete"
+    @cancel="onCropCancel"
+  />
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onBeforeUnmount } from "vue"
+import { ref, computed, watch, onBeforeUnmount } from "vue"
 import { toast } from "vue-sonner"
 import apiClient from "@/api/client"
+import { Camera, Pencil } from "lucide-vue-next"
+import AdminModal from "@/components/ui/admin/Adminmodal.vue"
 import ImageCropper from "../ImageCropper.vue"
 
 const props = defineProps({
@@ -214,7 +86,6 @@ const form = ref({ name: "", description: "", category: "", price: "", image: nu
 const loading         = ref(false)
 const previewImage    = ref(null)
 const fileInput       = ref(null)
-const showCatDropdown = ref(false)
 const showCropper     = ref(false)
 const rawImageForCrop = ref(null)
 
@@ -225,10 +96,11 @@ const categories = [
 ]
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const getCategoryLabel = () => {
-  const cat = categories.find(c => c.id == form.value.category)
-  return cat ? cat.name : "Pilih Kategori"
-}
+// AdminModal memakai v-model; komponen ini tampil selama ter-mount dan menutup lewat emit("close").
+const isOpen = computed({
+  get: () => true,
+  set: (v) => { if (!v) emit("close") },
+})
 
 const normalizeCategory = (category) => {
   if (!category) return ""
@@ -342,24 +214,33 @@ const handleSubmit = async () => {
   }
 }
 
-// ── Keyboard escape ───────────────────────────────────────────────────────────
-const handleEscape = (e) => { if (e.key === "Escape") emit("close") }
-
-onMounted(() => document.addEventListener("keydown", handleEscape))
-
 onBeforeUnmount(() => {
-  document.removeEventListener("keydown", handleEscape)
   cleanupPreview()
   cleanupRaw()
 })
 </script>
 
 <style scoped>
-.no-spinner::-webkit-outer-spin-button,
-.no-spinner::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.no-spinner { -moz-appearance: textfield; }
+.mf-form { display: flex; flex-direction: column; gap: 1rem; }
 
-.custom-scroll::-webkit-scrollbar { width: 4px; }
-.custom-scroll::-webkit-scrollbar-track { background: transparent; }
-.custom-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+.mf-preview {
+  position: relative; display: block; width: 100%; padding: 0; overflow: hidden; cursor: pointer;
+  border: 1px solid var(--border-strong); border-radius: var(--r-md); background: var(--surface-2);
+}
+.mf-preview img { display: block; width: 100%; height: 14rem; object-fit: cover; transition: opacity 0.15s; }
+.mf-preview-hint {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+  background: var(--overlay); color: var(--text); font-size: 0.8125rem; font-weight: 600;
+  opacity: 0; transition: opacity 0.15s;
+}
+.mf-preview:hover .mf-preview-hint, .mf-preview:focus-visible .mf-preview-hint { opacity: 1; }
+
+.mf-drop {
+  display: flex; flex-direction: column; align-items: center; gap: 0.35rem; width: 100%;
+  padding: 2rem 1rem; cursor: pointer; color: var(--text-dim);
+  border: 1px dashed var(--border-strong); border-radius: var(--r-md); background: transparent;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.mf-drop:hover { border-color: var(--accent); color: var(--text); background: var(--surface-hover); }
+.mf-drop-title { font-size: 0.875rem; font-weight: 600; }
 </style>

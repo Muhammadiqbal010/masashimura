@@ -1,199 +1,139 @@
 <template>
-  <div class="w-full min-h-screen bg-[color:var(--bg)]">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 pb-24">
+  <div class="adm-page">
 
-      <!-- ═══ HEADER ════════════════════════════════════════════════════
-           Sengaja TIDAK sticky: judul + tab + filter + badge periode tingginya ±330px,
-           jadi kalau menempel di atas ia menutup grafik dan tabel saat halaman di-scroll. -->
-      <div class="pt-6 pb-4">
-        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
-          <div>
-            <div class="flex items-center gap-2 mb-2">
-              <span class="w-1 h-1 rounded-full bg-red-600"></span>
-              <p class="text-[color:var(--text-faint)] text-[11px] font-manrope font-bold tracking-normal">Masashimura · Admin</p>
-            </div>
-            <h1 class="font-manrope font-bold text-3xl sm:text-4xl lg:text-5xl italic tracking-tighter text-[color:var(--accent-text)] leading-none">
-              Order Reports
-            </h1>
-            <p class="text-[color:var(--text-faint)] text-xs sm:text-sm font-light mt-2">
-              {{ activeTabSubtitle }}
-            </p>
-          </div>
-
-          <div class="flex items-center gap-2 shrink-0">
-            <!-- Refresh -->
-            <button
-              @click="refresh"
-              :disabled="loading || tabRef?.loading"
-              aria-label="Muat ulang data"
-              class="flex items-center justify-center w-11 h-11 bg-[color:rgb(var(--ink)/0.04)] border border-[color:rgb(var(--ink)/0.1)] rounded-xl text-[color:var(--text-dim)] hover:text-[color:var(--text)] hover:bg-[color:rgb(var(--ink)/0.08)] transition-all disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/60"
-            >
-              <RefreshCw :size="14" :class="{ 'animate-spin': loading || tabRef?.loading }" />
-            </button>
-
-            <!-- Export dropdown -->
-            <div class="relative" ref="exportMenuRef">
-              <button
-                v-if="activeTab === 'ringkasan' && canExport"
-                @click="exportOpen = !exportOpen"
-                aria-haspopup="menu"
-                :aria-expanded="exportOpen"
-                :disabled="loading"
-                class="flex items-center gap-2 bg-[color:rgb(var(--ink)/0.04)] border border-[color:rgb(var(--ink)/0.1)] px-4 sm:px-5 h-11 rounded-xl text-[11px] font-manrope font-bold tracking-normal hover:bg-[color:rgb(var(--ink)/0.08)] transition-all text-[color:var(--text)] disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/60"
-              >
-                <Download :size="13" class="text-[color:var(--accent-text)]" />
-                <span class="hidden sm:inline">Export</span>
-                <ChevronDown :size="12" class="text-[color:var(--text-faint)]" />
-              </button>
-
-              <Transition
-                enter-active-class="transition duration-150 ease-out"
-                enter-from-class="opacity-0 -translate-y-1"
-                enter-to-class="opacity-100 translate-y-0"
-                leave-active-class="transition duration-100 ease-in"
-                leave-from-class="opacity-100"
-                leave-to-class="opacity-0"
-              >
-                <div
-                  v-if="exportOpen"
-                  class="absolute right-0 mt-2 w-44 bg-[color:var(--surface)] border border-[color:rgb(var(--ink)/0.1)] rounded-xl shadow-2xl shadow-black/50 overflow-hidden z-40"
-                >
-                  <button
-                    @click="exportDocument('pdf')"
-                    class="w-full flex items-center gap-2.5 px-4 py-3 text-[11px] font-manrope font-bold tracking-normal text-[color:var(--text-2)] hover:bg-[color:rgb(var(--ink)/0.05)] hover:text-[color:var(--text)] transition-colors"
-                  >
-                    <FileText :size="13" class="text-[color:var(--accent-text)]" /> Export PDF
-                  </button>
-                  <button
-                    @click="exportDocument('excel')"
-                    class="w-full flex items-center gap-2.5 px-4 py-3 text-[11px] font-manrope font-bold tracking-normal text-[color:var(--text-2)] hover:bg-[color:rgb(var(--ink)/0.05)] hover:text-[color:var(--text)] transition-colors border-t border-[color:rgb(var(--ink)/0.05)]"
-                  >
-                    <Sheet :size="13" class="text-[color:var(--green-soft)]" /> Export Excel
-                  </button>
-                </div>
-              </Transition>
-            </div>
-          </div>
-        </div>
-
-        <!-- ═══ TAB HALAMAN ═════════════════════════════════════════════ -->
-        <div class="flex gap-1 mt-5 border-b border-[color:rgb(var(--ink)/0.06)] overflow-x-auto no-scrollbar" role="tablist" aria-label="Bagian laporan">
-          <button
-            v-for="t in pageTabs"
-            :key="t.value"
-            type="button"
-            role="tab"
-            :aria-selected="activeTab === t.value"
-            @click="activeTab = t.value"
-            :class="[
-              'px-4 min-h-[44px] -mb-px shrink-0 whitespace-nowrap text-[11px] font-manrope font-bold tracking-normal border-b-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/60 rounded-t-lg',
-              activeTab === t.value
-                ? 'border-red-600 text-[color:var(--text)]'
-                : 'border-transparent text-[color:var(--text-faint)] hover:text-[color:var(--text-dim)]'
-            ]"
-          >{{ t.label }}</button>
-        </div>
-
-        <template v-if="activeTab !== 'jam'">
-        <!-- ═══ FILTER BAR ══════════════════════════════════════════════ -->
-        <div class="bg-[color:var(--surface)] border border-[color:rgb(var(--ink)/0.08)] rounded-2xl p-1.5 mt-5 flex flex-col sm:flex-row gap-1.5 sm:gap-1">
-
-          <!-- Group tabs — horizontal scroll on mobile instead of wrapping -->
-          <div class="flex gap-1 overflow-x-auto no-scrollbar sm:flex-1 sm:min-w-[260px]">
-            <button
-              v-for="g in groups"
-              :key="g.value"
-              @click="selectGroup(g.value)"
-              :class="[
-                'flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[11px] font-manrope font-bold tracking-normal transition-all duration-200 whitespace-nowrap shrink-0 sm:flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/60',
-                activeGroup === g.value
-                  ? 'bg-red-600 text-white shadow-lg shadow-red-900/30'
-                  : 'text-[color:var(--text-faint)] hover:text-[color:var(--text-dim)] hover:bg-[color:rgb(var(--ink)/0.05)]'
-              ]"
-            >
-              <component :is="g.icon" :size="12" />
-              {{ g.label }}
-            </button>
-          </div>
-
-          <!-- Divider -->
-          <div class="w-px bg-[color:rgb(var(--ink)/0.08)] my-1 hidden sm:block"></div>
-          <div class="h-px bg-[color:rgb(var(--ink)/0.08)] mx-1 sm:hidden" v-if="activeGroup !== 'lifetime'"></div>
-
-          <!-- Sub-filter: Mingguan -->
-          <template v-if="activeGroup === 'weekly'">
-            <div class="flex items-center gap-1 px-1 overflow-x-auto no-scrollbar">
-              <button
-                v-for="w in weekOptions"
-                :key="w.value"
-                @click="activeWeek = w.value; fetchReport()"
-                :class="[
-                  'px-4 py-3 rounded-xl text-[11px] font-manrope font-bold tracking-normal transition-all whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/60',
-                  activeWeek === w.value ? 'bg-[color:rgb(var(--ink)/0.1)] text-[color:var(--text)]' : 'text-[color:var(--text-faint)] hover:text-[color:var(--text-dim)]'
-                ]"
-              >
-                {{ w.label }}
-              </button>
-            </div>
-          </template>
-
-          <!-- Sub-filter: Bulanan -->
-          <template v-if="activeGroup === 'monthly'">
-            <div class="flex items-center gap-2 px-1 sm:px-2">
-              <select
-                v-model.number="activeMonth"
-                @change="fetchReport()"
-                class="flex-1 sm:flex-none bg-transparent border border-[color:rgb(var(--ink)/0.1)] rounded-lg px-3 py-2.5 text-[11px] font-manrope font-bold tracking-normal outline-none focus:border-red-600 text-[color:var(--text)] cursor-pointer"
-              >
-                <option v-for="m in 12" :key="m" :value="m" class="bg-[color:var(--surface)]">{{ monthName(m) }}</option>
-              </select>
-              <select
-                v-model.number="activeYear"
-                @change="fetchReport()"
-                class="flex-1 sm:flex-none bg-transparent border border-[color:rgb(var(--ink)/0.1)] rounded-lg px-3 py-2.5 text-[11px] font-manrope font-bold tracking-normal outline-none focus:border-red-600 text-[color:var(--text)] cursor-pointer"
-              >
-                <option v-for="y in yearOptions" :key="y" :value="y" class="bg-[color:var(--surface)]">{{ y }}</option>
-              </select>
-            </div>
-          </template>
-
-          <!-- Sub-filter: Tahunan -->
-          <template v-if="activeGroup === 'yearly'">
-            <div class="flex items-center gap-1 px-1 overflow-x-auto no-scrollbar">
-              <button
-                v-for="y in yearOptions"
-                :key="y"
-                @click="activeYear = y; fetchReport()"
-                :class="[
-                  'px-4 py-3 rounded-xl text-[11px] font-manrope font-bold tracking-normal transition-all whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600/60',
-                  activeYear === y ? 'bg-[color:rgb(var(--ink)/0.1)] text-[color:var(--text)]' : 'text-[color:var(--text-faint)] hover:text-[color:var(--text-dim)]'
-                ]"
-              >
-                {{ y }}
-              </button>
-            </div>
-          </template>
-
-          <!-- Sub-filter: Lifetime — just a label -->
-          <template v-if="activeGroup === 'lifetime'">
-            <div class="flex items-center px-4 py-2 sm:py-0">
-              <span class="text-[color:var(--text-faint)] text-[11px] font-manrope font-bold tracking-normal">Semua waktu</span>
-            </div>
-          </template>
-        </div>
-
-        <!-- ═══ PERIOD BADGE ════════════════════════════════════════════ -->
-        <div class="flex items-center gap-3 mt-5">
-          <div class="h-px flex-1 bg-[color:rgb(var(--ink)/0.05)]"></div>
-          <span class="text-[color:var(--text-faint)] text-[11px] font-manrope font-bold tracking-normal whitespace-nowrap">
-            {{ periodLabel }}
-          </span>
-          <div class="h-px flex-1 bg-[color:rgb(var(--ink)/0.05)]"></div>
-        </div>
-        </template>
+    <!-- ═══ HEADER ════════════════════════════════════════════════════
+         Sengaja TIDAK sticky: judul + tab + filter + badge periode tingginya ±330px,
+         jadi kalau menempel di atas ia menutup grafik dan tabel saat halaman di-scroll. -->
+    <header class="adm-header">
+      <div>
+        <p class="adm-eyebrow">Masashimura · Admin</p>
+        <h1 class="adm-title">Order Reports</h1>
+        <p class="adm-sub">{{ activeTabSubtitle }}</p>
       </div>
 
-      <div class="pt-6">
+      <div class="adm-header-actions">
+        <!-- Refresh -->
+        <button
+          type="button"
+          @click="refresh"
+          :disabled="loading || tabRef?.loading"
+          aria-label="Muat ulang data"
+          class="adm-icon-btn adm-icon-btn--bordered"
+        >
+          <RefreshCw :size="14" :class="{ 'animate-spin': loading || tabRef?.loading }" />
+        </button>
+
+        <!-- Export dropdown -->
+        <div class="relative" ref="exportMenuRef">
+          <button
+            v-if="activeTab === 'ringkasan' && canExport"
+            type="button"
+            @click="exportOpen = !exportOpen"
+            aria-haspopup="menu"
+            :aria-expanded="exportOpen"
+            :disabled="loading"
+            class="adm-btn adm-btn--ghost"
+          >
+            <Download :size="13" class="text-[color:var(--accent-text)]" />
+            <span class="hidden sm:inline">Export</span>
+            <ChevronDown :size="12" class="text-[color:var(--text-faint)]" />
+          </button>
+
+          <Transition
+            enter-active-class="transition duration-150 ease-out"
+            enter-from-class="opacity-0 -translate-y-1"
+            enter-to-class="opacity-100 translate-y-0"
+            leave-active-class="transition duration-100 ease-in"
+            leave-from-class="opacity-100"
+            leave-to-class="opacity-0"
+          >
+            <div v-if="exportOpen" class="rep-menu" role="menu">
+              <button type="button" role="menuitem" @click="exportDocument('pdf')" class="rep-menu-item">
+                <FileText :size="13" class="text-[color:var(--accent-text)]" /> Export PDF
+              </button>
+              <button type="button" role="menuitem" @click="exportDocument('excel')" class="rep-menu-item">
+                <Sheet :size="13" class="text-[color:var(--green-soft)]" /> Export Excel
+              </button>
+            </div>
+          </Transition>
+        </div>
+      </div>
+    </header>
+
+    <!-- ═══ TAB HALAMAN ═════════════════════════════════════════════ -->
+    <div class="adm-seg" role="tablist" aria-label="Bagian laporan">
+      <button
+        v-for="t in pageTabs"
+        :key="t.value"
+        type="button"
+        role="tab"
+        class="adm-seg-btn"
+        :aria-selected="activeTab === t.value"
+        :aria-pressed="activeTab === t.value"
+        @click="activeTab = t.value"
+      >{{ t.label }}</button>
+    </div>
+
+    <template v-if="activeTab !== 'jam'">
+      <!-- ═══ FILTER BAR ══════════════════════════════════════════════ -->
+      <div class="adm-toolbar">
+        <div class="adm-seg" role="group" aria-label="Rentang periode">
+          <button
+            v-for="g in groups"
+            :key="g.value"
+            type="button"
+            class="adm-seg-btn"
+            :aria-pressed="activeGroup === g.value"
+            @click="selectGroup(g.value)"
+          >
+            <component :is="g.icon" :size="12" />
+            {{ g.label }}
+          </button>
+        </div>
+
+        <!-- Sub-filter: Mingguan -->
+        <div v-if="activeGroup === 'weekly'" class="adm-seg" role="group" aria-label="Minggu">
+          <button
+            v-for="w in weekOptions"
+            :key="w.value"
+            type="button"
+            class="adm-seg-btn"
+            :aria-pressed="activeWeek === w.value"
+            @click="activeWeek = w.value; fetchReport()"
+          >{{ w.label }}</button>
+        </div>
+
+        <!-- Sub-filter: Bulanan -->
+        <template v-if="activeGroup === 'monthly'">
+          <select v-model.number="activeMonth" @change="fetchReport()" class="adm-input rep-select" aria-label="Pilih bulan">
+            <option v-for="m in 12" :key="m" :value="m">{{ monthName(m) }}</option>
+          </select>
+          <select v-model.number="activeYear" @change="fetchReport()" class="adm-input rep-select" aria-label="Pilih tahun">
+            <option v-for="y in yearOptions" :key="y" :value="y">{{ y }}</option>
+          </select>
+        </template>
+
+        <!-- Sub-filter: Tahunan -->
+        <div v-if="activeGroup === 'yearly'" class="adm-seg" role="group" aria-label="Tahun">
+          <button
+            v-for="y in yearOptions"
+            :key="y"
+            type="button"
+            class="adm-seg-btn"
+            :aria-pressed="activeYear === y"
+            @click="activeYear = y; fetchReport()"
+          >{{ y }}</button>
+        </div>
+
+        <!-- Sub-filter: Lifetime — just a label -->
+        <span v-if="activeGroup === 'lifetime'" class="adm-badge">Semua waktu</span>
+      </div>
+
+      <!-- ═══ PERIOD BADGE ════════════════════════════════════════════ -->
+      <p class="adm-hint rep-period">{{ periodLabel }}</p>
+    </template>
+
+    <div class="rep-body">
 
         <!-- ═══ TAB LAIN (dimuat saat dibuka; mengikuti filter periode di atas) ═══ -->
         <template v-if="activeTab !== 'ringkasan'">
@@ -206,17 +146,17 @@
         <!-- ═══ LOADING SKELETON ═══════════════════════════════════════ -->
         <div v-else-if="loading" class="space-y-5 animate-pulse">
           <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            <div v-for="i in 4" :key="i" class="bg-[color:var(--surface)] border border-[color:rgb(var(--ink)/0.05)] rounded-2xl p-5 h-[112px]">
-              <div class="w-10 h-10 rounded-xl bg-[color:rgb(var(--ink)/0.05)] mb-4"></div>
-              <div class="w-16 h-4 bg-[color:rgb(var(--ink)/0.05)] rounded mb-2"></div>
-              <div class="w-20 h-2.5 bg-[color:rgb(var(--ink)/0.05)] rounded"></div>
+            <div v-for="i in 4" :key="i" class="adm-card p-5 h-[112px]">
+              <div class="w-10 h-10 rounded-[var(--r-sm)] bg-[color:rgb(var(--ink)/0.06)] mb-4"></div>
+              <div class="w-16 h-4 bg-[color:rgb(var(--ink)/0.06)] rounded mb-2"></div>
+              <div class="w-20 h-2.5 bg-[color:rgb(var(--ink)/0.06)] rounded"></div>
             </div>
           </div>
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <div class="bg-[color:var(--surface)] border border-[color:rgb(var(--ink)/0.05)] rounded-2xl p-6 h-64"></div>
-            <div class="bg-[color:var(--surface)] border border-[color:rgb(var(--ink)/0.05)] rounded-2xl p-6 h-64"></div>
+            <div class="adm-card p-6 h-64"></div>
+            <div class="adm-card p-6 h-64"></div>
           </div>
-          <p class="text-center text-[color:var(--text-faint)] text-[11px] font-manrope font-bold tracking-normal pt-2">
+          <p class="text-center text-[color:var(--text-faint)] text-[11px] font-semibold pt-2">
             Memuat data laporan...
           </p>
         </div>
@@ -250,27 +190,23 @@
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 mb-4 sm:mb-5">
             <RCard title="Top 10 Menu Terlaris" icon="Award" accent="amber" class="lg:col-span-2">
               <!-- Desktop table -->
-              <table class="w-full text-sm hidden sm:table">
+              <table class="adm-table hidden sm:table">
                 <thead>
-                  <tr class="text-[color:var(--text-faint)] text-[11px] uppercase tracking-[0.15em]">
-                    <th class="pb-4 text-left font-normal w-8">#</th>
-                    <th class="pb-4 text-left font-normal">Menu</th>
-                    <th class="pb-4 text-right font-normal">Qty</th>
-                    <th class="pb-4 text-right font-normal">Omzet</th>
+                  <tr>
+                    <th class="w-8">#</th>
+                    <th >Menu</th>
+                    <th class="adm-th-r">Qty</th>
+                    <th class="adm-th-r">Omzet</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr
-                    v-for="(m, i) in report.top_menu"
-                    :key="i"
-                    class="border-t border-[color:rgb(var(--ink)/0.04)] group hover:bg-[color:rgb(var(--ink)/0.03)] transition-colors"
-                  >
-                    <td class="py-3 pr-3 text-[color:var(--text-faint)] text-xs font-manrope font-bold">{{ String(i+1).padStart(2,'0') }}</td>
-                    <td class="py-3 text-[color:var(--text)] font-manrope font-bold tracking-tight text-sm">{{ m.name }}</td>
-                    <td class="py-3 text-right">
-                      <span class="bg-amber-500/10 text-[color:var(--amber-soft)] font-bold text-xs px-2.5 py-1 rounded-lg">{{ m.qty }}</span>
+                  <tr v-for="(m, i) in report.top_menu" :key="i">
+                    <td class="text-[color:var(--text-faint)] font-bold">{{ String(i+1).padStart(2,'0') }}</td>
+                    <td class="text-[color:var(--text)] font-semibold">{{ m.name }}</td>
+                    <td class="adm-td-r">
+                      <span class="adm-badge adm-badge--amber">{{ m.qty }}</span>
                     </td>
-                    <td class="py-3 text-right text-[color:var(--text-dim)] font-mono text-xs">{{ formatRp(m.omzet) }}</td>
+                    <td class="adm-td-r adm-mono">{{ formatRp(m.omzet) }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -280,16 +216,16 @@
                 <div
                   v-for="(m, i) in report.top_menu"
                   :key="i"
-                  class="flex items-center justify-between bg-[color:rgb(var(--ink)/0.02)] border border-[color:rgb(var(--ink)/0.05)] rounded-xl px-3.5 py-3"
+                  class="flex items-center justify-between bg-[color:var(--surface-2)] border border-[color:var(--border)] rounded-[var(--r-md)] px-3.5 py-3"
                 >
                   <div class="flex items-center gap-3 min-w-0">
-                    <span class="text-[color:var(--text-faint)] text-[11px] font-manrope font-bold shrink-0">{{ String(i+1).padStart(2,'0') }}</span>
+                    <span class="text-[color:var(--text-faint)] text-[11px] font-semibold shrink-0">{{ String(i+1).padStart(2,'0') }}</span>
                     <div class="min-w-0">
-                      <p class="text-[color:var(--text)] font-manrope font-bold tracking-tight text-xs truncate">{{ m.name }}</p>
+                      <p class="text-[color:var(--text)] font-semibold text-xs truncate">{{ m.name }}</p>
                       <p class="text-[color:var(--text-faint)] text-[11px] font-mono mt-0.5">{{ formatRp(m.omzet) }}</p>
                     </div>
                   </div>
-                  <span class="bg-amber-500/10 text-[color:var(--amber-soft)] font-bold text-[11px] px-2 py-1 rounded-lg shrink-0 ml-2">{{ m.qty }}</span>
+                  <span class="adm-badge adm-badge--amber shrink-0 ml-2">{{ m.qty }}</span>
                 </div>
               </div>
 
@@ -300,13 +236,13 @@
               <div class="space-y-5">
                 <div v-for="(m, i) in report.menu_paling_menghasilkan" :key="i">
                   <div class="flex justify-between text-xs mb-2 gap-2">
-                    <span class="text-[color:var(--text)] font-manrope font-bold tracking-tight truncate">{{ m.name }}</span>
+                    <span class="text-[color:var(--text)] font-semibold truncate">{{ m.name }}</span>
                     <span class="text-[color:var(--green-soft)] font-bold tabular-nums shrink-0">{{ formatRp(m.omzet) }}</span>
                   </div>
-                  <div class="w-full bg-[color:rgb(var(--ink)/0.05)] h-1.5 rounded-full overflow-hidden">
+                  <div class="w-full bg-[color:rgb(var(--ink)/0.06)] h-1.5 rounded-full overflow-hidden">
                     <div
                       class="h-full rounded-full transition-all duration-700"
-                      :style="{ width: pct(m.omzet, maxMenghasilkan) + '%', background: 'linear-gradient(90deg, #10b981, #34d399)' }"
+                      :style="{ width: pct(m.omzet, maxMenghasilkan) + '%', background: 'linear-gradient(90deg, var(--green), var(--green-soft))' }"
                     ></div>
                   </div>
                 </div>
@@ -324,10 +260,10 @@
                 <div
                   v-for="(m, i) in report.menu_tidak_laku"
                   :key="i"
-                  class="flex justify-between items-center bg-[color:var(--tint-accent)] border border-red-500/8 rounded-xl px-4 py-3"
+                  class="flex justify-between items-center bg-[color:var(--tint-accent)] border border-[color:var(--line-accent)] rounded-[var(--r-md)] px-4 py-3"
                 >
-                  <span class="text-[color:var(--text)] text-xs font-manrope font-bold tracking-tight truncate mr-2">{{ m.name }}</span>
-                  <span class="text-[color:color-mix(in_srgb,var(--red-soft)_70%,transparent)] text-[11px] font-bold uppercase tracking-wider shrink-0">
+                  <span class="text-[color:var(--text)] text-xs font-semibold truncate mr-2">{{ m.name }}</span>
+                  <span class="text-[color:var(--red-soft)] text-[11px] font-bold uppercase tracking-wider shrink-0">
                     {{ m.transaksi }}×
                   </span>
                 </div>
@@ -348,7 +284,7 @@
                     class="flex items-center justify-between"
                   >
                     <div class="flex items-center gap-2 min-w-0">
-                      <div class="w-2 h-2 rounded-full shrink-0" :style="{ background: payColors[p.method] || '#6b7280' }"></div>
+                      <div class="w-2 h-2 rounded-full shrink-0" :style="{ background: payColors[p.method] || '#9a9aa3' }"></div>
                       <span class="text-[color:var(--text-dim)] text-xs truncate">{{ p.label }}</span>
                     </div>
                     <span class="text-[color:var(--text)] text-xs font-bold tabular-nums shrink-0">{{ p.percent }}%</span>
@@ -370,16 +306,16 @@
           <RCard title="Pelanggan" icon="Users" accent="pink">
             <div class="grid grid-cols-3 gap-3 sm:gap-6 text-center">
               <div class="py-3 sm:py-4">
-                <p class="font-manrope font-bold text-2xl sm:text-4xl font-bold text-[color:var(--text)] mb-1">{{ report.pelanggan.baru }}</p>
-                <p class="text-[11px] sm:text-[11px] text-[color:var(--text-faint)] uppercase tracking-[0.15em] sm:tracking-[0.2em]">Pelanggan Baru</p>
+                <p class="font-display text-2xl sm:text-4xl text-[color:var(--text)] mb-1">{{ report.pelanggan.baru }}</p>
+                <p class="text-xs text-[color:var(--text-faint)] uppercase tracking-[0.15em] sm:tracking-[0.2em]">Pelanggan Baru</p>
               </div>
               <div class="py-3 sm:py-4 border-x border-[color:rgb(var(--ink)/0.05)]">
-                <p class="font-manrope font-bold text-2xl sm:text-4xl font-bold text-[color:var(--text)] mb-1">{{ report.pelanggan.lama }}</p>
-                <p class="text-[11px] sm:text-[11px] text-[color:var(--text-faint)] uppercase tracking-[0.15em] sm:tracking-[0.2em]">Pelanggan Lama</p>
+                <p class="font-display text-2xl sm:text-4xl text-[color:var(--text)] mb-1">{{ report.pelanggan.lama }}</p>
+                <p class="text-xs text-[color:var(--text-faint)] uppercase tracking-[0.15em] sm:tracking-[0.2em]">Pelanggan Lama</p>
               </div>
               <div class="py-3 sm:py-4">
-                <p class="font-manrope font-bold text-2xl sm:text-4xl font-bold text-[color:var(--amber-soft)] mb-1">{{ report.pelanggan.loyal_member }}</p>
-                <p class="text-[11px] sm:text-[11px] text-[color:var(--text-faint)] uppercase tracking-[0.15em] sm:tracking-[0.2em]">Member Loyal</p>
+                <p class="font-display text-2xl sm:text-4xl text-[color:var(--amber-soft)] mb-1">{{ report.pelanggan.loyal_member }}</p>
+                <p class="text-xs text-[color:var(--text-faint)] uppercase tracking-[0.15em] sm:tracking-[0.2em]">Member Loyal</p>
               </div>
             </div>
           </RCard>
@@ -387,20 +323,16 @@
 
         <!-- ═══ ERROR / EMPTY ═════════════════════════════════════════════ -->
         <div v-else class="flex flex-col items-center justify-center py-24 sm:py-32 text-center">
-          <div class="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center mb-4">
+          <div class="w-12 h-12 rounded-[var(--r-md)] bg-[color:var(--tint-accent)] flex items-center justify-center mb-4">
             <AlertTriangle :size="20" class="text-[color:var(--accent-text)]" />
           </div>
-          <p class="text-[color:var(--text)] text-sm font-manrope font-bold tracking-wide mb-1">Gagal memuat data</p>
+          <p class="text-[color:var(--text)] text-sm font-semibold mb-1">Gagal memuat data</p>
           <p class="text-[color:var(--text-faint)] text-xs mb-5">Periksa koneksi atau coba lagi beberapa saat.</p>
-          <button
-            @click="fetchReport()"
-            class="flex items-center gap-2 bg-red-600 hover:bg-red-500 text-white text-[11px] font-manrope font-bold tracking-normal px-5 py-3 rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-          >
+          <button type="button" @click="fetchReport()" class="adm-btn adm-btn--primary">
             <RefreshCw :size="13" /> Muat ulang
           </button>
         </div>
 
-      </div>
     </div>
   </div>
 </template>
@@ -568,18 +500,18 @@ const jamData = computed(() => ({
   datasets: [{
     label: "Transaksi",
     data: report.value?.jam_teramai.map(j => j.count) || [],
-    backgroundColor: "#8b5cf6",
+    backgroundColor: "#c79bf7",
     borderRadius: 6,
     borderSkipped: false,
   }],
 }));
 
-const payColors = { cash: "#22c55e", qris: "#3b82f6", qris_manual: "#06b6d4", gateway: "#a855f7" };
+const payColors = { cash: "#2fb36d", qris: "#7cc4f5", qris_manual: "#f4c542", gateway: "#c79bf7" };
 const paymentData = computed(() => ({
   labels: report.value?.metode_pembayaran.map(p => p.label) || [],
   datasets: [{
     data: report.value?.metode_pembayaran.map(p => p.total) || [],
-    backgroundColor: report.value?.metode_pembayaran.map(p => payColors[p.method] || "#374151") || [],
+    backgroundColor: report.value?.metode_pembayaran.map(p => payColors[p.method] || "#9a9aa3") || [],
     borderWidth: 0,
     hoverOffset: 6,
   }],
@@ -594,7 +526,7 @@ const pct = (v, max) => Math.round((v / max) * 100);
 const { isDark } = useTheme();
 const chartTheme = computed(() => isDark.value
   ? { grid: "rgba(255,255,255,0.05)", tick: "rgba(255,255,255,0.5)", tipBg: "#151518", tipBorder: "rgba(255,255,255,0.12)", tipTitle: "#fafafa", tipBody: "rgba(255,255,255,0.7)" }
-  : { grid: "rgba(24,24,27,0.07)",   tick: "#63636b",                tipBg: "#ffffff", tipBorder: "rgba(24,24,27,0.15)",    tipTitle: "#18181b", tipBody: "#3f3f46" });
+  : { grid: "rgba(24,24,27,0.07)",   tick: "rgba(24,24,27,0.62)",    tipBg: "#ffffff", tipBorder: "rgba(24,24,27,0.15)",    tipTitle: "#18181b", tipBody: "#3f3f46" });
 
 const barOpts = computed(() => {
   const c = chartTheme.value;
@@ -658,28 +590,28 @@ const accentText = {
 };
 
 const RCard = (props, { slots }) =>
-  h("div", { class: "bg-[color:var(--surface)] border border-[color:rgb(var(--ink)/0.05)] rounded-2xl p-4 sm:p-6 hover:border-[color:rgb(var(--ink)/0.1)] transition-all duration-500" }, [
+  h("div", { class: "adm-card p-4 sm:p-6" }, [
     h("div", { class: "flex items-center gap-2 mb-4 sm:mb-5" }, [
       props.icon && iconMap[props.icon]
         ? h(iconMap[props.icon], { size: 13, class: accentText[props.accent] || "text-[color:var(--red-soft)]" })
         : null,
-      h("h3", { class: "font-manrope font-bold text-[color:var(--text-faint)] text-[11px] tracking-normal" }, props.title),
+      h("h3", { class: "text-[color:var(--text-dim)] text-sm font-bold" }, props.title),
       props.subtitle
-        ? h("span", { class: "text-[color:var(--text-faint)] text-[11px] font-light ml-1" }, `· ${props.subtitle}`)
+        ? h("span", { class: "text-[color:var(--text-faint)] text-xs ml-1" }, `· ${props.subtitle}`)
         : null,
     ]),
     slots.default ? slots.default() : null,
   ]);
 
 const StatCard = (props) => {
-  const bgMap  = { red: "bg-red-500/8", amber: "bg-amber-500/8", emerald: "bg-emerald-500/8", sky: "bg-sky-500/8" };
+  const bgMap  = { red: "tone-accent", amber: "tone-amber", emerald: "tone-green", sky: "tone-blue" };
   const txtMap = { red: "text-[color:var(--red-soft)]", amber: "text-[color:var(--amber-soft)]", emerald: "text-[color:var(--green-soft)]", sky: "text-[color:var(--blue-soft)]" };
-  return h("div", { class: "bg-[color:var(--surface)] border border-[color:rgb(var(--ink)/0.05)] p-4 sm:p-5 rounded-2xl hover:border-[color:rgb(var(--ink)/0.1)] transition-all duration-300" }, [
-    h("div", { class: `w-9 h-9 sm:w-10 sm:h-10 rounded-xl ${bgMap[props.color]} flex items-center justify-center mb-3 sm:mb-4` }, [
+  return h("div", { class: "adm-stat !block" }, [
+    h("div", { class: `w-9 h-9 sm:w-10 sm:h-10 rounded-[var(--r-sm)] ${bgMap[props.color]} flex items-center justify-center mb-3 sm:mb-4` }, [
       iconMap[props.icon] ? h(iconMap[props.icon], { size: 17, class: txtMap[props.color] }) : null,
     ]),
-    h("p", { class: "font-manrope font-bold text-lg sm:text-xl font-bold text-[color:var(--text)] leading-tight truncate" }, String(props.value)),
-    h("p", { class: "text-[11px] sm:text-[11px] text-[color:var(--text-faint)] uppercase tracking-[0.15em] sm:tracking-[0.18em] mt-1" }, props.label),
+    h("p", { class: "adm-stat-value truncate" }, String(props.value)),
+    h("p", { class: "text-xs text-[color:var(--text-faint)] uppercase tracking-[0.15em] sm:tracking-[0.18em] mt-1" }, props.label),
     props.sub
       ? h("p", { class: "text-[11px] text-[color:var(--text-faint)] mt-1.5" }, props.sub)
       : null,
@@ -696,10 +628,20 @@ onMounted(fetchReport);
 </script>
 
 <style scoped>
+.rep-select { width: auto; min-height: 40px; padding-block: 0.4rem; font-weight: 600; }
+.rep-period { margin: 0; }
+.rep-menu {
+  position: absolute; right: 0; z-index: 40; width: 11rem; margin-top: 0.5rem; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--r-md); box-shadow: var(--shadow-lg);
+}
+.rep-menu-item {
+  display: flex; align-items: center; gap: 0.6rem; width: 100%; padding: 0.7rem 1rem;
+  border: 0; background: transparent; color: var(--text-2); cursor: pointer;
+  font-family: var(--font-body); font-size: 0.8125rem; font-weight: 600; text-align: left;
+}
+.rep-menu-item:hover { background: var(--surface-hover); color: var(--text); }
 .custom-scroll::-webkit-scrollbar { width: 3px; }
 .custom-scroll::-webkit-scrollbar-track { background: transparent; }
 .custom-scroll::-webkit-scrollbar-thumb { background: rgb(var(--ink) / 0.1); border-radius: 99px; }
 
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 </style>

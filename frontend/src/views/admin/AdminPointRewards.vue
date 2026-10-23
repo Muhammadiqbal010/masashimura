@@ -1,91 +1,94 @@
 <template>
-  <div class="dashboard-root">
+  <div class="adm-page">
 
     <!-- ── HEADER ──────────────────────────────────────────────────── -->
-    <div class="dash-header">
+    <header class="adm-header">
       <div>
-        <p class="dash-eyebrow">Masashimura · Admin</p>
-        <h1 class="dash-title">Kelola Reward Poin</h1>
-        <p class="dash-sub">Katalog menu yang bisa ditukar pakai poin loyalty customer</p>
+        <p class="adm-eyebrow">Masashimura · Admin</p>
+        <h1 class="adm-title">Kelola Reward Poin</h1>
+        <p class="adm-sub">Katalog menu yang bisa ditukar pakai poin loyalty customer</p>
       </div>
-      <button class="new-promo-btn" @click="openCreateModal">
-        <Plus :size="14" /> Tambah Reward
-      </button>
-    </div>
+      <div class="adm-header-actions">
+        <button type="button" class="adm-btn adm-btn--primary" @click="openCreateModal">
+          <Plus :size="15" /> Tambah Reward
+        </button>
+      </div>
+    </header>
 
     <!-- ── STAT CARDS ──────────────────────────────────────────────── -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <span class="stat-icon-wrap ic-red"><Gift :size="15" /></span>
+    <div class="adm-stats">
+      <div class="adm-stat">
+        <span class="adm-stat-icon tone-accent"><Gift :size="17" /></span>
         <div>
-          <p class="stat-value">{{ totalRewards }}</p>
-          <p class="stat-label">Total Reward</p>
+          <p class="adm-stat-value">{{ totalRewards }}</p>
+          <p class="adm-stat-label">Total Reward</p>
         </div>
       </div>
-      <div class="stat-card">
-        <span class="stat-icon-wrap ic-green"><CheckCircle2 :size="15" /></span>
+      <div class="adm-stat">
+        <span class="adm-stat-icon tone-green"><CheckCircle2 :size="17" /></span>
         <div>
-          <p class="stat-value">{{ activeRewards }}</p>
-          <p class="stat-label">Reward Aktif</p>
+          <p class="adm-stat-value">{{ activeRewards }}</p>
+          <p class="adm-stat-label">Reward Aktif</p>
         </div>
       </div>
-      <div class="stat-card">
-        <span class="stat-icon-wrap ic-amber"><Coins :size="15" /></span>
+      <div class="adm-stat">
+        <span class="adm-stat-icon tone-amber"><Coins :size="17" /></span>
         <div>
-          <p class="stat-value">{{ avgPointCost.toLocaleString('id-ID') }}</p>
-          <p class="stat-label">Rata-rata Biaya Poin</p>
+          <p class="adm-stat-value">{{ avgPointCost.toLocaleString('id-ID') }}</p>
+          <p class="adm-stat-label">Rata-rata Biaya Poin</p>
         </div>
       </div>
     </div>
 
     <!-- ── PENGATURAN RATE POIN MASUK ──────────────────────────────── -->
-    <div class="settings-card">
-      <div class="settings-info">
-        <span class="settings-icon-wrap"><Settings2 :size="15" /></span>
-        <div>
-          <p class="settings-label">Rate Poin Masuk</p>
-          <p class="settings-hint">Belanja Rp berapa yang setara 1 poin? (redeem-nya diatur per-menu di tabel bawah)</p>
+    <section class="adm-card">
+      <div class="adm-card-head pr-settings">
+        <span class="adm-card-icon"><Settings2 :size="16" /></span>
+        <div class="adm-card-head-main">
+          <h2 class="adm-card-title">Rate Poin Masuk</h2>
+          <p class="adm-card-desc">Belanja Rp berapa yang setara 1 poin? (redeem-nya diatur per-menu di tabel bawah)</p>
+        </div>
+        <div class="pr-rate-row">
+          <span class="pr-affix adm-mono">Rp</span>
+          <input
+            id="rate-input"
+            v-model.number="rupiahPerPoint"
+            type="number" min="1" step="1000" inputmode="numeric"
+            aria-label="Nominal belanja (Rupiah) yang setara 1 poin"
+            class="adm-input adm-input--mono pr-rate-input"
+            @keydown.enter="saveLoyaltySettings"
+          />
+          <span class="pr-affix adm-mono">= 1 poin</span>
+          <button
+            type="button"
+            class="adm-btn adm-btn--primary pr-rate-save"
+            :disabled="isSavingSettings || !rupiahPerPoint || rupiahPerPoint === savedRupiahPerPoint"
+            @click="saveLoyaltySettings"
+          >
+            {{ isSavingSettings ? 'Menyimpan...' : 'Simpan' }}
+          </button>
         </div>
       </div>
-      <div class="settings-input-row">
-        <span class="settings-prefix">Rp</span>
-        <input
-          id="rate-input"
-          v-model.number="rupiahPerPoint"
-          type="number" min="1" step="1000" inputmode="numeric"
-          aria-label="Nominal belanja (Rupiah) yang setara 1 poin"
-          class="form-input mono settings-input"
-          @keydown.enter="saveLoyaltySettings"
-        />
-        <span class="settings-suffix">= 1 poin</span>
-        <button
-          class="btn-primary settings-save-btn"
-          :disabled="isSavingSettings || !rupiahPerPoint || rupiahPerPoint === savedRupiahPerPoint"
-          @click="saveLoyaltySettings"
-        >
-          {{ isSavingSettings ? 'Menyimpan...' : 'Simpan' }}
-        </button>
-      </div>
-    </div>
+    </section>
 
     <!-- ── TOOLBAR: SEARCH + FILTER ────────────────────────────────── -->
-    <div v-if="!isLoading && !loadError && rewards.length > 0" class="table-toolbar">
-      <div class="search-box">
-        <Search :size="14" class="search-icon" />
+    <div v-if="!isLoading && !loadError && rewards.length > 0" class="adm-toolbar">
+      <div class="adm-search">
+        <Search :size="15" class="adm-search-icon" />
         <input
           v-model="searchQuery"
           type="search"
           placeholder="Cari nama menu..."
           aria-label="Cari reward berdasarkan nama menu"
-          class="search-input"
+          class="adm-input"
         />
       </div>
-      <div class="filter-chips" role="group" aria-label="Filter status">
+      <div class="adm-seg" role="group" aria-label="Filter status">
         <button
           v-for="f in statusFilters"
           :key="f.key"
-          class="chip-btn"
-          :class="{ active: statusFilter === f.key }"
+          type="button"
+          class="adm-seg-btn"
           :aria-pressed="statusFilter === f.key"
           @click="statusFilter = f.key"
         >
@@ -95,180 +98,174 @@
     </div>
 
     <!-- ── ERROR ───────────────────────────────────────────────────── -->
-    <div v-if="!isLoading && loadError" class="table-card">
-      <div class="empty-state">
-        <div class="empty-icon">⚠️</div>
-        <p class="empty-text">Gagal memuat data reward poin</p>
-        <button class="retry-btn" @click="fetchRewards">Coba Lagi</button>
+    <div v-if="!isLoading && loadError" class="adm-card adm-card--flush">
+      <div class="adm-empty">
+        <div class="adm-empty-icon"><AlertTriangle :size="22" /></div>
+        <p class="adm-empty-title">Gagal memuat data reward poin</p>
+        <button type="button" class="adm-btn adm-btn--primary" @click="fetchRewards">Coba Lagi</button>
       </div>
     </div>
 
     <!-- ── EMPTY (belum ada reward sama sekali) ─────────────────────── -->
-    <div v-else-if="!isLoading && rewards.length === 0" class="table-card">
-      <div class="empty-state">
-        <div class="empty-icon">🎁</div>
-        <p class="empty-text">Belum ada reward poin</p>
-        <p class="empty-hint">Klik "Tambah Reward" buat bikin yang pertama — pilih menu HPP kecil biar aman</p>
+    <div v-else-if="!isLoading && rewards.length === 0" class="adm-card adm-card--flush">
+      <div class="adm-empty">
+        <div class="adm-empty-icon"><Gift :size="22" /></div>
+        <p class="adm-empty-title">Belum ada reward poin</p>
+        <p class="adm-empty-text">Klik "Tambah Reward" buat bikin yang pertama — pilih menu HPP kecil biar aman</p>
       </div>
     </div>
 
     <!-- ── TABLE ───────────────────────────────────────────────────── -->
-    <div v-else-if="!isLoading" class="table-card">
-      <table v-if="filteredRewards.length" class="promo-table">
-        <thead>
-          <tr>
-            <th>Menu</th>
-            <th>Harga Menu</th>
-            <th>Biaya Poin</th>
-            <th>Status</th>
-            <th class="col-aksi">Aksi</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="reward in filteredRewards" :key="reward.id">
-            <td class="td-menu">
-              <span class="promo-code">{{ reward.menu_name }}</span>
-            </td>
-            <td class="mono-cell td-price" data-label="Harga menu">{{ formatPrice(reward.menu_price) }}</td>
-            <td class="td-cost" data-label="Biaya poin">
-              <span class="promo-discount">{{ reward.point_cost.toLocaleString('id-ID') }} poin</span>
-            </td>
-            <td class="td-status">
-              <button
-                class="status-badge"
-                :class="reward.is_active ? 'badge-green' : 'badge-gray'"
-                :disabled="togglingId === reward.id"
-                :aria-pressed="reward.is_active"
-                :title="reward.is_active ? 'Klik untuk nonaktifkan' : 'Klik untuk aktifkan'"
-                @click="toggleActive(reward)"
-              >
-                {{ reward.is_active ? 'Aktif' : 'Nonaktif' }}
-              </button>
-            </td>
-            <td class="col-aksi td-actions">
-              <div class="row-actions">
-                <button class="icon-btn" title="Edit" :aria-label="`Edit reward ${reward.menu_name}`" @click="openEditModal(reward)">
-                  <Pencil :size="14" />
+    <div v-else-if="!isLoading" class="adm-card adm-card--flush">
+      <div v-if="filteredRewards.length" class="adm-table-wrap">
+        <table class="adm-table adm-table--stack">
+          <thead>
+            <tr>
+              <th>Menu</th>
+              <th>Harga Menu</th>
+              <th>Biaya Poin</th>
+              <th>Status</th>
+              <th class="adm-th-r">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="reward in filteredRewards" :key="reward.id">
+              <td class="adm-td-first" data-label="Menu">
+                <span class="pr-name">{{ reward.menu_name }}</span>
+              </td>
+              <td class="adm-mono" data-label="Harga menu">{{ formatPrice(reward.menu_price) }}</td>
+              <td data-label="Biaya poin">
+                <span class="pr-cost adm-mono">{{ reward.point_cost.toLocaleString('id-ID') }} poin</span>
+              </td>
+              <td data-label="Status">
+                <button
+                  type="button"
+                  class="adm-badge"
+                  :class="reward.is_active ? 'adm-badge--green' : ''"
+                  :disabled="togglingId === reward.id"
+                  :aria-pressed="reward.is_active"
+                  :title="reward.is_active ? 'Klik untuk nonaktifkan' : 'Klik untuk aktifkan'"
+                  @click="toggleActive(reward)"
+                >
+                  {{ reward.is_active ? 'Aktif' : 'Nonaktif' }}
                 </button>
-                <button class="icon-btn icon-btn-danger" title="Hapus" :aria-label="`Hapus reward ${reward.menu_name}`" @click="askDelete(reward)">
-                  <Trash2 :size="14" />
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+              </td>
+              <td class="adm-td-r" data-label="">
+                <div class="pr-row-actions">
+                  <button type="button" class="adm-icon-btn adm-icon-btn--bordered" title="Edit" :aria-label="`Edit reward ${reward.menu_name}`" @click="openEditModal(reward)">
+                    <Pencil :size="14" />
+                  </button>
+                  <button type="button" class="adm-icon-btn adm-icon-btn--bordered adm-icon-btn--danger" title="Hapus" :aria-label="`Hapus reward ${reward.menu_name}`" @click="askDelete(reward)">
+                    <Trash2 :size="14" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
       <!-- Filter tidak menemukan hasil -->
-      <div v-else class="empty-state">
-        <div class="empty-icon">🔍</div>
-        <p class="empty-text">Tidak ada reward yang cocok</p>
-        <p class="empty-hint">Coba ubah kata kunci pencarian atau filter status</p>
-        <button class="retry-btn" @click="resetFilters">Reset Filter</button>
+      <div v-else class="adm-empty">
+        <div class="adm-empty-icon"><Search :size="22" /></div>
+        <p class="adm-empty-title">Tidak ada reward yang cocok</p>
+        <p class="adm-empty-text">Coba ubah kata kunci pencarian atau filter status</p>
+        <button type="button" class="adm-btn adm-btn--ghost" @click="resetFilters">Reset Filter</button>
       </div>
     </div>
 
     <!-- ── MODAL CREATE/EDIT ─────────────────────────────────────── -->
-    <transition
-      enter-active-class="modal-enter-active" enter-from-class="modal-enter-from"
-      leave-active-class="modal-leave-active" leave-to-class="modal-leave-to"
+    <AdminModal
+      :model-value="showModal"
+      :title="editingId ? 'Edit Reward' : 'Tambah Reward Baru'"
+      :persistent="isSaving"
+      @close="closeModal"
     >
-      <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
-        <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="reward-modal-title">
-          <div class="modal-head">
-            <h2 id="reward-modal-title" class="modal-title">{{ editingId ? 'Edit Reward' : 'Tambah Reward Baru' }}</h2>
-            <button type="button" class="modal-close-btn" aria-label="Tutup" @click="closeModal"><X :size="15" /></button>
-          </div>
-
-          <form class="modal-form" @submit.prevent="submitForm">
-            <div class="field">
-              <label id="reward-menu-label" class="field-label">Menu</label>
-              <div class="custom-select" ref="menuDropdownRef">
-                <button
-                  type="button"
-                  class="form-input custom-select-trigger"
-                  aria-haspopup="listbox"
-                  :aria-expanded="menuOpen ? 'true' : 'false'"
-                  aria-labelledby="reward-menu-label"
-                  @click="menuOpen = !menuOpen"
-                >
-                  <span>{{ selectedMenuLabel }}</span>
-                  <ChevronDown :size="14" class="custom-select-chevron" :class="{ 'is-open': menuOpen }" />
-                </button>
-                <div v-if="menuOpen" class="custom-select-panel" role="listbox" aria-labelledby="reward-menu-label">
-                  <p v-if="!menus.length" class="custom-select-empty">Belum ada menu</p>
-                  <button
-                    type="button"
-                    v-for="menu in menus"
-                    :key="menu.id"
-                    class="custom-select-option"
-                    role="option"
-                    :aria-selected="form.menu === menu.id"
-                    :class="{ 'is-selected': form.menu === menu.id }"
-                    @click="selectMenu(menu.id)"
-                  >
-                    <span>{{ menu.name }} — {{ formatPrice(menu.price) }}</span>
-                    <Check v-if="form.menu === menu.id" :size="13" />
-                  </button>
-                </div>
-              </div>
-              <p class="field-hint">Pilih menu HPP kecil (minuman/side dish), hindari menu signature yang mahal</p>
-            </div>
-
-            <div class="field">
-              <label class="field-label" for="reward-cost">Biaya Poin</label>
-              <input
-                id="reward-cost"
-                v-model.number="form.point_cost"
-                type="number" min="1" inputmode="numeric"
-                class="form-input mono"
-                placeholder="cth: 500"
-                required
-              />
-            </div>
-
-            <label class="checkbox-row">
-              <input type="checkbox" v-model="form.is_active" />
-              <span>Aktifkan reward ini sekarang</span>
-            </label>
-
-            <p v-if="formError" class="form-error" role="alert">{{ formError }}</p>
-
-            <div class="modal-actions">
-              <button type="button" class="btn-secondary" @click="closeModal">Batal</button>
-              <button type="submit" class="btn-primary" :disabled="isSaving">
-                {{ editingId ? 'Simpan Perubahan' : 'Tambah Reward' }}
+      <form id="reward-form" class="adm-modal-form" @submit.prevent="submitForm">
+        <div class="adm-field">
+          <label id="reward-menu-label" class="adm-label">Menu</label>
+          <div class="custom-select" ref="menuDropdownRef">
+            <button
+              type="button"
+              class="adm-input custom-select-trigger"
+              aria-haspopup="listbox"
+              :aria-expanded="menuOpen ? 'true' : 'false'"
+              aria-labelledby="reward-menu-label"
+              @click="menuOpen = !menuOpen"
+            >
+              <span class="adm-truncate">{{ selectedMenuLabel }}</span>
+              <ChevronDown :size="14" class="custom-select-chevron" :class="{ 'is-open': menuOpen }" />
+            </button>
+            <div v-if="menuOpen" class="custom-select-panel" role="listbox" aria-labelledby="reward-menu-label">
+              <p v-if="!menus.length" class="custom-select-empty">Belum ada menu</p>
+              <button
+                type="button"
+                v-for="menu in menus"
+                :key="menu.id"
+                class="custom-select-option"
+                role="option"
+                :aria-selected="form.menu === menu.id"
+                :class="{ 'is-selected': form.menu === menu.id }"
+                @click="selectMenu(menu.id)"
+              >
+                <span>{{ menu.name }} — {{ formatPrice(menu.price) }}</span>
+                <Check v-if="form.menu === menu.id" :size="13" />
               </button>
             </div>
-          </form>
+          </div>
+          <p class="adm-hint">Pilih menu HPP kecil (minuman/side dish), hindari menu signature yang mahal</p>
         </div>
-      </div>
-    </transition>
+
+        <div class="adm-field">
+          <label class="adm-label" for="reward-cost">Biaya Poin</label>
+          <input
+            id="reward-cost"
+            v-model.number="form.point_cost"
+            type="number" min="1" inputmode="numeric"
+            class="adm-input adm-input--mono"
+            placeholder="cth: 500"
+            required
+          />
+        </div>
+
+        <label class="adm-check">
+          <input type="checkbox" v-model="form.is_active" />
+          <span>Aktifkan reward ini sekarang</span>
+        </label>
+
+        <p v-if="formError" class="adm-alert" role="alert">{{ formError }}</p>
+      </form>
+
+      <template #footer>
+        <button type="button" class="adm-btn adm-btn--ghost" :disabled="isSaving" @click="closeModal">Batal</button>
+        <button type="submit" form="reward-form" class="adm-btn adm-btn--primary" :disabled="isSaving">
+          <span v-if="isSaving" class="adm-spinner"></span>
+          {{ editingId ? 'Simpan Perubahan' : 'Tambah Reward' }}
+        </button>
+      </template>
+    </AdminModal>
 
     <!-- ── MODAL KONFIRMASI HAPUS ─────────────────────────────────── -->
-    <transition
-      enter-active-class="modal-enter-active" enter-from-class="modal-enter-from"
-      leave-active-class="modal-leave-active" leave-to-class="modal-leave-to"
+    <AdminModal
+      v-if="deleteTarget"
+      :model-value="true"
+      title="Hapus reward ini?"
+      size="sm"
+      :persistent="isDeleting"
+      @close="closeDelete"
     >
-      <div v-if="deleteTarget" class="modal-overlay" @click.self="closeDelete">
-        <div class="modal-box modal-sm" role="alertdialog" aria-modal="true" aria-labelledby="del-title" aria-describedby="del-desc">
-          <div class="confirm-body">
-            <div class="confirm-icon"><Trash2 :size="18" /></div>
-            <h2 id="del-title" class="modal-title">Hapus reward ini?</h2>
-            <p id="del-desc" class="confirm-text">
-              <strong>{{ deleteTarget.menu_name }}</strong> ({{ deleteTarget.point_cost.toLocaleString('id-ID') }} poin)
-              akan dihapus dari katalog. Aksi ini tidak bisa dibatalkan.
-            </p>
-            <div class="modal-actions">
-              <button ref="cancelDeleteBtn" type="button" class="btn-secondary" @click="closeDelete">Batal</button>
-              <button type="button" class="btn-primary" :disabled="isDeleting" @click="confirmDelete">
-                {{ isDeleting ? 'Menghapus...' : 'Hapus reward' }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </transition>
+      <p class="adm-modal-text">
+        <strong>{{ deleteTarget.menu_name }}</strong> ({{ deleteTarget.point_cost.toLocaleString('id-ID') }} poin)
+        akan dihapus dari katalog. Aksi ini tidak bisa dibatalkan.
+      </p>
+      <template #footer>
+        <button ref="cancelDeleteBtn" data-autofocus type="button" class="adm-btn adm-btn--ghost" :disabled="isDeleting" @click="closeDelete">Batal</button>
+        <button type="button" class="adm-btn adm-btn--danger" :disabled="isDeleting" @click="confirmDelete">
+          <span v-if="isDeleting" class="adm-spinner"></span>
+          {{ isDeleting ? 'Menghapus...' : 'Hapus reward' }}
+        </button>
+      </template>
+    </AdminModal>
 
     <!-- ── Efektivitas poin (#15) ──────────────────────────────────── -->
     <PointEffectiveness />
@@ -277,10 +274,11 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
-import { Plus, Pencil, Trash2, X, ChevronDown, Check, Gift, CheckCircle2, Coins, Settings2, Search } from 'lucide-vue-next';
+import { Plus, Pencil, Trash2, ChevronDown, Check, Gift, CheckCircle2, Coins, Settings2, Search, AlertTriangle } from 'lucide-vue-next';
 import { pointRewardAPI, loyaltySettingsAPI, menuAPI } from '@/api';
 import { toast } from 'vue-sonner';
 import PointEffectiveness from '@/components/ui/admin/PointEffectiveness.vue';
+import AdminModal from '@/components/ui/admin/Adminmodal.vue';
 
 const rewards    = ref([]);
 const menus      = ref([]);
@@ -380,9 +378,9 @@ const handleClickOutsideDropdown = (e) => {
 // Esc menutup lapisan paling atas: konfirmasi hapus → dropdown → modal form
 const handleKeydown = (e) => {
   if (e.key !== 'Escape') return;
-  if (deleteTarget.value) { closeDelete(); return; }
-  if (menuOpen.value) { menuOpen.value = false; return; }
-  if (showModal.value) closeModal();
+  // AdminModal juga menutup dirinya lewat Esc; stopImmediatePropagation mencegah
+  // satu kali Esc menutup dropdown SEKALIGUS modal di bawahnya.
+  if (menuOpen.value) { e.stopImmediatePropagation(); menuOpen.value = false; }
 };
 onMounted(() => {
   document.addEventListener('mousedown', handleClickOutsideDropdown);
@@ -535,466 +533,51 @@ const confirmDelete = async () => {
 </script>
 
 <style scoped>
-.dashboard-root {
+/* Halaman memakai primitif bersama (admin-ui.css); di sini hanya yang spesifik. */
 
-  --page-max: 1280px;
-  min-height: 100%;
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font-ui);
-  -webkit-font-smoothing: antialiased;
-  padding: clamp(1.1rem, 3vw, 2rem) max(clamp(1rem, 3vw, 2.5rem), calc((100% - var(--page-max)) / 2)) 3rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
+/* Kartu "Rate Poin Masuk": judul di kiri, input di kanan */
+.pr-settings { align-items: center; flex-wrap: wrap; }
+.pr-rate-row { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; margin-left: auto; }
+.pr-affix { font-size: 0.8125rem; color: var(--text-dim); white-space: nowrap; }
+.pr-rate-input { width: 7.5rem; text-align: right; }
 
-/* ── Header ──────────────────────────────────────────────────────── */
-.dash-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 1rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid var(--border);
-}
-.dash-eyebrow {
-  font-family: var(--font-ui);
-  font-size: 0.75rem;
-  letter-spacing: -0.01em;
-  color: var(--accent-text);
-  margin: 0 0 0.25rem;
-}
-.dash-title {
-  font-family: var(--font-ui);
-  font-size: 1.75rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  margin: 0 0 0.25rem;
-}
-.dash-sub { font-size: 0.78rem; color: var(--text-dim); margin: 0; }
+.pr-name { font-weight: 700; color: var(--text); }
+.pr-cost { font-weight: 700; color: var(--accent-text); }
+.pr-row-actions { display: flex; justify-content: flex-end; gap: 0.4rem; }
 
-.new-promo-btn {
-  display: flex; align-items: center; gap: 0.4rem;
-  padding: 0.7rem 1.25rem;
-  background: var(--accent); border: none; border-radius: var(--r-md);
-  color: var(--on-accent); font-family: var(--font-ui);
-  font-size: 0.75rem; letter-spacing: -0.01em;
-  cursor: pointer; transition: background 0.15s;
-  flex-shrink: 0;
-}
-.new-promo-btn:hover { background: var(--accent-hover); }
+.adm-modal-form { display: flex; flex-direction: column; gap: 1rem; }
 
-/* ── Stat cards ──────────────────────────────────────────────────── */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-}
-
-
-.stat-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  padding: 1.1rem 1.25rem;
-  display: flex; align-items: center; gap: 0.85rem;
-}
-.stat-icon-wrap {
-  width: 34px; height: 34px; border-radius: var(--r-sm);
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-.ic-red   { background: rgba(217,43,34,0.1);  color: var(--red-soft); }
-.ic-green { background: rgba(34,197,94,0.1);  color: var(--green-soft); }
-.ic-amber { background: rgba(244,197,66,0.1); color: var(--amber-soft); }
-.stat-value { font-family: monospace; font-size: 1.25rem; font-weight: 700; color: var(--text); margin: 0 0 0.15rem; line-height: 1; }
-.stat-label { font-family: var(--font-ui); font-size: 0.75rem; letter-spacing: -0.01em; color: var(--text-dim); margin: 0; }
-
-/* ── Pengaturan rate poin ────────────────────────────────────────── */
-.settings-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  padding: 1.1rem 1.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-.settings-info { display: flex; align-items: flex-start; gap: 0.75rem; }
-.settings-icon-wrap {
-  width: 30px; height: 30px; border-radius: var(--r-sm);
-  background: rgb(var(--ink) / 0.05); color: var(--text-dim);
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-  margin-top: 0.1rem;
-}
-.settings-label {
-  font-family: var(--font-ui);
-  font-size: 0.75rem;
-  letter-spacing: -0.01em;
-  color: var(--text);
-  margin: 0 0 0.2rem;
-}
-.settings-hint { font-size: 0.75rem; color: var(--text-dim); margin: 0; max-width: 420px; }
-
-.settings-input-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-shrink: 0;
-}
-.settings-prefix, .settings-suffix {
-  font-family: monospace;
-  font-size: 0.78rem;
-  color: var(--text-dim);
-  white-space: nowrap;
-}
-.settings-input {
-  width: 110px;
-  text-align: right;
-}
-.settings-save-btn { padding: 0.6rem 1.1rem; }
-
-/* ── Toolbar: search + filter ─────────────────────────────────────── */
-.table-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-.search-box {
-  position: relative;
-  flex: 1;
-  min-width: 220px;
-  max-width: 320px;
-}
-.search-icon {
-  position: absolute; left: 0.8rem; top: 50%; transform: translateY(-50%);
-  color: var(--text-faint); pointer-events: none;
-}
-.search-input {
-  width: 100%;
-  background: var(--surface);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--r-md);
-  padding: 0.6rem 0.9rem 0.6rem 2.15rem;
-  color: var(--text); font-size: 0.8rem; font-family: var(--font-ui);
-  outline: none; transition: border-color 0.15s;
-}
-.search-input::placeholder { color: var(--text-faint); }
-.search-input:focus { border-color: rgba(217,43,34,0.45); }
-
-.filter-chips {
-  display: flex; background: var(--surface);
-  border: 1px solid var(--border); border-radius: var(--r-md);
-  padding: 3px; gap: 2px;
-}
-.chip-btn {
-  padding: 0.42rem 0.85rem; border-radius: 8px; border: none; background: transparent;
-  color: var(--text-faint);
-  font-family: var(--font-ui); font-size: 0.75rem;
-  letter-spacing: -0.01em; cursor: pointer; transition: all 0.15s;
-}
-.chip-btn:hover { color: var(--text-2); }
-.chip-btn.active { background: var(--accent); color: var(--on-accent); }
-
-/* ── Table ───────────────────────────────────────────────────────── */
-.table-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  overflow: hidden;
-}
-.promo-table { width: 100%; border-collapse: collapse; }
-.promo-table thead th {
-  text-align: left;
-  padding: 0.9rem 1.25rem;
-  font-family: var(--font-ui);
-  font-size: 0.75rem;
-  letter-spacing: -0.01em;
-  color: var(--text-faint);
-  background: rgb(var(--ink) / 0.015);
-  border-bottom: 1px solid var(--border);
-}
-.promo-table tbody td {
-  padding: 0.9rem 1.25rem;
-  font-size: 0.8rem;
-  color: var(--text-2);
-  border-bottom: 1px solid rgb(var(--ink) / 0.03);
-  vertical-align: middle;
-}
-.promo-table tbody tr { transition: background 0.12s; }
-.promo-table tbody tr:hover { background: rgb(var(--ink) / 0.02); }
-.promo-table tbody tr:last-child td { border-bottom: none; }
-.mono-cell { font-family: monospace; font-size: 0.75rem; color: var(--text-dim); }
-
-.promo-code { font-family: monospace; font-weight: 700; font-size: 0.85rem; color: var(--text); letter-spacing: 0.03em; }
-.promo-discount { font-family: monospace; font-weight: 700; color: var(--accent-text); font-size: 0.85rem; }
-
-.col-aksi { text-align: right; }
-.row-actions { display: flex; justify-content: flex-end; gap: 0.4rem; }
-.icon-btn {
-  width: 28px; height: 28px; border-radius: 7px;
-  background: rgb(var(--ink) / 0.05); border: 1px solid rgb(var(--ink) / 0.08);
-  color: var(--text-dim);
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; transition: all 0.15s;
-}
-.icon-btn:hover { background: rgb(var(--ink) / 0.1); color: var(--text); }
-.icon-btn-danger:hover { background: rgba(217,43,34,0.15); color: var(--red-soft); border-color: rgba(217,43,34,0.3); }
-
-.status-badge {
-  padding: 0.3rem 0.7rem; border-radius: 100px; border: 1px solid;
-  font-family: var(--font-ui); font-size: 0.75rem;
-  letter-spacing: -0.01em;
-  cursor: pointer; transition: opacity 0.15s; white-space: nowrap;
-}
-.status-badge:hover { opacity: 0.8; }
-.status-badge:disabled { opacity: 0.5; cursor: not-allowed; }
-.badge-green { background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.3); color: var(--green-soft); }
-.badge-gray  { background: rgb(var(--ink) / 0.05); border-color: rgb(var(--ink) / 0.12); color: var(--text-dim); }
-
-/* ── Empty / error state ─────────────────────────────────────────── */
-.empty-state {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 0.6rem; padding: 4rem 2rem; text-align: center;
-}
-.empty-icon { font-size: 2rem; }
-.empty-text { color: var(--text-dim); margin: 0; font-size: 0.9rem; }
-.empty-hint { color: var(--text-faint); margin: 0; font-size: 0.75rem; }
-.retry-btn {
-  margin-top: 0.5rem; padding: 0.5rem 1.25rem; border-radius: 8px;
-  background: var(--accent); border: none; color: var(--on-accent);
-  font-family: var(--font-ui); font-size: 0.75rem;
-  letter-spacing: -0.01em; cursor: pointer;
-}
-.retry-btn:hover { background: var(--accent-hover); }
-
-/* ── Modal ───────────────────────────────────────────────────────── */
-.modal-overlay {
-  position: fixed; inset: 0; z-index: 70;
-  background: var(--overlay); backdrop-filter: blur(4px);
-  display: flex; align-items: center; justify-content: center; padding: 1rem;
-}
-.modal-enter-active { transition: all 0.2s ease; }
-.modal-enter-from   { opacity: 0; transform: scale(0.96); }
-.modal-leave-active { transition: all 0.15s ease; }
-.modal-leave-to     { opacity: 0; transform: scale(0.96); }
-
-.modal-box {
-  background: var(--surface); border: 1px solid rgb(var(--ink) / 0.08);
-  border-radius: 18px; width: 100%; max-width: 480px;
-  max-height: 90vh; overflow-y: auto;
-}
-.modal-head {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 1.4rem 1.5rem 1rem;
-  border-bottom: 1px solid var(--border);
-}
-.modal-title {
-  font-family: var(--font-ui); font-size: 1rem; font-weight: 600; letter-spacing: -0.01em; margin: 0;
-}
-.modal-close-btn {
-  width: 28px; height: 28px; border-radius: 7px;
-  background: rgb(var(--ink) / 0.05); border: 1px solid rgb(var(--ink) / 0.08);
-  color: var(--text-dim); cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-}
-.modal-close-btn:hover { background: rgb(var(--ink) / 0.1); color: var(--text); }
-
-.modal-form { padding: 1.25rem 1.5rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
-
-.field { display: flex; flex-direction: column; gap: 0.4rem; }
-.field-label {
-  font-family: var(--font-ui); font-size: 0.75rem;
-  letter-spacing: -0.01em; color: var(--text-dim);
-}
-.field-hint { font-size: 0.75rem; color: var(--text-faint); margin: 0.1rem 0 0; }
-
-.form-input {
-  background: rgb(var(--ink) / 0.04); border: 1px solid rgb(var(--ink) / 0.1);
-  border-radius: 9px; padding: 0.6rem 0.8rem;
-  color: var(--text); font-size: 0.82rem; font-family: var(--font-ui);
-  outline: none; transition: border-color 0.15s; width: 100%;
-
-}
-.form-input.mono { font-family: monospace; }
-.form-input:focus { border-color: rgba(217,43,34,0.5); }
-.form-input::placeholder { color: var(--text-faint); }
-
-.form-input[type="number"]::-webkit-inner-spin-button,
-.form-input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-.form-input[type="number"] { -moz-appearance: textfield; }
-
-/* ── Custom dropdown "Menu" ──────────────────────────────────────── */
+/* ── Dropdown "Menu" ─────────────────────────────────────────────── */
 .custom-select { position: relative; }
-.custom-select-trigger {
-  display: flex; align-items: center; justify-content: space-between;
-  cursor: pointer; text-align: left;
-}
+.custom-select-trigger { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; cursor: pointer; text-align: left; }
 .custom-select-chevron { color: var(--text-dim); transition: transform 0.15s; flex-shrink: 0; }
 .custom-select-chevron.is-open { transform: rotate(180deg); }
-
 .custom-select-panel {
   position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 20;
-  background: var(--surface-2); border: 1px solid rgb(var(--ink) / 0.1);
-  border-radius: 9px; padding: 0.3rem;
-  max-height: 260px; overflow-y: auto;
-  box-shadow: var(--shadow-lg);
+  max-height: 260px; overflow-y: auto; padding: 0.3rem;
+  background: var(--surface-2); border: 1px solid var(--border-strong);
+  border-radius: var(--r-md); box-shadow: var(--shadow-lg);
 }
 .custom-select-option {
-  width: 100%; display: flex; align-items: center; justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0.55rem 0.65rem; border-radius: 6px; border: none;
-  background: transparent; color: var(--text-2);
-  font-size: 0.8rem; font-family: var(--font-ui); text-align: left;
-  cursor: pointer; transition: background 0.12s;
+  display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+  width: 100%; min-height: 38px; padding: 0.55rem 0.65rem;
+  border: none; border-radius: var(--r-sm); background: transparent;
+  color: var(--text-2); font-family: var(--font-body); font-size: 0.8125rem; text-align: left; cursor: pointer;
+  transition: background 0.12s;
 }
-.custom-select-option:hover { background: rgb(var(--ink) / 0.06); color: var(--text); }
-.custom-select-option.is-selected { color: var(--red-soft); }
-.custom-select-option.is-selected svg { color: var(--red-soft); flex-shrink: 0; }
-
-.checkbox-row {
-  display: flex; align-items: center; gap: 0.55rem;
-  font-size: 0.78rem; color: var(--text-2); cursor: pointer;
-}
-.checkbox-row input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
-
-.form-error {
-  font-size: 0.75rem; color: var(--red-soft); margin: 0;
-  background: rgba(217,43,34,0.08); border: 1px solid rgba(217,43,34,0.2);
-  padding: 0.6rem 0.8rem; border-radius: 8px;
-}
-
-.modal-actions { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 0.25rem; }
-.btn-secondary, .btn-primary {
-  padding: 0.65rem 1.25rem; border-radius: 9px; border: none;
-  font-family: var(--font-ui); font-size: 0.7rem;
-  letter-spacing: -0.01em; cursor: pointer;
-  transition: all 0.15s;
-}
-.btn-secondary { background: rgb(var(--ink) / 0.05); color: var(--text-dim); }
-.btn-secondary:hover { background: rgb(var(--ink) / 0.1); color: var(--text); }
-.btn-primary { background: var(--accent); color: var(--on-accent); }
-.btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
-.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-
-
-/* ══ Tambahan: tema, UX, responsif ═════════════════════════════════ */
-.stat-card, .settings-card, .table-card, .search-input, .filter-chips { box-shadow: var(--shadow-sm); }
-.stat-value, .mono-cell, .promo-discount { font-variant-numeric: tabular-nums; }
-.dash-title { font-size: clamp(1.4rem, 4vw, 1.75rem); }
-.new-promo-btn { color: var(--on-accent); min-height: 44px; }
-
-.icon-btn { width: 32px; height: 32px; }
-.promo-table tbody tr:hover { background: var(--surface-hover); }
-.status-badge { min-height: 28px; }
-.status-badge.badge-gray { color: var(--text-dim); }
-.chip-btn.active, .btn-primary, .retry-btn { color: var(--on-accent); }
-.settings-icon-wrap { color: var(--text-dim); }
-.settings-hint { max-width: 46ch; }
-
-.custom-select-empty { margin: 0; padding: 0.7rem; font-size: 0.78rem; color: var(--text-faint); }
-.custom-select-option { min-height: 38px; }
-
-/* modal konfirmasi hapus */
-.modal-sm { max-width: 400px; }
-.confirm-body { padding: 1.5rem; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.6rem; }
-.confirm-icon {
-  display: flex; align-items: center; justify-content: center;
-  width: 44px; height: 44px; border-radius: 12px; margin-bottom: 0.25rem;
-  background: rgb(239 68 68 / 0.12); color: var(--red-soft);
-}
-.confirm-text { margin: 0 0 0.75rem; font-size: 0.82rem; line-height: 1.55; color: var(--text-dim); }
-.confirm-text strong { color: var(--text); font-weight: 600; }
-.confirm-body .modal-actions { width: 100%; }
-.confirm-body .modal-actions > button { flex: 1; }
-
-.modal-box { animation: none; }
-.btn-secondary, .btn-primary { min-height: 40px; }
-
-/* ── Tablet & mobile ── */
-@media (max-width: 900px) {
-  .settings-card { align-items: stretch; }
-  .settings-input-row { flex-wrap: wrap; }
-}
+.custom-select-option:hover { background: var(--surface-hover); color: var(--text); }
+.custom-select-option.is-selected { color: var(--accent-text); }
+.custom-select-empty { margin: 0; padding: 0.7rem; font-size: 0.8125rem; color: var(--text-faint); }
 
 @media (max-width: 720px) {
-  .dashboard-root { gap: 1rem; }
-  .dash-header { flex-direction: column; align-items: stretch; padding-bottom: 1.1rem; }
-  .new-promo-btn { width: 100%; justify-content: center; }
-
-  /* ringkasan: 3 tile ringkas sebaris */
-  .stats-grid { grid-template-columns: repeat(3, 1fr); gap: 0.6rem; }
-  .stat-card { flex-direction: column; align-items: flex-start; gap: 0.55rem; padding: 0.8rem; }
-  .stat-value { font-size: 1.1rem; }
-  .stat-label { line-height: 1.3; }
-
-  .settings-input-row { width: 100%; }
-  .settings-input { flex: 1; min-width: 0; width: auto; }
-  .settings-save-btn { width: 100%; min-height: 44px; }
-
-  .table-toolbar { flex-direction: column; align-items: stretch; }
-  .search-box { max-width: none; min-width: 0; }
-  .filter-chips { width: 100%; }
-  .chip-btn { flex: 1; min-height: 36px; }
-
-  /* tabel → kartu */
-  .promo-table, .promo-table tbody { display: block; width: 100%; }
-  .promo-table thead {
-    position: absolute; width: 1px; height: 1px; overflow: hidden;
-    clip: rect(0 0 0 0); white-space: nowrap;
-  }
-  .promo-table tbody tr {
-    display: grid;
-    grid-template-columns: 1fr 1fr auto;
-    grid-template-areas: "menu menu status" "price cost actions";
-    gap: 0.7rem 0.75rem;
-    align-items: center;
-    padding: 0.95rem 1rem;
-    border-bottom: 1px solid var(--border);
-  }
-  .promo-table tbody tr:last-child { border-bottom: none; }
-  .promo-table tbody td { display: block; padding: 0; border: 0; }
-  .td-menu    { grid-area: menu; min-width: 0; }
-  .td-price   { grid-area: price; }
-  .td-cost    { grid-area: cost; }
-  .td-status  { grid-area: status; justify-self: end; }
-  .td-actions { grid-area: actions; justify-self: end; }
-  .promo-code { word-break: break-word; }
-  .promo-table tbody td[data-label]::before {
-    content: attr(data-label);
-    display: block; margin-bottom: 0.15rem;
-    font-family: var(--font-ui); font-size: 0.75rem;
-    letter-spacing: -0.01em; color: var(--text-faint);
-  }
-  .promo-table { font-size: 0.8rem; }
+  .pr-rate-row { width: 100%; margin-left: 0; flex-wrap: wrap; }
+  .pr-rate-input { flex: 1; min-width: 0; width: auto; }
+  .pr-rate-save { width: 100%; }
+  .adm-toolbar .adm-search { max-width: none; }
+  .adm-toolbar .adm-seg { width: 100%; }
+  .adm-toolbar .adm-seg-btn { flex: 1; }
 }
-
-/* modal jadi bottom-sheet di layar kecil */
 @media (max-width: 560px) {
-  .modal-overlay { align-items: flex-end; padding: 0; }
-  .modal-box {
-    max-width: none; max-height: 92vh; max-height: 92dvh;
-    border-radius: 20px 20px 0 0;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
-  .modal-enter-from, .modal-leave-to { opacity: 0; transform: translateY(24px); }
-  .modal-actions { flex-direction: column-reverse; }
-  .modal-actions > button { width: 100%; min-height: 46px; }
-  .form-input { font-size: 1rem; min-height: 44px; } /* 16px → iOS tidak auto-zoom */
   .custom-select-option { min-height: 44px; }
-  .checkbox-row { min-height: 40px; }
 }
-
-@media (pointer: coarse) {
-  .icon-btn { width: 40px; height: 40px; }
-  .status-badge { min-height: 34px; padding-inline: 0.9rem; }
-  .chip-btn { min-height: 40px; }
-}
-
 </style>

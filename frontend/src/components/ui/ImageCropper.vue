@@ -1,56 +1,37 @@
 <template>
   <Teleport to="body">
-    <div
-      class="fixed inset-0 z-[99999] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
-      @click.stop
-    >
-      <div
-        class="w-full max-w-2xl bg-[#121212] p-6 rounded-lg border border-white/10 shadow-2xl font-inter"
-      >
-        <!-- Judul dinamis menyesuaikan tipe -->
-        <h3
-          class="text-center mb-4 font-oswald uppercase tracking-widest text-amber-500 text-sm"
-        >
-          Potong Foto {{ cropLabel }} ({{ ratioLabel }} • Output {{ targetResolution.width }} × {{ targetResolution.height }})
-        </h3>
+    <div class="adm-overlay ic-overlay" @click.stop>
+      <div class="adm-modal adm-modal--lg" role="dialog" aria-modal="true" aria-labelledby="ic-title">
+        <header class="adm-modal-head">
+          <h3 id="ic-title" class="adm-modal-title">Potong Foto {{ cropLabel }}</h3>
+          <span class="adm-badge adm-mono">{{ ratioLabel }} · {{ targetResolution.width }} × {{ targetResolution.height }}</span>
+        </header>
 
-        <div
-          class="relative w-full h-[400px] bg-black overflow-hidden rounded-md border border-white/5"
-        >
-          <cropper
-            ref="cropperRef"
-            class="h-full w-full"
-            :src="image"
-            :stencil-props="{ aspectRatio: currentAspectRatio }"
-          />
+        <div class="adm-modal-body">
+          <!-- Kanvas edit foto tetap gelap supaya kontras dengan gambar, di kedua tema -->
+          <div class="ic-stage">
+            <cropper
+              ref="cropperRef"
+              class="ic-cropper"
+              :src="image"
+              :stencil-props="{ aspectRatio: currentAspectRatio }"
+            />
 
-          <!-- Overlay loading saat proses resize/generate canvas -->
-          <div
-            v-if="isGenerating"
-            class="absolute inset-0 bg-black/70 flex items-center justify-center"
-          >
-            <div class="animate-spin w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full"></div>
+            <div v-if="isGenerating" class="ic-loading">
+              <span class="adm-spinner ic-spinner"></span>
+            </div>
           </div>
         </div>
 
-        <div class="mt-6 flex gap-4">
-          <button
-            type="button"
-            @click="onCancel"
-            :disabled="isGenerating"
-            class="flex-1 py-3 bg-white/10 text-white uppercase text-xs font-bold rounded hover:bg-white/20 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-          >
+        <footer class="adm-modal-foot">
+          <button type="button" class="adm-btn adm-btn--ghost" :disabled="isGenerating" @click="onCancel">
             Batal
           </button>
-          <button
-            type="button"
-            @click="handleGenerate"
-            :disabled="isGenerating"
-            class="flex-[2] py-3 bg-amber-600 text-black uppercase text-xs font-bold rounded hover:bg-amber-500 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-          >
+          <button type="button" class="adm-btn adm-btn--primary" :disabled="isGenerating" @click="handleGenerate">
+            <span v-if="isGenerating" class="adm-spinner"></span>
             {{ isGenerating ? "Memproses..." : "Simpan Potongan" }}
           </button>
-        </div>
+        </footer>
       </div>
     </div>
   </Teleport>
@@ -159,3 +140,19 @@ const onCancel = () => {
   emit("cancel");
 };
 </script>
+
+<style scoped>
+/* Di atas modal admin lain (AdminModal z-index 9000) */
+.ic-overlay { z-index: 9500; }
+.ic-stage {
+  position: relative; width: 100%; height: 400px; overflow: hidden;
+  border: 1px solid var(--border); border-radius: var(--r-md);
+  background: #000;
+}
+.ic-cropper { height: 100%; width: 100%; }
+.ic-loading {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: var(--overlay);
+}
+.ic-spinner { width: 24px; height: 24px; color: var(--accent-text); }
+</style>

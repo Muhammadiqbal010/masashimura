@@ -173,7 +173,7 @@ const formatRp = (n) =>
 /* 16px di HP supaya iOS tidak zoom otomatis saat select difokuskan */
 .ms-select {
   width: 100%; min-height: 44px; padding: 0 0.85rem;
-  border-radius: 12px; border: 1px solid rgb(var(--ink) / 0.1);
+  border-radius: var(--r-md); border: 1px solid var(--border-strong);
   background: rgb(var(--ink) / 0.04); color: var(--text);
   font-family: inherit; font-size: 1rem; cursor: pointer;
 }

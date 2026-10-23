@@ -73,8 +73,8 @@ const props = defineProps({ params: { type: Object, required: true } })
 const { data, loading, error, load } = useReportLoad(analyticsAPI.getChannels, () => props.params)
 defineExpose({ reload: load, loading })
 
-const COLORS = { web: "#3b82f6", pos: "#f4c542" }
-const color = (s) => COLORS[s] || "#71717a"
+const COLORS = { web: "#7cc4f5", pos: "#f4c542" }
+const color = (s) => COLORS[s] || "#9a9aa3"
 const rp = (v) => "Rp " + Math.round(v || 0).toLocaleString("id-ID")
 
 const LABELS = { web: "Web (pelanggan)", pos: "POS (kasir)" }
@@ -92,7 +92,7 @@ const chartData = computed(() => ({
 // Canvas tidak bisa membaca CSS variable, jadi warna mengikuti tema lewat isDark.
 const { isDark } = useTheme()
 const chartOpts = computed(() => {
-  const tick = isDark.value ? "rgba(255,255,255,0.5)" : "#63636b"
+  const tick = isDark.value ? "rgba(255,255,255,0.55)" : "rgba(24,24,27,0.62)"
   const grid = isDark.value ? "rgba(255,255,255,0.05)" : "rgba(24,24,27,0.07)"
   return {
     responsive: true,

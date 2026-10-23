@@ -553,7 +553,7 @@ html[data-admin-theme='light'] .sb-pattern { --sb-pat-invert: 1; opacity: 0.5; }
   height: 20px;
   padding: 0 0.3rem;
   border-radius: 99px;
-  background: var(--brand-yellow, #f4c542);
+  background: var(--brand-yellow);
   color: #1a1400;
   font-family: var(--font-ui);
   font-size: 0.75rem;

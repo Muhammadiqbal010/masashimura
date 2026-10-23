@@ -1672,8 +1672,8 @@ const confirmDelete = async () => {
 .ao-stat-hint { font-size: 0.75rem; color: var(--text-faint); }
 .ao-stat.is-alert { border-color: var(--line-accent); background: var(--tint-accent); }
 .ao-stat.is-alert .ao-stat-value { color: var(--red-soft); }
-.ao-stat--cash { box-shadow: inset 3px 0 0 #eab308; }
-.ao-stat--qris { box-shadow: inset 3px 0 0 #3b82f6; }
+.ao-stat--cash { box-shadow: inset 3px 0 0 var(--amber); }
+.ao-stat--qris { box-shadow: inset 3px 0 0 var(--blue-soft); }
 .ao-stat--total { box-shadow: inset 3px 0 0 var(--green); }
 @media (max-width: 480px) { .ao-stats { grid-template-columns: 1fr 1fr; } }
 
@@ -1710,7 +1710,7 @@ const confirmDelete = async () => {
 }
 .adm-seg-btn[aria-pressed='true'] .ao-count { background: rgb(255 255 255 / 0.22); }
 .ao-count.is-alert,
-.adm-seg-btn[aria-pressed='true'] .ao-count.is-alert { background: var(--accent); color: #fff; }
+.adm-seg-btn[aria-pressed='true'] .ao-count.is-alert { background: var(--accent); color: var(--on-accent); }
 
 /* ── Error ───────────────────────────────────────────────────────── */
 .ao-error { align-items: center; flex-wrap: wrap; }
@@ -1798,11 +1798,9 @@ const confirmDelete = async () => {
   font-size: 0.7rem; font-weight: 700; text-transform: capitalize;
   color: var(--text-dim);
 }
-.ao-method--cash  { color: #facc15; background: rgb(234 179 8 / 0.14);  border-color: rgb(234 179 8 / 0.45); }
-.ao-method--qris  { color: #60a5fa; background: rgb(59 130 246 / 0.14); border-color: rgb(59 130 246 / 0.45); }
+.ao-method--cash  { color: var(--amber-soft); background: var(--tint-amber); border-color: var(--line-amber); }
+.ao-method--qris  { color: var(--blue-soft); background: var(--tint-blue); border-color: var(--line-blue); }
 .ao-method--mixed { color: var(--text-dim); background: rgb(var(--ink) / 0.08); border-color: var(--border-strong); }
-html[data-admin-theme='light'] .ao-method--cash { color: #a16207; background: rgb(234 179 8 / 0.18); }
-html[data-admin-theme='light'] .ao-method--qris { color: #1d4ed8; background: rgb(59 130 246 / 0.12); }
 
 /* Status */
 .ao-status { display: inline-flex; flex-direction: column; align-items: center; gap: 0.3rem; }
@@ -1882,7 +1880,7 @@ html[data-admin-theme='light'] .ao-method--qris { color: #1d4ed8; background: rg
   .ao-foot-actions { width: 100%; }
   .ao-foot-actions .adm-btn { flex: 1; }
 }
-.ao-btn-wa { background: var(--green); border-color: var(--green); color: #fff; }
+.ao-btn-wa { background: var(--green); border-color: var(--green); color: var(--on-accent); }
 .ao-btn-wa:hover:not(:disabled) { filter: brightness(0.92); }
 
 
@@ -1916,10 +1914,8 @@ html[data-admin-theme='light'] .ao-method--qris { color: #1d4ed8; background: rg
 .rcpt-status.is-paid { color: var(--green-soft); }
 .rcpt-status.is-void { color: var(--text-dim); }
 .rcpt-status.is-pending { color: var(--amber-soft); }
-.rcpt-row b.rcpt-method--cash { color: #facc15; }
-.rcpt-row b.rcpt-method--qris { color: #60a5fa; }
-:global(html[data-admin-theme='light']) .rcpt-row b.rcpt-method--cash { color: #a16207; }
-:global(html[data-admin-theme='light']) .rcpt-row b.rcpt-method--qris { color: #1d4ed8; }
+.rcpt-row b.rcpt-method--cash { color: var(--amber-soft); }
+.rcpt-row b.rcpt-method--qris { color: var(--blue-soft); }
 .rcpt-cancel { display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.75rem; padding: 0.7rem 0.85rem; border: 1px solid var(--line-accent); border-radius: var(--r-md); background: var(--tint-accent); }
 .rcpt-cancel-title { display: flex; align-items: center; gap: 0.35rem; margin: 0 0 0.25rem; font-weight: 700; color: var(--red-soft); }
 
@@ -1946,8 +1942,8 @@ html[data-admin-theme='light'] .ao-method--qris { color: #1d4ed8; background: rg
   .ao-payrow .adm-seg-btn { flex: 1; }
 }
 
-.adm-seg-btn.ao-pm-cash[aria-pressed='true'] { background: #eab308; color: #1c1917; }
-.adm-seg-btn.ao-pm-qris[aria-pressed='true'] { background: #2563eb; color: #fff; }
+.adm-seg-btn.ao-pm-cash[aria-pressed='true'] { background: var(--amber); color: var(--bg); }
+.adm-seg-btn.ao-pm-qris[aria-pressed='true'] { background: var(--blue-soft); color: var(--bg); }
 
 .ao-quick { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .ao-chip {

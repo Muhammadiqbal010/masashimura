@@ -1,96 +1,48 @@
 <template>
-  <div
-    v-if="open"
-    class="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
-  >
-    <div
-      class="bg-[#0a0a0a] border border-white/10 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl"
-    >
-      <div class="px-8 py-6 border-b border-white/10">
-        <h2 class="font-manrope font-bold text-2xl tracking-tight text-white">
-          Buat Akun Baru
-        </h2>
-        <p class="text-white/50 text-sm">
-          Hanya Owner yang dapat mendaftarkan staff
-        </p>
+  <AdminModal v-model="isOpen" title="Buat Akun Baru" size="sm" :persistent="loading">
+    <form id="create-user-form" class="cu-form" autocomplete="off" @submit.prevent="handleSubmit">
+      <p class="adm-modal-text">Hanya Owner yang dapat mendaftarkan staff.</p>
+
+      <div class="adm-field">
+        <label class="adm-label" for="cu-username">Username</label>
+        <input id="cu-username" v-model="form.username" data-autofocus type="text" required class="adm-input" placeholder="username_staff" />
       </div>
 
-      <form
-        @submit.prevent="handleSubmit"
-        class="p-8 space-y-6"
-        autocomplete="off"
-      >
-        <div>
-          <label class="block text-sm text-white/70 mb-2">Username</label>
-          <input
-            v-model="form.username"
-            type="text"
-            required
-            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-red-500 outline-none transition-colors"
-            placeholder="username_staff"
-          />
-        </div>
+      <div class="adm-field">
+        <label class="adm-label" for="cu-email">Email</label>
+        <input id="cu-email" v-model="form.email" type="email" required class="adm-input" placeholder="staff@masashimura.id" />
+      </div>
 
-        <div>
-          <label class="block text-sm text-white/70 mb-2">Email</label>
-          <input
-            v-model="form.email"
-            type="email"
-            required
-            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-red-500 outline-none transition-colors"
-            placeholder="staff@masashimura.id"
-          />
-        </div>
+      <div class="adm-field">
+        <label class="adm-label" for="cu-password">Password</label>
+        <input id="cu-password" v-model="form.password" type="password" required class="adm-input" />
+      </div>
 
-        <div>
-          <label class="block text-sm text-white/70 mb-2">Password</label>
-          <input
-            v-model="form.password"
-            type="password"
-            required
-            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-red-500 outline-none transition-colors"
-          />
-        </div>
+      <div class="adm-field">
+        <label class="adm-label" for="cu-role">Hak Akses (Role)</label>
+        <select id="cu-role" v-model="form.role" class="adm-input">
+          <option value="kasir">Kasir</option>
+          <option value="admin">Admin</option>
+          <option value="owner">Owner</option>
+        </select>
+      </div>
+    </form>
 
-        <div>
-          <label class="block text-sm text-white/70 mb-2"
-            >Hak Akses (Role)</label
-          >
-          <select
-            v-model="form.role"
-            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-red-500 outline-none transition-colors"
-          >
-            <option value="kasir">Kasir</option>
-            <option value="admin">Admin</option>
-            <option value="owner">Owner</option>
-          </select>
-        </div>
-
-        <div class="flex gap-4 pt-4">
-          <button
-            type="button"
-            @click="closeModal"
-            class="flex-1 py-4 border border-white/20 rounded-2xl text-white/70 hover:bg-white/5 transition"
-          >
-            Batal
-          </button>
-          <button
-            type="submit"
-            :disabled="loading"
-            class="flex-1 py-4 bg-red-600 hover:bg-red-500 text-white rounded-2xl font-bold uppercase transition disabled:opacity-50"
-          >
-            {{ loading ? "Memproses..." : "Buat Akun" }}
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
+    <template #footer>
+      <button type="button" class="adm-btn adm-btn--ghost" :disabled="loading" @click="closeModal">Batal</button>
+      <button type="submit" form="create-user-form" class="adm-btn adm-btn--primary" :disabled="loading">
+        <span v-if="loading" class="adm-spinner"></span>
+        {{ loading ? "Memproses..." : "Buat Akun" }}
+      </button>
+    </template>
+  </AdminModal>
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { toast } from "vue-sonner";
 import { authAPI } from "@/api";
+import AdminModal from "@/components/ui/admin/Adminmodal.vue";
 
 const props = defineProps({
   open: { type: Boolean, required: true },
@@ -106,6 +58,12 @@ const form = ref({
 });
 
 const loading = ref(false);
+
+// AdminModal memakai v-model; antarmuka publik komponen ini tetap `open` + `update:open`.
+const isOpen = computed({
+  get: () => props.open,
+  set: (v) => { if (!v) closeModal(); },
+});
 
 const handleSubmit = async () => {
   loading.value = true;
@@ -127,3 +85,7 @@ const closeModal = () => {
   form.value = { username: "", email: "", password: "", role: "kasir" };
 };
 </script>
+
+<style scoped>
+.cu-form { display: flex; flex-direction: column; gap: 1rem; }
+</style>

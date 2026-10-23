@@ -1,168 +1,70 @@
 <template>
-  <div
-    v-if="open"
-    class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 backdrop-blur-sm p-4"
-  >
-    <div
-      class="bg-[#0a0a0a] border border-white/10 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl"
-    >
-      <div
-        class="px-8 py-5 border-b border-white/5 flex justify-between items-center bg-white/5"
-      >
-        <div>
-          <h2 class="font-manrope font-bold text-2xl tracking-wide text-white">
-            Edit Pesanan #{{ localOrder?.id || "..." }}
-          </h2>
-          <p class="text-xs text-white/60">
-            Pelanggan: {{ localOrder?.customer?.phone || "Guest" }}
-          </p>
-        </div>
-        <button
-          @click="$emit('close')"
-          class="text-white/50 hover:text-white text-xl transition"
-        >
-          &times;
+  <AdminModal v-model="isOpen" :title="`Edit Pesanan #${localOrder?.id || '...'}`" size="lg">
+    <p class="adm-hint">Pelanggan: {{ localOrder?.customer?.phone || "Guest" }}</p>
+
+    <div class="adm-field">
+      <label class="adm-label" for="oe-status">Ubah Status</label>
+      <select id="oe-status" v-model="localOrder.status" class="adm-input">
+        <option value="pending">PENDING</option>
+        <option value="diproses">DIPROSES</option>
+        <option value="selesai">SELESAI / LUNAS</option>
+      </select>
+    </div>
+
+    <div v-if="localOrder.payment_method === 'qris' && localOrder.qris_url" class="oe-qris">
+      <p class="adm-label">Scan QRIS</p>
+      <img :src="localOrder.qris_url" alt="QRIS" class="oe-qris-img" />
+    </div>
+
+    <div class="adm-field">
+      <div class="adm-label-row">
+        <span class="adm-label">Item Menu</span>
+        <button type="button" class="adm-btn adm-btn--soft adm-btn--sm" @click="addItemPlaceholder">
+          <Plus :size="14" /> Tambah Item
         </button>
       </div>
 
-      <div
-        class="p-8 max-h-[60vh] overflow-y-auto space-y-6 text-white custom-scroll"
-      >
-        <div>
-          <label
-            class="block text-xs uppercase tracking-widest text-white/60 mb-2"
-            >Ubah Status</label
-          >
-          <select
-            v-model="localOrder.status"
-            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-red-600 transition"
-          >
-            <option value="pending">PENDING</option>
-            <option value="diproses">DIPROSES</option>
-            <option value="selesai">SELESAI / LUNAS</option>
-          </select>
-        </div>
-
-        <div
-          v-if="localOrder.payment_method === 'qris' && localOrder.qris_url"
-          class="bg-white/5 p-4 rounded-xl flex flex-col items-center border border-white/5"
-        >
-          <p class="text-xs uppercase tracking-widest text-white/60 mb-3">
-            Scan QRIS
-          </p>
-          <img
-            :src="localOrder.qris_url"
-            alt="QRIS"
-            class="w-40 h-40 bg-white p-2 rounded-lg"
-          />
-        </div>
-
-        <div>
-          <div class="flex justify-between items-center mb-3">
-            <label class="block text-xs uppercase tracking-widest text-white/60"
-              >Item Menu</label
-            >
-            <button
-              @click="addItemPlaceholder"
-              class="text-xs bg-red-600/20 text-red-400 border border-red-500/30 px-3 py-1 rounded-lg hover:bg-red-600 hover:text-white transition"
-            >
-              + Tambah Item
-            </button>
+      <div class="oe-items">
+        <div v-for="(item, index) in localOrder.items" :key="index" class="oe-item">
+          <div class="oe-item-main">
+            <p class="oe-item-name adm-truncate">{{ item.menu?.name || "Item Menu" }}</p>
+            <p class="adm-hint">Rp {{ (item.price || 0).toLocaleString() }}</p>
           </div>
 
-          <div class="space-y-3">
-            <div
-              v-for="(item, index) in localOrder.items"
-              :key="index"
-              class="flex items-center gap-4 bg-white/5 border border-white/5 p-4 rounded-xl"
-            >
-              <div class="flex-1">
-                <p class="text-sm font-semibold">
-                  {{ item.menu?.name || "Item Menu" }}
-                </p>
-                <p class="text-xs text-white/60">
-                  Rp {{ (item.price || 0).toLocaleString() }}
-                </p>
-              </div>
-
-              <div
-                class="flex items-center gap-2 bg-black border border-white/10 rounded-lg p-1"
-              >
-                <button
-                  type="button"
-                  @click="updateQty(index, -1)"
-                  class="w-8 h-8 rounded bg-white/5 hover:bg-white/10"
-                >
-                  -
-                </button>
-                <span class="w-8 text-center text-sm font-semibold">{{
-                  item.quantity
-                }}</span>
-                <button
-                  type="button"
-                  @click="updateQty(index, 1)"
-                  class="w-8 h-8 rounded bg-white/5 hover:bg-white/10"
-                >
-                  +
-                </button>
-              </div>
-
-              <div class="w-24 text-right font-manrope font-bold text-sm text-amber-500">
-                Rp {{ ((item.price || 0) * item.quantity).toLocaleString() }}
-              </div>
-
-              <button
-                @click="removeItemRow(index)"
-                class="text-white/60 hover:text-red-500 transition"
-              >
-                🗑️
-              </button>
-            </div>
+          <div class="oe-qty">
+            <button type="button" class="adm-icon-btn" aria-label="Kurangi" @click="updateQty(index, -1)"><Minus :size="14" /></button>
+            <span class="oe-qty-val">{{ item.quantity }}</span>
+            <button type="button" class="adm-icon-btn" aria-label="Tambah" @click="updateQty(index, 1)"><Plus :size="14" /></button>
           </div>
-        </div>
 
-        <div
-          class="pt-4 border-t border-white/5 flex justify-between items-center"
-        >
-          <span class="text-sm uppercase tracking-wider text-white/50"
-            >Total Baru:</span
-          >
-          <span class="text-xl font-bold font-manrope font-bold text-emerald-400">
-            Rp {{ calculatedFinalPrice.toLocaleString() }}
-          </span>
-        </div>
-      </div>
+          <div class="oe-item-total">Rp {{ ((item.price || 0) * item.quantity).toLocaleString() }}</div>
 
-      <div
-        class="px-8 py-5 border-t border-white/5 bg-white/5 flex justify-between"
-      >
-        <button
-          @click="$emit('delete', localOrder.id)"
-          class="px-5 py-3 border border-red-500/30 text-red-500 rounded-xl hover:bg-red-600 hover:text-white transition text-xs uppercase"
-        >
-          Hapus Order
-        </button>
-        <div class="flex gap-3">
-          <button
-            @click="$emit('close')"
-            class="px-5 py-3 border border-white/10 text-white/70 rounded-xl hover:bg-white/5 transition text-xs uppercase"
-          >
-            Batal
-          </button>
-          <button
-            @click="submitSave"
-            class="px-6 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold text-xs uppercase transition"
-          >
-            Simpan Perubahan
+          <button type="button" class="adm-icon-btn adm-icon-btn--danger" aria-label="Hapus item" @click="removeItemRow(index)">
+            <Trash2 :size="15" />
           </button>
         </div>
       </div>
     </div>
-  </div>
+
+    <div class="oe-total">
+      <span class="adm-label">Total Baru</span>
+      <span class="oe-total-val">Rp {{ calculatedFinalPrice.toLocaleString() }}</span>
+    </div>
+
+    <template #footer>
+      <button type="button" class="adm-btn adm-btn--danger oe-delete" @click="$emit('delete', localOrder.id)">
+        <Trash2 :size="14" /> Hapus Order
+      </button>
+      <button type="button" class="adm-btn adm-btn--ghost" @click="$emit('close')">Batal</button>
+      <button type="button" class="adm-btn adm-btn--primary" @click="submitSave">Simpan Perubahan</button>
+    </template>
+  </AdminModal>
 </template>
 
 <script setup>
 import { computed, ref, watch } from "vue";
+import { Plus, Minus, Trash2 } from "lucide-vue-next";
+import AdminModal from "@/components/ui/admin/Adminmodal.vue";
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -171,6 +73,12 @@ const props = defineProps({
 
 const emit = defineEmits(["close", "save", "delete"]);
 const localOrder = ref({ items: [] });
+
+// AdminModal memakai v-model; antarmuka publik komponen ini tetap `open` + emit("close").
+const isOpen = computed({
+  get: () => props.open,
+  set: (v) => { if (!v) emit("close"); },
+});
 
 // Watcher untuk melakukan deep copy order ke local state agar tidak mutasi props langsung
 watch(
@@ -226,3 +134,29 @@ const submitSave = () => {
   emit("save", payload);
 };
 </script>
+
+<style scoped>
+.oe-qris { display: flex; flex-direction: column; align-items: center; gap: 0.6rem; padding: 1rem; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-2); }
+.oe-qris-img { width: 10rem; height: 10rem; padding: 0.5rem; border-radius: var(--r-sm); background: #fff; } /* QR wajib latar putih agar terbaca scanner */
+
+.oe-items { display: flex; flex-direction: column; gap: 0.6rem; }
+.oe-item {
+  display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 0.9rem;
+  border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-2);
+}
+.oe-item-main { flex: 1; min-width: 0; }
+.oe-item-name { margin: 0; font-size: 0.875rem; font-weight: 600; color: var(--text); }
+.oe-qty { display: flex; align-items: center; gap: 0.25rem; padding: 2px; border: 1px solid var(--border-strong); border-radius: var(--r-sm); background: var(--surface); }
+.oe-qty-val { min-width: 1.75rem; text-align: center; font-size: 0.875rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.oe-item-total { min-width: 6rem; text-align: right; font-size: 0.875rem; font-weight: 700; color: var(--amber-soft); font-variant-numeric: tabular-nums; }
+
+.oe-total { display: flex; align-items: center; justify-content: space-between; padding-top: 1rem; border-top: 1px solid var(--border); }
+.oe-total-val { font-family: var(--font-display); font-size: 1.25rem; color: var(--green-soft); font-variant-numeric: tabular-nums; }
+.oe-delete { margin-right: auto; }
+
+@media (max-width: 560px) {
+  .oe-item { flex-wrap: wrap; }
+  .oe-item-total { margin-left: auto; }
+  .oe-delete { margin-right: 0; flex-basis: 100%; }
+}
+</style>
