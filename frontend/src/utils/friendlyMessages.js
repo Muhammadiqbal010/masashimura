@@ -1,6 +1,3 @@
-// Teks pesan WhatsApp ke pelanggan: ramah, pakai "kakak", dan sapaannya mengikuti jam.
-// Dipakai oleh NotifyCustomerModal.vue dan ActiveOrders.vue.
-
 export const greetingByTime = (d = new Date()) => {
   const h = d.getHours()
   if (h >= 4 && h < 11) return 'pagi'
