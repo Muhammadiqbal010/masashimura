@@ -103,18 +103,23 @@ def _calc_promo_discount(promo, subtotal):
 
     return min(discount, subtotal)
 
-def _orderable_problem(menu, source):
+def _orderable_problem(menu, source, backdated=False):
     """
     Pesan error kalau menu TIDAK boleh dipesan dari source ini, atau None kalau aman.
-    - Web: secret & nonaktif ditolak (pesan generik, nama secret menu tidak dibocorkan),
-      menu habis juga ditolak (sebelumnya cuma dicek di tampilan, bisa dibypass lewat POST langsung).
-    - POS (staff): tidak dibatasi, kasir yang menentukan.
+    - Web: secret & nonaktif ditolak (pesan generik, nama secret menu tidak dibocorkan).
+    - Web DAN POS: menu yang ditandai habis (is_available=False) ditolak. Dicek di server,
+      bukan cuma di tampilan, supaya tidak bisa lolos lewat tab lama / POST langsung.
+    - POS lainnya (secret / nonaktif) tidak dibatasi, kasir yang menentukan.
+    - backdated=True (input susulan order lama): menu habis TIDAK ditolak, karena saat
+      kejadian aslinya menu itu memang masih ada.
     """
     if source == "web":
         if menu.is_secret or not menu.is_active:
             return "Ada menu di keranjang yang sudah tidak tersedia. Kosongkan keranjang lalu pilih ulang."
-        if not menu.is_available:
+    if not menu.is_available and not backdated:
+        if source == "web":
             return f"Menu {menu.name} sedang habis."
+        return f"Menu {menu.name} sedang habis. Aktifkan lagi di Kelola Menu kalau stoknya sudah ada."
     return None
 
 
@@ -340,7 +345,7 @@ def create_order(request):
 
         menu = get_object_or_404(Menu, pk=menu_id)
 
-        problem = _orderable_problem(menu, source)
+        problem = _orderable_problem(menu, source, backdated=bool(backdated_at))
         if problem:
             transaction.set_rollback(True)
             return Response({"error": problem}, status=400)
@@ -416,7 +421,7 @@ def create_order(request):
                 transaction.set_rollback(True)
                 return Response({"error": "Salah satu reward tidak valid/tidak aktif"}, status=400)
 
-            if reward.menu and _orderable_problem(reward.menu, source):
+            if reward.menu and _orderable_problem(reward.menu, source, backdated=bool(backdated_at)):
                 transaction.set_rollback(True)
                 return Response({"error": "Salah satu reward tidak tersedia saat ini"}, status=400)
 
@@ -1936,6 +1941,11 @@ def add_order_item(request, pk):
         return err
 
     menu = get_object_or_404(Menu, pk=request.data.get("menu_id"))
+    if not menu.is_available:
+        return Response(
+            {"detail": f"Menu {menu.name} sedang habis. Aktifkan lagi di Kelola Menu kalau stoknya sudah ada."},
+            status=400,
+        )
     try:
         quantity = int(request.data.get("quantity", 1) or 1)
     except (TypeError, ValueError):
@@ -2185,6 +2195,51 @@ def _shrink_loyalty_after_reduction(order, old_total, new_total):
     return take
 
 
+def _open_orders_with_menus(menu_ids, exclude_pk=None):
+    """Nota yang masih berjalan (24 jam terakhir, belum siap, belum batal) dan memuat salah satu menu ini."""
+    if not menu_ids:
+        return Order.objects.none()
+    since = timezone.now() - timedelta(hours=24)
+    qs = (
+        Order.objects
+        .filter(items__menu_id__in=menu_ids, created_at__gte=since, ready_at__isnull=True)
+        .exclude(status="cancelled")
+        .exclude(payment_status="void")
+        .exclude(GATEWAY_NOT_PAID_Q)
+        .distinct()
+        .order_by("created_at")
+    )
+    if exclude_pk is not None:
+        qs = qs.exclude(pk=exclude_pk)
+    return qs
+
+
+def _sold_out_menus(menu_ids):
+    """
+    Tandai menu jadi habis di katalog (Kelola Menu), supaya tidak bisa dipesan lagi
+    di POS maupun web. Return daftar menu yang BARU berubah dari tersedia → habis.
+    """
+    ids = {m for m in menu_ids if m}
+    if not ids:
+        return []
+    changed = list(Menu.objects.filter(pk__in=ids, is_available=True).values("id", "name"))
+    if changed:
+        Menu.objects.filter(pk__in=[m["id"] for m in changed]).update(is_available=False)
+    return changed
+
+
+def _unavailable_extras(order, menu_ids, changed_menus):
+    """Bagian respons tambahan: menu yang ikut ditandai habis + nota lain yang masih memuat menu itu."""
+    others = _open_orders_with_menus(menu_ids, exclude_pk=order.pk)
+    return {
+        "menus_marked": changed_menus,
+        "other_orders": [
+            {"id": o.pk, "order_number": o.order_number, "customer_name": o.customer_name}
+            for o in others[:20]
+        ],
+    }
+
+
 @api_view(["PATCH"])
 @permission_classes([IsStaffLevel])
 @transaction.atomic
@@ -2217,10 +2272,15 @@ def mark_items_unavailable(request, pk):
     {
       "items": [{"item_id": 12, "quantity": 1}],   # quantity kosong = seluruh baris
       "kasir_name": "Wawan",
-      "note": ""                                    # opsional
+      "note": "",                                   # opsional
+      "mark_menu_sold_out": true                    # default true: menu ikut jadi HABIS di Kelola Menu
     }
 
-    Respons: order terbaru + "summary" (nominal yang hilang, refund / kurang bayar).
+    Menu yang ditandai habis di sini otomatis tidak bisa dipesan lagi di POS maupun web
+    (sampai diaktifkan lagi di Kelola Menu). Kirim false kalau cuma porsi di nota ini yang kurang.
+
+    Respons: order terbaru + "summary" (nominal yang hilang, refund / kurang bayar)
+    + "menus_marked" (menu yang baru jadi habis) + "other_orders" (nota lain yang masih memuat menu itu).
     """
     order = get_object_or_404(Order.objects.select_for_update(), pk=pk)
 
@@ -2263,6 +2323,10 @@ def mark_items_unavailable(request, pk):
     note = (request.data.get("note") or "").strip()[:200]
     now = timezone.now()
 
+    raw_flag = request.data.get("mark_menu_sold_out", True)
+    mark_sold_out = raw_flag if isinstance(raw_flag, bool) else str(raw_flag).strip().lower() not in ("0", "false", "no", "tidak")
+    menu_ids = [item.menu_id for item, _, _ in moves if item.menu_id]
+
     total_units = sum(i.quantity for i in order.items.all())
     if total_units - sum(q for _, q, _ in moves) <= 0:
         # Semua menu di nota habis.
@@ -2282,9 +2346,11 @@ def mark_items_unavailable(request, pk):
         order._previous_status = previous_status
         order.save()
         order.refresh_from_db()
+        changed = _sold_out_menus(menu_ids) if mark_sold_out else []
         return Response({
             "order": OrderSerializer(order).data,
             "summary": {"cancelled": True, "lost_amount": 0, "refund_due": 0, "amount_to_pay_now": 0},
+            **_unavailable_extras(order, menu_ids, changed),
         })
 
     old_total = order.total_price
@@ -2335,8 +2401,11 @@ def mark_items_unavailable(request, pk):
     order.save(update_fields=update_fields)
     order.refresh_from_db()
 
+    changed = _sold_out_menus(menu_ids) if mark_sold_out else []
+
     return Response({
         "order": OrderSerializer(order).data,
+        **_unavailable_extras(order, menu_ids, changed),
         "summary": {
             "cancelled": False,
             "lost_amount": int(lost_gross),

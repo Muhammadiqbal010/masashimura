@@ -1544,8 +1544,40 @@ watch(showUnpaidDrawer, (open) => { if (open) fetchUnpaidOrders(); });
 // Metode/alur berubah → nominal uang diterima lama tidak relevan lagi
 watch(isCashNow, (v) => { if (!v) amountPaid.value = 0; });
 
-onMounted(() => { fetchMenus(); fetchBundles(); fetchUnpaidOrders(); });
-onBeforeUnmount(() => clearTimeout(debounceTimeout));
+// Menu bisa berubah jadi HABIS dari halaman lain (mis. Riwayat Pesanan → Menu habis, atau Kelola Menu).
+// Segarkan diam-diam tiap 30 detik & saat tab kembali aktif, lalu keluarkan menu yang habis
+// dari pesanan yang sedang disusun (server juga menolaknya, ini supaya kasir tahu lebih awal).
+const MENU_REFRESH_MS = 30000;
+let menuRefreshTimer = null;
+const refreshMenusQuietly = async () => {
+  try {
+    const res = await menuAPI.getAll();
+    if (!Array.isArray(res.data)) return;
+    menus.value = res.data;
+    const byId = new Map(res.data.map((m) => [m.id, m]));
+    const gone = [];
+    orderItems.value = orderItems.value.filter((i) => {
+      const m = byId.get(i.id);
+      if (m && m.is_available) return true;
+      gone.push(i.name);
+      return false;
+    });
+    if (gone.length) toast.error(`${[...new Set(gone)].join(", ")} habis, dikeluarkan dari pesanan`);
+    fetchBundles();
+  } catch { /* gagal diam-diam: daftar lama tetap dipakai, server tetap menolak menu habis */ }
+};
+const onPosVisible = () => { if (!document.hidden) refreshMenusQuietly(); };
+
+onMounted(() => {
+  fetchMenus(); fetchBundles(); fetchUnpaidOrders();
+  menuRefreshTimer = setInterval(() => { if (!document.hidden) refreshMenusQuietly(); }, MENU_REFRESH_MS);
+  document.addEventListener("visibilitychange", onPosVisible);
+});
+onBeforeUnmount(() => {
+  clearTimeout(debounceTimeout);
+  clearInterval(menuRefreshTimer);
+  document.removeEventListener("visibilitychange", onPosVisible);
+});
 </script>
 
 <style scoped>

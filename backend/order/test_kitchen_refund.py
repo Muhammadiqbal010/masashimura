@@ -8,7 +8,7 @@ from menu.models import Category, Menu
 from order.models import CustomerLoyalty, Order, OrderItem, OrderPayment
 
 
-class KitchenRefundTests(TestCase):
+class _KitchenBase(TestCase):
     def setUp(self):
         u = User.objects.create(username='kasir', is_staff=True)
         UserProfile.objects.update_or_create(user=u, defaults={'role': 'kasir'})
@@ -34,6 +34,8 @@ class KitchenRefundTests(TestCase):
         o.refresh_from_db()
         return o
 
+
+class KitchenRefundTests(_KitchenBase):
     # ── siap diambil ──
     def test_ready_toggle(self):
         o = self._order(paid=False)
@@ -157,3 +159,85 @@ class KitchenRefundTests(TestCase):
         self.assertEqual(new_item['added_qty'], 2)
         teh.refresh_from_db()
         self.assertEqual((teh.quantity, teh.added_qty), (1, 0))
+
+
+class SoldOutSyncTests(_KitchenBase):
+    """Menu habis dari nota ikut menandai menu HABIS di katalog, dan tidak bisa dipesan lagi."""
+
+    def _pos_payload(self, menu):
+        return {'source': 'pos', 'payment_method': 'cash', 'amount_paid': 100000,
+                'items': [{'menu_id': menu.pk, 'quantity': 1}]}
+
+    def _web_payload(self, menu):
+        return {'source': 'web', 'payment_method': 'cash', 'customer_name': 'Budi Santoso',
+                'customer_phone': '0812345678901', 'items': [{'menu_id': menu.pk, 'quantity': 1}]}
+
+    def test_marking_unavailable_also_sells_out_menu(self):
+        o = self._order(paid=False)
+        r = self.c.post(f'/api/orders/{o.pk}/unavailable/',
+                        {'items': [{'item_id': self.i_teh.pk}], 'kasir_name': 'K'}, format='json')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual([m['name'] for m in r.data['menus_marked']], ['Teh'])
+        self.teh.refresh_from_db()
+        self.katsu.refresh_from_db()
+        self.assertFalse(self.teh.is_available)
+        self.assertTrue(self.katsu.is_available)       # menu lain di nota tidak ikut habis
+
+    def test_sold_out_menu_cannot_be_ordered_from_pos(self):
+        o = self._order(paid=False)
+        self.c.post(f'/api/orders/{o.pk}/unavailable/', {'items': [{'item_id': self.i_teh.pk}]}, format='json')
+        r = self.c.post('/api/orders/', self._pos_payload(self.teh), format='json')
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('habis', r.data['error'])
+
+    def test_sold_out_menu_cannot_be_ordered_from_web(self):
+        o = self._order(paid=False)
+        self.c.post(f'/api/orders/{o.pk}/unavailable/', {'items': [{'item_id': self.i_teh.pk}]}, format='json')
+        anon = APIClient()
+        r = anon.post('/api/orders/', self._web_payload(self.teh), format='json')
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('habis', r.data['error'])
+
+    def test_sold_out_menu_cannot_be_added_to_existing_order(self):
+        o = self._order(paid=False)
+        self.c.post(f'/api/orders/{o.pk}/unavailable/', {'items': [{'item_id': self.i_teh.pk}]}, format='json')
+        r = self.c.post(f'/api/orders/{o.pk}/items/', {'menu_id': self.teh.pk, 'quantity': 1}, format='json')
+        self.assertEqual(r.status_code, 400)
+
+    def test_menu_orderable_again_after_reactivated(self):
+        o = self._order(paid=False)
+        self.c.post(f'/api/orders/{o.pk}/unavailable/', {'items': [{'item_id': self.i_teh.pk}]}, format='json')
+        Menu.objects.filter(pk=self.teh.pk).update(is_available=True)
+        r = self.c.post('/api/orders/', self._pos_payload(self.teh), format='json')
+        self.assertEqual(r.status_code, 201)
+
+    def test_can_opt_out_of_selling_out_menu(self):
+        o = self._order(paid=False)
+        r = self.c.post(f'/api/orders/{o.pk}/unavailable/',
+                        {'items': [{'item_id': self.i_teh.pk}], 'mark_menu_sold_out': False}, format='json')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.data['menus_marked'], [])
+        self.teh.refresh_from_db()
+        self.assertTrue(self.teh.is_available)
+
+    def test_cancelled_by_all_unavailable_also_sells_out_menus(self):
+        o = self._order(paid=False)
+        r = self.c.post(f'/api/orders/{o.pk}/unavailable/', {'items': [
+            {'item_id': self.i_katsu.pk}, {'item_id': self.i_teh.pk}]}, format='json')
+        self.assertTrue(r.data['summary']['cancelled'])
+        self.assertEqual(sorted(m['name'] for m in r.data['menus_marked']), ['Katsu', 'Teh'])
+
+    def test_refused_request_does_not_sell_out_menu(self):
+        o = self._order(paid=True)       # semua item habis di nota lunas ditolak
+        r = self.c.post(f'/api/orders/{o.pk}/unavailable/', {'items': [
+            {'item_id': self.i_katsu.pk}, {'item_id': self.i_teh.pk}]}, format='json')
+        self.assertEqual(r.status_code, 400)
+        self.teh.refresh_from_db()
+        self.assertTrue(self.teh.is_available)
+
+    def test_lists_other_open_orders_with_same_menu(self):
+        o1 = self._order(paid=False)
+        i1 = self.i_teh
+        o2 = self._order(paid=False)
+        r = self.c.post(f'/api/orders/{o1.pk}/unavailable/', {'items': [{'item_id': i1.pk}]}, format='json')
+        self.assertEqual([x['id'] for x in r.data['other_orders']], [o2.pk])

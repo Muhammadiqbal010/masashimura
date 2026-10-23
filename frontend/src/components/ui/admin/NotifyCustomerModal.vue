@@ -86,8 +86,10 @@ const rebuild = () => {
   text.value = t && props.order ? t.build(props.order) : ''
 }
 
-// Buka untuk nota lain → pilih jenis awal. Ganti jenis atau data nota berubah → pesan dibuat ulang.
-watch(() => [props.order?.id, props.initialType], () => { type.value = guessType(); rebuild() }, { immediate: true })
+// Buka untuk nota lain → pilih jenis awal & susun pesan. Ganti jenis → pesan dibuat ulang.
+// Kunci watch sengaja STRING: kalau array, polling (objek order diganti tiap 5 detik) akan
+// menimpa pesan yang sedang diedit kasir.
+watch(() => `${props.order?.id ?? ''}:${props.initialType}`, () => { type.value = guessType(); rebuild() }, { immediate: true })
 watch(type, rebuild)
 
 const phoneOk = computed(() => !!waLink(props.order?.customer_phone, 'x'))

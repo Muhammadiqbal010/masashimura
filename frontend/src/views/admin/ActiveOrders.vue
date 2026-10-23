@@ -302,7 +302,7 @@
           </div>
 
           <div class="ao-a-act ao-actions" role="cell" @click.stop>
-            <div v-if="hasMainActions(order)" class="ao-act-main">
+            <div v-if="hasRowActions(order)" class="ao-act-main">
               <button
                 v-if="canPay(order)"
                 type="button"
@@ -310,16 +310,6 @@
                 @click="openPayModal(order)"
               >Lunasi</button>
 
-              <button
-                v-if="order.status !== 'completed' && order.status !== 'cancelled'"
-                type="button"
-                class="adm-btn adm-btn--soft adm-btn--sm"
-                @click="openCancelModal(order)"
-              >Batalkan</button>
-
-            </div>
-
-            <div v-if="hasToolActions(order)" class="ao-act-tools">
               <button
                 v-if="canMarkReady(order)"
                 type="button"
@@ -344,22 +334,18 @@
                 @click="giveRefund(order)"
               >Refund sudah diberikan</button>
 
-              <button v-if="canEditItems(order)" type="button" class="adm-icon-btn adm-icon-btn--bordered" title="Tambah menu" aria-label="Tambah menu" @click="openTool('add', order)"><Plus :size="14" /></button>
-              <button v-if="canEditItems(order) && (order.items?.length || 0) > 0" type="button" class="adm-icon-btn adm-icon-btn--bordered" title="Pisah nota" aria-label="Pisah nota" @click="openTool('split', order)"><Shuffle :size="14" /></button>
-              <button v-if="canMarkUnavailable(order)" type="button" class="adm-icon-btn adm-icon-btn--bordered" title="Menu habis" aria-label="Menu habis" @click="openTool('unavailable', order)"><AlertTriangle :size="14" /></button>
-              <button v-if="canNotify(order)" type="button" class="adm-btn adm-btn--ghost adm-btn--sm" title="Kabari pelanggan via WhatsApp" @click="openNotify(order)"><MessageCircle :size="14" /> Kabari</button>
+              <button
+                v-if="rowMenuItems(order).length"
+                type="button"
+                class="adm-icon-btn adm-icon-btn--bordered ao-more-btn"
+                :class="{ 'is-open': rowMenu?.id === order.id }"
+                title="Aksi lain"
+                aria-label="Aksi lain"
+                aria-haspopup="menu"
+                :aria-expanded="rowMenu?.id === order.id"
+                @click="toggleRowMenu(order, $event)"
+              ><MoreHorizontal :size="16" /></button>
             </div>
-
-            <button
-              v-if="isOwner"
-              type="button"
-              class="ao-del adm-icon-btn adm-icon-btn--danger adm-icon-btn--bordered"
-              title="Hapus permanen (khusus owner)"
-              aria-label="Hapus permanen"
-              @click="openDeleteModal(order)"
-            >
-              <Trash2 :size="14" />
-            </button>
           </div>
         </div>
 
@@ -791,7 +777,35 @@
       </template>
     </AdminModal>
 
-  </div>
+    <!-- ── MENU AKSI PER BARIS (⋯) ─────────────────────────────────────
+         Satu menu untuk semua baris, dipasang di body supaya tidak terpotong kartu/tabel. -->
+    <Teleport to="body">
+      <div
+        v-if="rowMenu && rowMenuOrder"
+        ref="rowMenuEl"
+        class="ao-menu"
+        :class="{ 'is-up': rowMenu.up }"
+        :style="{ left: rowMenu.left + 'px', top: rowMenu.top + 'px' }"
+        role="menu"
+        :aria-label="`Aksi untuk order ${rowMenuOrder.order_number || rowMenuOrder.id}`"
+        @keydown="onRowMenuKeys"
+      >
+        <template v-for="item in rowMenuItems(rowMenuOrder)" :key="item.key">
+          <div v-if="item.sep" class="ao-menu-sep" role="separator"></div>
+          <button
+            type="button"
+            role="menuitem"
+            class="ao-menu-item"
+            :class="{ 'is-danger': item.danger }"
+            @click="runRowMenu(item)"
+          >
+            <component :is="item.icon" :size="15" aria-hidden="true" />
+            {{ item.label }}
+          </button>
+        </template>
+      </div>
+    </Teleport>
+
     <NotifyCustomerModal :order="notifyOrderObj" :initial-type="notifyType" @close="closeNotify" />
 
     <OrderItemTools
@@ -800,15 +814,17 @@
       :kasir-name="kasirName"
       @close="closeTool"
       @updated="onToolUpdated"
+      @notify="onToolNotify"
     />
+  </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import {
   Search, X, ChevronLeft, ChevronRight, ChevronDown, Printer, Send, Plus, Trash2,
   Banknote, QrCode, Shuffle, RefreshCw, AlertTriangle, Receipt, Bell, BellOff,
-  Pause, Play, Download, MessageCircle, Check,
+  Pause, Play, Download, MessageCircle, Check, MoreHorizontal, Ban,
 } from 'lucide-vue-next'
 import { orderAPI, apiClient } from '@/api'
 import { toast } from 'vue-sonner'
@@ -1037,6 +1053,10 @@ onMounted(() => {
   }, 30000)
   document.addEventListener('visibilitychange', onVisibility)
   window.addEventListener('keydown', onKeydown)
+  document.addEventListener('pointerdown', onDocPointer)
+  window.addEventListener('keydown', onRowMenuEsc, true)
+  window.addEventListener('resize', onRowMenuDismiss)
+  window.addEventListener('scroll', onRowMenuDismiss, true)
 })
 onUnmounted(() => {
   if (pollingTimer) clearInterval(pollingTimer)
@@ -1044,6 +1064,10 @@ onUnmounted(() => {
   clearTimeout(flashTimer)
   document.removeEventListener('visibilitychange', onVisibility)
   window.removeEventListener('keydown', onKeydown)
+  document.removeEventListener('pointerdown', onDocPointer)
+  window.removeEventListener('keydown', onRowMenuEsc, true)
+  window.removeEventListener('resize', onRowMenuDismiss)
+  window.removeEventListener('scroll', onRowMenuDismiss, true)
   document.title = baseTitle
   try { audioCtx?.close() } catch { /* abaikan */ }
 })
@@ -1234,9 +1258,7 @@ const isGatewayPending = (o) => o.payment_method === 'gateway' && o.payment_stat
 const canEditItems = (o) => isOpenOrder(o) && ['unpaid', 'pending'].includes(o.payment_status) && !isGatewayPending(o)
 const canMarkReady = (o) => isOpenOrder(o) && !o.is_ready && isToday.value && !isGatewayPending(o)
 const canMarkUnavailable = (o) => isOpenOrder(o) && !o.is_ready && !isGatewayPending(o) && (o.items?.length || 0) > 0
-const hasToolActions = (o) =>
-  canMarkReady(o) || (isOpenOrder(o) && o.is_ready && isToday.value) || o.refund_pending ||
-  canEditItems(o) || canMarkUnavailable(o) || canNotify(o)
+const canCancelOrder = (o) => o.status !== 'completed' && o.status !== 'cancelled'
 
 const busyIds = ref(new Set())
 const withBusy = async (id, fn) => {
@@ -1297,8 +1319,84 @@ const onToolUpdated = ({ order, newOrder }) => {
   fetchActiveOrders({ force: true })
 }
 
-const hasMainActions = (o) =>
-  canPay(o) || (o.status !== 'completed' && o.status !== 'cancelled')
+// ── Aksi per baris ──────────────────────────────────────────────────
+// Yang sering dipakai kasir tampil langsung: Lunasi, Siap, Refund.
+// Sisanya (Kabari, Tambah menu, Pisah nota, Menu habis, Batalkan, Hapus) ada di menu ⋯.
+const onToolNotify = (o) => {
+  closeTool()
+  if (o) openNotify(o, 'unavailable')
+}
+
+const rowMenuItems = (o) => {
+  const list = []
+  if (canNotify(o)) list.push({ key: 'notify', label: 'Kabari pelanggan', icon: MessageCircle, run: () => openNotify(o) })
+  if (canEditItems(o)) list.push({ key: 'add', label: 'Tambah menu', icon: Plus, run: () => openTool('add', o) })
+  if (canEditItems(o) && (o.items?.length || 0) > 0) list.push({ key: 'split', label: 'Pisah nota', icon: Shuffle, run: () => openTool('split', o) })
+  if (canMarkUnavailable(o)) list.push({ key: 'unavailable', label: 'Menu habis', icon: AlertTriangle, run: () => openTool('unavailable', o) })
+  if (canCancelOrder(o)) list.push({ key: 'cancel', label: 'Batalkan pesanan', icon: Ban, danger: true, sep: list.length > 0, run: () => openCancelModal(o) })
+  if (isOwner.value) list.push({ key: 'delete', label: 'Hapus permanen', icon: Trash2, danger: true, sep: list.length > 0 && !canCancelOrder(o), run: () => openDeleteModal(o) })
+  return list
+}
+
+const hasRowActions = (o) =>
+  canPay(o) || canMarkReady(o) || (isOpenOrder(o) && o.is_ready && isToday.value) ||
+  !!o.refund_pending || rowMenuItems(o).length > 0
+
+// Menu ⋯: satu instance untuk semua baris. Posisi dihitung dari tombol yang diklik.
+const ROW_MENU_W = 224
+const ROW_MENU_ITEM_H = 42
+const rowMenu = ref(null)            // { id, left, top, up }
+const rowMenuEl = ref(null)
+let rowMenuTrigger = null            // elemen DOM, sengaja bukan ref reaktif
+const rowMenuOrder = computed(() =>
+  rowMenu.value ? orders.value.find((o) => o.id === rowMenu.value.id) ?? null : null
+)
+
+const closeRowMenu = (refocus = false) => {
+  const t = rowMenuTrigger
+  rowMenu.value = null
+  rowMenuTrigger = null
+  if (refocus && t?.isConnected) t.focus()
+}
+const toggleRowMenu = (o, ev) => {
+  if (rowMenu.value?.id === o.id) return closeRowMenu()
+  const btn = ev.currentTarget
+  const r = btn.getBoundingClientRect()
+  const h = rowMenuItems(o).length * ROW_MENU_ITEM_H + 16
+  const below = window.innerHeight - r.bottom
+  const up = below < h + 12 && r.top > below
+  rowMenuTrigger = btn
+  rowMenu.value = {
+    id: o.id,
+    up,
+    top: up ? r.top - 6 : r.bottom + 6,
+    left: Math.max(8, Math.min(r.right - ROW_MENU_W, window.innerWidth - ROW_MENU_W - 8)),
+  }
+  nextTick(() => rowMenuEl.value?.querySelector('[role="menuitem"]')?.focus())
+}
+const runRowMenu = (item) => {
+  closeRowMenu()
+  item.run()
+}
+const onRowMenuKeys = (e) => {
+  const els = [...(rowMenuEl.value?.querySelectorAll('[role="menuitem"]') || [])]
+  if (!els.length) return
+  const i = els.indexOf(document.activeElement)
+  if (e.key === 'ArrowDown') { e.preventDefault(); els[(i + 1) % els.length].focus() }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); els[(i - 1 + els.length) % els.length].focus() }
+  else if (e.key === 'Home') { e.preventDefault(); els[0].focus() }
+  else if (e.key === 'End') { e.preventDefault(); els[els.length - 1].focus() }
+  else if (e.key === 'Tab') closeRowMenu()
+}
+const onDocPointer = (e) => {
+  if (!rowMenu.value) return
+  if (rowMenuEl.value?.contains(e.target) || rowMenuTrigger?.contains(e.target)) return
+  closeRowMenu()
+}
+const onRowMenuEsc = (e) => {
+  if (e.key === 'Escape' && rowMenu.value) { e.stopPropagation(); closeRowMenu(true) }
+}
+const onRowMenuDismiss = () => { if (rowMenu.value) closeRowMenu() }
 
 // ── Salin teks ──────────────────────────────────────────────────────
 const copyText = async (text, label = 'Teks') => {
@@ -1784,7 +1882,6 @@ const confirmDelete = async () => {
 .ao-items-qty { flex-shrink: 0; font-family: var(--font-mono); font-weight: 700; color: var(--accent-text); }
 .ao-items-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
 .ao-items-add { flex-shrink: 0; margin-left: 0.3rem; padding: 0 0.4rem; border-radius: 99px; background: var(--tint-accent); border: 1px solid var(--line-accent); font-size: 0.68rem; font-weight: 700; color: var(--accent-text); white-space: nowrap; }
-.ao-act-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 0.4rem; flex-basis: 100%; margin-top: 0.15rem; }
 .ao-items-more { display: inline-block; margin-top: 0.25rem; padding: 0.05rem 0.5rem; border-radius: 99px; background: rgb(var(--ink) / 0.08); font-size: 0.75rem; font-weight: 600; color: var(--text-dim); }
 .ao-items-empty { color: var(--text-faint); font-size: 0.78rem; }
 
@@ -1812,10 +1909,28 @@ const confirmDelete = async () => {
 .ao-age.is-old { font-weight: 700; color: var(--red-soft); }
 .ao-late { margin-top: 2px; font-family: var(--font-body); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--amber-soft); }
 
-/* Aksi (desktop): satu baris, rata kanan, tidak pernah turun baris */
+/* Aksi (desktop): satu baris, rata kanan: [Lunasi] [Siap] [⋯] */
 .ao-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 0.4rem; min-width: 0; }
-.ao-act-main { display: flex; flex-wrap: nowrap; align-items: center; gap: 0.4rem; }
+.ao-act-main { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 0.4rem; }
 .ao-actions .adm-btn { white-space: nowrap; }
+.ao-more-btn.is-open { background: var(--surface-hover); color: var(--text); border-color: var(--border-strong); }
+
+/* Menu ⋯ (di-teleport ke body, tetap di-scope lewat atribut data-v) */
+.ao-menu {
+  position: fixed; z-index: 8500; width: 14rem; padding: 0.4rem;
+  display: flex; flex-direction: column; gap: 0.1rem;
+  border: 1px solid var(--border-strong); border-radius: var(--r-md);
+  background: var(--surface-2, var(--bg)); box-shadow: 0 12px 32px rgb(0 0 0 / 0.35);
+}
+.ao-menu.is-up { transform: translateY(-100%); }
+.ao-menu-item {
+  display: flex; align-items: center; gap: 0.6rem; width: 100%; min-height: 42px; padding: 0.5rem 0.7rem;
+  border: 0; border-radius: var(--r-sm, 0.5rem); background: transparent;
+  color: var(--text); font-family: var(--font-body); font-size: 0.85rem; font-weight: 600; text-align: left; cursor: pointer;
+}
+.ao-menu-item:hover, .ao-menu-item:focus-visible { background: var(--surface-hover); outline: none; }
+.ao-menu-item.is-danger { color: var(--red-soft); }
+.ao-menu-sep { height: 1px; margin: 0.25rem 0.2rem; background: var(--border); }
 
 /* Tombol "tampilkan lagi" */
 .ao-more { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; padding: 0.8rem 1.1rem; border-top: 1px solid var(--border); font-size: 0.75rem; color: var(--text-dim); }
@@ -1829,10 +1944,9 @@ const confirmDelete = async () => {
     grid-template-columns: auto minmax(0, 1fr) auto;
     grid-template-areas:
       'id    cust  time'
-      'menu  menu  del'
+      'menu  menu  menu'
       'bill  bill  status'
-      'act   act   act'
-      'tools tools tools';
+      'act   act   act';
     align-items: center;
     column-gap: 0.6rem;
     row-gap: 0.55rem;
@@ -1848,11 +1962,10 @@ const confirmDelete = async () => {
   .ao-age, .ao-late { margin-top: 0; font-size: 0.75rem; line-height: 1.2; }
   .ao-cust-name { font-size: 0.9rem; }
 
-  /* Baris 2: menu + tombol hapus sejajar dengan nama item pertama */
+  /* Baris 2: daftar menu selebar kartu */
   .ao-a-menu { align-self: start; }
   .ao-items-name { white-space: normal; }
   .ao-actions { display: contents; }          /* anak-anaknya jadi item grid */
-  .ao-del { grid-area: del; align-self: start; justify-self: end; min-width: 36px; min-height: 36px; }
 
   /* Baris 3: harga + metode di kiri, status di kanan */
   .ao-bill { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
@@ -1860,12 +1973,9 @@ const confirmDelete = async () => {
   .ao-a-status { justify-content: flex-end; }
 
   /* Baris 4: tombol utama selebar kartu */
-  .ao-act-main { grid-area: act; padding-top: 0.6rem; border-top: 1px dashed var(--border); }
-  .ao-act-tools { grid-area: tools; justify-content: stretch; margin-top: 0; }
-  .ao-act-tools .adm-btn { flex: 1; min-height: 44px; }
-  .ao-act-tools .adm-icon-btn { min-width: 44px; min-height: 44px; }
+  .ao-act-main { grid-area: act; flex-wrap: nowrap; justify-content: stretch; padding-top: 0.6rem; border-top: 1px dashed var(--border); }
   .ao-act-main .adm-btn { flex: 1; min-height: 44px; }
-  .ao-act-main .adm-icon-btn { min-width: 44px; min-height: 44px; }
+  .ao-act-main .adm-icon-btn { flex: 0 0 auto; min-width: 44px; min-height: 44px; }
 
   .ao-more { border-top: 0; padding-inline: 0.4rem; }
 }

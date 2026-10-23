@@ -132,6 +132,13 @@
             <label class="oit-label" for="oit-reason">Catatan (opsional)</label>
             <input id="oit-reason" v-model="unavailNote" class="adm-input" maxlength="200" placeholder="mis. bahan habis" />
           </div>
+          <label class="oit-check">
+            <input v-model="soldOutCatalog" type="checkbox" />
+            <span>
+              <b>Ikut tandai habis di Kelola Menu</b>
+              <span class="oit-faint">Menu tidak bisa dipesan lagi di POS maupun web sampai diaktifkan kembali.</span>
+            </span>
+          </label>
           <p class="oit-sum">
             Menu habis: <b>{{ pickedUnits }}</b> porsi · sekitar {{ money(pickedValue) }}
             <span class="oit-faint">(angka pasti dihitung server, termasuk promo)</span>
@@ -152,6 +159,19 @@
               Pelanggan bayar: <b>{{ money(result.summary.amount_to_pay_now) }}</b>
             </p>
           </template>
+          <p v-if="result.menus_marked?.length" class="oit-note">
+            <b>{{ result.menus_marked.map((m) => m.name).join(', ') }}</b>
+            sekarang berstatus <b>habis</b> di Kelola Menu, jadi tidak bisa dipesan di POS maupun web.
+            Aktifkan lagi di Kelola Menu kalau stoknya sudah ada.
+          </p>
+          <p v-if="result.other_orders?.length" class="oit-note is-warn">
+            <AlertTriangle :size="14" />
+            <span>
+              Ada {{ result.other_orders.length }} nota lain yang masih memuat menu ini:
+              {{ result.other_orders.map((o) => o.customer_name || o.order_number).join(', ') }}.
+              Cek dan kabari kalau perlu.
+            </span>
+          </p>
         </div>
       </template>
     </div>
@@ -175,12 +195,12 @@
         </template>
         <template v-else>
           <button
-            v-if="canWhatsApp"
+            v-if="canWhatsApp && !result.summary.cancelled"
             type="button"
             class="adm-btn adm-btn--soft"
             @click="notifyCustomer"
           >
-            <MessageCircle :size="14" /> Kabari via WhatsApp
+            <MessageCircle :size="14" /> Kabari pelanggan
           </button>
           <button type="button" class="adm-btn adm-btn--primary" @click="close">Selesai</button>
         </template>
@@ -191,11 +211,11 @@
 
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
-import { Search, Plus, Minus, Check, MessageCircle } from 'lucide-vue-next'
+import { Search, Plus, Minus, Check, MessageCircle, AlertTriangle } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import AdminModal from '@/components/ui/admin/Adminmodal.vue'
 import { orderAPI, menuAPI } from '@/api'
-import { waLink, msgUnavailable } from '@/utils/orderMessages'
+import { waLink } from '@/utils/orderMessages'
 
 const props = defineProps({
   // 'add' | 'split' | 'unavailable' | null (tertutup)
@@ -203,7 +223,7 @@ const props = defineProps({
   order: { type: Object, default: null },
   kasirName: { type: String, default: '' },
 })
-const emit = defineEmits(['close', 'updated'])
+const emit = defineEmits(['close', 'updated', 'notify'])
 
 const money = (n) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(n) || 0)
@@ -220,6 +240,7 @@ const apiError = (err, fallback) => err?.response?.data?.detail || err?.response
 const pick = reactive({})          // { itemId: jumlah }
 const splitName = ref('')
 const unavailNote = ref('')
+const soldOutCatalog = ref(true)   // menu yang ditandai habis di nota ikut habis di katalog
 const result = ref(null)
 
 const items = computed(() => props.order?.items || [])
@@ -259,7 +280,6 @@ const filteredMenus = computed(() => {
 })
 
 const loadMenus = async () => {
-  if (menus.value.length) return
   menuLoading.value = true
   menuError.value = ''
   try {
@@ -359,6 +379,7 @@ const submitUnavailable = async () => {
       items: rows,
       kasir_name: props.kasirName,
       note: unavailNote.value.trim(),
+      mark_menu_sold_out: soldOutCatalog.value,
     })
     result.value = res.data
     emit('updated', { order: res.data.order })
@@ -371,20 +392,22 @@ const submitUnavailable = async () => {
 
 const latestOrder = computed(() => result.value?.order || props.order)
 const canWhatsApp = computed(() => !!waLink(latestOrder.value?.customer_phone, 'x'))
-const notifyCustomer = () => {
-  const o = latestOrder.value
-  const url = waLink(o.customer_phone, msgUnavailable(o))
-  if (url) window.open(url, '_blank', 'noopener')
-}
+// Buka modul "Kabari pelanggan" (jenis: Menu habis) di halaman induk, supaya kasir bisa
+// mengedit pesannya dulu dan memakai jenis pesan lain kalau perlu.
+const notifyCustomer = () => emit('notify', latestOrder.value)
 
 const close = () => emit('close')
 
+// PENTING: kuncinya STRING, bukan array. Getter yang mengembalikan array baru dianggap
+// "berubah" setiap kali props.order diganti objek baru (polling 5 detik menggantinya terus),
+// akibatnya jumlah yang sudah dipilih & layar "Tersimpan" ter-reset sendiri.
 watch(
-  () => [props.mode, props.order?.id],
+  () => `${props.mode || ''}:${props.order?.id ?? ''}`,
   () => {
     Object.keys(pick).forEach((k) => delete pick[k])
     splitName.value = ''
     unavailNote.value = ''
+    soldOutCatalog.value = true
     result.value = null
     lastAdded.value = ''
     menuQuery.value = ''
@@ -427,5 +450,11 @@ watch(
 .oit-actions { display: flex; gap: 0.5rem; }
 .oit-result { display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.92rem; color: var(--text); }
 .oit-result p { margin: 0; }
+.oit-check { display: flex; gap: 0.6rem; align-items: flex-start; padding: 0.7rem 0.8rem; border: 1px solid var(--border-strong); border-radius: 0.75rem; cursor: pointer; font-size: 0.85rem; color: var(--text); line-height: 1.45; }
+.oit-check input { margin-top: 0.2rem; accent-color: var(--accent); flex-shrink: 0; }
+.oit-check span { display: flex; flex-direction: column; gap: 0.1rem; }
+.oit-note { margin: 0; font-size: 0.82rem; color: var(--text-2); line-height: 1.5; }
+.oit-note.is-warn { display: flex; gap: 0.45rem; align-items: flex-start; color: var(--amber-soft); }
+.oit-note.is-warn svg { flex-shrink: 0; margin-top: 0.15rem; }
 .oit-money { padding: 0.7rem 0.9rem; border-radius: 0.75rem; background: var(--tint-accent); border: 1px solid var(--line-accent); }
 </style>
