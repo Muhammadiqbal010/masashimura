@@ -1,6 +1,6 @@
 <template>
   <nav v-if="!isAdminRoute" class="site-nav fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-6 sm:pt-4" aria-label="Navigasi utama">
-    <div class="nav-pill mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2 sm:px-5" :class="{ 'is-solid': isScrolled || isOpen }">
+    <div class="nav-pill mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2 sm:px-5 md:grid md:grid-cols-[1fr_auto_1fr]" :class="{ 'is-solid': isScrolled || isOpen }">
 
       <!-- Logo -->
       <router-link to="/" class="flex shrink-0 items-center" @click="closeMenu" aria-label="Masashimura – Beranda">
@@ -22,7 +22,7 @@
         </router-link>
       </div>
 
-      <div class="hidden md:block">
+      <div class="hidden md:flex md:justify-end">
         <router-link to="/menu" class="pop-btn pop-btn--on-dark nav-cta">
           Pesan sekarang
           <span class="pop-btn-dot" aria-hidden="true"><ArrowUpRight :size="15" /></span>
@@ -58,7 +58,7 @@
           :key="link.path"
           :to="link.path"
           class="flex min-h-[56px] items-center justify-between rounded-2xl px-4 transition-colors"
-          :class="isExact(link.path) ? 'bg-[#F4C542] text-[#111113]' : 'text-white/85 hover:bg-white/[0.07]'"
+          :class="isExact(link.path) ? 'bg-[#d92b22] text-white' : 'text-white/85 hover:bg-white/[0.07]'"
           @click="closeMenu"
         >
           <span class="text-base font-extrabold">{{ link.name }}</span>
@@ -147,9 +147,10 @@ onUnmounted(() => {
 }
 .nav-link:hover { color: #fff; background: rgb(255 255 255 / 0.08); }
 .nav-link-label { font-size: 0.9375rem; font-weight: 800; }
-.nav-link-jp { margin-top: 2px; font-size: 0.6875rem; font-weight: 500; opacity: 0.6; }
-.nav-link.is-active { background: #F4C542; color: #111113; }
-.nav-link.is-active:hover { background: #F4C542; }
+.nav-link-jp { margin-top: 2px; font-size: 0.6875rem; font-weight: 500; opacity: 0.75; }
+.nav-link.is-active { background: var(--pop-red, #d92b22); color: #fff; }
+.nav-link.is-active:hover { background: var(--pop-red, #d92b22); }
+.nav-link.is-active .nav-link-jp { opacity: 0.85; }
 .nav-cta { min-height: 46px; padding: 0 0.5rem 0 1.25rem; font-size: 0.875rem; }
 
 .mobile-sheet {
