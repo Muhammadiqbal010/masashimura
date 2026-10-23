@@ -277,13 +277,13 @@
 
           <div class="ao-a-status" role="cell">
             <div class="ao-status">
-              <span class="adm-badge" :class="orderBadge(order).cls">{{ orderBadge(order).label }}</span>
-              <span v-if="order.status !== 'cancelled'" class="adm-badge" :class="payBadge(order).cls">{{ payBadge(order).label }}</span>
-              <span v-if="isOpenOrder(order) && order.is_ready" class="adm-badge adm-badge--green">Siap diambil</span>
-              <span v-else-if="isOpenOrder(order) && isToday && order.is_late" class="adm-badge adm-badge--red">Telat {{ order.wait_minutes }} mnt</span>
-              <span v-if="isOpenOrder(order) && order.has_additions" class="adm-badge adm-badge--amber">Ditambah</span>
-              <span v-if="order.refund_pending" class="adm-badge adm-badge--red">Refund {{ formatPrice(order.refund_due) }}</span>
-              <span v-else-if="order.unavailable_items?.length" class="adm-badge">Ada menu habis</span>
+              <!-- Maksimal 2 pill: kondisi pesanan + status bayar. Info tambahan jadi teks kecil. -->
+              <div class="ao-pills">
+                <span v-for="p in statusPills(order)" :key="p.label" class="adm-badge" :class="p.cls">{{ p.label }}</span>
+              </div>
+              <div v-if="statusFlags(order).length" class="ao-flags">
+                <span v-for="f in statusFlags(order)" :key="f.label" class="ao-flag" :class="`is-${f.tone}`">{{ f.label }}</span>
+              </div>
             </div>
           </div>
 
@@ -318,15 +318,7 @@
                 @click="toggleReady(order, true)"
               ><Check :size="14" /> Siap</button>
               <button
-                v-if="isOpenOrder(order) && order.is_ready && canNotify(order)"
-                type="button"
-                class="adm-btn adm-btn--soft adm-btn--sm"
-                :disabled="isCapturing"
-                title="Kirim struk gambar ke WhatsApp pelanggan"
-                @click="sendReadyReceipt(order)"
-              ><Send :size="13" /> Kirim nota</button>
-              <button
-                v-if="!canMarkReady(order) && isOpenOrder(order) && order.is_ready && isToday"
+                v-else-if="isOpenOrder(order) && order.is_ready && isToday"
                 type="button"
                 class="adm-btn adm-btn--ghost adm-btn--sm"
                 :disabled="busyIds.has(order.id)"
@@ -1235,6 +1227,26 @@ const payBadge = (o) =>
   o.payment_status === 'paid' ? { cls: 'adm-badge--green', label: 'Lunas' }
   : o.payment_status === 'void' ? { cls: '', label: 'Batal' }
   : { cls: 'adm-badge--amber', label: 'Belum bayar' }
+// Pill di kolom Status: paling banyak 2 (kondisi pesanan + status bayar).
+const statusPills = (o) => {
+  if (o.status === 'cancelled') return [{ cls: 'adm-badge--red', label: 'Dibatalkan' }]
+  const pills = []
+  if (o.status === 'completed') pills.push({ cls: 'adm-badge--green', label: 'Selesai' })
+  else if (isOpenOrder(o) && o.is_ready) pills.push({ cls: 'adm-badge--green', label: 'Siap diambil' })
+  else if (isOpenOrder(o) && isToday.value && o.is_late) pills.push({ cls: 'adm-badge--red', label: `Telat ${o.wait_minutes} mnt` })
+  else pills.push({ cls: 'adm-badge--amber', label: 'Proses' })
+  pills.push(payBadge(o))
+  return pills
+}
+// Info tambahan: teks kecil di bawah pill, bukan pill baru.
+const statusFlags = (o) => {
+  if (o.status === 'cancelled') return []
+  const flags = []
+  if (isOpenOrder(o) && o.has_additions) flags.push({ tone: 'amber', label: 'Ada tambahan menu' })
+  if (o.refund_pending) flags.push({ tone: 'red', label: `Refund ${formatPrice(o.refund_due)}` })
+  else if (o.unavailable_items?.length) flags.push({ tone: 'muted', label: 'Ada menu habis' })
+  return flags
+}
 const payStatusText = (o) =>
   o?.payment_status === 'paid' ? 'LUNAS' : (o?.payment_status === 'void' ? 'BATAL' : 'BELUM BAYAR')
 
@@ -1342,12 +1354,8 @@ const onToolNotify = (o) => {
 
 const rowMenuItems = (o) => {
   const list = []
-  // Order yang sudah siap diambil: mengabari = kirim struk GAMBAR. Selain itu tetap lewat modal pesan.
-  if (canNotify(o)) {
-    list.push(o.is_ready
-      ? { key: 'notify', label: 'Kirim struk (siap diambil)', icon: MessageCircle, run: () => sendReadyReceipt(o) }
-      : { key: 'notify', label: 'Kabari pelanggan', icon: MessageCircle, run: () => openNotify(o) })
-  }
+  // Mengabari pelanggan = kirim struk GAMBAR (siap atau belum siap); sapaannya menyesuaikan status.
+  if (canNotify(o)) list.push({ key: 'notify', label: 'Kirim struk ke pelanggan', icon: MessageCircle, run: () => sendReadyReceipt(o) })
   if (canEditItems(o)) list.push({ key: 'add', label: 'Tambah menu', icon: Plus, run: () => openTool('add', o) })
   if (canEditItems(o) && (o.items?.length || 0) > 0) list.push({ key: 'split', label: 'Pisah nota', icon: Shuffle, run: () => openTool('split', o) })
   if (canMarkUnavailable(o)) list.push({ key: 'unavailable', label: 'Menu habis', icon: AlertTriangle, run: () => openTool('unavailable', o) })
@@ -1559,9 +1567,21 @@ const isCapturing = ref(false)
 const canvasToBlob = (canvas) => new Promise((resolve) => canvas.toBlob(resolve, 'image/png'))
 
 const RECEIPT_CAPTION = 'Bukti Pembelian di Masashimura 🙏'
+const greetingByTime = (d = new Date()) => {
+  const h = d.getHours()
+  if (h >= 4 && h < 11) return 'pagi'
+  if (h >= 11 && h < 15) return 'siang'
+  if (h >= 15 && h < 18) return 'sore'
+  return 'malam'
+}
+// Sapaan ramah + status pesanan. Struk gambar dikirim bersama teks ini.
 const readyCaption = (o) => {
   const name = (o?.customer_name || '').trim()
-  return `Halo kakak${name ? ' ' + name : ''}, pesanan kamu sudah siap diambil ya 🍽️\nTerima kasih sudah jajan di Masashimura 🙏`
+  const hello = `Halo kakak${name ? ' ' + name : ''}, selamat ${greetingByTime()} 😊`
+  const body = o?.is_ready
+    ? 'Pesanan kakak sudah siap diambil ya 🍽️'
+    : 'Ini struk pesanan kakak di Masashimura ya 🧾'
+  return `${hello}\n${body}\nTerima kasih sudah jajan di Masashimura 🙏`
 }
 
 // Dipanggil dari toast "siap diambil": pilih order lalu tunggu struk tersembunyi
@@ -1860,7 +1880,7 @@ const confirmDelete = async () => {
 .ao-head,
 .ao-row {
   display: grid;
-  grid-template-columns: 4rem minmax(6rem, 1fr) minmax(8rem, 1.4fr) 7.5rem 6rem 5.5rem 14rem;
+  grid-template-columns: 4rem minmax(6rem, 1fr) minmax(8rem, 1.4fr) 7.5rem 7.5rem 5.5rem 13rem;
   grid-template-areas: 'id cust menu bill status time act';
   align-items: center;
   column-gap: 0.75rem;
@@ -1934,7 +1954,13 @@ const confirmDelete = async () => {
 .ao-method--mixed { color: var(--text-dim); background: rgb(var(--ink) / 0.08); border-color: var(--border-strong); }
 
 /* Status */
-.ao-status { display: inline-flex; flex-direction: column; align-items: center; gap: 0.3rem; }
+.ao-status { display: inline-flex; flex-direction: column; align-items: center; gap: 0.35rem; }
+.ao-pills { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; }
+.ao-flags { display: flex; flex-direction: column; align-items: center; gap: 0.1rem; }
+.ao-flag { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.72rem; font-weight: 600; line-height: 1.3; color: var(--text-dim); text-align: center; }
+.ao-flag::before { content: ''; width: 5px; height: 5px; border-radius: 99px; background: currentColor; flex-shrink: 0; }
+.ao-flag.is-amber { color: var(--amber-soft); }
+.ao-flag.is-red { color: var(--red-soft); }
 .ao-a-status { display: flex; justify-content: center; }
 
 /* Waktu */
@@ -2003,7 +2029,10 @@ const confirmDelete = async () => {
 
   /* Baris 3: harga + metode di kiri, status di kanan */
   .ao-bill { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
-  .ao-status { flex-direction: row; justify-self: end; }
+  .ao-status { align-items: flex-end; justify-self: end; }
+  .ao-pills { flex-direction: row; flex-wrap: wrap; justify-content: flex-end; }
+  .ao-flags { align-items: flex-end; }
+  .ao-flag { text-align: right; }
   .ao-a-status { justify-content: flex-end; }
 
   /* Baris 4: tombol utama selebar kartu */
