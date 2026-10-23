@@ -19,7 +19,8 @@ const router = createRouter({
       path: "/checkout",
       name: "Checkout",
       component: () => import("../views/customer/Checkout.vue"),
-      meta: { requiresAuth: false },
+      // Checkout fokus ke pembayaran: tanpa Navbar & Footer, tapi tetap memakai gaya situs publik.
+      meta: { requiresAuth: false, hideNavFooter: true, publicStyle: true },
     },
     { path: "/menu", name: "Menu", component: () => import("../pages/Menu.vue") },
     { path: "/contact", name: "Contact", component: () => import("../pages/Contact.vue") },

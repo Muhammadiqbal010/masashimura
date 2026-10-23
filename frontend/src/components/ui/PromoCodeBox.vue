@@ -122,7 +122,7 @@ defineExpose({ removePromo });
 .promo-icon {
   position: absolute;
   left: 0.875rem;
-  color: #9A9AA3;
+  color: var(--box-faint, #9A9AA3);
   pointer-events: none;
 }
 
@@ -130,11 +130,11 @@ defineExpose({ removePromo });
 .promo-input {
   width: 100%;
   height: 3rem;
-  background: #17171A;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--box-field-bg, #17171A);
+  border: var(--box-field-border-w, 1px) solid var(--box-border, rgba(255, 255, 255, 0.1));
   border-radius: 0.75rem;
   padding: 0 1rem 0 2.5rem;
-  color: #FAFAFA;
+  color: var(--box-text, #FAFAFA);
   font-family: var(--font-ui);
   font-size: 1rem;
   font-weight: 600;
@@ -146,14 +146,14 @@ defineExpose({ removePromo });
   .promo-input { font-size: 0.875rem; }
 }
 .promo-input::placeholder {
-  color: #9A9AA3;
+  color: var(--box-faint, #9A9AA3);
   font-weight: 400;
   letter-spacing: normal;
 }
-.promo-input:hover:not(:disabled) { border-color: rgba(255, 255, 255, 0.2); }
+.promo-input:hover:not(:disabled) { border-color: var(--box-border-hover, rgba(255, 255, 255, 0.2)); }
 .promo-input:focus {
-  border-color: rgba(244,197,66, 0.6);
-  box-shadow: 0 0 0 3px rgba(244,197,66, 0.12);
+  border-color: var(--box-focus-border, rgba(244,197,66, 0.6));
+  box-shadow: 0 0 0 3px var(--box-focus-ring, rgba(244,197,66, 0.12));
 }
 .promo-input:disabled { opacity: 0.5; }
 
@@ -161,7 +161,7 @@ defineExpose({ removePromo });
   min-width: 5rem;
   padding: 0 1.25rem;
   background: #D92B22;
-  border: none;
+  border: var(--box-btn-border, none);
   border-radius: 0.75rem;
   color: #fff;
   font-family: var(--font-ui);
@@ -181,8 +181,8 @@ defineExpose({ removePromo });
   justify-content: space-between;
   gap: 0.75rem;
   padding: 0.625rem 0.75rem 0.625rem 1rem;
-  background: rgba(52, 211, 153, 0.08);
-  border: 1px solid rgba(52, 211, 153, 0.25);
+  background: var(--box-ok-bg, rgba(52, 211, 153, 0.08));
+  border: 1px solid var(--box-ok-border, rgba(52, 211, 153, 0.25));
   border-radius: 0.75rem;
 }
 .promo-applied-info {
@@ -199,44 +199,44 @@ defineExpose({ removePromo });
   align-items: center;
   justify-content: center;
   border-radius: 9999px;
-  background: rgba(52, 211, 153, 0.2);
-  color: #6EE7B7;
+  background: var(--box-ok-icon-bg, rgba(52, 211, 153, 0.2));
+  color: var(--box-ok, #6EE7B7);
 }
 .promo-applied-code {
   font-weight: 700;
   font-size: 0.875rem;
-  color: #FAFAFA;
+  color: var(--box-text, #FAFAFA);
   letter-spacing: 0.06em;
 }
 .promo-applied-amount {
   font-size: 0.875rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  color: #6EE7B7;
+  color: var(--box-ok, #6EE7B7);
   white-space: nowrap;
 }
 .promo-remove-btn {
   width: 2rem; height: 2rem;
   flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--box-chip-bg, rgba(255, 255, 255, 0.06));
   border: none; border-radius: 9999px;
-  color: #B8B8C0;
+  color: var(--box-muted, #B8B8C0);
   cursor: pointer;
   transition: all 0.15s;
 }
-.promo-remove-btn:hover { background: rgba(217,43,34, 0.15); color: #F0605A; }
+.promo-remove-btn:hover { background: rgba(217,43,34, 0.15); color: var(--box-err, #F0605A); }
 
 .promo-error {
   font-size: 0.8125rem;
-  color: #F0605A;
+  color: var(--box-err, #F0605A);
   margin: 0;
   padding-left: 0.25rem;
 }
 
 .promo-apply-btn:focus-visible,
 .promo-remove-btn:focus-visible {
-  outline: 2px solid #F4C542;
+  outline: 2px solid var(--box-outline, #F4C542);
   outline-offset: 2px;
 }
 </style>

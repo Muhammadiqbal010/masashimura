@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-[#111113] font-manrope" :class="{ 'site-public': !isAdminRoute && !route.meta.hideNavFooter }">
+  <div class="min-h-screen bg-[#111113] font-manrope" :class="{ 'site-public': isPublicStyle }">
     <!-- 🟢 Halaman Publik (Muncul Navbar & Footer) -->
     <!-- Logika: Jika BUKAN rute admin DAN BUKAN rute yang disembunyikan metanya -->
     <template v-if="!isAdminRoute && !route.meta.hideNavFooter">
@@ -29,5 +29,11 @@ import Footer from "@/components/ui/layouts/Footer.vue";
 const route = useRoute();
 
 // Mengecek apakah user sedang berada di halaman yang diawali dengan /admin
-const isAdminRoute = computed(() => route.path.startsWith("/admin"));
+const isAdminRoute = computed(() => route.path.startsWith("/admin"))
+
+// Gaya situs publik (font judul, dll.) berlaku di halaman dengan Navbar & Footer,
+// dan di halaman publik yang sengaja menyembunyikannya (mis. Checkout, meta.publicStyle).
+const isPublicStyle = computed(
+  () => !isAdminRoute.value && (!route.meta.hideNavFooter || !!route.meta.publicStyle)
+);
 </script>

@@ -153,6 +153,12 @@
   .shadow-neo-yellow {
     box-shadow: 4px 4px 0px #fff500;
   }
+
+  /* Outline hitam tipis untuk teks putih di atas bidang merah, supaya teks kecil tetap terbaca.
+     Pakai text-shadow 8 arah (bukan -webkit-text-stroke) agar hasilnya rapi di semua font & ukuran. */
+  .text-outline {
+    text-shadow: -1px -1px 0 var(--pop-ink), 1px -1px 0 var(--pop-ink), -1px 1px 0 var(--pop-ink), 1px 1px 0 var(--pop-ink), 0 -1px 0 var(--pop-ink), 0 1px 0 var(--pop-ink), -1px 0 0 var(--pop-ink), 1px 0 0 var(--pop-ink);
+  }
 }
 
 /* Utility Khusus: Scrollbar Tipis Transparan (Ex-Main.css) */
@@ -313,7 +319,7 @@
   box-shadow: 6px 6px 0 var(--pop-ink);
 }
 .pop-card--yellow { background: var(--pop-yellow); }
-.pop-card--red { background: var(--pop-red); color: #fff; }
+.pop-card--red { background: var(--pop-red); color: #fff; text-shadow: -1px -1px 0 var(--pop-ink), 1px -1px 0 var(--pop-ink), -1px 1px 0 var(--pop-ink), 1px 1px 0 var(--pop-ink), 0 -1px 0 var(--pop-ink), 0 1px 0 var(--pop-ink), -1px 0 0 var(--pop-ink), 1px 0 0 var(--pop-ink); }
 
 /* Tombol keycap */
 .pop-btn {
@@ -358,11 +364,12 @@
   transform: rotate(-3deg);
   box-shadow: 2px 2px 0 var(--pop-ink);
 }
-.sticker--red { background: var(--pop-red); color: #fff; }
+.sticker--red { background: var(--pop-red); color: #fff; text-shadow: -1px -1px 0 var(--pop-ink), 1px -1px 0 var(--pop-ink), -1px 1px 0 var(--pop-ink), 1px 1px 0 var(--pop-ink), 0 -1px 0 var(--pop-ink), 0 1px 0 var(--pop-ink), -1px 0 0 var(--pop-ink), 1px 0 0 var(--pop-ink); }
 .sticker--pink { background: var(--color-pink); }
 
 /* Segel hanko (kotak merah dengan kanji) */
 .hanko {
+  text-shadow: -1px -1px 0 var(--pop-ink), 1px -1px 0 var(--pop-ink), -1px 1px 0 var(--pop-ink), 1px 1px 0 var(--pop-ink), 0 -1px 0 var(--pop-ink), 0 1px 0 var(--pop-ink), -1px 0 0 var(--pop-ink), 1px 0 0 var(--pop-ink);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -405,6 +412,16 @@
 
 @media (prefers-reduced-motion: reduce) {
   .pop-btn, .pop-btn:active { transition: none; }
+}
+
+/* Halaman bertema terang (Menu, Kontak, Checkout): autofill ikut terang */
+.site-public .dot-grid input:-webkit-autofill,
+.site-public .dot-grid input:-webkit-autofill:hover,
+.site-public .dot-grid input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #111113;
+  caret-color: #111113;
+  -webkit-box-shadow: 0 0 0 1000px #f7f5f0 inset;
+  box-shadow: 0 0 0 1000px #f7f5f0 inset;
 }
 
 /* Autofill browser jangan jadi kotak putih/biru di tema gelap */

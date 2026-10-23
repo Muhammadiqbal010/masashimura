@@ -21,10 +21,10 @@
           enter-from-class="opacity-0 translate-y-6 sm:scale-95"
           enter-to-class="opacity-100 translate-y-0 sm:scale-100"
         >
-          <div class="modal-sheet flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-[2rem] border border-white/[0.08] sm:max-w-lg sm:rounded-[2rem]">
+          <div class="modal-sheet flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-[2rem] sm:max-w-lg sm:rounded-[2rem]">
 
             <!-- Foto (16:9, sama dengan hasil crop di admin) -->
-            <div class="relative aspect-video w-full flex-shrink-0 bg-[#232327]">
+            <div class="relative aspect-video w-full flex-shrink-0 border-b-2 border-[#111113] bg-[#EFEBE2]">
               <img
                 v-if="menu.image_url"
                 :src="getMediaUrl(menu.image_url, 900)"
@@ -33,10 +33,10 @@
               />
               <div v-else class="flex h-full w-full flex-col items-center justify-center gap-2">
                 <span class="text-4xl opacity-25">🍜</span>
-                <span class="text-xs text-[#9A9AA3]">Belum ada foto</span>
+                <span class="text-xs text-[#6B6B73]">Belum ada foto</span>
               </div>
 
-              <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#1C1C1F] via-transparent to-black/30"></div>
+              <div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-transparent"></div>
 
               <!-- Aksi kanan atas: favorit, bagikan, tutup -->
               <div class="absolute right-3 top-3 z-10 flex items-center gap-2">
@@ -71,15 +71,15 @@
               <div class="absolute left-3 top-3 z-10 flex flex-col items-start gap-1.5">
                 <div
                   v-if="!menu.is_available"
-                  class="rounded-full border border-white/10 bg-black/70 px-2.5 py-1 backdrop-blur-md"
+                  class="rounded-full border-2 border-[#111113] bg-[#111113] px-2.5 py-1"
                 >
-                  <span class="text-[11px] font-semibold text-[#FAFAFA]">Habis</span>
+                  <span class="text-[11px] font-semibold text-white">Habis</span>
                 </div>
                 <div v-if="menu.is_recommended" class="sticker sticker--red inline-flex items-center gap-1.5">
                   <ThumbsUp :size="11" />
                   <span class="text-[11px] font-semibold">Rekomendasi</span>
                 </div>
-                <div v-if="isBestSeller" class="flex items-center gap-1.5 rounded-full bg-[#F4C542] px-2.5 py-1 text-[#2A1F00]">
+                <div v-if="isBestSeller" class="flex items-center gap-1.5 rounded-full border-2 border-[#111113] bg-[#F4C542] px-2.5 py-1 text-[#111113]">
                   <Flame :size="11" />
                   <span class="text-[11px] font-semibold">Terlaris</span>
                 </div>
@@ -89,27 +89,27 @@
             <!-- Info -->
             <div ref="scrollEl" class="modal-body flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 pb-2 pt-4 sm:px-7">
               <div class="space-y-2.5">
-                <span class="block text-xs font-medium text-[#F4C542]">
+                <span class="block text-xs font-medium text-[#B8201A]">
                   {{ menu.category_name }}
                 </span>
-                <h2 class="font-sora text-2xl font-semibold leading-tight tracking-tight text-[#FAFAFA]">
+                <h2 class="font-sora text-2xl font-semibold leading-tight tracking-tight text-[#111113]">
                   {{ menu.name }}
                 </h2>
-                <p class="text-sm leading-relaxed text-[#B8B8C0]">
+                <p class="text-sm leading-relaxed text-[#55555D]">
                   {{ menu.description || "Menu andalan spesial Masashimura." }}
                 </p>
               </div>
 
               <!-- Ringkasan opsi yang bisa dipilih -->
               <div v-if="menu.options?.length" class="space-y-2">
-                <span class="block text-xs font-medium text-[#9A9AA3]">Pilihan yang tersedia</span>
+                <span class="block text-xs font-medium text-[#6B6B73]">Pilihan yang tersedia</span>
                 <div class="flex flex-wrap items-center gap-2">
                   <span
                     v-for="group in menu.options"
                     :key="group.name"
-                    class="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-medium text-[#C8C8C8]"
+                    class="rounded-full border border-[#111113]/15 bg-[#111113]/[0.04] px-3 py-1 text-xs font-medium text-[#3F3F46]"
                   >
-                    {{ group.name }}<span v-if="group.required" class="text-[#F0605A]" title="Wajib dipilih"> *</span>
+                    {{ group.name }}<span v-if="group.required" class="text-[#D92B22]" title="Wajib dipilih"> *</span>
                   </span>
                 </div>
               </div>
@@ -129,10 +129,10 @@
             </div>
 
             <!-- Footer: harga + aksi -->
-            <div class="footer-safe flex flex-shrink-0 items-center justify-between gap-4 border-t border-white/[0.07] bg-black/20 px-6 pt-4 sm:px-7">
+            <div class="footer-safe flex flex-shrink-0 items-center justify-between gap-4 border-t-2 border-[#111113] bg-white px-6 pt-4 sm:px-7">
               <div class="min-w-0">
-                <span class="block text-xs text-[#9A9AA3]">Harga</span>
-                <span class="block font-sora text-2xl font-semibold leading-none tracking-tight text-[#FAFAFA]">
+                <span class="block text-xs text-[#6B6B73]">Harga</span>
+                <span class="block font-sora text-2xl font-semibold leading-none tracking-tight text-[#111113]">
                   {{ formatPrice(menu.price_web) }}
                 </span>
               </div>
@@ -145,7 +145,7 @@
                   'add-btn flex min-h-[50px] flex-shrink-0 items-center gap-2 rounded-full px-6 text-sm font-extrabold',
                   menu.is_available && isStoreOpen
                     ? 'add-btn--on'
-                    : 'cursor-not-allowed border border-white/5 bg-[#232327] text-[#9A9AA3]'
+                    : 'cursor-not-allowed border border-[#111113]/10 bg-[#EFEBE2] text-[#6B6B73]'
                 ]"
               >
                 <Plus :size="16" />
@@ -195,12 +195,12 @@ const handleAdd = () => {
 .modal-body { --rec-bleed: 1.5rem; }
 @media (min-width: 640px) { .modal-body { --rec-bleed: 1.75rem; } }
 
-/* Palet: Surface #1C1C1F · Washi #FAFAFA · Crimson #D92B22 · Champagne #F4C542 */
+/* Palet: Surface #FFFFFF · Washi #111113 · Crimson #D92B22 · Champagne #F4C542 */
 
 .modal-sheet {
-  background: #1C1C1F;
-  border: 3px solid #F4C542;
-  box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.7), 8px 8px 0 rgb(0 0 0 / 0.5);
+  background: #FFFFFF;
+  border: 3px solid #111113;
+  box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.5);
 }
 
 .icon-btn {
@@ -222,9 +222,9 @@ const handleAdd = () => {
 
 /* Tombol tambah keycap */
 .add-btn { transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.15s; }
-.add-btn--on { background: #D92B22; color: #fff; border: 2px solid #111113; box-shadow: 0 3px 0 #7A1410; }
+.add-btn--on { background: #D92B22; color: #fff; text-shadow: -1px -1px 0 #111113, 1px -1px 0 #111113, -1px 1px 0 #111113, 1px 1px 0 #111113, 0 -1px 0 #111113, 0 1px 0 #111113, -1px 0 0 #111113, 1px 0 0 #111113; border: 2px solid #111113; box-shadow: 0 3px 0 #111113; }
 .add-btn--on:hover { background: #E8362D; }
-.add-btn--on:active { transform: translateY(3px); box-shadow: 0 0 0 #7A1410; }
+.add-btn--on:active { transform: translateY(3px); box-shadow: 0 0 0 #111113; }
 
 /* Footer aman dari home-indicator di HP */
 .footer-safe {
@@ -232,7 +232,7 @@ const handleAdd = () => {
 }
 
 button:focus-visible {
-  outline: 2px solid #F4C542;
+  outline: 2px solid #111113;
   outline-offset: 3px;
 }
 </style>

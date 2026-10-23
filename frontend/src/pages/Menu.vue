@@ -1,28 +1,26 @@
 <template>
-  <div class="page relative min-h-screen bg-[#111113] font-inter text-[#FAFAFA]">
-    <!-- Atmosfer latar -->
-    <div class="pattern-seigaiha pointer-events-none absolute inset-x-0 top-0 h-[420px] [mask-image:linear-gradient(to_bottom,black,transparent)]" aria-hidden="true"></div>
+  <div class="page dot-grid relative min-h-screen font-inter text-[#111113]">
 
     <!-- ── HEADER ──────────────────────────────────────────────────────────── -->
     <header class="relative mx-auto max-w-7xl px-5 pb-8 pt-28 sm:px-8 sm:pb-10 sm:pt-32 lg:px-10">
-      <p class="eyebrow-jp eyebrow-jp--yellow mb-4"><span class="hanko" aria-hidden="true">品</span>Menu</p>
+      <p class="eyebrow-jp mb-4"><span class="hanko" aria-hidden="true">品</span>Menu</p>
       <h1 class="font-sora text-4xl leading-[1.1] sm:text-5xl lg:text-6xl">
         Pilih menu
       </h1>
-      <p class="mt-4 max-w-md text-base leading-relaxed text-[#B8B8C0] sm:text-lg">
+      <p class="mt-4 max-w-md text-base leading-relaxed text-[#55555D] sm:text-lg">
         Rasa dijamin enak, harga ramah di kantong. Fresh tiap hari.
       </p>
       <CrowdBadge class="mt-5" />
     </header>
 
     <!-- ── STICKY SEARCH + FILTER BAR ─────────────────────────────────────────── -->
-    <div class="sticky top-[76px] z-30 bg-[#111113]/85 backdrop-blur-xl sm:top-[84px]">
+    <div class="sticky top-[76px] z-30 bg-[#F7F5F0]/90 backdrop-blur-xl sm:top-[84px]">
       <div class="mx-auto max-w-7xl space-y-3 px-5 py-3 sm:px-8 sm:py-4 lg:px-10">
 
         <!-- Search + Sort -->
         <div class="flex gap-2.5">
           <div class="relative min-w-0 flex-1">
-            <Search :size="16" class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#9A9AA3]" />
+            <Search :size="16" class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#6B6B73]" />
             <input
               v-model="searchQuery"
               type="text"
@@ -31,14 +29,14 @@
               autocomplete="off"
               placeholder="Cari menu favoritmu"
               aria-label="Cari menu"
-              class="h-12 w-full rounded-2xl border-2 border-white/15 bg-[#1C1C1F] pl-11 pr-11 text-base text-[#FAFAFA] transition-colors placeholder:text-[#9A9AA3] focus:border-[#F4C542] focus:outline-none sm:text-sm"
+              class="h-12 w-full rounded-2xl border-2 border-[#111113]/20 bg-white pl-11 pr-11 text-base text-[#111113] transition-colors placeholder:text-[#6B6B73] focus:border-[#111113] focus:outline-none sm:text-sm"
             />
             <button
               v-if="searchQuery"
               type="button"
               @click="searchQuery = ''"
               aria-label="Hapus pencarian"
-              class="absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-[#9A9AA3] transition-colors hover:text-[#FAFAFA]"
+              class="absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-[#6B6B73] transition-colors hover:text-[#111113]"
             >
               <X :size="16" />
             </button>
@@ -48,13 +46,13 @@
             <select
               v-model="sortBy"
               aria-label="Urutkan menu"
-              class="h-12 cursor-pointer appearance-none rounded-2xl border-2 border-white/15 bg-[#1C1C1F] pl-4 pr-10 text-base font-medium text-[#FAFAFA] transition-colors focus:border-[#F4C542] focus:outline-none sm:text-sm"
+              class="h-12 cursor-pointer appearance-none rounded-2xl border-2 border-[#111113]/20 bg-white pl-4 pr-10 text-base font-medium text-[#111113] transition-colors focus:border-[#111113] focus:outline-none sm:text-sm"
             >
               <option value="default">Urutkan</option>
               <option value="price_asc">Termurah</option>
               <option value="price_desc">Termahal</option>
             </select>
-            <ChevronDown :size="15" class="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9A9AA3]" />
+            <ChevronDown :size="15" class="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#6B6B73]" />
           </div>
         </div>
 
@@ -69,7 +67,7 @@
               <div
                 v-for="n in 4"
                 :key="'chip-skel-' + n"
-                class="h-10 w-24 flex-shrink-0 animate-pulse rounded-full border border-white/10 bg-white/[0.04]"
+                class="h-10 w-24 flex-shrink-0 animate-pulse rounded-full border border-[#111113]/15 bg-[#111113]/[0.04]"
                 aria-hidden="true"
               ></div>
             </template>
@@ -87,7 +85,7 @@
                   'inline-flex min-h-[44px] flex-shrink-0 items-center gap-1.5 rounded-full border-2 px-4 py-2 text-sm font-bold transition-all duration-200',
                   selectedCategory === cat.value
                     ? 'border-[#F4C542] bg-[#F4C542] text-[#111113]'
-                    : 'border-white/15 bg-transparent text-[#D2D2D8] hover:border-white/50 hover:text-white'
+                    : 'border-[#111113]/20 bg-transparent text-[#3F3F46] hover:border-[#111113] hover:bg-white hover:text-[#111113]'
                 ]"
               >
                 <ThumbsUp v-if="cat.value === FILTER_RECOMMENDED" :size="13" />
@@ -95,12 +93,12 @@
                 {{ cat.label }}
                 <span
                   class="rounded-full px-1.5 text-xs tabular-nums"
-                  :class="selectedCategory === cat.value ? 'bg-[#111113] text-[#F4C542]' : 'bg-white/[0.08] text-[#B8B8C0]'"
+                  :class="selectedCategory === cat.value ? 'bg-[#111113] text-[#F4C542]' : 'bg-[#111113]/[0.08] text-[#55555D]'"
                 >{{ getCategoryCount(cat.value) }}</span>
               </button>
             </template>
           </div>
-          <div class="pointer-events-none absolute bottom-0 right-0 top-0 w-10 bg-gradient-to-l from-[#111113] to-transparent sm:hidden"></div>
+          <div class="pointer-events-none absolute bottom-0 right-0 top-0 w-10 bg-gradient-to-l from-[#F7F5F0] to-transparent sm:hidden"></div>
         </div>
       </div>
     </div>
@@ -111,13 +109,13 @@
       <!-- Store closed banner -->
       <div
         v-if="settingsReady && !isStoreOpen"
-        class="mb-6 flex items-start gap-3 rounded-2xl border border-[#D92B22]/25 bg-[#D92B22]/10 px-5 py-4"
+        class="mb-6 flex items-start gap-3 rounded-2xl border border-2 border-[#D92B22]/40 bg-[#D92B22]/10 px-5 py-4"
         role="status"
       >
-        <Lock :size="17" class="mt-0.5 flex-shrink-0 text-[#F0605A]" />
-        <p class="text-sm leading-relaxed text-[#FFB0B0]">
+        <Lock :size="17" class="mt-0.5 flex-shrink-0 text-[#D92B22]" />
+        <p class="text-sm leading-relaxed text-[#8F1511]">
           {{ closedMessage }}
-          <span v-if="nextOpenText" class="mt-1 block font-semibold text-[#FFD0D0]">{{ nextOpenText }}</span>
+          <span v-if="nextOpenText" class="mt-1 block font-semibold text-[#8F1511]">{{ nextOpenText }}</span>
         </p>
       </div>
 
@@ -126,8 +124,8 @@
 
       <!-- Info hasil + toggle habis + reset filter -->
       <div v-if="!loading && menus.length > 0" class="mb-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
-        <span aria-live="polite" class="text-sm text-[#B8B8C0]">
-          <span class="font-semibold text-[#FAFAFA]">{{ filteredMenus.length }}</span> menu<template v-if="selectedCategory !== 'all'"> di {{ activeFilterLabel }}</template>
+        <span aria-live="polite" class="text-sm text-[#55555D]">
+          <span class="font-semibold text-[#111113]">{{ filteredMenus.length }}</span> menu<template v-if="selectedCategory !== 'all'"> di {{ activeFilterLabel }}</template>
         </span>
 
         <div class="flex items-center gap-5">
@@ -137,11 +135,11 @@
             role="switch"
             :aria-checked="hideSoldOut"
             @click="hideSoldOut = !hideSoldOut"
-            class="inline-flex items-center gap-2.5 text-sm text-[#B8B8C0] transition-colors hover:text-[#FAFAFA]"
+            class="inline-flex items-center gap-2.5 text-sm text-[#55555D] transition-colors hover:text-[#111113]"
           >
             <span
               class="relative h-5 w-9 flex-shrink-0 rounded-full border transition-colors"
-              :class="hideSoldOut ? 'border-[#D92B22] bg-[#D92B22]' : 'border-white/20 bg-white/[0.04]'"
+              :class="hideSoldOut ? 'border-[#D92B22] bg-[#D92B22]' : 'border-[#111113]/30 bg-[#111113]/[0.04]'"
               aria-hidden="true"
             >
               <span
@@ -156,7 +154,7 @@
             v-if="hasActiveFilters"
             type="button"
             @click="resetFilters"
-            class="border-b border-[#F4C542]/60 pb-0.5 text-sm font-medium text-[#F4C542] transition-colors hover:text-[#FAFAFA]"
+            class="border-b-2 border-[#D92B22] pb-0.5 text-sm font-bold text-[#B8201A] transition-colors hover:text-[#111113]"
           >
             Reset filter
           </button>
@@ -168,15 +166,15 @@
         <div
           v-for="n in 6"
           :key="n"
-          class="flex animate-pulse flex-col overflow-hidden rounded-3xl border border-white/[0.06] bg-[#1C1C1F]"
+          class="flex animate-pulse flex-col overflow-hidden rounded-3xl border border-[#111113]/10 bg-white"
         >
-          <div class="aspect-video w-full bg-white/[0.04]"></div>
+          <div class="aspect-video w-full bg-[#111113]/[0.04]"></div>
           <div class="space-y-3 p-5">
-            <div class="h-4 w-2/3 rounded-full bg-white/[0.06]"></div>
-            <div class="h-3 w-1/2 rounded-full bg-white/[0.04]"></div>
+            <div class="h-4 w-2/3 rounded-full bg-[#111113]/[0.06]"></div>
+            <div class="h-3 w-1/2 rounded-full bg-[#111113]/[0.04]"></div>
             <div class="flex items-center justify-between pt-4">
-              <div class="h-5 w-1/3 rounded-full bg-white/[0.06]"></div>
-              <div class="h-11 w-1/4 rounded-full bg-white/[0.06]"></div>
+              <div class="h-5 w-1/3 rounded-full bg-[#111113]/[0.06]"></div>
+              <div class="h-11 w-1/4 rounded-full bg-[#111113]/[0.06]"></div>
             </div>
           </div>
         </div>
@@ -185,18 +183,18 @@
       <!-- Error state -->
       <div
         v-else-if="loadError && menus.length === 0"
-        class="space-y-4 rounded-3xl border border-dashed border-white/10 py-24 text-center sm:py-28"
+        class="space-y-4 rounded-3xl border border-dashed border-[#111113]/15 py-24 text-center sm:py-28"
         role="alert"
       >
-        <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-[#1C1C1F]">
-          <WifiOff :size="22" class="text-[#B8B8C0]" />
+        <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-[#111113]/15 bg-white">
+          <WifiOff :size="22" class="text-[#55555D]" />
         </div>
-        <p class="px-4 font-sora text-lg font-semibold text-[#FAFAFA]">Gagal memuat menu</p>
-        <p class="px-4 text-sm text-[#B8B8C0]">Cek koneksi internet kamu, lalu coba lagi.</p>
+        <p class="px-4 font-sora text-lg font-semibold text-[#111113]">Gagal memuat menu</p>
+        <p class="px-4 text-sm text-[#55555D]">Cek koneksi internet kamu, lalu coba lagi.</p>
         <button
           type="button"
           @click="fetchMenus"
-          class="mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-[#D92B22] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#B8201A] active:scale-95"
+          class="mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-[#D92B22] px-6 py-3 text-sm font-semibold text-outline text-white transition hover:bg-[#B8201A] active:scale-95"
         >
           <RefreshCw :size="15" />
           Coba lagi
@@ -206,20 +204,20 @@
       <!-- Empty state -->
       <div
         v-else-if="filteredMenus.length === 0"
-        class="space-y-4 rounded-3xl border border-dashed border-white/10 py-24 text-center sm:py-28"
+        class="space-y-4 rounded-3xl border border-dashed border-[#111113]/15 py-24 text-center sm:py-28"
       >
-        <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-[#1C1C1F]">
+        <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-[#111113]/15 bg-white">
           <span class="text-2xl">🍽️</span>
         </div>
-        <p class="px-4 font-sora text-lg font-semibold text-[#FAFAFA]">
+        <p class="px-4 font-sora text-lg font-semibold text-[#111113]">
           {{ searchQuery ? `Tidak ada hasil untuk "${searchQuery}"` : "Menu tidak tersedia" }}
         </p>
-        <p class="text-sm text-[#B8B8C0]">Coba kategori lain atau cek lagi nanti.</p>
+        <p class="text-sm text-[#55555D]">Coba kategori lain atau cek lagi nanti.</p>
         <button
           v-if="hasActiveFilters"
           type="button"
           @click="resetFilters"
-          class="mt-2 inline-flex items-center justify-center rounded-full border border-white/20 px-6 py-3 text-sm font-semibold text-[#FAFAFA] transition hover:border-white/50 hover:bg-white/5"
+          class="mt-2 inline-flex items-center justify-center rounded-full border border-[#111113]/30 px-6 py-3 text-sm font-semibold text-[#111113] transition hover:border-[#111113] hover:bg-[#111113]/5"
         >
           Reset filter
         </button>
@@ -247,7 +245,7 @@
           <button
             type="button"
             :aria-label="'Lihat detail ' + menu.name"
-            class="relative aspect-video w-full shrink-0 overflow-hidden bg-[#232327] text-left"
+            class="relative aspect-video w-full shrink-0 overflow-hidden border-b-2 border-[#111113] bg-[#EFEBE2] text-left"
             @click="openDetail(menu)"
           >
             <img
@@ -261,16 +259,14 @@
             />
             <div v-else class="absolute inset-0 flex flex-col items-center justify-center gap-2">
               <span class="text-3xl opacity-25">🍜</span>
-              <span class="text-xs text-[#9A9AA3]">Belum ada foto</span>
+              <span class="text-xs text-[#6B6B73]">Belum ada foto</span>
             </div>
 
-            <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#1C1C1F] via-transparent to-transparent opacity-70"></div>
-
-            <!-- Badge -->
+                        <!-- Badge -->
             <div class="absolute left-3 top-3 z-10 flex flex-col items-start gap-1.5">
               <div
                 v-if="!menu.is_available"
-                class="sticker !bg-[#232327] !text-white !shadow-none"
+                class="sticker !bg-[#111113] !text-white"
               >
                 <span class="text-xs font-extrabold">Habis</span>
               </div>
@@ -315,20 +311,20 @@
                 class="min-w-0 flex-1 space-y-1.5 text-left"
                 @click="openDetail(menu)"
               >
-                <span class="block text-xs font-medium text-[#F4C542]">
+                <span class="block text-xs font-medium text-[#B8201A]">
                   {{ menu.category_name }}
                 </span>
-                <h3 class="line-clamp-2 text-lg font-extrabold leading-snug text-[#FAFAFA]">
+                <h3 class="line-clamp-2 text-lg font-extrabold leading-snug text-[#111113]">
                   {{ menu.name }}
                 </h3>
-                <p class="line-clamp-2 text-sm leading-relaxed text-[#B8B8C0]">
+                <p class="line-clamp-2 text-sm leading-relaxed text-[#55555D]">
                   {{ menu.description || "Menu andalan spesial Masashimura." }}
                 </p>
               </button>
               <button
                 type="button"
                 :aria-label="'Bagikan ' + menu.name + ' lewat WhatsApp'"
-                class="-mr-1.5 -mt-1.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#9A9AA3] transition-colors hover:bg-white/5 hover:text-[#FAFAFA]"
+                class="-mr-1.5 -mt-1.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#6B6B73] transition-colors hover:bg-[#111113]/5 hover:text-[#111113]"
                 @click="shareMenu(menu)"
               >
                 <Share2 :size="16" />
@@ -336,32 +332,32 @@
             </div>
 
             <!-- Harga + tombol -->
-            <div class="mt-auto flex items-center justify-between gap-3 border-t-2 border-dashed border-white/15 pt-4">
-              <span class="text-lg font-extrabold leading-none tabular-nums text-[#F4C542]">
+            <div class="mt-auto flex items-center justify-between gap-3 border-t-2 border-dashed border-[#111113]/25 pt-4">
+              <span class="text-lg font-extrabold leading-none tabular-nums text-[#B8201A]">
                 {{ formatPrice(menu.price_web) }}
               </span>
 
               <!-- Stepper -->
               <div
                 v-if="cartStore.quantityOfMenu(menu.id) > 0"
-                class="flex items-center rounded-full border-2 border-white/20 bg-white/[0.03] p-1"
+                class="flex items-center rounded-full border-2 border-[#111113]/30 bg-[#111113]/[0.03] p-1"
               >
                 <button
                   type="button"
                   :aria-label="'Kurangi ' + menu.name"
-                  class="flex h-9 w-9 items-center justify-center rounded-full text-[#FAFAFA] transition-colors hover:bg-white/10"
+                  class="flex h-9 w-9 items-center justify-center rounded-full text-[#111113] transition-colors hover:bg-[#111113]/10"
                   @click="cartStore.decrementMenu(menu.id)"
                 >
                   <Minus :size="15" />
                 </button>
-                <span class="min-w-[2rem] text-center text-sm font-semibold tabular-nums text-[#FAFAFA]">
+                <span class="min-w-[2rem] text-center text-sm font-semibold tabular-nums text-[#111113]">
                   {{ cartStore.quantityOfMenu(menu.id) }}
                 </span>
                 <button
                   type="button"
                   :aria-label="'Tambah ' + menu.name"
                   :disabled="!menu.is_available || !isStoreOpen"
-                  class="flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#111113] bg-[#D92B22] text-white transition-colors hover:bg-[#B8201A] disabled:opacity-40"
+                  class="flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#111113] bg-[#D92B22] text-outline text-white transition-colors hover:bg-[#B8201A] disabled:opacity-40"
                   @click="requestAdd(menu)"
                 >
                   <Plus :size="15" />
@@ -378,7 +374,7 @@
                   'add-btn flex min-h-[44px] items-center justify-center gap-1.5 rounded-full px-5 text-sm font-extrabold',
                   menu.is_available && isStoreOpen
                     ? 'add-btn--on'
-                    : 'cursor-not-allowed border-2 border-white/10 bg-[#232327] text-[#9A9AA3]'
+                    : 'cursor-not-allowed border-2 border-[#111113]/15 bg-[#EFEBE2] text-[#6B6B73]'
                 ]"
               >
                 <Plus :size="15" />
@@ -407,13 +403,13 @@
           type="button"
           @click="isCartOpen = true"
           :aria-label="`Buka keranjang: ${cartStore.cartItemCount} item, total ${formatPrice(cartStore.totalPrice)}`"
-          class="cart-bar flex w-full items-center justify-between gap-4 rounded-2xl border border-white/10 py-3.5 pl-4 pr-5 text-white shadow-[0_16px_44px_rgba(217,43,34,0.4)] transition-all duration-200 active:scale-[0.99]"
+          class="cart-bar flex w-full items-center justify-between gap-4 rounded-2xl py-3.5 pl-4 pr-5 text-white shadow-[0_16px_44px_rgba(217,43,34,0.4)] transition-all duration-200 active:scale-[0.99]"
           :class="{ 'fab-bump': cartBump }"
         >
           <div class="flex min-w-0 items-center gap-3">
             <div class="relative flex-shrink-0">
               <ShoppingCart :size="20" />
-              <span class="absolute -right-2 -top-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#FAFAFA] px-1 text-[11px] font-bold leading-none text-[#8F0000]">
+              <span class="absolute -right-2 -top-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border border-[#111113] bg-white px-1 text-[11px] font-bold leading-none text-[#111113]">
                 {{ cartStore.cartItemCount }}
               </span>
             </div>
@@ -807,32 +803,34 @@ onUnmounted(() => clearTimeout(bumpTimer))
 <style scoped>
 /*
   Palet (sama dengan halaman Lokasi & Kontak)
-  Warm black #111113 · Surface #1C1C1F · Washi #FAFAFA
-  Crimson #D92B22 (aksi) · Champagne #F4C542 (detail premium)
+  Tema terang: krem berpola titik, kartu putih, border & bayangan hitam keras.
+  Crimson #D92B22 (aksi) · Champagne #F4C542 (penanda aktif)
 */
 
-/* Kartu menu: border tegas + bayangan keras, naik & berwarna kuning saat hover */
+/* Kartu menu: border hitam tegas + bayangan keras, naik saat hover (sama dengan kartu di Home) */
 .menu-card {
-  background: #1C1C1F;
-  border: 2px solid rgb(255 255 255 / 0.16);
+  background: #FFFFFF;
+  color: #202024;
+  border: 2px solid #111113;
   border-radius: 24px;
-  box-shadow: 5px 5px 0 rgb(0 0 0 / 0.55);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  box-shadow: 6px 6px 0 #111113;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 @media (hover: hover) {
-  .menu-card:hover { transform: translate(-2px, -2px); border-color: #F4C542; box-shadow: 8px 8px 0 #F4C542; }
+  .menu-card:hover { transform: translate(-2px, -2px); box-shadow: 9px 9px 0 #111113; }
 }
 
 /* Tombol "Tambah" keycap */
 .add-btn { transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.15s; }
-.add-btn--on { background: #D92B22; color: #fff; border: 2px solid #111113; box-shadow: 0 3px 0 #7A1410; }
+.add-btn--on { background: #D92B22; color: #fff; text-shadow: -1px -1px 0 #111113, 1px -1px 0 #111113, -1px 1px 0 #111113, 1px 1px 0 #111113, 0 -1px 0 #111113, 0 1px 0 #111113, -1px 0 0 #111113, 1px 0 0 #111113; border: 2px solid #111113; box-shadow: 0 3px 0 #111113; }
 .add-btn--on:hover { background: #E8362D; }
-.add-btn--on:active { transform: translateY(3px); box-shadow: 0 0 0 #7A1410; }
+.add-btn--on:active { transform: translateY(3px); box-shadow: 0 0 0 #111113; }
 
 .cart-bar {
   background: #D92B22;
+  text-shadow: -1px -1px 0 #111113, 1px -1px 0 #111113, -1px 1px 0 #111113, 1px 1px 0 #111113, 0 -1px 0 #111113, 0 1px 0 #111113, -1px 0 0 #111113, 1px 0 0 #111113;
   border: 2px solid #111113;
-  box-shadow: 0 5px 0 #7A1410, 0 16px 30px -12px rgb(0 0 0 / 0.6);
+  box-shadow: 0 5px 0 #111113, 0 16px 30px -12px rgb(0 0 0 / 0.6);
 }
 .cart-bar:hover {
   filter: brightness(1.06);
@@ -845,7 +843,7 @@ onUnmounted(() => clearTimeout(bumpTimer))
 a:focus-visible,
 button:focus-visible,
 select:focus-visible {
-  outline: 2px solid #F4C542;
+  outline: 2px solid #111113;
   outline-offset: 3px;
 }
 

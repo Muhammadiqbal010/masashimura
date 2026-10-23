@@ -55,7 +55,7 @@ const todaySchedule = computed(() => {
 </script>
 
 <style scoped>
-/* Palet: Crimson #D92B22 · Washi #FAFAFA · Champagne #F4C542 */
+/* Palet: Crimson #D92B22 · Washi #111113 · Champagne #F4C542 */
 .store-banner {
   display: flex;
   align-items: flex-start;
@@ -78,7 +78,7 @@ const todaySchedule = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #F0605A;
+  color: #D92B22;
   flex-shrink: 0;
 }
 
@@ -88,13 +88,13 @@ const todaySchedule = computed(() => {
   font-family: var(--font-ui);
   font-size: 16px;
   font-weight: 600;
-  color: #FAFAFA;
+  color: #111113;
   line-height: 1.3;
 }
 
 .banner-msg {
   font-size: 14px;
-  color: #B8B8C0;
+  color: #55555D;
   margin-top: 4px;
   line-height: 1.55;
 }
@@ -102,7 +102,7 @@ const todaySchedule = computed(() => {
 .banner-next {
   font-size: 14px;
   font-weight: 600;
-  color: #F4C542;
+  color: #B8201A;
   margin-top: 6px;
   line-height: 1.4;
 }
@@ -114,19 +114,19 @@ const todaySchedule = computed(() => {
   gap: 2px;
   flex-shrink: 0;
   padding-left: 16px;
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 1px solid rgba(17, 17, 19, 0.08);
 }
 
 .hours-label {
   font-size: 12px;
-  color: #9A9AA3;
+  color: #6B6B73;
 }
 
 .hours-value {
   font-size: 14px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  color: #FAFAFA;
+  color: #111113;
 }
 
 @media (max-width: 520px) {
@@ -138,7 +138,7 @@ const todaySchedule = computed(() => {
     justify-content: space-between;
     padding: 12px 0 0;
     border-left: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid rgba(17, 17, 19, 0.08);
   }
 }
 </style>

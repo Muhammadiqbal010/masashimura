@@ -124,7 +124,7 @@
           </div>
           <div class="pop-card pop-card--red px-6 py-5">
             <p class="metric-num whitespace-nowrap" :class="metric3IsStars ? '!text-[1.5rem] !tracking-tight' : ''">{{ cms.metric_3 || "–" }}</p>
-            <p class="metric-label !text-white">Rating pelanggan</p>
+            <p class="metric-label text-outline !text-white">Rating pelanggan</p>
           </div>
         </div>
       </div>
@@ -238,7 +238,7 @@
             >
               <span class="bento-slab" aria-hidden="true"></span>
               <div class="icon-tile-yellow relative"><component :is="getIcon(bento.icon_name)" :size="22" /></div>
-              <span class="relative font-[family-name:var(--font-display)] text-2xl leading-tight text-white sm:text-[1.75rem]">{{ bento.title }}</span>
+              <span class="text-outline relative font-[family-name:var(--font-display)] text-2xl leading-tight text-white sm:text-[1.75rem]">{{ bento.title }}</span>
             </div>
           </div>
 
@@ -246,11 +246,12 @@
             <div
               v-for="(bento, i) in bentoSmall"
               :key="'s' + i"
-              class="pop-card flex min-h-[116px] flex-col justify-between gap-5 p-5 sm:min-h-[132px] sm:p-6"
+              class="bento-feature bento-feature--sm pattern-seigaiha relative flex min-h-[132px] flex-col justify-between gap-5 overflow-hidden p-5 sm:min-h-[150px] sm:p-6"
               :class="isBentoOrphan(i) ? 'col-span-2' : ''"
             >
-              <div class="icon-tile-red"><component :is="getIcon(bento.icon_name)" :size="18" /></div>
-              <span class="text-[0.9375rem] font-extrabold leading-snug text-[#111113] sm:text-base">{{ bento.title }}</span>
+              <span class="bento-slab" aria-hidden="true"></span>
+              <div class="icon-tile-yellow icon-tile-yellow--sm relative"><component :is="getIcon(bento.icon_name)" :size="20" /></div>
+              <span class="text-outline relative font-[family-name:var(--font-display)] text-lg leading-tight text-white sm:text-xl">{{ bento.title }}</span>
             </div>
           </div>
         </div>
@@ -391,8 +392,8 @@
         <p class="jp-outline pointer-events-none absolute -bottom-4 left-4 whitespace-nowrap text-[5.5rem] leading-none sm:text-[8rem]" aria-hidden="true">腹減った</p>
 
         <div class="relative space-y-4">
-          <h2 class="font-[family-name:var(--font-display)] text-4xl leading-[1.1] text-white sm:text-5xl">Udah laper?</h2>
-          <p class="max-w-xs text-base leading-relaxed text-white/90">Pilih menu favorit dan nikmati langsung di kedai atau lewat web ordering.</p>
+          <h2 class="text-outline font-[family-name:var(--font-display)] text-4xl leading-[1.1] text-white sm:text-5xl">Udah laper?</h2>
+          <p class="text-outline max-w-xs text-base font-semibold leading-relaxed text-white">Pilih menu favorit dan nikmati langsung di kedai atau lewat web ordering.</p>
         </div>
 
         <div class="relative flex flex-col gap-4 sm:flex-row lg:justify-end">
@@ -958,6 +959,12 @@ button:focus-visible { outline: 3px solid #F4C542; outline-offset: 3px; }
   background-color: #111113;
   box-shadow: 8px 8px 0 #F4C542, 8px 8px 0 2px #111113;
 }
+/* 2x1: desain sama persis dengan 2x2, hanya skalanya diperkecil */
+.bento-feature--sm {
+  border-radius: 24px;
+  box-shadow: 6px 6px 0 #F4C542, 6px 6px 0 2px #111113;
+}
+.bento-feature--sm .bento-slab { width: 50%; height: 50%; border-bottom-right-radius: 22px; }
 .bento-slab {
   position: absolute;
   right: -2px;
@@ -978,6 +985,7 @@ button:focus-visible { outline: 3px solid #F4C542; outline-offset: 3px; }
   box-shadow: 2px 2px 0 #fff;
 }
 .icon-tile-yellow { width: 52px; height: 52px; background: #F4C542; color: #111113; }
+.icon-tile-yellow--sm { width: 46px; height: 46px; border-radius: 13px; }
 .icon-tile-red { width: 42px; height: 42px; background: #D92B22; color: #fff; box-shadow: 2px 2px 0 #111113; }
 
 /* ── Gallery ── */

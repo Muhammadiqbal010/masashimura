@@ -82,8 +82,8 @@ const totalPointsUsed = computed(() =>
   gap: 0.75rem;
   background:
     radial-gradient(80% 100% at 100% 0%, rgba(244,197,66, 0.08), transparent 70%),
-    #17171A;
-  border: 1px solid rgba(244,197,66, 0.18);
+    var(--box-field-bg, #17171A);
+  border: var(--box-pt-border, 1px solid rgba(244,197,66, 0.18));
   border-radius: 1rem;
   padding: 1rem;
 }
@@ -103,20 +103,20 @@ const totalPointsUsed = computed(() =>
   border-radius: 0.625rem;
   border: 1px solid rgba(244,197,66, 0.25);
   background: rgba(244,197,66, 0.1);
-  color: #F4C542;
+  color: var(--box-accent, #F4C542);
 }
 .point-label {
   flex: 1;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #B8B8C0;
+  color: var(--box-muted, #B8B8C0);
 }
 .point-balance {
   font-family: var(--font-ui);
   font-weight: 600;
   font-size: 1.125rem;
   font-variant-numeric: tabular-nums;
-  color: #F4C542;
+  color: var(--box-accent, #F4C542);
 }
 
 .point-list {
@@ -168,41 +168,41 @@ const totalPointsUsed = computed(() =>
   flex: 1;
   min-width: 0;
   font-size: 0.875rem;
-  color: #FAFAFA;
+  color: var(--box-text, #FAFAFA);
   font-weight: 600;
 }
 .point-item-cost {
   font-size: 0.8125rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  color: #F4C542;
+  color: var(--box-accent, #F4C542);
   white-space: nowrap;
 }
 
 .point-item--locked {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--box-chip-bg, rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--box-lock-border, rgba(255, 255, 255, 0.06));
   opacity: 0.65;
 }
-.point-item-lock { color: #9A9AA3; flex-shrink: 0; }
-.point-item--locked .point-item-name { color: #B8B8C0; font-weight: 500; }
+.point-item-lock { color: var(--box-faint, #9A9AA3); flex-shrink: 0; }
+.point-item--locked .point-item-name { color: var(--box-muted, #B8B8C0); font-weight: 500; }
 .point-item-missing {
   font-size: 0.8125rem;
   font-variant-numeric: tabular-nums;
-  color: #9A9AA3;
+  color: var(--box-faint, #9A9AA3);
   white-space: nowrap;
 }
 
 .point-summary {
   font-size: 0.8125rem;
   font-weight: 500;
-  color: #F4C542;
+  color: var(--box-accent, #F4C542);
   margin: 0;
   padding-left: 0.125rem;
 }
 
 .point-item--affordable:focus-visible {
-  outline: 2px solid #F4C542;
+  outline: 2px solid var(--box-outline, #F4C542);
   outline-offset: 2px;
 }
 </style>

@@ -126,7 +126,7 @@ onUnmounted(() => {
 .nav-pill {
   border: 2px solid rgb(255 255 255 / 0.12);
   border-radius: 999px;
-  background: rgb(17 17 19 / 0.72);
+  background: rgb(17 17 19 / 0.9);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   transition: background-color 0.25s, border-color 0.25s;

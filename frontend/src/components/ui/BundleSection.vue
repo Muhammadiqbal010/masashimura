@@ -6,55 +6,55 @@
 <template>
   <section v-if="bundles.length" class="mb-10" aria-labelledby="bundle-heading">
     <div class="mb-4 flex items-end justify-between gap-3">
-      <h2 id="bundle-heading" class="font-sora text-2xl font-semibold tracking-tight text-[#FAFAFA]">Paket</h2>
-      <span class="text-sm text-[#B8B8C0]">{{ bundles.length }} paket</span>
+      <h2 id="bundle-heading" class="font-sora text-2xl font-semibold tracking-tight text-[#111113]">Paket</h2>
+      <span class="text-sm text-[#55555D]">{{ bundles.length }} paket</span>
     </div>
 
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <article
         v-for="b in bundles"
         :key="b.id"
-        class="flex flex-col justify-between gap-4 rounded-3xl border border-white/[0.08] bg-[#1C1C1F] p-5"
+        class="flex flex-col justify-between gap-4 rounded-3xl border-2 border-[#111113] bg-white p-5 shadow-[6px_6px_0_#111113]"
         :class="{ 'opacity-60': b.unavailable_reason }"
       >
         <div class="space-y-3">
           <div class="flex items-start justify-between gap-3">
-            <h3 class="font-sora text-lg font-semibold leading-snug text-[#FAFAFA]">{{ b.name }}</h3>
+            <h3 class="font-sora text-lg font-semibold leading-snug text-[#111113]">{{ b.name }}</h3>
             <span
               v-if="b.savings > 0"
-              class="flex-shrink-0 rounded-full border border-[#F4C542]/30 bg-[#F4C542]/10 px-2.5 py-1 text-xs font-semibold text-[#F4C542]"
+              class="flex-shrink-0 rounded-full border-2 border-[#111113] bg-[#F4C542] px-2.5 py-1 text-xs font-extrabold text-[#111113]"
             >Hemat {{ rp(b.savings) }}</span>
           </div>
 
-          <ul class="space-y-1 text-sm text-[#C8C8C8]">
+          <ul class="space-y-1 text-sm text-[#3F3F46]">
             <li v-for="c in b.contents" :key="c.menu">{{ c.quantity }}× {{ c.name }}</li>
           </ul>
-          <p v-if="b.description" class="text-sm leading-relaxed text-[#B8B8C0]">{{ b.description }}</p>
+          <p v-if="b.description" class="text-sm leading-relaxed text-[#55555D]">{{ b.description }}</p>
         </div>
 
         <div class="flex items-end justify-between gap-3">
           <div>
-            <p v-if="b.normal_price" class="text-xs text-[#9A9AA3] line-through">{{ rp(b.normal_price) }}</p>
-            <p class="font-sora text-xl font-semibold tabular-nums text-[#FAFAFA]">{{ rp(b.price) }}</p>
+            <p v-if="b.normal_price" class="text-xs text-[#6B6B73] line-through">{{ rp(b.normal_price) }}</p>
+            <p class="font-sora text-xl font-semibold tabular-nums text-[#111113]">{{ rp(b.price) }}</p>
           </div>
 
-          <p v-if="b.unavailable_reason" class="text-sm font-medium text-[#F0605A]">{{ b.unavailable_reason }}</p>
+          <p v-if="b.unavailable_reason" class="text-sm font-medium text-[#D92B22]">{{ b.unavailable_reason }}</p>
 
           <div
             v-else-if="cartStore.quantityOfBundle(b.id) > 0"
-            class="flex items-center rounded-full border border-white/10 bg-white/[0.03] p-1"
+            class="flex items-center rounded-full border border-[#111113]/15 bg-[#111113]/[0.03] p-1"
           >
             <button
               type="button"
               :aria-label="'Kurangi ' + b.name"
-              class="flex h-9 w-9 items-center justify-center rounded-full text-[#FAFAFA] transition-colors hover:bg-white/10"
+              class="flex h-9 w-9 items-center justify-center rounded-full text-[#111113] transition-colors hover:bg-[#111113]/10"
               @click="cartStore.updateBundleQuantity(b.id, -1)"
             ><Minus :size="14" /></button>
-            <span class="min-w-[1.75rem] text-center text-sm font-semibold tabular-nums text-[#FAFAFA]">{{ cartStore.quantityOfBundle(b.id) }}</span>
+            <span class="min-w-[1.75rem] text-center text-sm font-semibold tabular-nums text-[#111113]">{{ cartStore.quantityOfBundle(b.id) }}</span>
             <button
               type="button"
               :aria-label="'Tambah ' + b.name"
-              class="flex h-9 w-9 items-center justify-center rounded-full bg-[#D92B22] text-white transition-colors hover:bg-[#B8201A]"
+              class="flex h-9 w-9 items-center justify-center rounded-full bg-[#D92B22] text-outline text-white transition-colors hover:bg-[#B8201A]"
               @click="cartStore.updateBundleQuantity(b.id, 1)"
             ><Plus :size="14" /></button>
           </div>
@@ -62,7 +62,7 @@
           <button
             v-else
             type="button"
-            class="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-[#D92B22] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#B8201A]"
+            class="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-[#D92B22] px-5 text-sm font-semibold text-outline text-white transition-colors hover:bg-[#B8201A]"
             @click="add(b)"
           ><Plus :size="15" /> Tambah</button>
         </div>

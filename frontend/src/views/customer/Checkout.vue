@@ -1,16 +1,26 @@
 <template>
-  <div class="page relative min-h-screen bg-[#111113] pb-24 pt-28 font-inter text-[#FAFAFA] sm:pt-32">
-    <div class="pattern-seigaiha pointer-events-none absolute inset-x-0 top-0 h-[380px] [mask-image:linear-gradient(to_bottom,black,transparent)]" aria-hidden="true"></div>
+  <div class="page dot-grid relative min-h-screen pb-24 pt-5 font-inter text-[#111113] sm:pt-6">
 
     <div class="relative mx-auto max-w-6xl px-5 sm:px-8 lg:px-10">
 
+      <!-- Bar atas mini: halaman checkout sengaja tanpa navbar & footer -->
+      <div class="mb-8 flex items-center justify-between gap-3 sm:mb-10">
+        <button type="button" class="co-back" @click="goBack">
+          <ArrowLeft :size="16" aria-hidden="true" />
+          <span>{{ payment || cashDone ? "Beranda" : "Kembali ke menu" }}</span>
+        </button>
+        <router-link to="/" class="co-logo" aria-label="Masashimura – Beranda">
+          <img src="@/assets/masashimura-logo.png" alt="Masashimura" class="h-7 w-auto object-contain sm:h-8" />
+        </router-link>
+      </div>
+
       <!-- Header -->
       <header class="mb-8 sm:mb-10">
-        <p class="eyebrow-jp eyebrow-jp--yellow mb-4"><span class="hanko" aria-hidden="true">会計</span>Checkout</p>
+        <p class="eyebrow-jp mb-4"><span class="hanko" aria-hidden="true">会計</span>Checkout</p>
         <h1 class="font-sora text-4xl leading-[1.1] sm:text-5xl">
           Pesanan Kamu
         </h1>
-        <p class="mt-3 text-base text-[#B8B8C0]">Cek item, isi data, lalu pilih cara bayar.</p>
+        <p class="mt-3 text-base text-[#55555D]">Cek item, isi data, lalu pilih cara bayar.</p>
       </header>
 
       <!-- ══ PANEL STATUS PEMBAYARAN ONLINE (muncul setelah order gateway dibuat) ══ -->
@@ -20,47 +30,47 @@
         role="status"
       >
         <div
-          class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border"
+          class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border-2"
           :class="phaseIconClass"
         >
           <div
             v-if="payment.phase === 'starting' || payment.phase === 'waiting'"
-            class="h-7 w-7 animate-spin rounded-full border-2 border-white/20 border-t-[#F4C542]"
+            class="h-7 w-7 animate-spin rounded-full border-2 border-[#111113]/20 border-t-[#D92B22]"
           ></div>
-          <Check v-else-if="payment.phase === 'paid'" :size="26" class="text-emerald-400" />
-          <X v-else-if="payment.phase === 'failed'" :size="26" class="text-[#F0605A]" />
-          <Clock v-else :size="26" class="text-[#F4C542]" />
+          <Check v-else-if="payment.phase === 'paid'" :size="26" class="text-emerald-600" />
+          <X v-else-if="payment.phase === 'failed'" :size="26" class="text-[#D92B22]" />
+          <Clock v-else :size="26" class="text-[#B8201A]" />
         </div>
 
         <div class="space-y-2">
-          <h2 class="font-sora text-2xl font-semibold tracking-tight text-[#FAFAFA]">{{ phaseTitle }}</h2>
-          <p class="text-sm leading-relaxed text-[#B8B8C0]">{{ phaseDescription }}</p>
+          <h2 class="font-sora text-2xl font-semibold tracking-tight text-[#111113]">{{ phaseTitle }}</h2>
+          <p class="text-sm leading-relaxed text-[#55555D]">{{ phaseDescription }}</p>
         </div>
 
         <div class="summary-box space-y-2.5 text-left">
           <div class="flex items-center justify-between">
-            <span class="text-sm text-[#B8B8C0]">No. order</span>
-            <span class="text-sm font-semibold tabular-nums text-[#FAFAFA]">#{{ payment.orderNumber }}</span>
+            <span class="text-sm text-[#55555D]">No. order</span>
+            <span class="text-sm font-semibold tabular-nums text-[#111113]">#{{ payment.orderNumber }}</span>
           </div>
           <div class="flex items-center justify-between">
-            <span class="text-sm text-[#B8B8C0]">Total</span>
-            <span class="font-sora text-lg font-semibold text-[#FAFAFA]">{{ formatPrice(payment.total) }}</span>
+            <span class="text-sm text-[#55555D]">Total</span>
+            <span class="font-sora text-lg font-semibold text-[#111113]">{{ formatPrice(payment.total) }}</span>
           </div>
 
           <!-- Ringkasan pesanan (tetap tampil setelah refresh) -->
           <div
             v-if="payment.items?.length"
-            class="mt-1 space-y-1.5 border-t border-white/[0.07] pt-3"
+            class="mt-1 space-y-1.5 border-t border-[#111113]/10 pt-3"
           >
             <div
               v-for="(it, i) in payment.items"
               :key="i"
               class="flex justify-between gap-3 text-sm"
             >
-              <span class="truncate text-[#B8B8C0]">
+              <span class="truncate text-[#55555D]">
                 {{ it.quantity }}x {{ it.name }}<template v-if="it.optionText"> ({{ it.optionText }})</template>
               </span>
-              <span class="flex-shrink-0 tabular-nums text-[#9A9AA3]">{{ formatPrice(it.price * it.quantity) }}</span>
+              <span class="flex-shrink-0 tabular-nums text-[#6B6B73]">{{ formatPrice(it.price * it.quantity) }}</span>
             </div>
           </div>
         </div>
@@ -96,7 +106,7 @@
             <button type="button" class="btn-ghost" @click="onCheckStatusClick">
               Cek status
             </button>
-            <p class="pt-1 text-xs text-[#9A9AA3]">
+            <p class="pt-1 text-xs text-[#6B6B73]">
               Order otomatis dibatalkan kalau tidak dibayar dalam 30 menit.
             </p>
           </template>
@@ -111,39 +121,39 @@
         class="card mx-auto max-w-md space-y-6 text-center"
       >
         <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-emerald-400/30 bg-emerald-400/10">
-          <Check :size="26" class="text-emerald-400" />
+          <Check :size="26" class="text-emerald-600" />
         </div>
 
         <div class="space-y-2">
-          <h2 class="font-sora text-2xl font-semibold tracking-tight text-[#FAFAFA]">Pesanan dibuat</h2>
-          <p class="text-sm leading-relaxed text-[#B8B8C0]">
+          <h2 class="font-sora text-2xl font-semibold tracking-tight text-[#111113]">Pesanan dibuat</h2>
+          <p class="text-sm leading-relaxed text-[#55555D]">
             Bayar langsung di toko, kasir yang mengonfirmasi pembayaranmu. Kabari admin lewat WhatsApp supaya pesananmu cepat diproses.
           </p>
         </div>
 
         <div class="summary-box space-y-2.5 text-left">
           <div class="flex items-center justify-between">
-            <span class="text-sm text-[#B8B8C0]">No. order</span>
-            <span class="text-sm font-semibold tabular-nums text-[#FAFAFA]">#{{ cashDone.orderNumber }}</span>
+            <span class="text-sm text-[#55555D]">No. order</span>
+            <span class="text-sm font-semibold tabular-nums text-[#111113]">#{{ cashDone.orderNumber }}</span>
           </div>
           <div class="flex items-center justify-between">
-            <span class="text-sm text-[#B8B8C0]">Total</span>
-            <span class="font-sora text-lg font-semibold text-[#FAFAFA]">{{ formatPrice(cashDone.total) }}</span>
+            <span class="text-sm text-[#55555D]">Total</span>
+            <span class="font-sora text-lg font-semibold text-[#111113]">{{ formatPrice(cashDone.total) }}</span>
           </div>
 
           <div
             v-if="cashDone.items?.length"
-            class="mt-1 space-y-1.5 border-t border-white/[0.07] pt-3"
+            class="mt-1 space-y-1.5 border-t border-[#111113]/10 pt-3"
           >
             <div
               v-for="(it, i) in cashDone.items"
               :key="i"
               class="flex justify-between gap-3 text-sm"
             >
-              <span class="truncate text-[#B8B8C0]">
+              <span class="truncate text-[#55555D]">
                 {{ it.quantity }}x {{ it.name }}<template v-if="it.optionText"> ({{ it.optionText }})</template>
               </span>
-              <span class="flex-shrink-0 tabular-nums text-[#9A9AA3]">{{ formatPrice(it.price * it.quantity) }}</span>
+              <span class="flex-shrink-0 tabular-nums text-[#6B6B73]">{{ formatPrice(it.price * it.quantity) }}</span>
             </div>
           </div>
         </div>
@@ -171,13 +181,13 @@
             <!-- Empty -->
             <div
               v-if="cartStore.isEmpty"
-              class="space-y-4 rounded-3xl border border-dashed border-white/10 px-6 py-20 text-center"
+              class="space-y-4 rounded-3xl border-2 border-dashed border-[#111113]/30 bg-white px-6 py-20 text-center"
             >
-              <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-[#1C1C1F]">
-                <ShoppingCart :size="22" class="text-[#B8B8C0]" />
+              <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-[#111113]/15 bg-white">
+                <ShoppingCart :size="22" class="text-[#55555D]" />
               </div>
-              <p class="font-sora text-lg font-semibold text-[#FAFAFA]">Keranjang masih kosong</p>
-              <p class="text-sm text-[#B8B8C0]">Pilih menu favoritmu dulu, lalu balik ke sini.</p>
+              <p class="font-sora text-lg font-semibold text-[#111113]">Keranjang masih kosong</p>
+              <p class="text-sm text-[#55555D]">Pilih menu favoritmu dulu, lalu balik ke sini.</p>
               <router-link to="/menu" class="btn-primary !inline-flex !w-auto px-7">
                 Lihat menu
               </router-link>
@@ -191,24 +201,24 @@
             >
               <div class="flex items-start justify-between gap-3">
                 <div class="min-w-0">
-                  <p class="text-[11px] font-semibold uppercase tracking-wider text-[#F4C542]">Paket</p>
-                  <h4 class="font-sora text-base font-semibold leading-snug text-[#FAFAFA]">{{ line.name }}</h4>
+                  <p class="text-[11px] font-semibold uppercase tracking-wider text-[#B8201A]">Paket</p>
+                  <h4 class="font-sora text-base font-semibold leading-snug text-[#111113]">{{ line.name }}</h4>
                 </div>
                 <button
                   type="button"
                   :aria-label="'Hapus ' + line.name + ' dari keranjang'"
                   @click="cartStore.removeBundle(line.id)"
-                  class="-mr-2 -mt-1.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#9A9AA3] transition-colors duration-150 hover:bg-[#D92B22]/10 hover:text-[#F0605A]"
+                  class="-mr-2 -mt-1.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#6B6B73] transition-colors duration-150 hover:bg-[#D92B22]/10 hover:text-[#B8201A]"
                 >
                   <X :size="16" />
                 </button>
               </div>
-              <p class="text-sm text-[#B8B8C0]">
+              <p class="text-sm text-[#55555D]">
                 {{ line.quantity }} × {{ formatPrice(line.price) }}
-                <span v-if="line.normal_price && line.savings > 0" class="ml-1 text-xs text-[#9A9AA3] line-through">{{ formatPrice(line.normal_price) }}</span>
+                <span v-if="line.normal_price && line.savings > 0" class="ml-1 text-xs text-[#6B6B73] line-through">{{ formatPrice(line.normal_price) }}</span>
               </p>
-              <p v-if="line.savings > 0" class="text-xs font-semibold text-[#F4C542]">Kamu hemat {{ formatPrice(line.savings * line.quantity) }}</p>
-              <p class="text-xs text-[#B8B8C0]">{{ line.contents.map((c) => c.quantity * line.quantity + '× ' + c.name).join(' · ') }}</p>
+              <p v-if="line.savings > 0" class="text-xs font-semibold text-[#B8201A]">Kamu hemat {{ formatPrice(line.savings * line.quantity) }}</p>
+              <p class="text-xs text-[#55555D]">{{ line.contents.map((c) => c.quantity * line.quantity + '× ' + c.name).join(' · ') }}</p>
             </div>
 
             <!-- Items -->
@@ -218,7 +228,7 @@
               class="card-item flex gap-4"
             >
               <!-- Thumbnail -->
-              <div class="h-[72px] w-[72px] flex-shrink-0 overflow-hidden rounded-2xl border border-white/[0.07] bg-[#232327] sm:h-20 sm:w-20">
+              <div class="h-[72px] w-[72px] flex-shrink-0 overflow-hidden rounded-2xl border border-[#111113]/10 bg-[#EFEBE2] sm:h-20 sm:w-20">
                 <img
                   v-if="item.image_url"
                   :src="getMediaUrl(item.image_url, 160)"
@@ -231,20 +241,20 @@
               <!-- Detail -->
               <div class="min-w-0 flex-1">
                 <div class="flex items-start justify-between gap-3">
-                  <h4 class="font-sora text-base font-semibold leading-snug text-[#FAFAFA]">
+                  <h4 class="font-sora text-base font-semibold leading-snug text-[#111113]">
                     {{ item.name }}
                   </h4>
                   <button
                     type="button"
                     :aria-label="'Hapus ' + item.name + ' dari keranjang'"
                     @click="cartStore.removeFromCart(item.cartKey)"
-                    class="-mr-2 -mt-1.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#9A9AA3] transition-colors duration-150 hover:bg-[#D92B22]/10 hover:text-[#F0605A]"
+                    class="-mr-2 -mt-1.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#6B6B73] transition-colors duration-150 hover:bg-[#D92B22]/10 hover:text-[#B8201A]"
                   >
                     <X :size="16" />
                   </button>
                 </div>
 
-                <p class="mt-1 text-sm text-[#B8B8C0]">
+                <p class="mt-1 text-sm text-[#55555D]">
                   {{ item.quantity }} × {{ formatPrice(item.price) }}
                 </p>
 
@@ -252,17 +262,17 @@
                   <span
                     v-for="opt in item.optionDetails"
                     :key="opt.group + opt.label"
-                    class="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-xs font-medium text-[#C8C8C8]"
+                    class="rounded-full border border-[#111113]/15 bg-[#111113]/[0.04] px-2.5 py-0.5 text-xs font-medium text-[#3F3F46]"
                   >
                     {{ opt.label }}<template v-if="opt.price"> +{{ formatPrice(opt.price) }}</template>
                   </span>
                 </div>
 
-                <p v-if="item.notes" class="mt-2 text-xs italic text-[#F4C542]">
+                <p v-if="item.notes" class="mt-2 text-xs italic text-[#B8201A]">
                   "{{ item.notes }}"
                 </p>
 
-                <p class="mt-3 font-sora text-base font-semibold tracking-tight text-[#FAFAFA]">
+                <p class="mt-3 font-sora text-base font-semibold tracking-tight text-[#111113]">
                   {{ formatPrice(item.price * item.quantity) }}
                 </p>
               </div>
@@ -284,13 +294,13 @@
           </section>
 
           <!-- ── KANAN: Form & Payment ────────────────────────────── -->
-          <aside class="card space-y-6 lg:sticky lg:top-24">
+          <aside class="card space-y-6 lg:sticky lg:top-6">
 
-            <h2 class="font-sora text-xl font-semibold tracking-tight text-[#FAFAFA]">Data pemesan</h2>
+            <h2 class="font-sora text-xl font-semibold tracking-tight text-[#111113]">Data pemesan</h2>
 
             <!-- Nama -->
             <div class="space-y-2">
-              <label for="co-name" class="block text-sm font-medium text-[#C8C8C8]">Nama</label>
+              <label for="co-name" class="block text-sm font-medium text-[#3F3F46]">Nama</label>
               <input
                 id="co-name"
                 :value="name"
@@ -309,7 +319,7 @@
               <p
                 id="co-name-help"
                 class="text-xs leading-relaxed"
-                :class="nameErrorText ? 'text-[#F0605A]' : 'text-[#9A9AA3]'"
+                :class="nameErrorText ? 'text-[#D92B22]' : 'text-[#6B6B73]'"
                 :role="nameErrorText ? 'alert' : undefined"
               >
                 {{ nameErrorText || `Huruf saja, ${NAME_MIN}-${NAME_MAX} karakter, tanpa angka atau tanda.` }}
@@ -318,7 +328,7 @@
 
             <!-- Nomor WA -->
             <div class="space-y-2">
-              <label for="co-phone" class="block text-sm font-medium text-[#C8C8C8]">Nomor WhatsApp</label>
+              <label for="co-phone" class="block text-sm font-medium text-[#3F3F46]">Nomor WhatsApp</label>
               <!-- type="tel" + inputmode="numeric": keypad angka di HP, tapi nilainya tetap string.
                    type="number" sengaja tidak dipakai: Vue mengubahnya jadi Number sehingga angka 0 di depan
                    hilang ("0812..." jadi 812...), dan browser masih menerima huruf "e", "+", "-" serta ".". -->
@@ -342,14 +352,14 @@
               <p
                 id="co-phone-help"
                 class="text-xs leading-relaxed"
-                :class="phoneErrorText ? 'text-[#F0605A]' : 'text-[#9A9AA3]'"
+                :class="phoneErrorText ? 'text-[#D92B22]' : 'text-[#6B6B73]'"
                 :role="phoneErrorText ? 'alert' : undefined"
               >
                 {{ phoneErrorText || `Diawali 08, ${PHONE_MIN}-${PHONE_MAX} digit angka.` }}
               </p>
 
               <!-- PIN member: terlihat oleh semua pelanggan supaya status member nomor lain tidak bocor -->
-              <div class="mt-3 rounded-2xl border border-white/[0.07] bg-[#17171A] p-3.5">
+              <div class="mt-3 rounded-2xl border border-[#111113]/10 bg-[#F7F5F0] p-3.5">
                 <MemberPinBox
                   :phone="phone"
                   :info="memberInfo"
@@ -362,21 +372,21 @@
 
             <!-- Metode Pembayaran -->
             <div class="space-y-2">
-              <span class="block text-sm font-medium text-[#C8C8C8]">Pembayaran</span>
+              <span class="block text-sm font-medium text-[#3F3F46]">Pembayaran</span>
               <div class="grid grid-cols-2 gap-2.5">
                 <button
                   type="button"
                   @click="selectPayment('cash')"
                   :aria-pressed="paymentMethod === 'cash'"
                   :class="[
-                    'rounded-2xl border px-4 py-3 text-left transition-all duration-150',
+                    'rounded-2xl border-2 px-4 py-3 text-left transition-all duration-150',
                     paymentMethod === 'cash'
                       ? 'border-[#D92B22] bg-[#D92B22]/10'
-                      : 'border-white/10 bg-white/[0.03] hover:border-white/25'
+                      : 'border-[#111113]/15 bg-[#111113]/[0.03] hover:border-[#111113]/40'
                   ]"
                 >
-                  <span class="block font-sora text-sm font-semibold text-[#FAFAFA]">Cash</span>
-                  <span class="block text-xs text-[#B8B8C0]">Bayar di toko</span>
+                  <span class="block font-sora text-sm font-semibold text-[#111113]">Cash</span>
+                  <span class="block text-xs text-[#55555D]">Bayar di toko</span>
                 </button>
                 <button
                   type="button"
@@ -384,17 +394,17 @@
                   @click="selectPayment('gateway')"
                   :aria-pressed="paymentMethod === 'gateway'"
                   :class="[
-                    'rounded-2xl border px-4 py-3 text-left transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-35',
+                    'rounded-2xl border-2 px-4 py-3 text-left transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-35',
                     paymentMethod === 'gateway'
                       ? 'border-[#D92B22] bg-[#D92B22]/10'
-                      : 'border-white/10 bg-white/[0.03] hover:border-white/25'
+                      : 'border-[#111113]/15 bg-[#111113]/[0.03] hover:border-[#111113]/40'
                   ]"
                 >
-                  <span class="block font-sora text-sm font-semibold text-[#FAFAFA]">QRIS</span>
-                  <span class="block text-xs text-[#B8B8C0]">Bayar online</span>
+                  <span class="block font-sora text-sm font-semibold text-[#111113]">QRIS</span>
+                  <span class="block text-xs text-[#55555D]">Bayar online</span>
                 </button>
               </div>
-              <p class="pt-0.5 text-xs leading-relaxed text-[#9A9AA3]">
+              <p class="pt-0.5 text-xs leading-relaxed text-[#6B6B73]">
                 <template v-if="paymentMethod === 'cash'">
                   Bayar langsung di toko. Kasir yang mengonfirmasi pembayaranmu.
                 </template>
@@ -402,18 +412,18 @@
                   Bayar lewat QRIS di popup. Pesanan diproses setelah pembayaran terkonfirmasi otomatis.
                 </template>
               </p>
-              <p v-if="gatewayUnavailable && !cartStore.isEmpty" class="text-xs text-[#F4C542]">
+              <p v-if="gatewayUnavailable && !cartStore.isEmpty" class="text-xs text-[#B8201A]">
                 Total Rp0 (semua item tukar poin), pembayaran online tidak diperlukan. Pakai Cash.
               </p>
             </div>
 
-            <div class="border-t border-white/[0.07]"></div>
+            <div class="border-t border-[#111113]/10"></div>
 
             <!-- Ringkasan Harga -->
             <div class="space-y-3">
               <div class="flex items-center justify-between text-sm">
-                <span class="text-[#B8B8C0]">Subtotal</span>
-                <span class="tabular-nums text-[#FAFAFA]">{{ formatPrice(cartStore.subtotal) }}</span>
+                <span class="text-[#55555D]">Subtotal</span>
+                <span class="tabular-nums text-[#111113]">{{ formatPrice(cartStore.subtotal) }}</span>
               </div>
 
               <!-- Kode Promo -->
@@ -425,8 +435,8 @@
               />
 
               <div v-if="appliedPromo" class="flex items-center justify-between text-sm">
-                <span class="text-emerald-300">Diskon promo ({{ appliedPromo.code }})</span>
-                <span class="tabular-nums text-emerald-300">−{{ formatPrice(appliedPromo.discount_amount) }}</span>
+                <span class="text-emerald-700">Diskon promo ({{ appliedPromo.code }})</span>
+                <span class="tabular-nums text-emerald-700">−{{ formatPrice(appliedPromo.discount_amount) }}</span>
               </div>
 
               <!-- Tukar Poin -->
@@ -442,13 +452,13 @@
                 :key="`reward-${reward.id}`"
                 class="flex items-center justify-between gap-3 text-sm"
               >
-                <span class="text-[#F4C542]">🎁 {{ reward.menu_name }} (gratis)</span>
-                <span class="flex-shrink-0 tabular-nums text-[#9A9AA3]">−{{ reward.point_cost.toLocaleString("id-ID") }} poin</span>
+                <span class="text-[#B8201A]">🎁 {{ reward.menu_name }} (gratis)</span>
+                <span class="flex-shrink-0 tabular-nums text-[#6B6B73]">−{{ reward.point_cost.toLocaleString("id-ID") }} poin</span>
               </div>
 
-              <div class="flex items-end justify-between border-t border-white/[0.07] pt-4">
-                <span class="text-sm font-medium text-[#B8B8C0]">Total bayar</span>
-                <span class="font-sora text-3xl font-semibold leading-none tracking-tight text-[#FAFAFA]">
+              <div class="flex items-end justify-between border-t border-[#111113]/10 pt-4">
+                <span class="text-sm font-medium text-[#55555D]">Total bayar</span>
+                <span class="font-sora text-3xl font-semibold leading-none tracking-tight text-[#111113]">
                   {{ formatPrice(finalTotal) }}
                 </span>
               </div>
@@ -486,7 +496,7 @@ import { useRouter } from "vue-router"
 import { useCartStore } from "@/stores/cart"
 import { orderAPI, paymentAPI, menuAPI, getMediaUrl } from "@/api"
 import { toast } from "vue-sonner"
-import { X, Check, Clock, ShoppingCart, ArrowRight } from "lucide-vue-next"
+import { X, Check, Clock, ShoppingCart, ArrowRight, ArrowLeft } from "lucide-vue-next"
 import { useStoreSettings } from "@/composables/useStoreSettings"
 import PromoCodeBox from "@/components/ui/PromoCodeBox.vue"
 import PointRedeemBox from "@/components/ui/PointRedeemBox.vue"
@@ -910,6 +920,11 @@ const backToMenu = () => {
   router.push("/menu")
 }
 
+// Tombol kembali di bar atas (checkout tidak punya navbar)
+const goBack = () => {
+  router.push(payment.value || cashDone.value ? "/" : "/menu")
+}
+
 // ── Teks & warna panel ───────────────────────────────────────────────────────
 const phaseTitle = computed(() => ({
   starting: "Menyiapkan Pembayaran",
@@ -935,7 +950,7 @@ const phaseIconClass = computed(() => ({
   paid:    "bg-emerald-400/10 border-emerald-400/30",
   failed:  "bg-[#D92B22]/10 border-[#D92B22]/30",
   pending: "bg-[#F4C542]/10 border-[#F4C542]/30",
-}[payment.value?.phase] || "bg-white/[0.04] border-white/[0.08]"))
+}[payment.value?.phase] || "bg-[#111113]/[0.04] border-[#111113]/20"))
 
 // ══════════════════════════════════════════════════════════════════════════════
 // CHECKOUT
@@ -1178,17 +1193,69 @@ onBeforeUnmount(() => {
 
 <style scoped>
 /*
-  Palet (sama dengan Home, Menu, dan Lokasi & Kontak)
-  Warm black #111113 · Surface #1C1C1F · Washi #FAFAFA
-  Crimson #D92B22 (aksi) · Champagne #F4C542 (detail premium)
+  Tema terang (sama dengan Home, Menu, dan Kontak): krem berpola titik,
+  kartu putih, border & bayangan hitam keras.
+  Crimson #D92B22 (aksi) · Champagne #F4C542 (penanda)
   Hijau hanya untuk status sukses dan tombol WhatsApp.
 */
 
+/* Komponen bersama (PromoCodeBox, PointRedeemBox) memakai variabel ini.
+   Di POS admin tidak diset, jadi tetap tema gelap bawaannya. */
+.page {
+  --box-field-bg: #F7F5F0;
+  --box-border: rgba(17, 17, 19, 0.25);
+  --box-border-hover: rgba(17, 17, 19, 0.5);
+  --box-field-border-w: 2px;
+  --box-text: #111113;
+  --box-muted: #55555D;
+  --box-faint: #6B6B73;
+  --box-accent: #B8201A;
+  --box-err: #D92B22;
+  --box-ok: #15803D;
+  --box-ok-bg: rgba(21, 128, 61, 0.08);
+  --box-ok-border: rgba(21, 128, 61, 0.4);
+  --box-ok-icon-bg: rgba(21, 128, 61, 0.15);
+  --box-chip-bg: rgba(17, 17, 19, 0.06);
+  --box-lock-border: rgba(17, 17, 19, 0.1);
+  --box-focus-border: #111113;
+  --box-focus-ring: rgba(244, 197, 66, 0.55);
+  --box-btn-border: 2px solid #111113;
+  --box-pt-border: 2px solid #111113;
+  --box-outline: #111113;
+}
+
+/* Bar atas mini */
+.co-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0 1.1rem;
+  border: 2px solid #111113;
+  border-radius: 9999px;
+  background: #fff;
+  color: #111113;
+  font-size: 0.875rem;
+  font-weight: 800;
+  box-shadow: 0 3px 0 #111113;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.15s;
+}
+.co-back:hover { background: #F4C542; }
+.co-back:active { transform: translateY(3px); box-shadow: 0 0 0 #111113; }
+.co-logo {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1.1rem;
+  border: 2px solid #111113;
+  border-radius: 9999px;
+  background: #111113;
+}
+
 .card {
   border-radius: 1.5rem;
-  border: 2px solid rgba(255, 255, 255, 0.16);
-  box-shadow: 6px 6px 0 rgb(0 0 0 / 0.55);
-  background: #1C1C1F;
+  border: 2px solid #111113;
+  box-shadow: 6px 6px 0 #111113;
+  background: #FFFFFF;
   padding: 1.5rem;
 }
 @media (min-width: 640px) {
@@ -1197,9 +1264,9 @@ onBeforeUnmount(() => {
 
 .card-item {
   border-radius: 1.25rem;
-  border: 2px solid rgba(255, 255, 255, 0.14);
-  box-shadow: 4px 4px 0 rgb(0 0 0 / 0.5);
-  background: #1C1C1F;
+  border: 2px solid #111113;
+  box-shadow: 4px 4px 0 #111113;
+  background: #FFFFFF;
   padding: 1rem;
 }
 @media (min-width: 640px) {
@@ -1208,8 +1275,8 @@ onBeforeUnmount(() => {
 
 .summary-box {
   border-radius: 1rem;
-  border: 2px dashed rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.025);
+  border: 2px dashed rgba(17, 17, 19, 0.35);
+  background: #F7F5F0;
   padding: 1rem 1.125rem;
 }
 
@@ -1218,22 +1285,22 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 3rem;
   border-radius: 0.875rem;
-  border: 2px solid rgba(255, 255, 255, 0.14);
-  background: #17171A;
+  border: 2px solid rgba(17, 17, 19, 0.25);
+  background: #F7F5F0;
   padding: 0 1rem;
   font-size: 1rem;
-  color: #FAFAFA;
+  color: #111113;
   outline: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 @media (min-width: 640px) {
   .field { font-size: 0.875rem; }
 }
-.field::placeholder { color: #9A9AA3; }
-.field:hover { border-color: rgba(255, 255, 255, 0.2); }
+.field::placeholder { color: #6B6B73; }
+.field:hover { border-color: rgba(17, 17, 19, 0.5); }
 .field:focus {
-  border-color: rgba(244,197,66, 0.6);
-  box-shadow: 0 0 0 3px rgba(244,197,66, 0.12);
+  border-color: #111113;
+  box-shadow: 0 0 0 3px rgba(244,197,66, 0.55);
 }
 
 .btn-primary,
@@ -1254,8 +1321,9 @@ onBeforeUnmount(() => {
 .btn-primary {
   background: #D92B22;
   color: #fff;
+  text-shadow: -1px -1px 0 #111113, 1px -1px 0 #111113, -1px 1px 0 #111113, 1px 1px 0 #111113, 0 -1px 0 #111113, 0 1px 0 #111113, -1px 0 0 #111113, 1px 0 0 #111113;
   border: 2px solid #111113;
-  box-shadow: 0 4px 0 #7A1410;
+  box-shadow: 0 4px 0 #111113;
 }
 .btn-primary:hover:not(:disabled) {
   background: #E8362D;
@@ -1265,18 +1333,19 @@ onBeforeUnmount(() => {
   opacity: 0.4;
 }
 .btn-ghost {
-  border: 2px solid rgba(255, 255, 255, 0.28);
-  color: #FAFAFA;
+  border: 2px solid #111113;
+  color: #111113;
+  background: #fff;
+  box-shadow: 0 4px 0 #111113;
 }
 .btn-ghost:hover {
-  border-color: rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.05);
+  background: #F4C542;
 }
 .btn-wa {
   background: #1FA855;
   color: #fff;
   border: 2px solid #111113;
-  box-shadow: 0 4px 0 #11602F;
+  box-shadow: 0 4px 0 #111113;
 }
 .btn-wa:hover {
   background: #1A9149;
@@ -1286,22 +1355,22 @@ onBeforeUnmount(() => {
   transform: translateY(4px);
   box-shadow: 0 0 0 transparent;
 }
-.btn-ghost:active { transform: translateY(1px); }
+.btn-ghost:active { transform: translateY(3px); box-shadow: 0 0 0 transparent; }
 
 a:focus-visible,
 button:focus-visible,
 input:focus-visible {
-  outline: 2px solid #F4C542;
+  outline: 2px solid #111113;
   outline-offset: 3px;
 }
 .field:focus-visible { outline: none; }
 .field-invalid,
 .field-invalid:hover,
 .field-invalid:focus {
-  border-color: rgba(242, 112, 122, 0.7);
+  border-color: #D92B22;
 }
 .field-invalid:focus {
-  box-shadow: 0 0 0 3px rgba(242, 112, 122, 0.14);
+  box-shadow: 0 0 0 3px rgba(217, 43, 34, 0.2);
 }
 
 @media (prefers-reduced-motion: reduce) {

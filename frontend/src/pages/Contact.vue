@@ -1,7 +1,5 @@
 <template>
-  <div class="page relative min-h-screen overflow-x-hidden bg-[#111113] font-inter text-[#FAFAFA]">
-    <!-- Atmosfer latar: glow halus, tidak mengganggu konten -->
-    <div class="pattern-seigaiha pointer-events-none absolute inset-x-0 top-0 h-[460px] [mask-image:linear-gradient(to_bottom,black,transparent)]" aria-hidden="true"></div>
+  <div class="page dot-grid relative min-h-screen overflow-x-hidden font-inter text-[#111113]">
 
     <div class="relative mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
 
@@ -10,21 +8,21 @@
         <div
           class="mb-6 inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-medium backdrop-blur"
           :class="isOpen
-            ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300'
-            : 'border-white/10 bg-white/[0.04] text-[#B8B8C0]'"
+            ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-700'
+            : 'border-[#111113]/15 bg-[#111113]/[0.04] text-[#55555D]'"
         >
           <span
             class="h-1.5 w-1.5 rounded-full"
-            :class="isOpen ? 'animate-pulse bg-emerald-400' : 'bg-[#9A9AA3]'"
+            :class="isOpen ? 'animate-pulse bg-emerald-400' : 'bg-[#8A8A92]'"
           ></span>
           {{ isOpen ? "Buka sekarang" : "Sedang tutup" }}
         </div>
 
-        <p class="eyebrow-jp eyebrow-jp--yellow mb-4"><span class="hanko" aria-hidden="true">連絡</span>Kontak</p>
-        <h1 class="font-sora text-4xl leading-[1.1] text-[#FAFAFA] sm:text-5xl lg:text-6xl">
+        <p class="eyebrow-jp mb-4"><span class="hanko" aria-hidden="true">連絡</span>Kontak</p>
+        <h1 class="font-sora text-4xl leading-[1.1] text-[#111113] sm:text-5xl lg:text-6xl">
           Lokasi dan kontak
         </h1>
-        <p class="mt-4 max-w-md text-base leading-relaxed text-[#B8B8C0] sm:text-lg">
+        <p class="mt-4 max-w-md text-base leading-relaxed text-[#55555D] sm:text-lg">
           Kunjungi Masashimura di Bekasi, atau hubungi kami lewat kontak resmi di bawah.
         </p>
       </header>
@@ -34,7 +32,7 @@
 
         <!-- Map -->
         <div
-          class="relative h-[340px] overflow-hidden rounded-3xl border border-white/[0.08] bg-[#1C1C1F] sm:h-[440px] lg:col-span-3 lg:h-auto lg:min-h-[600px]"
+          class="map-frame relative h-[340px] overflow-hidden rounded-3xl bg-white sm:h-[440px] lg:col-span-3 lg:h-auto lg:min-h-[600px]"
           @pointerleave="onMapLeave"
         >
           <div class="absolute inset-0">
@@ -54,15 +52,15 @@
 
           <!-- Topbar mengambang -->
           <div class="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 p-3 sm:p-4">
-            <div class="flex min-w-0 items-center gap-2 rounded-full border border-white/10 bg-black/60 py-2 pl-3 pr-4 backdrop-blur-md">
-              <MapPin :size="14" class="shrink-0 text-[#E5484D]" />
-              <span class="truncate text-xs font-medium text-[#FAFAFA] sm:text-[13px]">Masashimura, Bekasi</span>
+            <div class="flex min-w-0 items-center gap-2 rounded-full border-2 border-[#111113] bg-white py-2 pl-3 pr-4">
+              <MapPin :size="14" class="shrink-0 text-[#D92B22]" />
+              <span class="truncate text-xs font-bold text-[#111113] sm:text-[13px]">Masashimura, Bekasi</span>
             </div>
             <a
               :href="mapsUrl"
               target="_blank"
               rel="noopener"
-              class="pointer-events-auto flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-black/60 px-4 py-2 text-xs font-medium text-[#FAFAFA] backdrop-blur-md transition-colors duration-150 hover:bg-white hover:text-[#111113] sm:text-[13px]"
+              class="pointer-events-auto flex shrink-0 items-center gap-1.5 rounded-full border-2 border-[#111113] bg-white px-4 py-2 text-xs font-bold text-[#111113] transition-colors duration-150 hover:bg-[#F4C542] sm:text-[13px]"
             >
               Buka di Maps
               <ArrowUpRight :size="13" />
@@ -77,7 +75,7 @@
             aria-label="Aktifkan peta supaya bisa digeser dan di-zoom"
             class="absolute inset-0 z-[5] flex cursor-pointer items-end justify-center pb-5 sm:pb-6"
           >
-            <span class="rounded-full border border-white/15 bg-black/70 px-5 py-2.5 text-xs font-medium text-[#FAFAFA] backdrop-blur-md sm:text-[13px]">
+            <span class="rounded-full border-2 border-[#111113] bg-white px-5 py-2.5 text-xs font-bold text-[#111113] sm:text-[13px]">
               Ketuk untuk menjelajahi peta
             </span>
           </button>
@@ -90,15 +88,15 @@
           <article class="card flex flex-col gap-6">
             <div class="flex items-center gap-3">
               <div class="icon-tile"><MapPin :size="17" /></div>
-              <h2 class="font-sora text-base font-semibold text-[#FAFAFA]">Alamat</h2>
+              <h2 class="font-sora text-base font-semibold text-[#111113]">Alamat</h2>
             </div>
 
             <div class="space-y-1.5">
-              <p class="font-sora text-xl font-semibold leading-snug text-[#FAFAFA]">Jl. Pintu Air No.48</p>
-              <p class="text-sm leading-relaxed text-[#B8B8C0]">
+              <p class="font-sora text-xl font-semibold leading-snug text-[#111113]">Jl. Pintu Air No.48</p>
+              <p class="text-sm leading-relaxed text-[#55555D]">
                 Harapan Mulya, Medan Satria,<br />Kota Bekasi, Jawa Barat
               </p>
-              <p class="inline-flex items-center gap-2 pt-3 text-[13px] font-medium text-[#F4C542]">
+              <p class="inline-flex items-center gap-2 pt-3 text-[13px] font-medium text-[#B8201A]">
                 <span class="h-1.5 w-1.5 rounded-full bg-[#F4C542]"></span>
                 Depan PN Bekasi
               </p>
@@ -115,7 +113,7 @@
                 <ArrowUpRight :size="15" />
               </a>
               <button type="button" @click="copyAddress" class="btn-ghost">
-                <component :is="copied ? Check : Copy" :size="15" :class="copied ? 'text-emerald-400' : ''" />
+                <component :is="copied ? Check : Copy" :size="15" :class="copied ? 'text-emerald-600' : ''" />
                 {{ copied ? "Tersalin" : "Salin alamat" }}
               </button>
             </div>
@@ -126,16 +124,16 @@
             <div class="flex items-center justify-between gap-3">
               <div class="flex items-center gap-3">
                 <div class="icon-tile"><Clock :size="17" /></div>
-                <h2 class="font-sora text-base font-semibold text-[#FAFAFA]">Jam buka</h2>
+                <h2 class="font-sora text-base font-semibold text-[#111113]">Jam buka</h2>
               </div>
               <span
                 class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium"
                 :class="isOpen
-                  ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300'
-                  : 'border-white/10 bg-white/[0.05] text-[#B8B8C0]'"
+                  ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-700'
+                  : 'border-[#111113]/15 bg-[#111113]/[0.05] text-[#55555D]'"
               >
                 <span
-                  :class="isOpen ? 'animate-pulse bg-emerald-400' : 'bg-[#9A9AA3]'"
+                  :class="isOpen ? 'animate-pulse bg-emerald-400' : 'bg-[#8A8A92]'"
                   class="h-1.5 w-1.5 shrink-0 rounded-full"
                 ></span>
                 {{ isOpen ? "Buka" : "Tutup" }}
@@ -149,27 +147,27 @@
                 class="flex items-center justify-between gap-3 rounded-xl border px-4 py-3.5 transition-colors"
                 :class="isToday(row)
                   ? 'border-[#D92B22]/30 bg-[#D92B22]/[0.08]'
-                  : 'border-transparent bg-white/[0.025]'"
+                  : 'border-transparent bg-[#111113]/[0.025]'"
               >
-                <span class="flex items-center gap-2.5 text-sm" :class="isToday(row) ? 'font-medium text-[#FAFAFA]' : 'text-[#B8B8C0]'">
+                <span class="flex items-center gap-2.5 text-sm" :class="isToday(row) ? 'font-medium text-[#111113]' : 'text-[#55555D]'">
                   {{ row.label }}
                   <span
                     v-if="isToday(row)"
-                    class="rounded-full bg-[#D92B22] px-2 py-0.5 text-[11px] font-semibold text-white"
+                    class="text-outline rounded-full border-2 border-[#111113] bg-[#D92B22] px-2 py-0.5 text-[11px] font-bold text-white"
                   >Hari ini</span>
                 </span>
                 <span
                   class="whitespace-nowrap text-sm font-semibold tabular-nums"
-                  :class="row.closed ? 'text-[#9A9AA3]' : 'text-[#FAFAFA]'"
+                  :class="row.closed ? 'text-[#6B6B73]' : 'text-[#111113]'"
                 >
                   {{ row.time }}
                 </span>
               </div>
             </div>
 
-            <div class="mt-auto space-y-0.5 border-t border-white/[0.07] pt-4">
-              <p class="text-sm font-medium" :class="isOpen ? 'text-emerald-300' : 'text-[#FAFAFA]'">{{ statusNote }}</p>
-              <p class="text-xs text-[#9A9AA3]">Waktu Indonesia Barat (WIB)</p>
+            <div class="mt-auto space-y-0.5 border-t border-[#111113]/10 pt-4">
+              <p class="text-sm font-medium" :class="isOpen ? 'text-emerald-700' : 'text-[#111113]'">{{ statusNote }}</p>
+              <p class="text-xs text-[#6B6B73]">Waktu Indonesia Barat (WIB)</p>
             </div>
           </article>
         </div>
@@ -181,20 +179,20 @@
         <!-- Email -->
         <a
           href="mailto:kedaimasashimura@gmail.com"
-          class="card group flex flex-col gap-6 transition-colors duration-300 hover:border-[#F4C542]/40 lg:col-span-2"
+          class="card group flex flex-col gap-6 transition-colors duration-300 hover:bg-[#FFF8E1] lg:col-span-2"
         >
           <div class="flex items-center justify-between gap-3">
             <div class="flex items-center gap-3">
               <div class="icon-tile transition-colors duration-300 group-hover:bg-[#F4C542]/20"><Mail :size="17" /></div>
-              <h2 class="font-sora text-base font-semibold text-[#FAFAFA]">Email</h2>
+              <h2 class="font-sora text-base font-semibold text-[#111113]">Email</h2>
             </div>
-            <span class="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-[#B8B8C0] transition-all duration-300 group-hover:border-[#F4C542] group-hover:bg-[#F4C542] group-hover:text-[#111113]">
+            <span class="flex h-9 w-9 items-center justify-center rounded-full border border-[#111113]/15 text-[#55555D] transition-all duration-300 group-hover:border-[#F4C542] group-hover:bg-[#F4C542] group-hover:text-[#111113]">
               <ArrowUpRight :size="16" />
             </span>
           </div>
           <div class="space-y-1.5">
-            <p class="font-sora text-xl font-semibold text-[#FAFAFA]">Kirim pesan</p>
-            <p class="break-all text-sm text-[#B8B8C0]">kedaimasashimura@gmail.com</p>
+            <p class="font-sora text-xl font-semibold text-[#111113]">Kirim pesan</p>
+            <p class="break-all text-sm text-[#55555D]">kedaimasashimura@gmail.com</p>
           </div>
         </a>
 
@@ -203,17 +201,17 @@
           <div class="cta-sheen pointer-events-none absolute inset-0" aria-hidden="true"></div>
 
           <div class="relative max-w-sm space-y-3">
-            <h2 class="font-sora text-2xl font-semibold leading-tight tracking-tight text-white sm:text-3xl">
+            <h2 class="text-outline font-sora text-2xl font-semibold leading-tight tracking-tight text-white sm:text-3xl">
               Mau order dari rumah?
             </h2>
-            <p class="text-sm leading-relaxed text-white/75 sm:text-base">
+            <p class="text-outline text-sm font-semibold leading-relaxed text-white sm:text-base">
               Pilih menu favorit dan pesan langsung, tanpa harus keluar.
             </p>
           </div>
 
           <router-link
             to="/menu"
-            class="group relative inline-flex w-full items-center justify-center gap-2.5 whitespace-nowrap rounded-full bg-[#FAFAFA] px-8 py-4 font-sora text-sm font-semibold text-[#2A0A0F] transition-all duration-200 hover:bg-white active:scale-[0.98] sm:w-auto"
+            class="group relative inline-flex w-full items-center justify-center gap-2.5 whitespace-nowrap rounded-full border-2 border-[#111113] bg-white px-8 py-4 font-sora text-sm font-bold text-[#111113] shadow-[0_4px_0_#111113] transition-all duration-200 hover:bg-[#F4C542] active:translate-y-[3px] active:shadow-none sm:w-auto"
           >
             Lihat menu
             <ArrowRight :size="16" class="transition-transform duration-200 group-hover:translate-x-1" />
@@ -329,23 +327,27 @@ const copyAddress = async () => {
 
 <style scoped>
 /*
-  Palet
-  - Warm black  #111113  → latar
-  - Surface     #1C1C1F  → kartu
-  - Washi       #FAFAFA  → teks utama (putih hangat, bukan putih murni)
-  - Crimson     #D92B22  → aksi & penanda "hari ini"
-  - Champagne   #F4C542  → detail premium (ikon, landmark, hover)
+  Palet (tema terang, sama dengan Home)
+  - Krem berpola titik → latar (.dot-grid)
+  - Putih              → kartu, border & bayangan hitam keras
+  - Crimson  #D92B22   → aksi & penanda "hari ini"
+  - Champagne #F4C542  → detail (ikon, hover)
 */
 
 .card {
   border-radius: 1.5rem;
-  border: 2px solid rgba(255, 255, 255, 0.16);
-  box-shadow: 6px 6px 0 rgb(0 0 0 / 0.55);
-  background: #1C1C1F;
+  border: 2px solid #111113;
+  box-shadow: 6px 6px 0 #111113;
+  background: #FFFFFF;
   padding: 1.5rem;
 }
 @media (min-width: 640px) {
   .card { padding: 1.75rem; }
+}
+
+.map-frame {
+  border: 2px solid #111113;
+  box-shadow: 6px 6px 0 #111113;
 }
 
 .icon-tile {
@@ -359,7 +361,7 @@ const copyAddress = async () => {
   border: 2px solid #111113;
   background: #F4C542;
   color: #111113;
-  box-shadow: 2px 2px 0 rgb(255 255 255 / 0.9);
+  box-shadow: 2px 2px 0 rgb(17 17 19 / 0.9);
 }
 
 .btn-primary,
@@ -377,24 +379,25 @@ const copyAddress = async () => {
 .btn-primary {
   background: #D92B22;
   color: #fff;
+  text-shadow: -1px -1px 0 #111113, 1px -1px 0 #111113, -1px 1px 0 #111113, 1px 1px 0 #111113, 0 -1px 0 #111113, 0 1px 0 #111113, -1px 0 0 #111113, 1px 0 0 #111113;
   border: 2px solid #111113;
-  box-shadow: 0 4px 0 #7A1410;
+  box-shadow: 0 4px 0 #111113;
 }
 .btn-primary:hover { background: #E8362D; }
 .btn-ghost {
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  color: #FAFAFA;
+  border: 2px solid #111113;
+  color: #111113;
+  background: #fff;
 }
 .btn-ghost:hover {
-  border-color: rgba(255, 255, 255, 0.35);
-  background: rgba(255, 255, 255, 0.05);
+  background: #F4C542;
 }
 .btn-primary:active { transform: translateY(4px); box-shadow: 0 0 0 transparent; }
 .btn-ghost:active { transform: translateY(1px); }
 
 .cta {
   background: linear-gradient(120deg, #B8201A, #D92B22 60%);
-  border: 3px solid #fff;
+  border: 3px solid #111113;
   box-shadow: 8px 8px 0 #F4C542, 8px 8px 0 3px #111113;
 }
 .cta-sheen {
@@ -405,7 +408,7 @@ const copyAddress = async () => {
 
 a:focus-visible,
 button:focus-visible {
-  outline: 2px solid #F4C542;
+  outline: 2px solid #111113;
   outline-offset: 3px;
 }
 

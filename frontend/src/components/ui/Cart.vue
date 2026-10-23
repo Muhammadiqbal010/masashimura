@@ -11,10 +11,10 @@
     <div class="drawer relative flex h-full w-full max-w-md flex-col sm:rounded-l-[2rem]">
 
       <!-- HEADER -->
-      <div class="flex items-center justify-between border-b-2 border-dashed border-white/15 px-6 py-5">
+      <div class="flex items-center justify-between border-b-2 border-[#111113] bg-white px-6 py-5">
         <div class="flex items-center gap-3">
           <span class="hanko" aria-hidden="true">買</span>
-          <h2 class="font-sora text-xl text-[#FAFAFA]">Keranjang</h2>
+          <h2 class="font-sora text-xl text-[#111113]">Keranjang</h2>
           <span
             v-if="!cartStore.isEmpty"
             class="sticker !rotate-0 !shadow-none tabular-nums"
@@ -26,7 +26,7 @@
           type="button"
           aria-label="Tutup keranjang"
           @click="$emit('close')"
-          class="flex h-10 w-10 items-center justify-center rounded-full text-[#B8B8C0] transition-all duration-150 hover:bg-white/5 hover:text-[#FAFAFA]"
+          class="flex h-10 w-10 items-center justify-center rounded-full text-[#55555D] transition-all duration-150 hover:bg-[#111113]/5 hover:text-[#111113]"
         >
           <X :size="18" />
         </button>
@@ -37,12 +37,12 @@
 
         <!-- Empty state -->
         <div v-if="cartStore.isEmpty" class="flex h-full flex-col items-center justify-center gap-4 py-24">
-          <div class="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-[#1C1C1F]">
-            <ShoppingCart :size="22" class="text-[#B8B8C0]" />
+          <div class="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#111113]/15 bg-white">
+            <ShoppingCart :size="22" class="text-[#55555D]" />
           </div>
           <div class="space-y-1 text-center">
-            <p class="font-sora text-lg font-semibold text-[#FAFAFA]">Keranjang kosong</p>
-            <p class="text-sm text-[#B8B8C0]">Tambahkan menu dulu yuk.</p>
+            <p class="font-sora text-lg font-semibold text-[#111113]">Keranjang kosong</p>
+            <p class="text-sm text-[#55555D]">Tambahkan menu dulu yuk.</p>
           </div>
           <router-link
             to="/menu"
@@ -63,29 +63,29 @@
           >
             <div class="flex items-start justify-between gap-2">
               <div class="min-w-0 flex-1">
-                <p class="text-[11px] font-semibold uppercase tracking-wider text-[#F4C542]">Paket</p>
-                <h4 class="line-clamp-2 font-sora text-[15px] font-semibold leading-snug text-[#FAFAFA]">{{ line.name }}</h4>
+                <p class="text-[11px] font-semibold uppercase tracking-wider text-[#B8201A]">Paket</p>
+                <h4 class="line-clamp-2 font-sora text-[15px] font-semibold leading-snug text-[#111113]">{{ line.name }}</h4>
               </div>
               <button
                 type="button"
                 :aria-label="'Hapus ' + line.name + ' dari keranjang'"
                 @click="cartStore.removeBundle(line.id)"
-                class="-mr-2 -mt-1.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#9A9AA3] transition-colors hover:bg-[#D92B22]/10 hover:text-[#F0605A]"
+                class="-mr-2 -mt-1.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#6B6B73] transition-colors hover:bg-[#D92B22]/10 hover:text-[#B8201A]"
               >
                 <X :size="16" />
               </button>
             </div>
-            <p class="text-xs text-[#B8B8C0]">{{ line.contents.map((c) => c.quantity + '× ' + c.name).join(' · ') }}</p>
-            <p v-if="line.savings > 0" class="text-xs font-semibold text-[#F4C542]">Hemat {{ formatPrice(line.savings * line.quantity) }}</p>
+            <p class="text-xs text-[#55555D]">{{ line.contents.map((c) => c.quantity + '× ' + c.name).join(' · ') }}</p>
+            <p v-if="line.savings > 0" class="text-xs font-semibold text-[#B8201A]">Hemat {{ formatPrice(line.savings * line.quantity) }}</p>
             <div class="flex items-center justify-between gap-3">
-              <div class="flex items-center rounded-full border border-white/10 bg-white/[0.03] p-1">
+              <div class="flex items-center rounded-full border border-[#111113]/15 bg-[#111113]/[0.03] p-1">
                 <button type="button" :aria-label="'Kurangi ' + line.name" @click="cartStore.updateBundleQuantity(line.id, -1)"
-                  class="flex h-8 w-8 items-center justify-center rounded-full text-[#FAFAFA] transition-colors hover:bg-white/10"><Minus :size="14" /></button>
-                <span class="min-w-[1.75rem] text-center text-sm font-semibold tabular-nums text-[#FAFAFA]">{{ line.quantity }}</span>
+                  class="flex h-8 w-8 items-center justify-center rounded-full text-[#111113] transition-colors hover:bg-[#111113]/10"><Minus :size="14" /></button>
+                <span class="min-w-[1.75rem] text-center text-sm font-semibold tabular-nums text-[#111113]">{{ line.quantity }}</span>
                 <button type="button" :aria-label="'Tambah ' + line.name" @click="cartStore.updateBundleQuantity(line.id, 1)"
-                  class="flex h-8 w-8 items-center justify-center rounded-full bg-[#D92B22] text-white transition-colors hover:bg-[#B8201A]"><Plus :size="14" /></button>
+                  class="flex h-8 w-8 items-center justify-center rounded-full bg-[#D92B22] text-outline text-white transition-colors hover:bg-[#B8201A]"><Plus :size="14" /></button>
               </div>
-              <span class="font-sora text-base font-semibold tracking-tight text-[#FAFAFA]">{{ formatPrice(line.price * line.quantity) }}</span>
+              <span class="font-sora text-base font-semibold tracking-tight text-[#111113]">{{ formatPrice(line.price * line.quantity) }}</span>
             </div>
           </div>
 
@@ -95,7 +95,7 @@
             class="item-card group flex gap-4"
           >
             <!-- Thumbnail -->
-            <div class="h-[72px] w-[72px] flex-shrink-0 overflow-hidden rounded-2xl border border-white/[0.07] bg-[#232327]">
+            <div class="h-[72px] w-[72px] flex-shrink-0 overflow-hidden rounded-2xl border border-[#111113]/10 bg-[#EFEBE2]">
               <img
                 v-if="item.image_url"
                 :src="getMediaUrl(item.image_url, 160)"
@@ -111,14 +111,14 @@
             <!-- Detail -->
             <div class="flex min-w-0 flex-1 flex-col gap-2.5">
               <div class="flex items-start justify-between gap-2">
-                <h4 class="line-clamp-2 flex-1 font-sora text-[15px] font-semibold leading-snug text-[#FAFAFA]">
+                <h4 class="line-clamp-2 flex-1 font-sora text-[15px] font-semibold leading-snug text-[#111113]">
                   {{ item.name }}
                 </h4>
                 <button
                   type="button"
                   :aria-label="'Hapus ' + item.name + ' dari keranjang'"
                   @click="cartStore.removeFromCart(item.cartKey)"
-                  class="-mr-2 -mt-1.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#9A9AA3] transition-colors hover:bg-[#D92B22]/10 hover:text-[#F0605A]"
+                  class="-mr-2 -mt-1.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-[#6B6B73] transition-colors hover:bg-[#D92B22]/10 hover:text-[#B8201A]"
                 >
                   <X :size="16" />
                 </button>
@@ -129,7 +129,7 @@
                 <span
                   v-for="opt in item.optionDetails"
                   :key="opt.group + opt.label"
-                  class="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-xs font-medium text-[#C8C8C8]"
+                  class="rounded-full border border-[#111113]/15 bg-[#111113]/[0.04] px-2.5 py-0.5 text-xs font-medium text-[#3F3F46]"
                 >
                   {{ opt.label }}<template v-if="opt.price"> +{{ formatPrice(opt.price) }}</template>
                 </span>
@@ -146,29 +146,29 @@
 
               <!-- Qty + subtotal -->
               <div class="flex items-center justify-between gap-3">
-                <div class="flex items-center rounded-full border border-white/10 bg-white/[0.03] p-1">
+                <div class="flex items-center rounded-full border border-[#111113]/15 bg-[#111113]/[0.03] p-1">
                   <button
                     type="button"
                     :aria-label="'Kurangi ' + item.name"
                     @click="cartStore.updateQuantity(item.cartKey, -1)"
-                    class="flex h-8 w-8 items-center justify-center rounded-full text-[#FAFAFA] transition-colors hover:bg-white/10"
+                    class="flex h-8 w-8 items-center justify-center rounded-full text-[#111113] transition-colors hover:bg-[#111113]/10"
                   >
                     <Minus :size="14" />
                   </button>
-                  <span class="min-w-[1.75rem] text-center text-sm font-semibold tabular-nums text-[#FAFAFA]">
+                  <span class="min-w-[1.75rem] text-center text-sm font-semibold tabular-nums text-[#111113]">
                     {{ item.quantity }}
                   </span>
                   <button
                     type="button"
                     :aria-label="'Tambah ' + item.name"
                     @click="cartStore.updateQuantity(item.cartKey, 1)"
-                    class="flex h-8 w-8 items-center justify-center rounded-full bg-[#D92B22] text-white transition-colors hover:bg-[#B8201A]"
+                    class="flex h-8 w-8 items-center justify-center rounded-full bg-[#D92B22] text-outline text-white transition-colors hover:bg-[#B8201A]"
                   >
                     <Plus :size="14" />
                   </button>
                 </div>
 
-                <span class="font-sora text-base font-semibold tracking-tight text-[#FAFAFA]">
+                <span class="font-sora text-base font-semibold tracking-tight text-[#111113]">
                   {{ formatPrice(item.price * item.quantity) }}
                 </span>
               </div>
@@ -191,18 +191,18 @@
       </div>
 
       <!-- FOOTER TOTAL + CTA -->
-      <div v-if="!cartStore.isEmpty" class="footer-safe border-t-2 border-dashed border-white/15 bg-black/25 px-6 pt-5">
+      <div v-if="!cartStore.isEmpty" class="footer-safe border-t-2 border-[#111113] bg-white px-6 pt-5">
         <!-- Total row -->
         <div class="mb-5 flex items-end justify-between gap-4">
           <div class="space-y-1">
-            <p class="text-sm text-[#B8B8C0]">Total</p>
-            <span class="block font-[family-name:var(--font-display)] text-3xl leading-none text-[#F4C542]">
+            <p class="text-sm text-[#55555D]">Total</p>
+            <span class="block font-[family-name:var(--font-display)] text-3xl leading-none text-[#D92B22]">
               {{ formatPrice(cartStore.totalPrice) }}
             </span>
           </div>
           <div class="space-y-1 text-right">
-            <p class="text-sm text-[#B8B8C0]">Jumlah</p>
-            <span class="block text-base font-semibold tabular-nums text-[#FAFAFA]">
+            <p class="text-sm text-[#55555D]">Jumlah</p>
+            <span class="block text-base font-semibold tabular-nums text-[#111113]">
               {{ cartStore.cartItemCount }} porsi
             </span>
           </div>
@@ -214,10 +214,10 @@
           class="mb-4 flex items-start gap-3 rounded-2xl border border-[#D92B22]/25 bg-[#D92B22]/10 px-4 py-3.5"
           role="status"
         >
-          <Lock :size="16" class="mt-0.5 flex-shrink-0 text-[#F0605A]" />
-          <p class="text-sm leading-relaxed text-[#FFB0B0]">
+          <Lock :size="16" class="mt-0.5 flex-shrink-0 text-[#D92B22]" />
+          <p class="text-sm leading-relaxed text-[#8F1511]">
             Toko sedang tutup, pesanan belum bisa dibuat.
-            <span v-if="nextOpenText" class="mt-0.5 block font-semibold text-[#FFD0D0]">{{ nextOpenText }}</span>
+            <span v-if="nextOpenText" class="mt-0.5 block font-semibold text-[#8F1511]">{{ nextOpenText }}</span>
           </p>
         </div>
 
@@ -229,7 +229,7 @@
           class="cta-btn pop-btn !min-h-[58px] w-full !text-base disabled:opacity-70"
           @click="goCheckout"
         >
-          <span v-if="navigating" class="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden="true"></span>
+          <span v-if="navigating" class="h-5 w-5 animate-spin rounded-full border-2 border-[#111113]/30 border-t-white" aria-hidden="true"></span>
           <template v-else>
             <span>Pesan sekarang</span>
             <span class="pop-btn-dot" aria-hidden="true"><ArrowRight :size="15" /></span>
@@ -239,7 +239,7 @@
           v-else
           type="button"
           disabled
-          class="flex min-h-[56px] w-full cursor-not-allowed items-center justify-center gap-2 rounded-full border border-white/5 bg-[#232327] text-base font-semibold text-[#9A9AA3]"
+          class="flex min-h-[56px] w-full cursor-not-allowed items-center justify-center gap-2 rounded-full border border-[#111113]/10 bg-[#EFEBE2] text-base font-semibold text-[#6B6B73]"
         >
           <span>Toko tutup</span>
         </button>
@@ -290,19 +290,19 @@ const goCheckout = async () => {
 </script>
 
 <style scoped>
-/* Palet: Surface #1C1C1F · Washi #FAFAFA · Crimson #D92B22 · Champagne #F4C542 */
+/* Palet: Surface #FFFFFF · Washi #111113 · Crimson #D92B22 · Champagne #F4C542 */
 
 .drawer {
-  background: #17171A;
-  border-left: 3px solid #F4C542;
-  box-shadow: -40px 0 80px -20px rgba(0, 0, 0, 0.6);
+  background: #F7F5F0;
+  border-left: 3px solid #111113;
+  box-shadow: -40px 0 80px -20px rgba(0, 0, 0, 0.45);
 }
 
 .item-card {
   border-radius: 1.25rem;
-  border: 2px solid rgba(255, 255, 255, 0.14);
-  box-shadow: 4px 4px 0 rgb(0 0 0 / 0.5);
-  background: #1C1C1F;
+  border: 2px solid #111113;
+  box-shadow: 4px 4px 0 #111113;
+  background: #FFFFFF;
   padding: 1rem;
 }
 
@@ -311,22 +311,22 @@ const goCheckout = async () => {
   width: 100%;
   height: 2.5rem;
   border-radius: 0.75rem;
-  border: 2px solid rgba(255, 255, 255, 0.12);
-  background: #17171A;
+  border: 2px solid rgba(17, 17, 19, 0.25);
+  background: #F7F5F0;
   padding: 0 0.875rem;
   font-size: 1rem;
-  color: #C8C8C8;
+  color: #3F3F46;
   outline: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 @media (min-width: 640px) {
   .note-input { font-size: 0.8125rem; }
 }
-.note-input::placeholder { color: #9A9AA3; }
-.note-input:hover { border-color: rgba(255, 255, 255, 0.18); }
+.note-input::placeholder { color: #6B6B73; }
+.note-input:hover { border-color: rgba(17, 17, 19, 0.5); }
 .note-input:focus {
-  border-color: rgba(244,197,66, 0.6);
-  box-shadow: 0 0 0 3px rgba(244,197,66, 0.12);
+  border-color: #111113;
+  box-shadow: 0 0 0 3px rgba(244,197,66, 0.55);
 }
 
 /* Footer aman dari home-indicator di HP */
@@ -334,12 +334,12 @@ const goCheckout = async () => {
 
 a:focus-visible,
 button:focus-visible {
-  outline: 2px solid #F4C542;
+  outline: 2px solid #111113;
   outline-offset: 3px;
 }
 
 ::-webkit-scrollbar { width: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.14); }
+::-webkit-scrollbar-thumb { background: rgba(17, 17, 19, 0.08); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(17, 17, 19, 0.14); }
 </style>
