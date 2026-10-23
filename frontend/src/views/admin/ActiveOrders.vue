@@ -809,7 +809,7 @@
       </div>
     </Teleport>
 
-    <NotifyCustomerModal :order="notifyOrderObj" :initial-type="notifyType" @close="closeNotify" />
+    <NotifyCustomerModal :order="notifyOrderObj" :initial-type="notifyType" @close="closeNotify" @send-receipt="onNotifySendReceipt" />
 
     <OrderItemTools
       :mode="toolMode"
@@ -837,6 +837,7 @@ import AdminModal from '@/components/ui/admin/Adminmodal.vue'
 import OrderItemTools from '@/components/ui/admin/OrderItemTools.vue'
 import NotifyCustomerModal from '@/components/ui/admin/NotifyCustomerModal.vue'
 import { groupReceiptLines } from '@/utils/receiptLines'
+import { msgReceipt } from '@/utils/friendlyMessages'
 // Di-import (bukan "/src/assets/…") supaya path-nya ikut di-hash & tetap jalan di build production.
 import logoUrl from '@/assets/masashimura-logo.png'
 
@@ -1354,8 +1355,8 @@ const onToolNotify = (o) => {
 
 const rowMenuItems = (o) => {
   const list = []
-  // Mengabari pelanggan = kirim struk GAMBAR (siap atau belum siap); sapaannya menyesuaikan status.
-  if (canNotify(o)) list.push({ key: 'notify', label: 'Kirim struk ke pelanggan', icon: MessageCircle, run: () => sendReadyReceipt(o) })
+  // Kabari pelanggan: struk gambar, telat, menu habis, refund, pengingat bayar (semua di satu modal).
+  if (canNotify(o)) list.push({ key: 'notify', label: 'Kabari pelanggan', icon: MessageCircle, run: () => openNotify(o) })
   if (canEditItems(o)) list.push({ key: 'add', label: 'Tambah menu', icon: Plus, run: () => openTool('add', o) })
   if (canEditItems(o) && (o.items?.length || 0) > 0) list.push({ key: 'split', label: 'Pisah nota', icon: Shuffle, run: () => openTool('split', o) })
   if (canMarkUnavailable(o)) list.push({ key: 'unavailable', label: 'Menu habis', icon: AlertTriangle, run: () => openTool('unavailable', o) })
@@ -1567,31 +1568,18 @@ const isCapturing = ref(false)
 const canvasToBlob = (canvas) => new Promise((resolve) => canvas.toBlob(resolve, 'image/png'))
 
 const RECEIPT_CAPTION = 'Bukti Pembelian di Masashimura 🙏'
-const greetingByTime = (d = new Date()) => {
-  const h = d.getHours()
-  if (h >= 4 && h < 11) return 'pagi'
-  if (h >= 11 && h < 15) return 'siang'
-  if (h >= 15 && h < 18) return 'sore'
-  return 'malam'
-}
-// Sapaan ramah + status pesanan. Struk gambar dikirim bersama teks ini.
-const readyCaption = (o) => {
-  const name = (o?.customer_name || '').trim()
-  const hello = `Halo kakak${name ? ' ' + name : ''}, selamat ${greetingByTime()} 😊`
-  const body = o?.is_ready
-    ? 'Pesanan kakak sudah siap diambil ya 🍽️'
-    : 'Ini struk pesanan kakak di Masashimura ya 🧾'
-  return `${hello}\n${body}\nTerima kasih sudah jajan di Masashimura 🙏`
-}
-
-// Dipanggil dari toast "siap diambil": pilih order lalu tunggu struk tersembunyi
-// ter-render ulang untuk order itu sebelum difoto.
-const sendReadyReceipt = async (order) => {
+// Pilih order lalu tunggu struk tersembunyi ter-render ulang untuk order itu sebelum difoto.
+// Dipakai toast "siap diambil" dan modal Kabari pelanggan; caption bisa sudah diedit kasir.
+const sendReadyReceipt = async (order, caption) => {
   if (!order) return
   selectedId.value = order.id
   selectedSnapshot.value = order
   await nextTick()
-  await shareReceiptAsImage(readyCaption(order))
+  await shareReceiptAsImage(caption || msgReceipt(order))
+}
+const onNotifySendReceipt = ({ order, caption }) => {
+  closeNotify()
+  sendReadyReceipt(order, caption)
 }
 
 const shareReceiptAsImage = async (caption = RECEIPT_CAPTION) => {
