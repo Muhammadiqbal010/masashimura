@@ -25,7 +25,7 @@ const STOPWORDS = new Set([
   "enak", "lezat", "segar", "the", "and", "with", "of", "a",
 ])
 
-// Stemming ringan: cukup buang akhiran "nya" dan "-lah"/"-kah". Sengaja tidak memakai
+// Stemming ringan: cukup buang akhiran "nya" (kata lebih dari 5 huruf). Sengaja tidak memakai
 // stemmer penuh (Nazief-Adriani) karena nama menu banyak istilah asing (katsu, ramen,
 // matcha) yang justru rusak kalau di-stem agresif.
 const stem = (token) => {

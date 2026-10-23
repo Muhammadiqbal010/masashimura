@@ -111,13 +111,29 @@
         </p>
         <button type="button" class="rt-btn ms-go" @click="$emit('go-paket')">Lihat saran paket</button>
       </section>
+
+      <!-- ── Lembar penilaian relevansi (untuk evaluasi Precision@3) ── -->
+      <section class="rt-card">
+        <h3 class="rt-title">Lembar penilaian relevansi</h3>
+        <p class="rt-lead">
+          Unduh daftar menu beserta 3 rekomendasinya dalam berkas CSV, lalu bagikan ke penilai untuk
+          evaluasi Precision@3. Isinya memakai menu yang tampil ke pelanggan (aktif, tersedia, bukan secret),
+          sama dengan bagian <strong>Menu serupa</strong> pada detail menu. Kolom penilai dikosongkan dan
+          skor cosine ada di kolom paling kanan, jangan ditampilkan ke penilai.
+        </p>
+        <button type="button" class="rt-btn ms-go" :disabled="!customerMenus.length" @click="downloadSheet">
+          Unduh lembar penilaian (CSV)
+        </button>
+      </section>
     </template>
   </div>
 </template>
 
 <script setup>
 import { computed, ref } from 'vue'
+import { toast } from 'vue-sonner'
 import { buildIndex, similarTo, similarPairs } from '@/utils/recommender'
+import { buildRelevanceSheet, downloadText } from '@/utils/relevanceSheet'
 
 const props = defineProps({
   // Daftar menu dari Kelola Menu (admin melihat semuanya, termasuk habis dan secret)
@@ -160,6 +176,31 @@ const neighbors = computed(() =>
   activeMenu.value ? similarTo(index.value, activeMenu.value.id, { limit: 5, includeHidden: true }) : [],
 )
 const pairs = computed(() => similarPairs(index.value, { limit: 8 }))
+
+// ── Lembar penilaian relevansi ──────────────────────────────────────────────
+// Indeks khusus untuk lembar ini dibangun dari menu yang sama dengan halaman pelanggan
+// (Menu.vue: aktif, bukan secret, punya kategori), supaya rekomendasi dan skor di lembar
+// sama persis dengan yang dilihat pelanggan. Indeks tab ini memakai semua menu (termasuk
+// secret), jadi nilai IDF dan skornya sedikit berbeda.
+const customerMenus = computed(() =>
+  props.menus.filter((m) => m && m.id != null && m.is_active !== false && !m.is_secret && m.category_name),
+)
+
+const localDate = () => {
+  const d = new Date()
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+const downloadSheet = () => {
+  try {
+    const { csv, referenceCount, rowCount } = buildRelevanceSheet(buildIndex(customerMenus.value))
+    downloadText(csv, `lembar-penilaian-relevansi-${localDate()}.csv`)
+    toast.success(`Lembar diunduh: ${referenceCount} menu acuan, ${rowCount} baris.`)
+  } catch {
+    toast.error('Gagal membuat lembar penilaian.')
+  }
+}
 
 const pct = (score) => Math.round(Math.min(1, Math.max(0, score)) * 100)
 const formatRp = (n) =>
@@ -209,5 +250,6 @@ const formatRp = (n) =>
 
 .ms-note { margin-top: 1rem; font-size: 0.75rem; }
 .ms-go { margin-top: 0.9rem; width: 100%; }
+.ms-go:disabled { opacity: 0.5; cursor: not-allowed; }
 @media (min-width: 640px) { .ms-go { width: auto; } }
 </style>

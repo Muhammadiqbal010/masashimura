@@ -118,7 +118,7 @@
               <MenuRecommendations
                 :items="recommendations"
                 title="Menu serupa"
-                subtitle="Dari nama, kategori, dan deskripsi menu"
+                subtitle="Dari nama, kategori, deskripsi, dan opsi menu"
                 variant="cards"
                 :format-price="formatPrice"
                 :can-add="isStoreOpen"

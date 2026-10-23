@@ -19,7 +19,8 @@ const BOM = "\uFEFF" // supaya Excel membaca UTF-8 dengan benar
 // Cegah CSV injection: sel yang diawali = + - @ dianggap rumus oleh Excel.
 const cell = (value) => {
   let s = value == null ? "" : String(value)
-  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s
+  // "-" saja (penanda kosong pada kolom Peringkat) aman, jangan diberi apostrof.
+  if (s !== "-" && /^[=+\-@\t\r]/.test(s)) s = "'" + s
   if (/[";\n\r]/.test(s)) s = `"${s.replace(/"/g, '""')}"`
   return s
 }
