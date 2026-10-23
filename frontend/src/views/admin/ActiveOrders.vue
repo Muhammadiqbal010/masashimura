@@ -412,6 +412,7 @@
               <span class="rcpt-name">{{ line.item.menu_name }}</span>
               <span class="rcpt-sub">{{ formatPrice(line.item.price * line.item.quantity) }}</span>
             </div>
+            <div v-if="line.item.quantity > 1" class="rcpt-unit">@ {{ formatPrice(line.item.price) }} / porsi</div>
             <div v-if="line.item.notes" class="rcpt-note">{{ line.item.notes }}</div>
           </template>
         </div>
@@ -459,7 +460,7 @@
             </div>
           </div>
           <div class="ao-foot-actions">
-            <button type="button" class="adm-btn ao-btn-wa" :disabled="isCapturing" @click="shareReceiptAsImage">
+            <button type="button" class="adm-btn ao-btn-wa" :disabled="isCapturing" @click="shareReceiptAsImage()">
               <span v-if="isCapturing" class="adm-spinner"></span><Send v-else :size="14" />
               {{ isCapturing ? 'Memproses…' : 'Kirim via WA' }}
             </button>
@@ -509,6 +510,7 @@
           </template>
           <template v-else>
             <div style="display:flex; justify-content:space-between; gap:12px;"><span>{{ line.item.quantity }}x {{ line.item.menu_name }}</span><span style="white-space:nowrap;">{{ formatPrice(line.item.price * line.item.quantity) }}</span></div>
+            <div v-if="line.item.quantity > 1" style="font-size:12px; padding-left:12px; color:#27272a;">@ {{ formatPrice(line.item.price) }} / porsi</div>
             <div v-if="line.item.notes" style="font-size:12px; padding-left:12px; font-style:italic; color:#000;">📋 "{{ line.item.notes }}"</div>
           </template>
         </div>
@@ -562,6 +564,7 @@
             <span>{{ line.item.quantity }}x {{ line.item.menu_name }}</span>
             <span>{{ formatPrice(line.item.price * line.item.quantity) }}</span>
           </div>
+          <div v-if="line.item.quantity > 1" class="pr-note" style="font-style:normal">@ {{ formatPrice(line.item.price) }} / porsi</div>
           <div v-if="line.item.notes" class="pr-note">"{{ line.item.notes }}"</div>
         </template>
       </div>
@@ -1287,9 +1290,11 @@ const toggleReady = (o, ready) => withBusy(o.id, async () => {
     const res = await orderAPI.markReady(o.id, ready)
     patchOrder(res.data)
     if (ready) {
-      toast.success(`Pesanan ${o.order_number || '#' + o.id} ditandai siap diambil`, canNotify(res.data)
-        ? { action: { label: 'Kabari pelanggan', onClick: () => openNotify(res.data, 'ready') } }
-        : undefined)
+      // Mengabari pelanggan = kirim struk dalam bentuk GAMBAR (bukan teks).
+      toast.success(`Pesanan ${o.order_number || '#' + o.id} ditandai siap diambil`, {
+        duration: 15000,
+        action: { label: 'Kirim struk ke pelanggan', onClick: () => sendReadyReceipt(res.data) },
+      })
     }
   } catch (err) {
     toast.error(errText(err, 'Gagal mengubah status siap.'))
@@ -1540,7 +1545,23 @@ const receiptRef = ref(null)
 const isCapturing = ref(false)
 const canvasToBlob = (canvas) => new Promise((resolve) => canvas.toBlob(resolve, 'image/png'))
 
-const shareReceiptAsImage = async () => {
+const RECEIPT_CAPTION = 'Bukti Pembelian di Masashimura 🙏'
+const readyCaption = (o) => {
+  const name = (o?.customer_name || '').trim()
+  return `Halo kakak${name ? ' ' + name : ''}, pesanan kamu sudah siap diambil ya 🍽️\nTerima kasih sudah jajan di Masashimura 🙏`
+}
+
+// Dipanggil dari toast "siap diambil": pilih order lalu tunggu struk tersembunyi
+// ter-render ulang untuk order itu sebelum difoto.
+const sendReadyReceipt = async (order) => {
+  if (!order) return
+  selectedId.value = order.id
+  selectedSnapshot.value = order
+  await nextTick()
+  await shareReceiptAsImage(readyCaption(order))
+}
+
+const shareReceiptAsImage = async (caption = RECEIPT_CAPTION) => {
   if (!receiptRef.value || !selectedOrder.value) return
   isCapturing.value = true
   try {
@@ -1554,7 +1575,7 @@ const shareReceiptAsImage = async () => {
 
     if (navigator.share && navigator.canShare?.({ files: [file] })) {
       try {
-        await navigator.share({ files: [file], text: 'Bukti Pembelian di Masashimura 🙏' })
+        await navigator.share({ files: [file], text: caption })
       } catch (e) {
         if (e?.name !== 'AbortError') throw e   // user menutup menu share = bukan error
       }
@@ -1566,8 +1587,8 @@ const shareReceiptAsImage = async () => {
       a.click()
       setTimeout(() => URL.revokeObjectURL(url), 1000)   // jangan dicabut seketika: unduhan bisa gagal
       const phone = normalizePhone(order.customer_phone)
-      const caption = encodeURIComponent('Bukti Pembelian di Masashimura 🙏')
-      setTimeout(() => window.open(phone ? `https://wa.me/${phone}?text=${caption}` : `https://wa.me/?text=${caption}`, '_blank', 'noopener'), 500)
+      const text = encodeURIComponent(caption)
+      setTimeout(() => window.open(phone ? `https://wa.me/${phone}?text=${text}` : `https://wa.me/?text=${text}`, '_blank', 'noopener'), 500)
       toast.info('Gambar diunduh. Lampirkan ke WhatsApp secara manual jika perlu.')
     }
   } catch (err) {
@@ -2012,6 +2033,7 @@ const confirmDelete = async () => {
 .rcpt-qty { min-width: 1.8rem; color: var(--text-faint); }
 .rcpt-name { flex: 1; color: var(--text); }
 .rcpt-sub { font-weight: 600; }
+.rcpt-unit { padding-left: 2.2rem; font-size: 0.75rem; color: var(--text-dim); }
 .rcpt-note { padding-left: 2.2rem; font-size: 0.75rem; font-style: italic; color: var(--amber-soft); }
 .rcpt-discount { color: var(--red-soft); }
 .rcpt-final { margin-top: 0.25rem; padding-top: 0.45rem; border-top: 1px dashed var(--border-strong); font-size: 0.95rem; font-weight: 800; color: var(--text); }
