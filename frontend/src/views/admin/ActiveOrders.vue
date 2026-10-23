@@ -318,7 +318,15 @@
                 @click="toggleReady(order, true)"
               ><Check :size="14" /> Siap</button>
               <button
-                v-else-if="isOpenOrder(order) && order.is_ready && isToday"
+                v-if="isOpenOrder(order) && order.is_ready && canNotify(order)"
+                type="button"
+                class="adm-btn adm-btn--soft adm-btn--sm"
+                :disabled="isCapturing"
+                title="Kirim struk gambar ke WhatsApp pelanggan"
+                @click="sendReadyReceipt(order)"
+              ><Send :size="13" /> Kirim nota</button>
+              <button
+                v-if="!canMarkReady(order) && isOpenOrder(order) && order.is_ready && isToday"
                 type="button"
                 class="adm-btn adm-btn--ghost adm-btn--sm"
                 :disabled="busyIds.has(order.id)"
@@ -1334,7 +1342,12 @@ const onToolNotify = (o) => {
 
 const rowMenuItems = (o) => {
   const list = []
-  if (canNotify(o)) list.push({ key: 'notify', label: 'Kabari pelanggan', icon: MessageCircle, run: () => openNotify(o) })
+  // Order yang sudah siap diambil: mengabari = kirim struk GAMBAR. Selain itu tetap lewat modal pesan.
+  if (canNotify(o)) {
+    list.push(o.is_ready
+      ? { key: 'notify', label: 'Kirim struk (siap diambil)', icon: MessageCircle, run: () => sendReadyReceipt(o) }
+      : { key: 'notify', label: 'Kabari pelanggan', icon: MessageCircle, run: () => openNotify(o) })
+  }
   if (canEditItems(o)) list.push({ key: 'add', label: 'Tambah menu', icon: Plus, run: () => openTool('add', o) })
   if (canEditItems(o) && (o.items?.length || 0) > 0) list.push({ key: 'split', label: 'Pisah nota', icon: Shuffle, run: () => openTool('split', o) })
   if (canMarkUnavailable(o)) list.push({ key: 'unavailable', label: 'Menu habis', icon: AlertTriangle, run: () => openTool('unavailable', o) })
