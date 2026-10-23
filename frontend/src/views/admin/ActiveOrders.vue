@@ -260,6 +260,7 @@
               <li v-for="(item, i) in itemsPreview(order)" :key="i">
                 <span class="ao-items-qty">{{ item.quantity }}×</span>
                 <span class="ao-items-name">{{ item.menu_name }}</span>
+                <span v-if="item.added_at" class="ao-items-add" title="Ditambahkan setelah order dibuat">+{{ item.added_qty }} baru</span>
               </li>
             </ul>
             <span v-else class="ao-items-empty">Tidak ada item</span>
@@ -278,6 +279,11 @@
             <div class="ao-status">
               <span class="adm-badge" :class="orderBadge(order).cls">{{ orderBadge(order).label }}</span>
               <span v-if="order.status !== 'cancelled'" class="adm-badge" :class="payBadge(order).cls">{{ payBadge(order).label }}</span>
+              <span v-if="isOpenOrder(order) && order.is_ready" class="adm-badge adm-badge--green">Siap diambil</span>
+              <span v-else-if="isOpenOrder(order) && isToday && order.is_late" class="adm-badge adm-badge--red">Telat {{ order.wait_minutes }} mnt</span>
+              <span v-if="isOpenOrder(order) && order.has_additions" class="adm-badge adm-badge--amber">Ditambah</span>
+              <span v-if="order.refund_pending" class="adm-badge adm-badge--red">Refund {{ formatPrice(order.refund_due) }}</span>
+              <span v-else-if="order.unavailable_items?.length" class="adm-badge">Ada menu habis</span>
             </div>
           </div>
 
@@ -311,16 +317,37 @@
                 @click="openCancelModal(order)"
               >Batalkan</button>
 
+            </div>
+
+            <div v-if="hasToolActions(order)" class="ao-act-tools">
               <button
-                v-if="canRemind(order)"
+                v-if="canMarkReady(order)"
                 type="button"
-                class="adm-icon-btn adm-icon-btn--bordered"
-                title="Ingatkan pembayaran via WhatsApp"
-                aria-label="Ingatkan pembayaran via WhatsApp"
-                @click="remindViaWA(order)"
-              >
-                <MessageCircle :size="14" />
-              </button>
+                class="adm-btn adm-btn--soft adm-btn--sm"
+                :disabled="busyIds.has(order.id)"
+                @click="toggleReady(order, true)"
+              ><Check :size="14" /> Siap</button>
+              <button
+                v-else-if="isOpenOrder(order) && order.is_ready && isToday"
+                type="button"
+                class="adm-btn adm-btn--ghost adm-btn--sm"
+                :disabled="busyIds.has(order.id)"
+                title="Cabut tanda siap diambil"
+                @click="toggleReady(order, false)"
+              >Belum siap</button>
+
+              <button
+                v-if="order.refund_pending"
+                type="button"
+                class="adm-btn adm-btn--danger adm-btn--sm"
+                :disabled="busyIds.has(order.id)"
+                @click="giveRefund(order)"
+              >Refund sudah diberikan</button>
+
+              <button v-if="canEditItems(order)" type="button" class="adm-icon-btn adm-icon-btn--bordered" title="Tambah menu" aria-label="Tambah menu" @click="openTool('add', order)"><Plus :size="14" /></button>
+              <button v-if="canEditItems(order) && (order.items?.length || 0) > 0" type="button" class="adm-icon-btn adm-icon-btn--bordered" title="Pisah nota" aria-label="Pisah nota" @click="openTool('split', order)"><Shuffle :size="14" /></button>
+              <button v-if="canMarkUnavailable(order)" type="button" class="adm-icon-btn adm-icon-btn--bordered" title="Menu habis" aria-label="Menu habis" @click="openTool('unavailable', order)"><AlertTriangle :size="14" /></button>
+              <button v-if="canNotify(order)" type="button" class="adm-btn adm-btn--ghost adm-btn--sm" title="Kabari pelanggan via WhatsApp" @click="openNotify(order)"><MessageCircle :size="14" /> Kabari</button>
             </div>
 
             <button
@@ -371,6 +398,15 @@
           <div v-if="selectedOrder.cancel_note" class="rcpt-row"><span>Catatan</span><b>{{ selectedOrder.cancel_note }}</b></div>
           <div class="rcpt-row"><span>Oleh</span><b>{{ selectedOrder.cancelled_by || '—' }}</b></div>
           <div class="rcpt-row"><span>Waktu</span><b>{{ formatFullDateTime(selectedOrder.cancelled_at) }}</b></div>
+        </div>
+
+        <div v-if="selectedOrder.unavailable_items?.length" class="rcpt-cancel">
+          <p class="rcpt-cancel-title"><AlertTriangle :size="13" /> Menu habis (tidak dibuat)</p>
+          <div v-for="(u, k) in selectedOrder.unavailable_items" :key="k" class="rcpt-row"><span>{{ u.name }} × {{ u.quantity }}</span><b>{{ formatPrice(u.price * u.quantity) }}</b></div>
+          <div v-if="selectedOrder.refund_due > 0" class="rcpt-row">
+            <span>Refund</span>
+            <b>{{ formatPrice(selectedOrder.refund_due) }} · {{ selectedOrder.refunded_at ? 'sudah dikembalikan' : 'belum dikembalikan' }}</b>
+          </div>
         </div>
 
         <hr class="rcpt-div" />
@@ -756,6 +792,15 @@
     </AdminModal>
 
   </div>
+    <NotifyCustomerModal :order="notifyOrderObj" :initial-type="notifyType" @close="closeNotify" />
+
+    <OrderItemTools
+      :mode="toolMode"
+      :order="toolOrderObj"
+      :kasir-name="kasirName"
+      @close="closeTool"
+      @updated="onToolUpdated"
+    />
 </template>
 
 <script setup>
@@ -763,13 +808,15 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import {
   Search, X, ChevronLeft, ChevronRight, ChevronDown, Printer, Send, Plus, Trash2,
   Banknote, QrCode, Shuffle, RefreshCw, AlertTriangle, Receipt, Bell, BellOff,
-  Pause, Play, Download, MessageCircle,
+  Pause, Play, Download, MessageCircle, Check,
 } from 'lucide-vue-next'
 import { orderAPI, apiClient } from '@/api'
 import { toast } from 'vue-sonner'
 import { useAuthStore } from '@/stores/auth'
 import html2canvas from 'html2canvas'
 import AdminModal from '@/components/ui/admin/Adminmodal.vue'
+import OrderItemTools from '@/components/ui/admin/OrderItemTools.vue'
+import NotifyCustomerModal from '@/components/ui/admin/NotifyCustomerModal.vue'
 import { groupReceiptLines } from '@/utils/receiptLines'
 // Di-import (bukan "/src/assets/…") supaya path-nya ikut di-hash & tetap jalan di build production.
 import logoUrl from '@/assets/masashimura-logo.png'
@@ -1177,20 +1224,81 @@ const normalizePhone = (raw) => {
   if (digits.startsWith('8')) return '62' + digits
   return digits
 }
-const canRemind = (o) => isUnpaid(o) && !!normalizePhone(o.customer_phone)
 
 // Kalau tidak ada tombol utama (mis. order selesai), grupnya tidak dirender
 // supaya tidak ada baris kosong di kartu mobile.
-const hasMainActions = (o) =>
-  canPay(o) || (o.status !== 'completed' && o.status !== 'cancelled') || canRemind(o)
+// ── Dapur: siap diambil, tambah menu, pisah nota, menu habis, refund ──
+const isOpenOrder = (o) => o.status !== 'cancelled' && o.payment_status !== 'void'
+const isGatewayPending = (o) => o.payment_method === 'gateway' && o.payment_status === 'pending'
+// Tambah / ubah / pisah cuma untuk nota yang belum dibayar (aturan yang sama dengan backend).
+const canEditItems = (o) => isOpenOrder(o) && ['unpaid', 'pending'].includes(o.payment_status) && !isGatewayPending(o)
+const canMarkReady = (o) => isOpenOrder(o) && !o.is_ready && isToday.value && !isGatewayPending(o)
+const canMarkUnavailable = (o) => isOpenOrder(o) && !o.is_ready && !isGatewayPending(o) && (o.items?.length || 0) > 0
+const hasToolActions = (o) =>
+  canMarkReady(o) || (isOpenOrder(o) && o.is_ready && isToday.value) || o.refund_pending ||
+  canEditItems(o) || canMarkUnavailable(o) || canNotify(o)
 
-const remindViaWA = (o) => {
-  const phone = normalizePhone(o.customer_phone)
-  if (!phone) return
-  const who = o.customer_name ? ` ${o.customer_name}` : ''
-  const text = `Halo${who}, pesanan ${o.order_number || '#' + o.id} di Masashimura sebesar ${formatPrice(o.total_price)} belum dibayar. Mohon konfirmasinya ya, terima kasih 🙏`
-  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank', 'noopener')
+const busyIds = ref(new Set())
+const withBusy = async (id, fn) => {
+  busyIds.value = new Set(busyIds.value).add(id)
+  try { return await fn() } finally {
+    const next = new Set(busyIds.value); next.delete(id); busyIds.value = next
+  }
 }
+const errText = (err, fallback) => err?.response?.data?.detail || err?.response?.data?.error || fallback
+const patchOrder = (updated) => {
+  if (!updated?.id) return
+  orders.value = orders.value.map((o) => (o.id === updated.id ? updated : o))
+}
+
+// Modul "Kabari pelanggan": jenis pesan dipilih lewat dropdown, isinya bisa diedit sebelum dikirim.
+const canNotify = (o) => isOpenOrder(o) && !!normalizePhone(o.customer_phone)
+const notifyOrderId = ref(null)
+const notifySnapshot = ref(null)
+const notifyType = ref('')
+const notifyOrderObj = computed(() => orders.value.find((o) => o.id === notifyOrderId.value) ?? notifySnapshot.value)
+const openNotify = (o, type = '') => { notifyOrderId.value = o.id; notifySnapshot.value = o; notifyType.value = type }
+const closeNotify = () => { notifyOrderId.value = null; notifySnapshot.value = null; notifyType.value = '' }
+
+const toggleReady = (o, ready) => withBusy(o.id, async () => {
+  try {
+    const res = await orderAPI.markReady(o.id, ready)
+    patchOrder(res.data)
+    if (ready) {
+      toast.success(`Pesanan ${o.order_number || '#' + o.id} ditandai siap diambil`, canNotify(res.data)
+        ? { action: { label: 'Kabari pelanggan', onClick: () => openNotify(res.data, 'ready') } }
+        : undefined)
+    }
+  } catch (err) {
+    toast.error(errText(err, 'Gagal mengubah status siap.'))
+  }
+})
+
+const giveRefund = (o) => withBusy(o.id, async () => {
+  try {
+    const res = await orderAPI.confirmRefund(o.id, { kasir_name: kasirName.value })
+    patchOrder(res.data)
+    toast.success(`Refund ${formatPrice(o.refund_due)} ditandai sudah diberikan`)
+  } catch (err) {
+    toast.error(errText(err, 'Gagal menandai refund.'))
+  }
+})
+
+const toolMode = ref(null)
+const toolOrderId = ref(null)
+const toolSnapshot = ref(null)
+const toolOrderObj = computed(() => orders.value.find((o) => o.id === toolOrderId.value) ?? toolSnapshot.value)
+const openTool = (mode, o) => { toolOrderId.value = o.id; toolSnapshot.value = o; toolMode.value = mode }
+const closeTool = () => { toolMode.value = null; toolOrderId.value = null; toolSnapshot.value = null }
+const onToolUpdated = ({ order, newOrder }) => {
+  patchOrder(order)
+  if (order?.id === toolOrderId.value) toolSnapshot.value = order
+  // Nota hasil pisah baru muncul lewat refresh; tarik sekarang supaya langsung kelihatan.
+  fetchActiveOrders({ force: true })
+}
+
+const hasMainActions = (o) =>
+  canPay(o) || (o.status !== 'completed' && o.status !== 'cancelled')
 
 // ── Salin teks ──────────────────────────────────────────────────────
 const copyText = async (text, label = 'Teks') => {
@@ -1675,6 +1783,8 @@ const confirmDelete = async () => {
 .ao-items li { display: flex; gap: 0.4rem; font-size: 0.8rem; line-height: 1.35; min-width: 0; }
 .ao-items-qty { flex-shrink: 0; font-family: var(--font-mono); font-weight: 700; color: var(--accent-text); }
 .ao-items-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+.ao-items-add { flex-shrink: 0; margin-left: 0.3rem; padding: 0 0.4rem; border-radius: 99px; background: var(--tint-accent); border: 1px solid var(--line-accent); font-size: 0.68rem; font-weight: 700; color: var(--accent-text); white-space: nowrap; }
+.ao-act-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 0.4rem; flex-basis: 100%; margin-top: 0.15rem; }
 .ao-items-more { display: inline-block; margin-top: 0.25rem; padding: 0.05rem 0.5rem; border-radius: 99px; background: rgb(var(--ink) / 0.08); font-size: 0.75rem; font-weight: 600; color: var(--text-dim); }
 .ao-items-empty { color: var(--text-faint); font-size: 0.78rem; }
 
@@ -1705,7 +1815,7 @@ html[data-admin-theme='light'] .ao-method--qris { color: #1d4ed8; background: rg
 .ao-late { margin-top: 2px; font-family: var(--font-body); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--amber-soft); }
 
 /* Aksi (desktop): satu baris, rata kanan, tidak pernah turun baris */
-.ao-actions { display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-end; gap: 0.4rem; min-width: 0; }
+.ao-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 0.4rem; min-width: 0; }
 .ao-act-main { display: flex; flex-wrap: nowrap; align-items: center; gap: 0.4rem; }
 .ao-actions .adm-btn { white-space: nowrap; }
 
@@ -1723,7 +1833,8 @@ html[data-admin-theme='light'] .ao-method--qris { color: #1d4ed8; background: rg
       'id    cust  time'
       'menu  menu  del'
       'bill  bill  status'
-      'act   act   act';
+      'act   act   act'
+      'tools tools tools';
     align-items: center;
     column-gap: 0.6rem;
     row-gap: 0.55rem;
@@ -1752,6 +1863,9 @@ html[data-admin-theme='light'] .ao-method--qris { color: #1d4ed8; background: rg
 
   /* Baris 4: tombol utama selebar kartu */
   .ao-act-main { grid-area: act; padding-top: 0.6rem; border-top: 1px dashed var(--border); }
+  .ao-act-tools { grid-area: tools; justify-content: stretch; margin-top: 0; }
+  .ao-act-tools .adm-btn { flex: 1; min-height: 44px; }
+  .ao-act-tools .adm-icon-btn { min-width: 44px; min-height: 44px; }
   .ao-act-main .adm-btn { flex: 1; min-height: 44px; }
   .ao-act-main .adm-icon-btn { min-width: 44px; min-height: 44px; }
 

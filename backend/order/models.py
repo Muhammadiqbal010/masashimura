@@ -157,6 +157,22 @@ class Order(models.Model):
         help_text="Poin yang di-earn dari order ini saat completed — disimpan biar reversal saat delete akurat, tidak bergantung rupiah_per_point yang mungkin sudah berubah",
     )
 
+    # ── Status dapur & menu habis ─────────────────────────────────
+    # "completed" di sistem ini artinya LUNAS, bukan "makanan sudah jadi", jadi
+    # kesiapan dicatat terpisah. Kosong = belum ditandai siap diambil.
+    ready_at = models.DateTimeField(null=True, blank=True)
+
+    # Menu yang batal dibuat karena habis SETELAH order dibuat:
+    # [{"name": "Kukubima", "quantity": 1, "price": 7500, "at": "2026-10-23T10:00:00+07:00"}]
+    # Item-nya sendiri dihapus dari nota (total ikut turun); catatannya disimpan di sini.
+    unavailable_items = models.JSONField(default=list, blank=True)
+
+    # Uang yang harus DIKEMBALIKAN ke pelanggan karena menu habis di order yang
+    # sudah lunas (QRIS/gateway/cash di muka). 0 = tidak ada utang kembalian.
+    refund_due = models.DecimalField(max_digits=12, decimal_places=0, default=0)
+    refunded_at = models.DateTimeField(null=True, blank=True)
+    refunded_by = models.CharField(max_length=100, blank=True, default="")
+
     class Meta:
         ordering = ['-created_at']
 
@@ -210,6 +226,12 @@ class OrderItem(models.Model):
     # Nama paket kalau baris ini berasal dari Menu Paket (snapshot teks, bukan FK:
     # paket boleh dihapus tanpa mengubah riwayat). Kosong = item biasa.
     bundle_name = models.CharField(max_length=100, blank=True, default='')
+
+    # Penanda "ditambahkan setelah order dibuat" (dari Active Orders). added_at =
+    # kapan terakhir ditambah, added_qty = berapa porsi yang ditambahkan belakangan.
+    # Item bawaan order awal: added_at kosong dan added_qty 0.
+    added_at  = models.DateTimeField(null=True, blank=True)
+    added_qty = models.PositiveIntegerField(default=0)
 
     class Meta:
         ordering = ['id']
@@ -642,6 +664,12 @@ class StoreSettings(models.Model):
     monthly_revenue_target = models.PositiveBigIntegerField(
         null=True, blank=True,
         help_text="Target omzet per bulan (Rp). Kosong = belum diatur",
+    )
+
+    # Batas "telat": order yang belum ditandai siap lebih lama dari ini dianggap telat.
+    order_late_minutes = models.PositiveSmallIntegerField(
+        default=20,
+        help_text="Menit sejak order masuk sampai dianggap telat kalau belum siap diambil",
     )
 
     updated_at = models.DateTimeField(auto_now=True)

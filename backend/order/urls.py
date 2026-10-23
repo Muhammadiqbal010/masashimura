@@ -15,6 +15,11 @@ from .views import (
     add_order_item,
     order_item_detail,
     split_order,
+    mark_order_ready,
+    mark_items_unavailable,
+    confirm_refund,
+    pending_refunds,
+    orders_affected_by_menu,
     # Loyalty & point rewards
     check_loyalty_status,
     available_point_rewards,
@@ -61,6 +66,8 @@ urlpatterns = [
     path("orders/unpaid/",        unpaid_orders,           name="unpaid-orders"),
     path("orders/history/",       order_history,           name="order-history"),
     path("orders/notifications/", new_order_notifications, name="order-notifications"),
+    path("orders/pending-refunds/", pending_refunds, name="pending-refunds"),
+    path("orders/affected-by-menu/<int:menu_id>/", orders_affected_by_menu, name="orders-affected-by-menu"),
 
     # ── Active orders (prefix berbeda) ───────────────────────────────────────
     path("active-orders/", active_orders_per_day, name="active-orders"),
@@ -119,4 +126,7 @@ urlpatterns = [
     path("orders/<int:pk>/items/",             add_order_item,      name="order-item-add"),
     path("orders/<int:pk>/items/<int:item_id>/", order_item_detail, name="order-item-detail"),
     path("orders/<int:pk>/split/",             split_order,         name="order-split"),
+    path("orders/<int:pk>/ready/",             mark_order_ready,    name="order-ready"),
+    path("orders/<int:pk>/unavailable/",       mark_items_unavailable, name="order-unavailable"),
+    path("orders/<int:pk>/refund/",            confirm_refund,      name="order-refund"),
 ] + router.urls

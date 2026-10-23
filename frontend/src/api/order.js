@@ -22,6 +22,17 @@ export const orderAPI = {
   // Dipakai oleh ActiveOrders.vue
   getActiveOrders: (targetDate) =>
     apiClient.get("/active-orders/", { params: { target_date: targetDate } }),
+
+  // ── Active Orders: tambah menu, pisah nota, siap diambil, menu habis, refund ──
+  addItem: (orderId, payload) => apiClient.post(`/orders/${orderId}/items/`, payload),
+  updateItem: (orderId, itemId, quantity) =>
+    apiClient.patch(`/orders/${orderId}/items/${itemId}/`, { quantity }),
+  splitOrder: (orderId, payload) => apiClient.post(`/orders/${orderId}/split/`, payload),
+  markReady: (orderId, ready = true) => apiClient.patch(`/orders/${orderId}/ready/`, { ready }),
+  markUnavailable: (orderId, payload) => apiClient.post(`/orders/${orderId}/unavailable/`, payload),
+  confirmRefund: (orderId, payload = {}) => apiClient.patch(`/orders/${orderId}/refund/`, payload),
+  getPendingRefunds: () => apiClient.get("/orders/pending-refunds/"),
+  getAffectedByMenu: (menuId) => apiClient.get(`/orders/affected-by-menu/${menuId}/`),
 };
 
 // Admin CRUD buat katalog reward poin (AdminPointRewards.vue)

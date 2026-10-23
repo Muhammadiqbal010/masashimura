@@ -49,6 +49,7 @@ from .serializers import (
     OrderSerializer,
     PointRewardSerializer,
     StoreSettingsSerializer,
+    reset_late_minutes_cache,
 )
 
 
@@ -1136,6 +1137,7 @@ class LoyaltySettingsView(APIView):
         serializer = LoyaltySettingsSerializer(settings, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        reset_late_minutes_cache()
         return Response(serializer.data)
 
 
@@ -1956,14 +1958,29 @@ def add_order_item(request, pk):
         ),
         None,
     )
+    now = timezone.now()
+    # Menambah ke nota yang sudah punya item = "pesanan ditambah". Nota yang
+    # masih kosong (belum ada item) tidak ditandai, karena itu bukan tambahan.
+    is_addition = order.items.exists()
     if existing:
         existing.quantity += quantity
-        existing.save(update_fields=["quantity"])
+        update_fields = ["quantity"]
+        if is_addition:
+            existing.added_qty += quantity
+            existing.added_at = now
+            update_fields += ["added_qty", "added_at"]
+        existing.save(update_fields=update_fields)
     else:
         OrderItem.objects.create(
             order=order, menu=menu, quantity=quantity,
             price=unit_price, notes=notes, selected_options=chosen,
+            added_at=now if is_addition else None,
+            added_qty=quantity if is_addition else 0,
         )
+    # Ada tambahan menu = dapur harus bikin lagi, jadi status "siap" dicabut.
+    if is_addition and order.ready_at:
+        order.ready_at = None
+        order.save(update_fields=["ready_at"])
 
     _refresh_totals(order)
     order.refresh_from_db()
@@ -2007,8 +2024,23 @@ def order_item_detail(request, pk, item_id):
             )
         item.delete()
     else:
+        diff = new_qty - item.quantity
         item.quantity = new_qty
-        item.save(update_fields=["quantity"])
+        update_fields = ["quantity"]
+        if diff > 0:
+            item.added_qty += diff
+            item.added_at = timezone.now()
+            update_fields += ["added_qty", "added_at"]
+            if order.ready_at:
+                order.ready_at = None
+                order.save(update_fields=["ready_at"])
+        elif diff < 0 and item.added_qty:
+            # Pengurangan memakan jatah "tambahan" dulu, supaya badge tidak menipu.
+            item.added_qty = max(item.added_qty + diff, 0)
+            if item.added_qty == 0:
+                item.added_at = None
+            update_fields += ["added_qty", "added_at"]
+        item.save(update_fields=update_fields)
 
     _refresh_totals(order)
     order.refresh_from_db()
@@ -2088,11 +2120,19 @@ def split_order(request, pk):
         else:
             item.quantity -= qty
             item.save(update_fields=["quantity"])
+            moved_added = min(item.added_qty, qty)
+            original_added_at = item.added_at
+            item.added_qty -= moved_added
+            if item.added_qty == 0:
+                item.added_at = None
+            item.save(update_fields=["added_qty", "added_at"])
             OrderItem.objects.create(
                 order=new_order, menu=item.menu, quantity=qty,
                 price=item.price, notes=item.notes,
                 selected_options=item.selected_options,
                 bundle_name=item.bundle_name,
+                added_qty=moved_added,
+                added_at=original_added_at if moved_added else None,
             )
 
     _refresh_totals(order)      # promo (kalau ada) tetap menempel di nota asal
@@ -2104,3 +2144,269 @@ def split_order(request, pk):
         "original":  OrderSerializer(order).data,
         "new_order": OrderSerializer(new_order).data,
     }, status=201)
+
+
+
+# ─────────────────────────────────────────────
+# DAPUR: SIAP DIAMBIL, MENU HABIS, REFUND
+# ─────────────────────────────────────────────
+#
+# Aturan uang saat menu habis SETELAH order dibuat (lihat mark_items_unavailable):
+#   • Order BELUM dibayar (cash bayar di akhir / makan dulu): item habis langsung
+#     dikeluarkan dari nota, total turun, pelanggan cukup bayar total baru.
+#   • Order SUDAH lunas (QRIS / gateway / cash di muka): item dikeluarkan dan total
+#     turun, selisihnya dicatat sebagai refund_due. Kasir menyerahkan uangnya waktu
+#     pesanan diambil, lalu menandai "sudah dikembalikan" (confirm_refund).
+
+
+def _shrink_loyalty_after_reduction(order, old_total, new_total):
+    """Tarik balik poin/total belanja yang sudah dicatat untuk order lunas yang totalnya turun."""
+    if not (order.loyalty_applied and order.customer_phone):
+        return 0
+    loyalty = (
+        CustomerLoyalty.objects.select_for_update()
+        .filter(phone=order.customer_phone).first()
+    )
+    if not loyalty:
+        return 0
+
+    rate = LoyaltySettings.get_settings().rupiah_per_point or 10000
+    new_earned = int(new_total // rate)
+    drop = max(order.loyalty_points_earned - new_earned, 0)
+    take = min(drop, loyalty.points)   # jangan sampai minus kalau poinnya sudah terpakai
+
+    loyalty.points = loyalty.points - take
+    loyalty.total_spent = max(loyalty.total_spent - (old_total - new_total), Decimal("0"))
+    loyalty.save(update_fields=["points", "total_spent", "updated_at"])
+
+    if drop:
+        # update() supaya tidak memicu signal post_save lagi.
+        Order.objects.filter(pk=order.pk).update(loyalty_points_earned=order.loyalty_points_earned - drop)
+    return take
+
+
+@api_view(["PATCH"])
+@permission_classes([IsStaffLevel])
+@transaction.atomic
+def mark_order_ready(request, pk):
+    """
+    Tandai pesanan siap diambil / batalkan tandanya.
+    Body: { "ready": true }   (default true; false = cabut tanda siap)
+    """
+    order = get_object_or_404(Order.objects.select_for_update(), pk=pk)
+    if order.status == "cancelled" or order.payment_status == "void":
+        return Response({"detail": "Order ini sudah dibatalkan."}, status=400)
+
+    raw = request.data.get("ready", True)
+    ready = raw if isinstance(raw, bool) else str(raw).strip().lower() in ("1", "true", "yes", "ya")
+
+    order.ready_at = timezone.now() if ready else None
+    order.save(update_fields=["ready_at"])
+    order.refresh_from_db()
+    return Response(OrderSerializer(order).data)
+
+
+@api_view(["POST"])
+@permission_classes([IsStaffLevel])
+@transaction.atomic
+def mark_items_unavailable(request, pk):
+    """
+    Menu habis setelah order dibuat. Item dikeluarkan dari nota dan totalnya dihitung ulang.
+
+    Body:
+    {
+      "items": [{"item_id": 12, "quantity": 1}],   # quantity kosong = seluruh baris
+      "kasir_name": "Wawan",
+      "note": ""                                    # opsional
+    }
+
+    Respons: order terbaru + "summary" (nominal yang hilang, refund / kurang bayar).
+    """
+    order = get_object_or_404(Order.objects.select_for_update(), pk=pk)
+
+    if order.status == "cancelled" or order.payment_status == "void":
+        return Response({"detail": "Order ini sudah dibatalkan."}, status=400)
+    if order.payment_method == "gateway" and order.payment_status == "pending":
+        return Response(
+            {"detail": "Order menunggu pembayaran online, item tidak bisa diubah. Batalkan order lalu input ulang."},
+            status=400,
+        )
+
+    rows = request.data.get("items") or []
+    if not rows:
+        return Response({"detail": "Pilih minimal satu item yang habis."}, status=400)
+
+    moves, seen = [], set()
+    for row in rows:
+        item = order.items.select_related("menu").filter(pk=row.get("item_id")).first()
+        if not item or item.pk in seen:
+            return Response({"detail": "Item tidak ditemukan / dobel di request."}, status=400)
+        if item.is_point_redemption:
+            return Response(
+                {"detail": "Item hasil tukar poin tidak bisa dikeluarkan dari sini (poin sudah terpotong). "
+                           "Batalkan / void order-nya supaya poin dikembalikan."},
+                status=400,
+            )
+        raw_qty = row.get("quantity")
+        try:
+            qty = item.quantity if raw_qty in (None, "") else int(raw_qty)
+        except (TypeError, ValueError):
+            return Response({"detail": "Quantity tidak valid."}, status=400)
+        name = item.menu.name if item.menu else "Menu"
+        if qty <= 0 or qty > item.quantity:
+            return Response({"detail": f"Jumlah untuk {name} tidak valid."}, status=400)
+        seen.add(item.pk)
+        moves.append((item, qty, name))
+
+    is_paid = order.payment_status == "paid"
+    kasir_name = (request.data.get("kasir_name") or "").strip()
+    note = (request.data.get("note") or "").strip()[:200]
+    now = timezone.now()
+
+    total_units = sum(i.quantity for i in order.items.all())
+    if total_units - sum(q for _, q, _ in moves) <= 0:
+        # Semua menu di nota habis.
+        if is_paid:
+            return Response(
+                {"detail": "Semua item di nota ini habis, padahal sudah dibayar. Hapus / void order lewat menu Hapus "
+                           "supaya poin & laporan ikut dibalik, lalu kembalikan uangnya ke pelanggan."},
+                status=400,
+            )
+        previous_status = order.status
+        order.status = "cancelled"
+        order.payment_status = "void"
+        order.cancel_reason = "out_of_stock"
+        order.cancel_note = note or "Semua menu habis"
+        order.cancelled_at = now
+        order.cancelled_by = kasir_name
+        order._previous_status = previous_status
+        order.save()
+        order.refresh_from_db()
+        return Response({
+            "order": OrderSerializer(order).data,
+            "summary": {"cancelled": True, "lost_amount": 0, "refund_due": 0, "amount_to_pay_now": 0},
+        })
+
+    old_total = order.total_price
+    log = list(order.unavailable_items or [])
+    lost_gross = Decimal("0")
+    for item, qty, name in moves:
+        lost_gross += item.price * qty
+        log.append({
+            "name": name,
+            "quantity": qty,
+            "price": int(item.price),
+            "notes": item.notes,
+            "at": now.isoformat(),
+            "by": kasir_name,
+            "note": note,
+        })
+        if qty == item.quantity:
+            item.delete()
+        else:
+            item.quantity -= qty
+            item.added_qty = min(item.added_qty, item.quantity)
+            if item.added_qty == 0:
+                item.added_at = None
+            item.save(update_fields=["quantity", "added_qty", "added_at"])
+
+    _refresh_totals(order)           # subtotal, promo, total dihitung ulang
+    order.refresh_from_db()
+    new_total = order.total_price
+    # Selisih yang BENAR-BENAR berubah di tagihan (sudah memperhitungkan promo).
+    drop = max(old_total - new_total, Decimal("0"))
+
+    order.unavailable_items = log
+    update_fields = ["unavailable_items"]
+
+    refund_due = order.refund_due
+    if is_paid and drop > 0:
+        if order.refunded_at is not None:
+            # Refund sebelumnya sudah diserahkan; ini utang baru yang terpisah.
+            order.refund_due = drop
+        else:
+            order.refund_due = order.refund_due + drop
+        order.refunded_at = None
+        order.refunded_by = ""
+        update_fields += ["refund_due", "refunded_at", "refunded_by"]
+        _shrink_loyalty_after_reduction(order, old_total, new_total)
+        refund_due = order.refund_due
+
+    order.save(update_fields=update_fields)
+    order.refresh_from_db()
+
+    return Response({
+        "order": OrderSerializer(order).data,
+        "summary": {
+            "cancelled": False,
+            "lost_amount": int(lost_gross),
+            "bill_drop": int(drop),
+            "old_total": int(old_total),
+            "new_total": int(new_total),
+            "is_paid": is_paid,
+            "refund_due": int(refund_due) if is_paid else 0,
+            "amount_to_pay_now": 0 if is_paid else int(new_total),
+            "payment_method": order.payment_method,
+        },
+    })
+
+
+@api_view(["PATCH"])
+@permission_classes([IsStaffLevel])
+@transaction.atomic
+def confirm_refund(request, pk):
+    """
+    Tandai uang refund sudah diserahkan ke pelanggan (saat pesanan diambil).
+    Body: { "kasir_name": "Wawan" }      → tandai sudah dikembalikan
+          { "undo": true }               → batalkan tanda (salah klik)
+    """
+    order = get_object_or_404(Order.objects.select_for_update(), pk=pk)
+    if not order.refund_due or order.refund_due <= 0:
+        return Response({"detail": "Order ini tidak punya refund."}, status=400)
+
+    if request.data.get("undo"):
+        order.refunded_at = None
+        order.refunded_by = ""
+    else:
+        if order.refunded_at is not None:
+            return Response({"detail": "Refund order ini sudah ditandai dikembalikan."}, status=400)
+        order.refunded_at = timezone.now()
+        order.refunded_by = (request.data.get("kasir_name") or "").strip()
+    order.save(update_fields=["refunded_at", "refunded_by"])
+    order.refresh_from_db()
+    return Response(OrderSerializer(order).data)
+
+
+@api_view(["GET"])
+@permission_classes([IsStaffLevel])
+def pending_refunds(request):
+    """Semua refund yang belum diserahkan (lintas hari), supaya tidak ada uang pelanggan yang terlewat."""
+    qs = (
+        Order.objects
+        .filter(refund_due__gt=0, refunded_at__isnull=True)
+        .exclude(status="cancelled")
+        .prefetch_related("items__menu")
+        .order_by("-created_at")
+    )
+    return Response(OrderSerializer(qs, many=True).data)
+
+
+@api_view(["GET"])
+@permission_classes([IsStaffLevel])
+def orders_affected_by_menu(request, menu_id):
+    """
+    Order yang masih berjalan (belum siap, belum batal, 24 jam terakhir) dan memuat menu ini.
+    Dipakai setelah menu ditandai habis: kasir langsung tahu nota mana yang harus dikabari.
+    """
+    since = timezone.now() - timedelta(hours=24)
+    qs = (
+        Order.objects
+        .filter(items__menu_id=menu_id, created_at__gte=since, ready_at__isnull=True)
+        .exclude(status="cancelled")
+        .exclude(payment_status="void")
+        .exclude(GATEWAY_NOT_PAID_Q)
+        .prefetch_related("items__menu")
+        .distinct()
+        .order_by("created_at")
+    )
+    return Response(OrderSerializer(qs, many=True).data)
