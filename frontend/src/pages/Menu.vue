@@ -828,7 +828,6 @@ onUnmounted(() => clearTimeout(bumpTimer))
 
 .cart-bar {
   background: #D92B22;
-  text-shadow: -1px -1px 0 #111113, 1px -1px 0 #111113, -1px 1px 0 #111113, 1px 1px 0 #111113, 0 -1px 0 #111113, 0 1px 0 #111113, -1px 0 0 #111113, 1px 0 0 #111113;
   border: 2px solid #111113;
   box-shadow: 0 5px 0 #111113, 0 16px 30px -12px rgb(0 0 0 / 0.6);
 }

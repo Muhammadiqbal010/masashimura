@@ -1,7 +1,7 @@
 /* src/index.css */
 
 /* 1. CORE TAILWIND V4 & FONTS */
-@import url("https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
 @import "tailwindcss";
 
 /* 2. TOKEN BRAND — diambil dari logo "M" (merah #FE0000 + kuning #FFF500 di atas hitam)
@@ -369,7 +369,6 @@
 
 /* Segel hanko (kotak merah dengan kanji) */
 .hanko {
-  text-shadow: -1px -1px 0 var(--pop-ink), 1px -1px 0 var(--pop-ink), -1px 1px 0 var(--pop-ink), 1px 1px 0 var(--pop-ink), 0 -1px 0 var(--pop-ink), 0 1px 0 var(--pop-ink), -1px 0 0 var(--pop-ink), 1px 0 0 var(--pop-ink);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -378,8 +377,11 @@
   border-radius: 8px;
   background: var(--pop-red);
   color: #fff;
-  font-family: var(--font-display);
-  font-size: 0.8125rem;
+  font-family: "Zen Kaku Gothic New", "Noto Sans JP", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+  font-weight: 900;
+  font-synthesis: none;
+  letter-spacing: -0.02em;
+  font-size: 0.75rem;
   line-height: 1;
   transform: rotate(-6deg);
   box-shadow: 2px 2px 0 rgb(17 17 19 / 0.35);

@@ -10,7 +10,7 @@
           <span>{{ payment || cashDone ? "Beranda" : "Kembali ke menu" }}</span>
         </button>
         <router-link to="/" class="co-logo" aria-label="Masashimura – Beranda">
-          <img src="@/assets/masashimura-logo.png" alt="Masashimura" class="h-7 w-auto object-contain sm:h-8" />
+          <img src="@/assets/masashimura-logo.png" alt="Masashimura" class="h-8 w-auto object-contain sm:h-10" />
         </router-link>
       </div>
 
@@ -1245,10 +1245,6 @@ onBeforeUnmount(() => {
 .co-logo {
   display: inline-flex;
   align-items: center;
-  padding: 0.5rem 1.1rem;
-  border: 2px solid #111113;
-  border-radius: 9999px;
-  background: #111113;
 }
 
 .card {
