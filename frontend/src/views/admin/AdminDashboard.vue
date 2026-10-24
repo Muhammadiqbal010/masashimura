@@ -14,10 +14,6 @@
       </div>
     </header>
 
-    <!-- HARI INI: briefing + pesanan (tidak ikut filter tanggal; dimuat dan disegarkan sendiri) -->
-    <BriefingStrip ref="briefingRef" />
-    <TodayOrdersCard ref="todayOrdersRef" />
-
     <!-- RINGKASAN PERIODE: semua yang ikut filter tanggal ada di satu bagian ini -->
     <section class="period" aria-labelledby="period-title">
       <div class="period-head">
@@ -111,8 +107,107 @@
           </div>
         </div>
 
+      </template>
+    </section>
+
+    <!-- HARI INI: pesanan lalu briefing, di atas Prediksi karena ini yang perlu ditindaklanjuti (tidak ikut filter tanggal; dimuat dan disegarkan sendiri) -->
+    <TodayOrdersCard ref="todayOrdersRef" />
+    <BriefingStrip ref="briefingRef" />
+
+    <!-- PREDIKSI & SIMULASI (dimuat terpisah; tidak ikut filter tanggal) -->
+    <section class="predict-section" aria-labelledby="predict-title">
+      <div class="predict-header">
+        <div class="predict-title-block">
+          <h2 id="predict-title" class="period-title">Prediksi Penjualan</h2>
+          <p class="period-sub" v-if="prediction && !predictionError">
+            Metode: {{ predictionModelLabel }}<template v-if="predictionDataEnd"> · data s.d. {{ predictionDataEnd }}</template><template v-if="prediction.trained_at"> · dilatih {{ formatDateTime(prediction.trained_at) }}</template>
+          </p>
+          <p class="period-sub" v-else>Estimasi penjualan berdasarkan data historis</p>
+        </div>
+
+        <div class="predict-summary" v-if="prediction && !predictionError">
+          <div class="predict-inline-text">
+            <span class="predict-inline-label">Estimasi 7 hari ke depan</span>
+            <span class="predict-inline-value">{{ formatPrice(prediction.total_estimated_revenue) }}</span>
+          </div>
+          <span v-if="predictionLevel" class="predict-conf" :class="`is-${predictionLevel}`">Keyakinan {{ predictionLevel }}</span>
+        </div>
+
+        <button class="retrain-btn" @click="retrainModel" :disabled="retraining">
+          {{ retraining ? 'Melatih…' : 'Latih Ulang' }}
+        </button>
+      </div>
+
+      <p v-if="retrainNotice" class="predict-notice" role="status">{{ retrainNotice }}</p>
+
+      <div class="predict-tabs" role="tablist" aria-label="Bagian prediksi">
+        <button type="button" role="tab" class="predict-tab" :aria-selected="predictTab === 'grafik'" @click="predictTab = 'grafik'">Grafik</button>
+        <button type="button" role="tab" class="predict-tab" :aria-selected="predictTab === 'hari'" @click="predictTab = 'hari'">Per Hari</button>
+        <button type="button" role="tab" class="predict-tab" :aria-selected="predictTab === 'simulasi'" @click="predictTab = 'simulasi'">Simulasi</button>
+      </div>
+
+      <SimulationPanel v-if="predictTab === 'simulasi'" />
+
+      <template v-else>
+        <div v-if="predictionLoading && !prediction" class="empty-state">
+          <p class="empty-text">Memuat prediksi…</p>
+        </div>
+
+        <div v-else-if="predictionError" class="empty-state">
+          <div class="empty-icon">🤖</div>
+          <p class="empty-text">{{ predictionError }}</p>
+          <p v-if="predictionErrorHint" class="empty-hint">{{ predictionErrorHint }}</p>
+        </div>
+
+        <template v-else-if="prediction">
+          <!-- GRAFIK: satu grafik, prediksi lama bisa dinyalakan sendiri -->
+          <div v-if="predictTab === 'grafik'" class="predict-panel">
+            <div class="chart-card">
+              <div class="chart-toolbar">
+                <h3 class="chart-title">Omzet harian: asli dan prediksi</h3>
+                <button
+                  v-if="hasSavedPoints"
+                  type="button"
+                  class="saved-toggle"
+                  :aria-pressed="showSaved"
+                  @click="showSaved = !showSaved"
+                >
+                  <span class="saved-toggle-dot" aria-hidden="true"></span>
+                  Bandingkan dengan prediksi lama
+                </button>
+              </div>
+
+              <ul class="chart-legend" aria-label="Keterangan grafik">
+                <li><span class="lg lg-real" aria-hidden="true"></span>Omzet asli</li>
+                <li><span class="lg lg-pred" aria-hidden="true"></span>Prediksi ke depan</li>
+                <li><span class="lg lg-band" aria-hidden="true"></span>Rentang perkiraan</li>
+                <li v-if="showSaved && hasSavedPoints"><span class="lg lg-saved" aria-hidden="true"></span>Prediksi lama</li>
+              </ul>
+
+              <div class="chart-wrap">
+                <Line :data="trendChartData" :options="trendChartOptions" :plugins="[nowLinePlugin]" />
+              </div>
+
+              <p v-if="savedAccuracyText && (showSaved || !hasSavedPoints)" class="chart-caption">{{ savedAccuracyText }}</p>
+              <p v-if="showSaved && hasSavedPoints" class="chart-caption chart-caption--hint">
+                Prediksi lama adalah tebakan yang dibuat sebelum harinya tiba, jadi bisa dinilai dengan omzet asli.
+              </p>
+            </div>
+            <PredictionInsights :prediction="prediction" :sections="['strip']" />
+          </div>
+
+          <!-- PER HARI: tabel rincian + detail metode -->
+          <div v-else class="predict-panel">
+            <PredictionInsights :prediction="prediction" :sections="['table', 'details']" />
+          </div>
+        </template>
+      </template>
+    </section>
+
+    <!-- MENU TERLARIS (ikut filter tanggal di Ringkasan periode) -->
+    <section v-if="!loading && !loadError" class="menu-section" aria-label="Menu terlaris">
       <!-- TOP MENU TABLE -->
-      <div v-if="!loadError" class="table-card">
+      <div class="table-card">
         <div class="table-header">
           <div>
             <h3 class="table-title">{{ menuView === 'tomorrow' ? `Perkiraan Menu Besok${tomorrow ? ' · ' + tomorrow.day_name : ''}` : 'Top 5 Menu Terlaris' }}</h3>
@@ -242,98 +337,6 @@
           </table>
         </div>
       </div>
-
-      </template>
-    </section>
-
-    <!-- PREDIKSI & SIMULASI (dimuat terpisah; tidak ikut filter tanggal) -->
-    <section class="predict-section" aria-labelledby="predict-title">
-      <div class="predict-header">
-        <div class="predict-title-block">
-          <h2 id="predict-title" class="period-title">Prediksi Penjualan</h2>
-          <p class="period-sub" v-if="prediction && !predictionError">
-            Metode: {{ predictionModelLabel }}<template v-if="predictionDataEnd"> · data s.d. {{ predictionDataEnd }}</template><template v-if="prediction.trained_at"> · dilatih {{ formatDateTime(prediction.trained_at) }}</template>
-          </p>
-          <p class="period-sub" v-else>Estimasi penjualan berdasarkan data historis</p>
-        </div>
-
-        <div class="predict-summary" v-if="prediction && !predictionError">
-          <div class="predict-inline-text">
-            <span class="predict-inline-label">Estimasi 7 hari ke depan</span>
-            <span class="predict-inline-value">{{ formatPrice(prediction.total_estimated_revenue) }}</span>
-          </div>
-          <span v-if="predictionLevel" class="predict-conf" :class="`is-${predictionLevel}`">Keyakinan {{ predictionLevel }}</span>
-        </div>
-
-        <button class="retrain-btn" @click="retrainModel" :disabled="retraining">
-          {{ retraining ? 'Melatih…' : 'Latih Ulang' }}
-        </button>
-      </div>
-
-      <p v-if="retrainNotice" class="predict-notice" role="status">{{ retrainNotice }}</p>
-
-      <div class="predict-tabs" role="tablist" aria-label="Bagian prediksi">
-        <button type="button" role="tab" class="predict-tab" :aria-selected="predictTab === 'grafik'" @click="predictTab = 'grafik'">Grafik</button>
-        <button type="button" role="tab" class="predict-tab" :aria-selected="predictTab === 'hari'" @click="predictTab = 'hari'">Per Hari</button>
-        <button type="button" role="tab" class="predict-tab" :aria-selected="predictTab === 'simulasi'" @click="predictTab = 'simulasi'">Simulasi</button>
-      </div>
-
-      <SimulationPanel v-if="predictTab === 'simulasi'" />
-
-      <template v-else>
-        <div v-if="predictionLoading && !prediction" class="empty-state">
-          <p class="empty-text">Memuat prediksi…</p>
-        </div>
-
-        <div v-else-if="predictionError" class="empty-state">
-          <div class="empty-icon">🤖</div>
-          <p class="empty-text">{{ predictionError }}</p>
-          <p v-if="predictionErrorHint" class="empty-hint">{{ predictionErrorHint }}</p>
-        </div>
-
-        <template v-else-if="prediction">
-          <!-- GRAFIK: satu grafik, prediksi lama bisa dinyalakan sendiri -->
-          <div v-if="predictTab === 'grafik'" class="predict-panel">
-            <div class="chart-card">
-              <div class="chart-toolbar">
-                <h3 class="chart-title">Omzet harian: asli dan prediksi</h3>
-                <button
-                  v-if="hasSavedPoints"
-                  type="button"
-                  class="saved-toggle"
-                  :aria-pressed="showSaved"
-                  @click="showSaved = !showSaved"
-                >
-                  <span class="saved-toggle-dot" aria-hidden="true"></span>
-                  Bandingkan dengan prediksi lama
-                </button>
-              </div>
-
-              <ul class="chart-legend" aria-label="Keterangan grafik">
-                <li><span class="lg lg-real" aria-hidden="true"></span>Omzet asli</li>
-                <li><span class="lg lg-pred" aria-hidden="true"></span>Prediksi ke depan</li>
-                <li><span class="lg lg-band" aria-hidden="true"></span>Rentang perkiraan</li>
-                <li v-if="showSaved && hasSavedPoints"><span class="lg lg-saved" aria-hidden="true"></span>Prediksi lama</li>
-              </ul>
-
-              <div class="chart-wrap">
-                <Line :data="trendChartData" :options="trendChartOptions" />
-              </div>
-
-              <p v-if="savedAccuracyText && (showSaved || !hasSavedPoints)" class="chart-caption">{{ savedAccuracyText }}</p>
-              <p v-if="showSaved && hasSavedPoints" class="chart-caption chart-caption--hint">
-                Prediksi lama adalah tebakan yang dibuat sebelum harinya tiba, jadi bisa dinilai dengan omzet asli.
-              </p>
-            </div>
-            <PredictionInsights :prediction="prediction" :sections="['strip']" />
-          </div>
-
-          <!-- PER HARI: tabel rincian + detail metode -->
-          <div v-else class="predict-panel">
-            <PredictionInsights :prediction="prediction" :sections="['table', 'details']" />
-          </div>
-        </template>
-      </template>
     </section>
   </div>
 </template>
@@ -599,10 +602,26 @@ const savedAccuracyText = computed(() => {
   return '';
 });
 
-// Chart omzet harian: garis asli (solid, biru) nyambung ke garis prediksi (putus-putus, merah)
-// di titik terakhir data aktual, plus rentang perkiraan (area merah muda) di sisi prediksi.
-// "Prediksi lama" (kuning) hanya tampil kalau dinyalakan lewat tombol di atas grafik.
+// Chart omzet harian bergaya area gradien: tiap seri punya garis halus dan isian gradien yang memudar ke bawah,
+// jadi saat "Prediksi lama" dinyalakan areanya saling menumpuk dan selisihnya langsung terlihat.
+// Omzet asli (biru) nyambung ke prediksi (merah, putus-putus) di titik data terakhir, plus rentang perkiraan tipis.
 // Legenda digambar sendiri di template (lebih jelas dan bisa diberi nama yang mudah dipahami).
+const hexToRgb = (hex) => {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+};
+// Isian gradien dari atas grafik ke dasar; canvas tidak bisa baca CSS variable, jadi dibuat di sini.
+const areaGradient = (hex, topAlpha, bottomAlpha = 0) => (ctx) => {
+  const { chart } = ctx;
+  const area = chart.chartArea;
+  const [r, g, b] = hexToRgb(hex);
+  if (!area) return `rgba(${r},${g},${b},${topAlpha})`;
+  const grad = chart.ctx.createLinearGradient(0, area.top, 0, area.bottom);
+  grad.addColorStop(0, `rgba(${r},${g},${b},${topAlpha})`);
+  grad.addColorStop(1, `rgba(${r},${g},${b},${bottomAlpha})`);
+  return grad;
+};
+
 const trendChartData = computed(() => {
   if (!prediction.value) return { labels: [], datasets: [] };
 
@@ -620,25 +639,63 @@ const trendChartData = computed(() => {
   const savedData = [...history.map(h => savedByDate.value[h.date] ?? null), ...preds.map(() => null)];
 
   const real = isDark.value ? '#60a5fa' : '#2563eb';
-  const realFill = isDark.value ? 'rgba(96,165,250,0.14)' : 'rgba(37,99,235,0.09)';
+  const pred = '#d92b22';
+  const saved = isDark.value ? '#fbbf24' : '#e0a800';
   // 'monotone' menjaga garis tidak melengkung melewati nilai data (mis. dipantulkan di bawah Rp0 saat hari libur).
   const smooth = { cubicInterpolationMode: 'monotone', tension: 0 };
+  // Titik disembunyikan; muncul membesar saat disorot supaya grafik tetap bersih.
+  const dots = (color) => ({
+    pointRadius: 0, pointHoverRadius: 5, pointHoverBorderWidth: 2,
+    pointBackgroundColor: color, pointHoverBackgroundColor: color, pointHoverBorderColor: '#fff',
+  });
 
+  // Chart.js menggambar dataset paling awal di atas, jadi urutannya: pita, prediksi, prediksi lama, omzet asli.
   return {
     labels,
     datasets: [
-      { label: 'Batas Atas', data: upperData, borderColor: 'transparent', backgroundColor: 'rgba(217,43,34,0.12)', pointRadius: 0, fill: '+1', ...smooth },
-      { label: 'Batas Bawah', data: lowerData, borderColor: 'transparent', backgroundColor: 'rgba(217,43,34,0.12)', pointRadius: 0, fill: false, ...smooth },
-      { label: 'Prediksi ke depan', data: predData, borderColor: '#d92b22', backgroundColor: '#d92b22', borderDash: [6, 4], borderWidth: 2, pointRadius: 2.5, fill: false, ...smooth },
+      { label: 'Batas Atas', data: upperData, borderColor: 'transparent', backgroundColor: 'rgba(217,43,34,0.07)', pointRadius: 0, pointHoverRadius: 0, fill: '+1', ...smooth },
+      { label: 'Batas Bawah', data: lowerData, borderColor: 'transparent', backgroundColor: 'rgba(217,43,34,0.07)', pointRadius: 0, pointHoverRadius: 0, fill: false, ...smooth },
       {
-        label: 'Prediksi lama', data: savedData, hidden: !showSaved.value,
-        borderColor: '#e0a800', backgroundColor: '#e0a800', borderDash: [2, 3], borderWidth: 1.5,
-        pointRadius: 3.5, pointStyle: 'rectRot', spanGaps: false, fill: false, tension: 0,
+        label: 'Prediksi ke depan', data: predData, borderColor: pred, borderDash: [6, 4], borderWidth: 2,
+        backgroundColor: areaGradient(pred, 0.22), fill: 'origin', ...dots(pred), ...smooth,
       },
-      { label: 'Omzet asli', data: historyData, borderColor: real, backgroundColor: realFill, pointBackgroundColor: real, pointBorderColor: real, borderWidth: 2.25, pointRadius: 2.5, fill: 'origin', ...smooth },
+      {
+        label: 'Prediksi lama', data: savedData, hidden: !showSaved.value, borderColor: saved, borderWidth: 2,
+        backgroundColor: areaGradient(saved, 0.3), fill: 'origin', spanGaps: true, ...dots(saved), ...smooth,
+      },
+      {
+        label: 'Omzet asli', data: historyData, borderColor: real, borderWidth: 2.25,
+        backgroundColor: areaGradient(real, isDark.value ? 0.34 : 0.28), fill: 'origin', ...dots(real), ...smooth,
+      },
     ],
   };
 });
+
+// Garis tegak putus-putus penanda batas "data asli" dan "prediksi", digambar di titik data terakhir.
+const nowLinePlugin = {
+  id: 'nowLine',
+  afterDatasetsDraw(chart) {
+    const real = chart.data.datasets.find(d => d.label === 'Omzet asli');
+    if (!real) return;
+    let idx = -1;
+    real.data.forEach((v, i) => { if (v !== null && v !== undefined) idx = i; });
+    if (idx < 0 || idx >= real.data.length - 1) return;
+    const x = chart.scales.x.getPixelForValue(idx);
+    const { top, bottom } = chart.chartArea;
+    const { ctx } = chart;
+    ctx.save();
+    ctx.setLineDash([3, 4]);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = isDark.value ? 'rgba(255,255,255,0.28)' : 'rgba(24,24,27,0.28)';
+    ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, bottom); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = isDark.value ? 'rgba(255,255,255,0.55)' : 'rgba(24,24,27,0.55)';
+    ctx.font = '10px "Plus Jakarta Sans", system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('Prediksi →', x + 6, top + 12);
+    ctx.restore();
+  },
+};
 
 // Warna chart (canvas tidak bisa baca CSS variable) → ikut tema aktif.
 const chartTheme = computed(() => isDark.value
@@ -668,8 +725,8 @@ const trendChartOptions = computed(() => {
       },
     },
     scales: {
-      x: { ticks: { color: t.tick, font: { size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 }, grid: { color: t.grid } },
-      y: { beginAtZero: true, grace: '8%', ticks: { color: t.tick, font: { size: 10 }, callback: (v) => formatPriceShort(v) }, grid: { color: t.grid } },
+      x: { ticks: { color: t.tick, font: { size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 }, grid: { display: false }, border: { display: false } },
+      y: { beginAtZero: true, grace: '8%', ticks: { color: t.tick, font: { size: 10 }, padding: 8, callback: (v) => formatPriceShort(v) }, grid: { color: t.grid }, border: { display: false, dash: [4, 4] } },
     },
   };
 });
@@ -755,10 +812,11 @@ const formatPrice = (value) =>
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── KPI: empat kartu sama besar, satu gaya ──────────────────────────
+/* ── KPI: Total Revenue besar selebar penuh di atas, tiga kartu lain sejajar di bawahnya ──
    Aksen merah brand hanya di kartu Revenue (metrik #1); sisanya netral. */
-.kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.9rem; }
-@media (max-width: 1000px) { .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.kpi-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.9rem; }
+.kpi-grid .stat-card--primary { grid-column: 1 / -1; padding: 1.4rem 1.6rem; }
+@media (max-width: 760px) { .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 520px) { .kpi-grid { grid-template-columns: 1fr; } }
 
 .stat-card {
@@ -782,6 +840,8 @@ const formatPrice = (value) =>
   overflow-wrap: anywhere;
 }
 .accent-purple .stat-value { color: var(--purple-soft); }
+.stat-card--primary .stat-value { font-size: clamp(2.1rem, 1.5rem + 2.4vw, 3.1rem); line-height: 1.05; margin-bottom: 0.55rem; overflow-wrap: normal; white-space: nowrap; }
+.stat-card--primary .stat-sub { font-size: 0.85rem; }
 .stat-value-text { font-family: var(--font-body); font-size: 1.05rem; line-height: 1.35; }
 .stat-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.6rem; font-size: 0.78rem; color: var(--text-faint); font-family: var(--font-body); }
 
@@ -980,15 +1040,15 @@ const formatPrice = (value) =>
 }
 .saved-toggle:hover { color: var(--text); border-color: rgb(var(--ink) / 0.3); }
 .saved-toggle[aria-pressed="true"] { color: var(--text); background: color-mix(in srgb, #e0a800 14%, transparent); border-color: color-mix(in srgb, #e0a800 55%, transparent); }
-.saved-toggle-dot { width: 8px; height: 8px; background: #e0a800; transform: rotate(45deg); }
+.saved-toggle-dot { width: 8px; height: 8px; border-radius: 50%; background: #e0a800; }
 
 .chart-legend { display: flex; flex-wrap: wrap; gap: 0.35rem 1.1rem; list-style: none; margin: 0 0 0.75rem; padding: 0; font-size: 0.78rem; color: var(--text-dim); }
 .chart-legend li { display: inline-flex; align-items: center; gap: 0.45rem; }
 .lg { display: inline-block; flex-shrink: 0; }
-.lg-real  { width: 16px; height: 3px; border-radius: 2px; background: #2563eb; }
-.lg-pred  { width: 16px; height: 0; border-top: 2.5px dashed #d92b22; }
-.lg-band  { width: 14px; height: 10px; border-radius: 3px; background: rgba(217,43,34,0.18); }
-.lg-saved { width: 8px; height: 8px; background: #e0a800; transform: rotate(45deg); }
+.lg-real  { width: 10px; height: 10px; border-radius: 50%; background: #2563eb; }
+.lg-pred  { width: 10px; height: 10px; border-radius: 50%; background: #d92b22; }
+.lg-band  { width: 14px; height: 10px; border-radius: 3px; background: rgba(217,43,34,0.16); }
+.lg-saved { width: 10px; height: 10px; border-radius: 50%; background: #e0a800; }
 html[data-admin-theme='dark'] .lg-real { background: #60a5fa; }
 
 .chart-wrap { height: 300px; width: 100%; position: relative; overflow: hidden; }
@@ -1117,4 +1177,22 @@ html[data-admin-theme='dark'] .lg-real { background: #60a5fa; }
 
 /* Ritme vertikal dipegang oleh .adm-page (gap), bukan margin tiap blok */
 .adm-page.dashboard-root > * { margin-bottom: 0; }
+</style>
+
+<!-- Tidak scoped: mengubah font judul/angka di seluruh Dashboard, termasuk komponen anaknya. -->
+<style>
+/* Judul dan angka besar sebelumnya memakai Dela Gothic One yang sangat tebal. Di Dashboard dipakai font isi saja. */
+.dashboard-root.dashboard-root { --font-display: var(--font-body); }
+.dashboard-root.dashboard-root .adm-title { font-weight: 600; letter-spacing: -0.02em; }
+.dashboard-root.dashboard-root .period-title,
+.dashboard-root.dashboard-root .bf-title,
+.dashboard-root.dashboard-root .adm-card-title,
+.dashboard-root.dashboard-root .table-title { font-weight: 600; }
+.dashboard-root.dashboard-root .stat-value,
+.dashboard-root.dashboard-root .predict-inline-value,
+.dashboard-root.dashboard-root .bf-value { font-weight: 600; letter-spacing: -0.01em; }
+.dashboard-root.dashboard-root .stat-label { font-weight: 500; }
+.dashboard-root.dashboard-root .qty-val,
+.dashboard-root.dashboard-root .td-revenue { font-weight: 600; }
+.dashboard-root.dashboard-root .th-rank, .dashboard-root.dashboard-root .menu-table th { font-weight: 600; }
 </style>
