@@ -682,7 +682,7 @@ function formatPriceShort(value) {
 }
 
 // Tanggal LOKAL (bukan toISOString yang UTC): antara 00.00 dan 07.00 WIB, versi UTC masih "kemarin".
-const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+function ymd(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
 function today() { return ymd(new Date()); }
 function daysAgo(n) { const d = new Date(); d.setDate(d.getDate() - n); return ymd(d); }
 function startOfMonth() { const d = new Date(); d.setDate(1); return ymd(d); }
