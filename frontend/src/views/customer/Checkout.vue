@@ -370,6 +370,29 @@
               </div>
             </div>
 
+            <!-- Tipe pesanan -->
+            <div class="space-y-2">
+              <span class="block text-sm font-medium text-[#3F3F46]">Makan di sini atau dibungkus?</span>
+              <div class="grid grid-cols-2 gap-2.5">
+                <button
+                  v-for="opt in serviceOptions"
+                  :key="opt.value"
+                  type="button"
+                  @click="serviceType = opt.value"
+                  :aria-pressed="serviceType === opt.value"
+                  :class="[
+                    'rounded-2xl border-2 px-4 py-3 text-left transition-all duration-150',
+                    serviceType === opt.value
+                      ? 'border-[#D92B22] bg-[#D92B22]/10'
+                      : 'border-[#111113]/15 bg-[#111113]/[0.03] hover:border-[#111113]/40'
+                  ]"
+                >
+                  <span class="block font-sora text-sm font-semibold text-[#111113]">{{ opt.icon }} {{ opt.label }}</span>
+                  <span class="block text-xs text-[#55555D]">{{ opt.hint }}</span>
+                </button>
+              </div>
+            </div>
+
             <!-- Metode Pembayaran -->
             <div class="space-y-2">
               <span class="block text-sm font-medium text-[#3F3F46]">Pembayaran</span>
@@ -561,6 +584,11 @@ const confirmPicker = ({ selection, quantity }) => {
 const name            = ref("")
 const phone           = ref("")
 const paymentMethod   = ref("cash")   // "cash" | "gateway" (Midtrans)
+const serviceType     = ref("dine_in") // "dine_in" | "takeaway"
+const serviceOptions  = [
+  { value: "dine_in",  icon: "🍽️", label: "Makan di Tempat", hint: "Disajikan di meja" },
+  { value: "takeaway", icon: "🥡", label: "Dibungkus",       hint: "Dibawa pulang" },
+]
 const isProcessing    = ref(false)
 
 // ── Nama pemesan ─────────────────────────────────────────────────────────────
@@ -1002,6 +1030,7 @@ const buildWaMessage = (orderNumber, paymentLabel) => {
     `No. Order  : *#${orderNumber}*\n` +
     `Nama       : ${name.value}\n` +
     `WhatsApp   : ${phone.value}\n` +
+    `Tipe       : ${serviceType.value === "takeaway" ? "Dibungkus" : "Makan di Tempat"}\n` +
     `Pembayaran : ${paymentLabel}\n` +
     `===========================\n` +
     `*Pesanan:*\n${itemsText}\n` +
@@ -1107,6 +1136,7 @@ const checkout = async () => {
       source:         "web",
       customer:       { phone: phone.value, name: cleanName(name.value) },
       payment_method: paymentMethod.value,
+      service_type:   serviceType.value,
       promo_id:          appliedPromo.value?.promo_id || null,
       redeem_reward_ids: selectedRewardIds.value,
       // PIN hanya dikirim saat menukar poin; server memverifikasi ulang (kunci 5x salah).

@@ -118,6 +118,8 @@
             </button>
           </div>
 
+          <p class="px-4 pb-2 text-xs text-[color:var(--text-dim)]">{{ serviceTypeLabel(order.service_type) }}</p>
+
           <!-- Detail item -->
           <div
             v-if="order.items?.length && isExpanded(order.id)"
@@ -165,6 +167,7 @@
 import { ref, computed, watch, onMounted } from "vue";
 import apiClient from "@/api/client";
 import { groupReceiptLines } from "@/utils/receiptLines";
+import { serviceTypeLabel } from "@/utils/serviceType";
 
 const orders = ref([]);
 const period = ref("today");

@@ -324,6 +324,29 @@
           </div>
         </div>
 
+        <!-- Service type: makan di tempat / dibungkus -->
+        <div class="order-section">
+          <label class="field-label">Tipe Pesanan</label>
+          <div class="toggle-grid">
+            <button
+              type="button"
+              @click="serviceType = 'dine_in'"
+              class="toggle-btn"
+              :class="serviceType === 'dine_in' ? 'toggle-active-red' : 'toggle-inactive'"
+            >
+              🍽️ Makan di Tempat
+            </button>
+            <button
+              type="button"
+              @click="serviceType = 'takeaway'"
+              class="toggle-btn"
+              :class="serviceType === 'takeaway' ? 'toggle-active-amber' : 'toggle-inactive'"
+            >
+              🥡 Dibungkus
+            </button>
+          </div>
+        </div>
+
         <!-- Order type -->
         <div class="order-section">
           <label class="field-label">Alur Konsumsi</label>
@@ -525,7 +548,7 @@
             <div class="drawer-order-top">
               <div>
                 <p class="drawer-order-num">{{ order.order_number }}</p>
-                <p class="drawer-order-name">{{ order.customer_name || 'Walk In' }}</p>
+                <p class="drawer-order-name">{{ order.customer_name || 'Walk In' }}<span v-if="order.service_type === 'takeaway'"> · 🥡 Dibungkus</span></p>
                 <p class="drawer-order-phone">{{ order.customer_phone || '—' }}</p>
               </div>
               <div class="drawer-order-right">
@@ -818,6 +841,7 @@ let debounceTimeout = null;
 // ── State: pembayaran ────────────────────────────────────────────────
 const paymentMethod = ref("cash");
 const orderType     = ref("dine_in_now");
+const serviceType   = ref("dine_in");   // 'dine_in' | 'takeaway'
 const amountPaid    = ref(0);
 const isSubmitting  = ref(false);
 
@@ -1310,6 +1334,7 @@ const resetForm = () => {
   resetPointRewards();
   paymentMethod.value = "cash";
   orderType.value = "dine_in_now";
+  serviceType.value = "dine_in";
   amountPaid.value = 0;
   promoBoxRef.value?.removePromo?.();
   showMobileCart.value = false;
@@ -1336,6 +1361,7 @@ const submitOrder = async () => {
       ? { phone: customerPhone.value, name: customerName.value || "Member Baru" }
       : null,
     payment_method: paymentMethod.value,
+    service_type: serviceType.value,
     payment_status: orderType.value === "dine_in_later" ? "pending" : "paid",
     amount_paid: isCashNow.value ? amountPaid.value || 0 : 0,
     kasir_name: kasirName.value,

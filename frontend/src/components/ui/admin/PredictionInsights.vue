@@ -1,29 +1,22 @@
 <template>
   <div class="pi-root">
-    <!-- RINGKASAN: KEYAKINAN + TREN -->
-    <div class="pi-summary">
-      <div class="pi-card pi-confidence">
-        <div class="pi-card-head">
-          <span class="pi-label">Tingkat keyakinan prediksi</span>
-          <span class="pi-level">
-            <span
-              class="pi-bars"
-              role="img"
-              :aria-label="`Keyakinan ${levelLabel}`"
-            >
-              <i v-for="n in 3" :key="n" :class="{ on: n <= levelIndex }"></i>
-            </span>
-            {{ levelLabel }}
+    <!-- RINGKASAN SATU BARIS: KEYAKINAN + TREN -->
+    <div v-if="show('strip')" class="pi-strip">
+      <div class="pi-strip-item">
+        <span class="pi-label">Keyakinan prediksi</span>
+        <span class="pi-level">
+          <span class="pi-bars" role="img" :aria-label="`Keyakinan ${levelLabel}`">
+            <i v-for="n in 3" :key="n" :class="{ on: n <= levelIndex }"></i>
           </span>
-        </div>
-        <p class="pi-text">{{ confidence.message || 'Belum ada keterangan keyakinan dari server.' }}</p>
-        <p v-if="confidence.history_days" class="pi-meta">
-          Berdasarkan {{ confidence.history_days }} hari data historis
-          <template v-if="dataRangeLabel"> · {{ dataRangeLabel }}</template>
+          {{ levelLabel }}
+        </span>
+        <p class="pi-meta">
+          <template v-if="confidence.history_days">Dari {{ confidence.history_days }} hari data<template v-if="dataRangeLabel"> ({{ dataRangeLabel }})</template>. </template>
+          <template v-if="levelIndex === 1">Masih kasar, belum cocok untuk keputusan besar seperti stok atau jadwal karyawan.</template>
+          <template v-else-if="levelIndex === 2">Cukup untuk acuan, tapi masih terbatas.</template>
         </p>
       </div>
-
-      <div class="pi-card pi-trend">
+      <div class="pi-strip-item">
         <span class="pi-label">Tren vs {{ historyWindowLabel }}</span>
         <div class="pi-trend-value" :class="trendTone">
           <span class="pi-trend-arrow" aria-hidden="true">{{ trendArrow }}</span>
@@ -31,17 +24,13 @@
           <span v-if="hasTrendPct" class="pi-trend-pct">{{ trendPctLabel }}</span>
         </div>
         <p v-if="trend.forecast_average_daily" class="pi-meta">
-          Rata-rata harian prediksi {{ rupiah(trend.forecast_average_daily) }}
-          <template v-if="trend.history_average_daily">
-            · historis {{ rupiah(trend.history_average_daily) }}
-          </template>
+          Rata-rata harian: prediksi {{ rupiah(trend.forecast_average_daily) }}<template v-if="trend.history_average_daily"> · historis {{ rupiah(trend.history_average_daily) }}</template> (hari buka saja)
         </p>
-        <p class="pi-meta">Dihitung dari hari buka saja.</p>
       </div>
     </div>
 
     <!-- TABEL RINCIAN HARIAN -->
-    <div class="pi-card pi-table-card">
+    <div v-if="show('table')" class="pi-card pi-table-card">
       <h4 class="pi-title">Rincian Prediksi per Hari</h4>
       <div class="pi-table-scroll">
         <table class="pi-table">
@@ -51,6 +40,7 @@
               <th class="num">Prediksi</th>
               <th class="num">Rentang perkiraan</th>
               <th>Keyakinan</th>
+              <th class="pi-bar-col">Perbandingan</th>
             </tr>
           </thead>
           <tbody>
@@ -63,12 +53,16 @@
                 <td class="num pi-muted">—</td>
                 <td class="num pi-muted">Libur rutin</td>
                 <td class="pi-muted">—</td>
+                <td class="pi-bar-col"></td>
               </template>
               <template v-else>
                 <td class="num pi-strong">{{ rupiah(row.predicted) }}</td>
                 <td class="num pi-range">{{ rupiah(row.lower) }} – {{ rupiah(row.upper) }}</td>
                 <td>
                   <span class="pi-chip" :title="row.sampleHint">{{ row.confidenceLabel }}</span>
+                </td>
+                <td class="pi-bar-col">
+                  <span class="pi-bar-track" aria-hidden="true"><span class="pi-bar-fill" :style="{ width: barPct(row.predicted) + '%' }"></span></span>
                 </td>
               </template>
             </tr>
@@ -81,7 +75,7 @@
     </div>
 
     <!-- DETAIL METODE & EVALUASI -->
-    <details class="pi-card pi-details">
+    <details v-if="show('details')" class="pi-card pi-details">
       <summary>Detail metode &amp; evaluasi model</summary>
 
       <div class="pi-details-body">
@@ -140,7 +134,11 @@ import { formatRupiah } from '@/utils/price';
 const props = defineProps({
   // Respons GET /api/prediction/revenue/
   prediction: { type: Object, required: true },
+  // Bagian yang ditampilkan: 'strip' (keyakinan + tren), 'table' (rincian harian), 'details' (metode & evaluasi).
+  sections: { type: Array, default: () => ['strip', 'table', 'details'] },
 });
+
+const show = (name) => props.sections.includes(name);
 
 const rupiah = (n) => formatRupiah(Math.round(Number(n) || 0));
 
@@ -197,6 +195,9 @@ const rows = computed(() =>
   })),
 );
 
+const maxPredicted = computed(() => Math.max(1, ...rows.value.filter((r) => !r.closed).map((r) => Number(r.predicted) || 0)));
+const barPct = (v) => Math.round(((Number(v) || 0) / maxPredicted.value) * 100);
+
 // ── Metode & evaluasi ─────────────────────────────────────────────────────
 const METHOD_LABELS = {
   baseline: 'Baseline (median berbobot per hari dalam seminggu)',
@@ -244,8 +245,7 @@ const metricsMismatch = computed(
 .pi-root {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-  margin-top: 1.25rem;
+  gap: 1rem;
   min-width: 0;
 }
 
@@ -257,12 +257,22 @@ const metricsMismatch = computed(
   min-width: 0;
 }
 
-.pi-summary {
+.pi-strip {
   display: grid;
   grid-template-columns: 1.3fr 1fr;
-  gap: 1.25rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
   min-width: 0;
 }
+.pi-strip-item { padding: 0.95rem 1.2rem; min-width: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+.pi-strip-item + .pi-strip-item { border-left: 1px solid var(--border); }
+.pi-strip .pi-meta { margin: 0; line-height: 1.45; }
+.pi-strip .pi-trend-value { margin-top: 0; font-size: 1.15rem; }
+
+.pi-bar-col { width: 26%; min-width: 110px; }
+.pi-bar-track { display: block; height: 6px; border-radius: 99px; background: var(--border); overflow: hidden; }
+.pi-bar-fill { display: block; height: 100%; border-radius: 99px; background: var(--accent); }
 
 .pi-label {
   font-family: var(--font-body);
@@ -416,7 +426,9 @@ const metricsMismatch = computed(
 }
 
 @media (max-width: 768px) {
-  .pi-summary { grid-template-columns: 1fr; }
+  .pi-strip { grid-template-columns: 1fr; }
+  .pi-strip-item + .pi-strip-item { border-left: none; border-top: 1px solid var(--border); }
   .pi-card { padding: 1rem; }
+  .pi-bar-col { display: none; }
 }
 </style>

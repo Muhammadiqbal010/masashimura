@@ -110,11 +110,17 @@ useTheme()
 const orderNotifications = useOrderNotificationsStore()
 const auth = useAuthStore()
 
-const todayLabel = new Intl.DateTimeFormat('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date())
+// Dihitung ulang (bukan sekali saat dimuat) supaya tidak basi kalau tab dibiarkan terbuka lewat tengah malam.
+const dateFmt = new Intl.DateTimeFormat('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+const todayLabel = ref(dateFmt.format(new Date()))
+const refreshTodayLabel = () => { todayLabel.value = dateFmt.format(new Date()) }
+let todayTimer = null
 const initial = computed(() => (auth.user?.name || 'A').trim().charAt(0).toUpperCase())
 
 onMounted(() => {
   orderNotifications.startPolling()
+  todayTimer = setInterval(refreshTodayLabel, 60 * 1000)
+  document.addEventListener('visibilitychange', refreshTodayLabel)
   // Browser nge-block AudioContext sebelum ada interaksi user pertama kali,
   // jadi listener ini cuma buat "buka kunci" audio, lalu ke-remove sendiri.
   window.addEventListener('click', unlockNotificationAudio, { once: true })
@@ -122,6 +128,8 @@ onMounted(() => {
 
 onUnmounted(() => {
   orderNotifications.stopPolling()
+  clearInterval(todayTimer)
+  document.removeEventListener('visibilitychange', refreshTodayLabel)
   window.removeEventListener('click', unlockNotificationAudio)
 })
 </script>

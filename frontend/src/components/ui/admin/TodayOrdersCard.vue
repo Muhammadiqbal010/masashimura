@@ -4,7 +4,7 @@
       <div class="adm-card-head-main">
         <h2 id="today-title" class="adm-card-title">Pesanan hari ini</h2>
         <p class="adm-card-desc">
-          {{ summary.count }} pesanan aktif · tidak ikut filter tanggal
+          {{ summary.count }} pesanan aktif
           <template v-if="lastUpdated"> · diperbarui {{ lastUpdated }}</template>
         </p>
       </div>
@@ -18,7 +18,7 @@
       <button type="button" class="today-retry" @click="load({ force: true })">Coba lagi</button>
     </div>
 
-    <div v-else-if="!orders.length" class="today-state">Belum ada pesanan hari ini.</div>
+    <div v-else-if="!orders.length" class="today-state today-state--empty">Belum ada pesanan hari ini. Pesanan baru akan muncul di sini otomatis.</div>
 
     <div v-else class="today-body">
       <div class="today-table-wrap">
@@ -199,7 +199,7 @@ defineExpose({ reload: () => load({ force: true }) })
 </script>
 
 <style scoped>
-.today { margin-bottom: 1.75rem; }
+.today { margin-bottom: 0; }
 .today-link {
   font-size: 0.8125rem; font-weight: 600; color: var(--accent-text);
   text-decoration: none; padding: 0.5rem 0.25rem; min-height: 44px;
@@ -209,6 +209,7 @@ defineExpose({ reload: () => load({ force: true }) })
 
 .today-state { padding: 2rem 1.25rem; text-align: center; font-size: 0.875rem; color: var(--text-dim); }
 .today-state p { margin: 0 0 0.75rem; }
+.today-state--empty { padding: 1rem 1.25rem; text-align: left; font-size: 0.82rem; color: var(--text-faint); }
 .today-retry {
   min-height: 44px; padding: 0 1rem; border-radius: var(--r-md);
   border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text);

@@ -245,6 +245,9 @@
           <div class="ao-a-id ao-id" role="cell">
             #{{ order.id }}
             <span v-if="newIds.has(order.id)" class="ao-new-tag">Baru</span>
+            <span class="ao-svc" :class="{ 'ao-svc--takeaway': order.service_type === 'takeaway' }">
+              {{ order.service_type === 'takeaway' ? '🥡 Bungkus' : '🍽️ Dine In' }}
+            </span>
           </div>
 
           <div class="ao-a-cust" role="cell">
@@ -376,6 +379,7 @@
           <div class="rcpt-row"><span>Kasir</span><b>{{ selectedOrder.kasir_name || kasirName }}</b></div>
           <div class="rcpt-row"><span>Waktu</span><b>{{ formatFullDateTime(selectedOrder.created_at) }}</b></div>
           <div v-if="customerLabel" class="rcpt-row"><span>Pelanggan</span><b>{{ customerLabel }}</b></div>
+          <div class="rcpt-row"><span>Tipe</span><b>{{ serviceTypeLabel(selectedOrder.service_type) }}</b></div>
         </div>
 
         <div v-if="selectedOrder.status === 'cancelled'" class="rcpt-cancel">
@@ -496,7 +500,8 @@
         <div style="display:flex; justify-content:space-between; margin-bottom:2px;"><span>No. Nota :</span><span style="font-weight:900;">{{ selectedOrder?.order_number }}</span></div>
         <div style="display:flex; justify-content:space-between; margin-bottom:2px;"><span>Kasir :</span><span>{{ selectedOrder?.kasir_name || kasirName }}</span></div>
         <div style="display:flex; justify-content:space-between; margin-bottom:2px;"><span>Waktu :</span><span>{{ formatFullDateTime(selectedOrder?.created_at) }}</span></div>
-        <div v-if="customerLabel" style="display:flex; justify-content:space-between;"><span>Pelanggan :</span><span>{{ customerLabel }}</span></div>
+        <div v-if="customerLabel" style="display:flex; justify-content:space-between; margin-bottom:2px;"><span>Pelanggan :</span><span>{{ customerLabel }}</span></div>
+        <div style="display:flex; justify-content:space-between;"><span>Tipe :</span><span style="font-weight:900;">{{ serviceTypeLabel(selectedOrder?.service_type) }}</span></div>
       </div>
 
       <div style="border-top:1px dashed #000; margin-bottom:12px;"></div>
@@ -549,6 +554,7 @@
       <div class="pr-row"><span>Kasir</span><span>{{ selectedOrder?.kasir_name || kasirName }}</span></div>
       <div class="pr-row"><span>Waktu</span><span>{{ formatFullDateTime(selectedOrder?.created_at) }}</span></div>
       <div v-if="customerLabel" class="pr-row"><span>Pelanggan</span><span>{{ customerLabel }}</span></div>
+      <div class="pr-row"><span>Tipe</span><span>{{ serviceTypeLabel(selectedOrder?.service_type) }}</span></div>
       <div class="pr-divider"></div>
       <div class="pr-heading">Detail Pesanan</div>
       <div v-for="(line, idx) in receiptLines" :key="'pr' + idx" class="pr-item">
@@ -837,6 +843,7 @@ import AdminModal from '@/components/ui/admin/Adminmodal.vue'
 import OrderItemTools from '@/components/ui/admin/OrderItemTools.vue'
 import NotifyCustomerModal from '@/components/ui/admin/NotifyCustomerModal.vue'
 import { groupReceiptLines } from '@/utils/receiptLines'
+import { serviceTypeLabel } from '@/utils/serviceType'
 import { msgReceipt, chatUrl, isMobileDevice } from '@/utils/friendlyMessages'
 // Di-import (bukan "/src/assets/…") supaya path-nya ikut di-hash & tetap jalan di build production.
 import logoUrl from '@/assets/masashimura-logo.png'
@@ -1929,6 +1936,8 @@ const confirmDelete = async () => {
 /* Customer */
 .ao-cust-name { display: block; font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
 .ao-cust-phone { display: block; font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-faint); }
+.ao-svc { display: inline-block; margin-left: 0.4rem; padding: 0.05rem 0.45rem; border-radius: 99px; background: rgba(120,120,130,0.16); font-family: var(--font-body); font-size: 0.72rem; font-weight: 700; white-space: nowrap; vertical-align: middle; }
+.ao-svc--takeaway { background: rgba(245,158,11,0.2); color: #b45309; }
 .ao-guest { padding-block: 0.1rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; }
 
 /* Menu */

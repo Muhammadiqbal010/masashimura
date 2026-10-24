@@ -228,7 +228,7 @@ defineExpose({ reload: load })
 <style scoped>
 /* Token mengikuti tema admin (admin-theme.css), jadi gelap/terang otomatis. */
 .bf {
-  margin-bottom: 1.75rem;
+  margin-bottom: 0;
   padding: clamp(1rem, 2.5vw, 1.4rem);
   background: var(--surface);
   border: 1px solid rgb(var(--ink) / 0.07);

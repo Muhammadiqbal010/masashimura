@@ -1,7 +1,7 @@
 <!--
   SimulationPanel.vue — tab kecil "Simulasi" di bagian Prediksi (Dashboard, #19).
   Hanya skenario yang punya dasar data historis:
-    1. Target: aritmatika dari rata-rata omzet per hari buka bulan ini (bukan model prediksi).
+    1. Target: titik awal prediksi model yang sama dengan Briefing (cadangan: rata-rata per hari buka).
     2. Promo : estimasi kasar dari selisih hari ber-promo vs tanpa promo (wajib berlabel estimasi).
   Angka dasar dari server; slider dan input hanya menghitung ulang di layar.
 -->
@@ -20,14 +20,15 @@
         <h4 id="sim-target-title" class="sim-title">Simulasi target · {{ t.month_label }}</h4>
 
         <p v-if="!t.enough_data" class="sim-note" role="status">
-          Data belum cukup. Simulasi butuh minimal {{ t.min_open_days }} hari buka yang sudah lewat bulan ini
+          Data belum cukup. Simulasi butuh prediksi model atau minimal {{ t.min_open_days }} hari buka yang sudah lewat bulan ini
           (baru {{ t.open_days_elapsed }}).
         </p>
 
         <template v-else>
           <label class="sim-label" for="sim-growth">
-            Kalau rata-rata omzet harian
-            <strong>{{ growth >= 0 ? 'naik' : 'turun' }} {{ Math.abs(growth) }}%</strong>
+            Kalau omzet hari-hari tersisa
+            <strong v-if="growth === 0">tetap seperti sekarang</strong>
+            <strong v-else>{{ growth > 0 ? 'naik' : 'turun' }} {{ Math.abs(growth) }}%</strong>
           </label>
           <input id="sim-growth" v-model.number="growth" class="sim-range" type="range" min="-50" max="100" step="5" />
           <div class="sim-scale" aria-hidden="true"><span>-50%</span><span>0%</span><span>+100%</span></div>
@@ -42,16 +43,20 @@
             <template v-else>Masih kurang {{ rp(t.target - projected) }} dari target {{ rp(t.target) }}.</template>
           </p>
           <p v-if="t.target_reached" class="sim-vs is-ok">Target bulan ini sudah tercapai.</p>
-          <p v-else-if="t.needed_growth_pct !== null" class="sim-hint">
-            Untuk mencapai target, rata-rata harian perlu
-            <strong>{{ t.needed_growth_pct > 0 ? 'naik ' + t.needed_growth_pct : 'turun maksimal ' + Math.abs(t.needed_growth_pct) }}%</strong>
-            dari sekarang.
+          <p v-else-if="t.needed_per_open_day !== null && t.needed_per_open_day !== undefined" class="sim-hint">
+            Untuk mencapai target, sisa {{ t.remaining_open_days }} hari buka perlu rata-rata
+            <strong>{{ rp(t.needed_per_open_day) }} per hari</strong>
+            (prediksi {{ rp(t.forecast_per_open_day ?? t.avg_open_day) }}<template v-if="t.needed_multiplier"> · sekitar {{ t.needed_multiplier }}× lipat</template>).
+          </p>
+          <p v-if="unrealisticTarget" class="sim-warn" role="status">
+            Targetnya kemungkinan terlalu tinggi untuk bulan ini.
+            <RouterLink v-if="auth.isOwner" :to="{ name: 'AdminSettings' }" class="sim-link">Tinjau target di Pengaturan</RouterLink>
           </p>
           <p v-else-if="!t.target" class="sim-hint">Isi target bulanan di Pengaturan Sistem untuk melihat selisihnya.</p>
 
           <dl class="sim-facts">
             <div><dt>Omzet berjalan</dt><dd>{{ rp(t.realized) }}</dd></div>
-            <div><dt>Rata-rata per hari buka</dt><dd>{{ rp(t.avg_open_day) }}</dd></div>
+            <div><dt>{{ t.basis === 'model' ? 'Prediksi per hari buka' : 'Rata-rata per hari buka' }}</dt><dd>{{ rp(t.forecast_per_open_day ?? t.avg_open_day) }}</dd></div>
             <div><dt>Sisa hari buka</dt><dd>{{ t.remaining_open_days }} hari</dd></div>
           </dl>
         </template>
@@ -62,10 +67,17 @@
       <section class="sim-card" aria-labelledby="sim-promo-title">
         <h4 id="sim-promo-title" class="sim-title">Simulasi promo <span class="sim-badge">Estimasi</span></h4>
 
-        <p v-if="!p.enough_data" class="sim-note" role="status">
-          Data belum cukup. Butuh minimal {{ p.min_days_per_group }} hari ber-promo dan {{ p.min_days_per_group }} hari tanpa promo
-          dalam {{ p.lookback_days }} hari terakhir (sekarang {{ p.promo_days }} dan {{ p.non_promo_days }}).
-        </p>
+        <div v-if="!p.enough_data" class="sim-progress" role="status">
+          <p class="sim-note">
+            Data belum cukup. Simulasi butuh minimal {{ p.min_days_per_group }} hari ber-promo dan
+            {{ p.min_days_per_group }} hari tanpa promo dalam {{ p.lookback_days }} hari terakhir.
+          </p>
+          <div v-for="g in promoGroups" :key="g.label" class="sim-prog-row">
+            <span class="sim-prog-label">{{ g.label }}</span>
+            <span class="sim-prog-track" aria-hidden="true"><span class="sim-prog-fill" :class="{ done: g.done }" :style="{ width: g.pct + '%' }"></span></span>
+            <span class="sim-prog-val">{{ g.have }}/{{ g.need }}</span>
+          </div>
+        </div>
 
         <template v-else>
           <p class="sim-compare">
@@ -94,6 +106,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { analyticsAPI } from '@/api'
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
 
 const data = ref(null)
 const loading = ref(true)
@@ -106,10 +121,18 @@ const rp = (v) => 'Rp' + Math.round(Number(v) || 0).toLocaleString('id-ID')
 const t = computed(() => data.value?.target || {})
 const p = computed(() => data.value?.promo || {})
 
-// realisasi + rata-rata harian x (1 + X%) x sisa hari buka
+// bagian pasti (omzet berjalan + hari ini) + prediksi hari tersisa x (1 + X%), sama dasarnya dengan Briefing
 const projected = computed(() =>
-  (t.value.realized || 0) + (t.value.avg_open_day || 0) * (1 + growth.value / 100) * (t.value.remaining_open_days || 0)
+  (t.value.fixed_part || 0) + (t.value.forecast_remaining || 0) * (1 + growth.value / 100)
 )
+// Target dianggap tidak realistis kalau butuh lebih dari 3x lipat rata-rata harian sekarang.
+const unrealisticTarget = computed(() => (t.value.needed_multiplier || 0) > 3)
+
+const promoGroups = computed(() => {
+  const need = p.value.min_days_per_group || 0
+  const mk = (label, have) => ({ label, have: have || 0, need, done: (have || 0) >= need, pct: need ? Math.min(100, Math.round(((have || 0) / need) * 100)) : 0 })
+  return [mk('Hari ber-promo', p.value.promo_days), mk('Hari tanpa promo', p.value.non_promo_days)]
+})
 const promoExtra = computed(() => promoDays.value * (p.value.diff || 0))
 
 const load = async () => {
@@ -129,7 +152,7 @@ onMounted(load)
 </script>
 
 <style scoped>
-.sim-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
+.sim-grid { align-items: start; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
 .sim-card { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-md); padding: 1.1rem 1.2rem; min-width: 0; display: flex; flex-direction: column; gap: .7rem; }
 .sim-title { margin: 0; font-size: .85rem; font-weight: 600; color: var(--text); display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
 .sim-badge { padding: .1rem .5rem; border-radius: 999px; font-size: 0.75rem; letter-spacing: .08em; text-transform: uppercase; background: color-mix(in srgb, var(--amber-soft) 18%, transparent); color: var(--amber-soft); }
@@ -148,6 +171,14 @@ onMounted(load)
 .sim-facts div { display: flex; justify-content: space-between; gap: 1rem; font-size: .75rem; }
 .sim-facts dt { color: var(--text-faint); }
 .sim-facts dd { margin: 0; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.sim-warn { margin: 0; padding: .5rem .7rem; font-size: .76rem; line-height: 1.45; color: var(--amber-soft); background: color-mix(in srgb, var(--amber-soft) 9%, transparent); border: 1px solid color-mix(in srgb, var(--amber-soft) 28%, transparent); border-radius: 10px; }
+.sim-link { color: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.sim-progress { display: flex; flex-direction: column; gap: .55rem; }
+.sim-prog-row { display: grid; grid-template-columns: 8.5rem 1fr 2.6rem; gap: .6rem; align-items: center; font-size: .75rem; color: var(--text-2); }
+.sim-prog-track { height: 6px; border-radius: 99px; background: var(--border); overflow: hidden; }
+.sim-prog-fill { display: block; height: 100%; border-radius: 99px; background: var(--amber-soft); }
+.sim-prog-fill.done { background: var(--green-soft); }
+.sim-prog-val { text-align: right; font-variant-numeric: tabular-nums; color: var(--text-dim); }
 .sim-foot { margin: auto 0 0; padding-top: .5rem; font-size: 0.75rem; line-height: 1.5; color: var(--text-faint); border-top: 1px solid rgb(var(--ink) / 0.06); }
 .sim-skel { height: 220px; border-radius: var(--r-md); background: rgb(var(--ink) / 0.05); }
 .sim-empty { padding: 2rem 1rem; text-align: center; color: var(--text-dim); font-size: .85rem; }
