@@ -1,10 +1,10 @@
 """
 Simulasi (#19), hanya skenario yang punya dasar data historis.
 
-1. Simulasi target (aritmatika): "kalau rata-rata harian naik X%, bulan ini mencapai Rp Y".
-   Dasarnya omzet berjalan bulan ini, rata-rata omzet per HARI BUKA (hari yang sudah lewat),
-   dan sisa hari buka. Persentase X dihitung di frontend (slider) dari angka dasar ini.
-   Ini hitungan sederhana, BUKAN keluaran model prediksi.
+1. Simulasi target: "kalau omzet hari-hari tersisa naik X%, bulan ini mencapai Rp Y".
+   Titik awalnya prediksi model yang sama dengan Briefing (projection_parts), jadi proyeksi
+   akhir bulan di kedua tempat identik. Kalau model belum ada, jatuh ke rata-rata omzet per
+   HARI BUKA x sisa hari buka (basis "average"). Persentase X dihitung di frontend (slider).
 
 2. Simulasi promo (estimasi kasar): selisih rata-rata omzet hari ber-promo dibanding hari tanpa
    promo selama beberapa bulan terakhir. Itu korelasi, bukan bukti promo penyebabnya (hari ber-promo
@@ -13,6 +13,7 @@ Simulasi (#19), hanya skenario yang punya dasar data historis.
 Skenario tanpa data (mis. "buka sampai jam 23.00") sengaja tidak dibuat.
 """
 import calendar
+import logging
 from collections import defaultdict
 from datetime import timedelta
 
@@ -20,9 +21,10 @@ from django.db.models import Sum
 from django.utils import timezone
 
 from .analytics import qualifying_orders
-from .briefing import BULAN_PANJANG
+from .briefing import BULAN_PANJANG, projection_parts
 from .crowd import schedule_for, to_wib
 from .models import StoreSettings
+logger = logging.getLogger(__name__)
 
 MIN_OPEN_DAYS = 3             # di bawah ini rata-rata harian belum meyakinkan
 PROMO_LOOKBACK_DAYS = 90
@@ -46,35 +48,75 @@ def _open_days(store, start, end):
     return days
 
 
-def target_base(store, today):
+def _model_pack(today):
+    """Prediksi model hari ini sampai akhir bulan (tanpa menyimpan snapshot). None bila belum ada."""
+    from prediction.ml.predict import ModelNotTrainedError, predict_dates
+
+    month_end = today.replace(day=calendar.monthrange(today.year, today.month)[1])
+    dates = [today + timedelta(days=i) for i in range((month_end - today).days + 1)]
+    try:
+        return predict_dates(dates)
+    except ModelNotTrainedError:
+        return None
+    except Exception:
+        logger.exception("Simulasi: prediksi model gagal, pakai rata-rata harian")
+        return None
+
+
+def target_base(store, today, now=None):
     month_start = today.replace(day=1)
     month_end = today.replace(day=calendar.monthrange(today.year, today.month)[1])
+    local = to_wib(now or timezone.now())
 
     before = _revenue(month_start, today - timedelta(days=1)) if today > month_start else 0.0
-    realized = before + _revenue(today, today)
+    today_actual = _revenue(today, today)
+    realized = before + today_actual
     open_elapsed = _open_days(store, month_start, today - timedelta(days=1))
     remaining = _open_days(store, today + timedelta(days=1), month_end)
 
-    enough = open_elapsed >= MIN_OPEN_DAYS
     avg = before / open_elapsed if open_elapsed else None
     target = int(store.monthly_revenue_target or 0)
 
-    projected = realized + avg * remaining if (enough and avg is not None) else None
-    needed = None
-    if enough and target and avg and remaining > 0 and realized < target:
-        needed = round(((target - realized) / (avg * remaining) - 1) * 100, 1)
+    # Titik awal sama dengan Briefing: prediksi model. Kalau belum ada, rata-rata per hari buka.
+    parts = projection_parts(store, _model_pack(today), today, local, before, today_actual)
+    if parts:
+        basis = "model"
+        fixed, forecast = parts
+    elif open_elapsed >= MIN_OPEN_DAYS and avg is not None:
+        basis = "average"
+        fixed, forecast = realized, avg * remaining
+    else:
+        basis = None
+        fixed = forecast = None
+
+    enough = basis is not None
+    projected = fixed + forecast if enough else None
+    forecast_per_day = forecast / remaining if enough and remaining > 0 else None
+
+    needed = needed_per_day = multiplier = None
+    if enough and target and remaining > 0 and realized < target:
+        needed_per_day = round((target - fixed) / remaining)
+        if forecast_per_day:
+            needed = round(((target - fixed) / forecast - 1) * 100, 1)
+            multiplier = round(needed_per_day / forecast_per_day, 1)
 
     return {
         "month_label": f"{BULAN_PANJANG[today.month - 1]} {today.year}",
         "enough_data": enough,
         "min_open_days": MIN_OPEN_DAYS,
+        "basis": basis,
         "target": target or None,
         "realized": round(realized),
+        "fixed_part": round(fixed) if enough else None,
+        "forecast_remaining": round(forecast) if enough else None,
+        "forecast_per_open_day": round(forecast_per_day) if forecast_per_day is not None else None,
         "avg_open_day": round(avg) if avg is not None else None,
         "open_days_elapsed": open_elapsed,
         "remaining_open_days": remaining,
-        "projected_base": round(projected) if projected is not None else None,
+        "projected_base": round(projected) if enough else None,
         "needed_growth_pct": needed,
+        "needed_per_open_day": needed_per_day,
+        "needed_multiplier": multiplier,
         "target_reached": bool(target) and realized >= target,
     }
 
@@ -121,10 +163,10 @@ def simulation(params=None, now=None):
     today = to_wib(now).date()
     store = StoreSettings.get()
     return {
-        "target": target_base(store, today),
+        "target": target_base(store, today, now),
         "promo": promo_base(today),
         "notes": {
-            "target": "Hitungan aritmatika dari rata-rata omzet per hari buka bulan ini, bukan keluaran model prediksi.",
+            "target": "Titik awalnya prediksi model yang sama dengan Briefing. Slider menggeser prediksi hari-hari tersisa, bukan omzet yang sudah berjalan.",
             "promo": (
                 "Estimasi kasar dari selisih rata-rata omzet hari ber-promo dan hari tanpa promo. "
                 "Ini korelasi, bukan bukti promo menyebabkan kenaikan (hari ber-promo bisa kebetulan hari ramai)."

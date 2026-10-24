@@ -177,6 +177,7 @@ class OrderSerializer(serializers.ModelSerializer):
             "payment_status",
             "payment_method",
             "is_deferred_payment",
+            "service_type",
             "customer_name",
             "customer_phone",
             "table_number",

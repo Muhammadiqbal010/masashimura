@@ -19,6 +19,11 @@ WIB = timezone.get_fixed_timezone(7 * 60)
 # CHOICES
 # ─────────────────────────────────────────────
 
+ORDER_SERVICE_TYPE_CHOICES = (
+    ('dine_in', 'Makan di Tempat'),
+    ('takeaway', 'Dibungkus'),
+)
+
 ORDER_SOURCE_CHOICES = (
     ('web', 'Web'),
     ('pos', 'POS'),
@@ -69,6 +74,12 @@ class Order(models.Model):
     is_deferred_payment = models.BooleanField(
         default=False,
         help_text='POS: pelanggan makan dulu, bayar nanti',
+    )
+
+    # Makan di tempat atau dibungkus. Terpisah dari is_deferred_payment (itu soal
+    # KAPAN bayar, ini soal DI MANA makannya). Order lama otomatis 'dine_in'.
+    service_type = models.CharField(
+        max_length=10, choices=ORDER_SERVICE_TYPE_CHOICES, default='dine_in',
     )
 
     customer_name  = models.CharField(max_length=100, blank=True)

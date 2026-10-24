@@ -258,6 +258,10 @@ def create_order(request):
     table_number = data.get('table_number')
     notes        = data.get('notes', '')
 
+    service_type = data.get('service_type') or 'dine_in'
+    if service_type not in ('dine_in', 'takeaway'):
+        return Response({"error": "service_type harus dine_in atau takeaway"}, status=400)
+
     try:
         amount_paid = Decimal(str(data.get('amount_paid', 0) or 0))
     except Exception:
@@ -320,6 +324,7 @@ def create_order(request):
         payment_status=payment_status,
         payment_method=payment_method,
         is_deferred_payment=is_deferred,
+        service_type=service_type,
         customer_name=name,
         customer_phone=phone,
         table_number=table_number,
@@ -2113,6 +2118,7 @@ def split_order(request, pk):
         payment_status=order.payment_status,
         payment_method=order.payment_method,
         is_deferred_payment=order.is_deferred_payment,
+        service_type=order.service_type,
         customer_name=new_name or (f"{order.customer_name} (pisah)" if order.customer_name else "Pisahan"),
         customer_phone="",   # sengaja kosong: poin loyalty tetap di nota asal
         table_number=order.table_number,

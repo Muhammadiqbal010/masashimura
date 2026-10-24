@@ -102,6 +102,26 @@ def _crowd_section(store, now):
     }
 
 
+def projection_parts(store, pack, today, local, realized_before, today_actual):
+    """
+    Pecahan proyeksi bulan ini dari prediksi model: (bagian pasti, sisa prediksi).
+    Bagian pasti = omzet sampai kemarin + bagian hari ini. Sisa = prediksi hari-hari setelah hari ini.
+    Dipakai bersama oleh Briefing dan Simulasi supaya angka proyeksinya satu sumber. None bila belum ada prediksi.
+    """
+    if not (pack and pack["days"]):
+        return None
+    today_pred = pack["days"][0]
+    sched = schedule_for(store, today.weekday())
+    minutes_now = local.hour * 60 + local.minute
+    finished = (sched is None) or minutes_now >= sched[1]
+    if today_pred["is_regular_closed_day"] or finished:
+        today_part = today_actual
+    else:
+        today_part = max(today_actual, today_pred["predicted_revenue"])
+    remaining = sum(d["predicted_revenue"] for d in pack["days"][1:])
+    return realized_before + today_part, remaining
+
+
 def _target_section(store, pack, today, local, month_start, month_end):
     target = int(store.monthly_revenue_target or 0)
     realized_before = _revenue(month_start, today - timedelta(days=1)) if today > month_start else 0.0
@@ -109,18 +129,8 @@ def _target_section(store, pack, today, local, month_start, month_end):
     realized = realized_before + today_actual
     days_left = (month_end - today).days
 
-    projected = None
-    if pack and pack["days"]:
-        today_pred = pack["days"][0]
-        sched = schedule_for(store, today.weekday())
-        minutes_now = local.hour * 60 + local.minute
-        finished = (sched is None) or minutes_now >= sched[1]
-        if today_pred["is_regular_closed_day"] or finished:
-            today_part = today_actual
-        else:
-            today_part = max(today_actual, today_pred["predicted_revenue"])
-        remaining = sum(d["predicted_revenue"] for d in pack["days"][1:])
-        projected = realized_before + today_part + remaining
+    parts = projection_parts(store, pack, today, local, realized_before, today_actual)
+    projected = parts[0] + parts[1] if parts else None
 
     if not target:
         status = "belum_ada_target"
