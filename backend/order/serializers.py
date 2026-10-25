@@ -3,13 +3,9 @@ from datetime import timedelta
 
 from django.utils import timezone
 from rest_framework import serializers
-from .models import Order, OrderItem, OrderPayment, LoyaltySettings, StoreSettings, PointReward, WIB
+from .models import Order, OrderItem, OrderPayment, LoyaltySettings, StoreSettings, PointReward, WIB, AUTO_READY_HOURS
 from menu.models import Menu, Category
 from .pricing import web_price as calc_web_price
-
-# Order yang belum siap tapi umurnya sudah lewat ini dianggap "terlupa ditandai",
-# bukan telat betulan (mis. order kemarin yang tidak pernah ditekan "Siap").
-STALE_ORDER_MINUTES = 6 * 60
 
 _late_cache = {"value": 20, "at": 0.0}
 
@@ -121,6 +117,9 @@ class OrderSerializer(serializers.ModelSerializer):
     is_ready     = serializers.SerializerMethodField()
     is_late      = serializers.SerializerMethodField()
     wait_minutes = serializers.SerializerMethodField()
+    ready_source = serializers.SerializerMethodField()
+    tracks_readiness = serializers.SerializerMethodField()
+    auto_ready_hours = serializers.SerializerMethodField()
     late_after_minutes = serializers.SerializerMethodField()
 
     # ── Penanda tambahan item ─────────────────────────────────────
@@ -133,19 +132,30 @@ class OrderSerializer(serializers.ModelSerializer):
     def _is_open_order(self, obj):
         return obj.status != "cancelled" and obj.payment_status != "void"
 
+    def get_tracks_readiness(self, obj):
+        return obj.tracks_readiness
+
+    def get_auto_ready_hours(self, obj):
+        return AUTO_READY_HOURS
+
+    def get_ready_source(self, obj):
+        return obj.ready_source()
+
     def get_is_ready(self, obj):
-        return obj.ready_at is not None
+        # Order POS: tidak ada status siap. Web: manual / lunas / auto 2 jam.
+        return obj.ready_source() is not None
 
     def get_wait_minutes(self, obj):
-        if obj.ready_at is not None or not self._is_open_order(obj):
+        # Hitungan menit hanya untuk order web yang belum siap.
+        if not obj.tracks_readiness or not self._is_open_order(obj) or obj.ready_source() is not None:
             return None
-        return max(int((timezone.now() - obj.created_at).total_seconds() // 60), 0)
+        return max(int((timezone.now() - obj.kitchen_clock_start()).total_seconds() // 60), 0)
 
     def get_is_late(self, obj):
         waited = self.get_wait_minutes(obj)
         if waited is None:
             return False
-        return late_minutes_setting() <= waited <= STALE_ORDER_MINUTES
+        return waited >= late_minutes_setting()
 
     def get_late_after_minutes(self, obj):
         return late_minutes_setting()
@@ -205,6 +215,9 @@ class OrderSerializer(serializers.ModelSerializer):
             "is_ready",
             "is_late",
             "wait_minutes",
+            "ready_source",
+            "tracks_readiness",
+            "auto_ready_hours",
             "late_after_minutes",
             "has_additions",
             "unavailable_items",

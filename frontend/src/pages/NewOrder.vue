@@ -349,7 +349,7 @@
 
         <!-- Order type -->
         <div class="order-section">
-          <label class="field-label">Alur Konsumsi</label>
+          <label class="field-label">Kapan Bayar</label>
           <div class="toggle-grid">
             <button
               @click="orderType = 'dine_in_now'"
@@ -360,22 +360,21 @@
               Bayar Sekarang
             </button>
             <button
-              @click="orderType = 'dine_in_later'"
-              :disabled="paymentMethod === 'qris_manual'"
+              @click="chooseLater"
               class="toggle-btn"
-              :class="orderType === 'dine_in_later'
-                ? 'toggle-active-amber'
-                : paymentMethod === 'qris_manual' ? 'toggle-disabled' : 'toggle-inactive'"
+              :class="orderType === 'dine_in_later' ? 'toggle-active-amber' : 'toggle-inactive'"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              Makan Dulu
+              {{ laterLabel }}
             </button>
           </div>
-          <p v-if="paymentMethod === 'qris_manual'" class="field-hint">QRIS Manual hanya untuk bayar sekarang.</p>
+          <p v-if="orderType === 'dine_in_later'" class="field-hint">
+            Pesanan masuk ke Tagihan. Bayar Cash atau QRIS nanti, saat pelanggan siap membayar.
+          </p>
         </div>
 
-        <!-- Payment method -->
-        <div class="order-section">
+        <!-- Payment method (bayar nanti: dipilih saat melunasi dari Tagihan) -->
+        <div v-if="orderType === 'dine_in_now'" class="order-section">
           <label class="field-label">Metode Pembayaran</label>
           <div class="toggle-grid">
             <button
@@ -387,14 +386,24 @@
               Cash
             </button>
             <button
-              @click="selectPaymentMethod('qris_manual')"
+              @click="selectPaymentMethod('gateway')"
               class="toggle-btn"
-              :class="paymentMethod === 'qris_manual' ? 'toggle-active-white' : 'toggle-inactive'"
+              :class="paymentMethod === 'gateway' ? 'toggle-active-white' : 'toggle-inactive'"
+              title="QR unik per pesanan, lunas otomatis"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
               QRIS
             </button>
+            <button
+              @click="selectPaymentMethod('qris_manual')"
+              class="toggle-btn toggle-btn--span"
+              :class="paymentMethod === 'qris_manual' ? 'toggle-active-white' : 'toggle-inactive'"
+              title="Cadangan: pelanggan scan QRIS toko, kasir tandai lunas sendiri"
+            >
+              QRIS Manual (cadangan)
+            </button>
           </div>
+          <p v-if="paymentMethod === 'gateway'" class="field-hint">QR unik muncul di layar ini. Lunas otomatis begitu pelanggan membayar.</p>
         </div>
 
         <!-- Cash input -->
@@ -693,6 +702,86 @@
     </div>
   </transition>
 
+  <!-- ── MODAL QRIS OTOMATIS (QR di layar kasir) ─────────────────── -->
+  <transition name="qr-fade">
+    <div v-if="qr.open" class="modal-overlay qr-overlay" role="dialog" aria-modal="true" aria-label="Pembayaran QRIS">
+      <div class="qr-box" :class="`is-${qr.state}`">
+
+        <!-- Ringkasan: selalu tampil -->
+        <header class="qr-top">
+          <span class="qr-chip">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM20 14v.01M14 20v.01M20 20v.01M17 17h3v3"/></svg>
+            QRIS Otomatis
+          </span>
+          <p class="qr-amount">{{ formatPrice(qr.total) }}</p>
+          <p class="qr-meta">
+            <span v-if="qr.name">{{ qr.name }} · </span><span class="qr-meta-no">{{ qr.orderNumber }}</span>
+          </p>
+        </header>
+
+        <!-- Membuat QR -->
+        <div v-if="qr.state === 'loading'" class="qr-stage qr-stage--center">
+          <div class="qr-skeleton" aria-hidden="true"></div>
+          <p class="qr-status"><span class="qr-dot"></span> Menyiapkan QR…</p>
+        </div>
+
+        <!-- Menunggu bayar -->
+        <div v-else-if="qr.state === 'waiting'" class="qr-stage">
+          <div class="qr-frame">
+            <span class="qr-corner qr-corner--tl"></span><span class="qr-corner qr-corner--tr"></span>
+            <span class="qr-corner qr-corner--bl"></span><span class="qr-corner qr-corner--br"></span>
+            <img :src="qr.url" alt="QR pembayaran" class="qr-img" />
+            <span class="qr-scan" aria-hidden="true"></span>
+          </div>
+
+          <p class="qr-status" role="status"><span class="qr-dot qr-dot--live"></span> Menunggu pembayaran</p>
+          <p class="qr-hint">Scan dengan GoPay, OVO, DANA, ShopeePay, atau m-banking apa saja.</p>
+
+          <div class="qr-timer" :class="{ 'is-low': qr.secondsLeft <= 120 }">
+            <div class="qr-timer-bar"><span :style="{ width: qrProgress + '%' }"></span></div>
+            <span class="qr-timer-text">Berlaku {{ qrClock }}</span>
+          </div>
+        </div>
+
+        <!-- Lunas -->
+        <div v-else-if="qr.state === 'paid'" class="qr-stage qr-stage--center">
+          <div class="qr-success" aria-hidden="true">
+            <span class="qr-ripple"></span><span class="qr-ripple qr-ripple--2"></span>
+            <svg viewBox="0 0 52 52" class="qr-tick"><circle cx="26" cy="26" r="24" class="qr-tick-ring"/><path d="M14 27l8 8 16-17" class="qr-tick-path"/></svg>
+          </div>
+          <p class="qr-ok-title">Pembayaran diterima</p>
+          <p class="qr-hint">Terima kasih! Nota sudah tercatat lunas.</p>
+        </div>
+
+        <!-- Kedaluwarsa -->
+        <div v-else-if="qr.state === 'expired'" class="qr-stage qr-stage--center">
+          <div class="qr-expired" aria-hidden="true">⏱</div>
+          <p class="qr-ok-title">QR kedaluwarsa</p>
+          <p class="qr-hint">
+            {{ qr.mode === 'bill' ? 'Tagihan masih aman. Buat QR baru atau bayar dengan cara lain.' : 'Tutup, lalu buat pesanan lagi atau pilih metode lain.' }}
+          </p>
+        </div>
+
+        <!-- Aksi -->
+        <footer class="qr-actions">
+          <template v-if="qr.state === 'paid'">
+            <button type="button" class="submit-btn" @click="finishQr">Selesai</button>
+            <div class="qr-auto"><span></span></div>
+          </template>
+          <template v-else-if="qr.state === 'expired'">
+            <button v-if="qr.mode === 'bill'" type="button" class="submit-btn" :disabled="qr.busy" @click="retryBillQr">Buat QR baru</button>
+            <button type="button" class="qr-link" :disabled="qr.busy" @click="cancelQr">{{ qr.busy ? 'Menutup…' : 'Tutup' }}</button>
+          </template>
+          <template v-else>
+            <button type="button" class="qr-link" :disabled="qr.busy || qr.state === 'loading'" @click="cancelQr">
+              {{ qr.busy ? 'Menutup…' : qr.mode === 'bill' ? 'Tutup QR · tagihan tetap tersimpan' : 'Batalkan · ganti metode' }}
+            </button>
+          </template>
+        </footer>
+      </div>
+    </div>
+  </transition>
+
   <!-- ── MODAL KONFIRMASI PEMBAYARAN ─────────────────────────────── -->
   <transition
     enter-active-class="modal-enter-active" enter-from-class="modal-enter-from"
@@ -748,17 +837,39 @@
         </div>
 
         <div class="modal-section">
-          <label class="field-label">Metode Pembayaran</label>
-          <div class="toggle-grid">
-            <button @click="selectedPaymentMethod = 'cash'" class="toggle-btn" :class="selectedPaymentMethod === 'cash' ? 'toggle-active-white' : 'toggle-inactive'">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/></svg>
-              Cash
+          <label class="field-label">Bayar dengan</label>
+          <div class="pay-tiles">
+            <button
+              type="button"
+              class="pay-tile"
+              :class="{ 'is-active': selectedPaymentMethod === 'cash' }"
+              @click="selectedPaymentMethod = 'cash'"
+            >
+              <span class="pay-tile-ico">💵</span>
+              <span class="pay-tile-name">Cash</span>
+              <span class="pay-tile-sub">Input uang diterima</span>
             </button>
-            <button @click="selectedPaymentMethod = 'qris_manual'" class="toggle-btn" :class="selectedPaymentMethod === 'qris_manual' ? 'toggle-active-white' : 'toggle-inactive'">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-              QRIS
+            <button
+              type="button"
+              class="pay-tile pay-tile--qris"
+              :disabled="isPaying || Number(selectedUnpaidOrder.total_price) <= 0"
+              @click="startBillQris(selectedUnpaidOrder)"
+            >
+              <span class="pay-tile-ico">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM20 14v.01M14 20v.01M20 20v.01M17 17h3v3"/></svg>
+              </span>
+              <span class="pay-tile-name">QRIS</span>
+              <span class="pay-tile-sub">QR langsung muncul · lunas otomatis</span>
             </button>
           </div>
+          <button
+            type="button"
+            class="pay-manual"
+            :class="{ 'is-active': selectedPaymentMethod === 'qris_manual' }"
+            @click="selectedPaymentMethod = selectedPaymentMethod === 'qris_manual' ? 'cash' : 'qris_manual'"
+          >
+            {{ selectedPaymentMethod === 'qris_manual' ? '✓ ' : '' }}Pelanggan scan QRIS toko? Tandai lunas manual
+          </button>
         </div>
 
         <div v-if="selectedPaymentMethod === 'cash'" class="modal-section">
@@ -800,7 +911,8 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
-import { menuAPI, orderAPI, bundleAPI, apiClient } from "@/api";
+import { menuAPI, orderAPI, bundleAPI, paymentAPI, apiClient } from "@/api";
+import { unlockPaymentAudio, playPaymentSuccess } from "@/utils/paymentSuccessSound.js";
 import { toast } from "vue-sonner";
 import { useAuthStore } from "@/stores/auth";
 import PromoCodeBox from "@/components/ui/PromoCodeBox.vue";
@@ -1001,6 +1113,13 @@ const totalPrice = computed(() =>
   Math.max(subtotal.value - (appliedPromo.value?.discount_amount || 0), 0)
 );
 
+const isQrisMethod = computed(() => paymentMethod.value === "qris_manual" || paymentMethod.value === "gateway");
+// Dibungkus: biasanya bayar setelah pesanan jadi. Makan di tempat: makan dulu, bayar nanti.
+const laterLabel = computed(() => (serviceType.value === "takeaway" ? "Bayar Setelah Jadi" : "Makan Dulu, Bayar Nanti"));
+const chooseLater = () => {
+  orderType.value = "dine_in_later";
+  paymentMethod.value = "cash";   // metode asli dipilih saat melunasi
+};
 const isCashNow = computed(() => paymentMethod.value === "cash" && orderType.value === "dine_in_now");
 const changeDue = computed(() =>
   isCashNow.value && amountPaid.value >= totalPrice.value ? amountPaid.value - totalPrice.value : 0
@@ -1021,6 +1140,7 @@ const quickCash = computed(() => buildQuickCash(totalPrice.value));
 const submitLabel = computed(() => {
   if (isSubmitting.value) return "Memproses...";
   if (useCustomTime.value) return "Simpan Pesanan Susulan";
+  if (paymentMethod.value === "gateway") return "Tampilkan QR Pembayaran";
   if (orderType.value === "dine_in_later") return "Simpan ke Tagihan";
   return "Eksekusi Pesanan";
 });
@@ -1321,7 +1441,7 @@ const updateQty = (index, delta) => {
 
 const selectPaymentMethod = (method) => {
   paymentMethod.value = method;
-  if (method === "qris_manual") orderType.value = "dine_in_now";
+  if (method === "qris_manual" || method === "gateway") orderType.value = "dine_in_now";
 };
 
 // ── Submit order baru ────────────────────────────────────────────────
@@ -1351,7 +1471,12 @@ const submitOrder = async () => {
     if (timeErr) { showTimePop.value = true; return toast.error(timeErr); }
   }
 
+  if (paymentMethod.value === "gateway" && useCustomTime.value) {
+    return toast.error("Pesanan susulan tidak bisa pakai QRIS otomatis. Pilih Cash atau QRIS Manual.");
+  }
+
   isSubmitting.value = true;
+  if (paymentMethod.value === "gateway") unlockPaymentAudio();   // izin suara dari klik kasir
 
   // Harga, diskon promo, dan status dihitung ulang di server — client hanya kirim niat.
   const payload = {
@@ -1376,6 +1501,13 @@ const submitOrder = async () => {
     })),
   };
 
+  // QRIS otomatis: order dibuat "menunggu bayar", lalu QR ditampilkan. Form baru dikosongkan setelah lunas.
+  if (paymentMethod.value === "gateway") {
+    await startQrisCheckout(payload);
+    isSubmitting.value = false;
+    return;
+  }
+
   try {
     const res = await apiClient.post("/orders/", payload);
     const no = res.data?.order_number;
@@ -1398,6 +1530,136 @@ const submitOrder = async () => {
   }
 };
 
+// ── QRIS otomatis (QR dinamis Midtrans, tampil di layar kasir) ────────
+const QR_TTL = 15 * 60;   // detik; harus sama dengan POS_QR_EXPIRY_MINUTES di backend
+const qr = ref({ open: false, state: "idle", mode: "new", name: "", orderNumber: "", total: 0, url: "", expiresAt: 0, secondsLeft: 0, busy: false });
+let qrPollTimer = null;
+let qrTickTimer = null;
+
+const stopQrTimers = () => {
+  clearInterval(qrPollTimer); clearInterval(qrTickTimer);
+  qrPollTimer = null; qrTickTimer = null;
+};
+const qrProgress = computed(() => Math.min(100, Math.max(0, (qr.value.secondsLeft / QR_TTL) * 100)));
+const qrClock = computed(() => {
+  const s = Math.max(qr.value.secondsLeft, 0);
+  return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+});
+
+const startQrisCheckout = async (payload) => {
+  let orderNumber = "";
+  try {
+    const res = await apiClient.post("/orders/", payload);
+    orderNumber = res.data?.order_number;
+    qr.value = { open: true, state: "loading", mode: "new", name: customerName.value || "", orderNumber, total: Number(res.data?.total_price || 0), url: "", expiresAt: 0, secondsLeft: 0, busy: false };
+    const { data } = await paymentAPI.posQrisCreate(orderNumber);
+    applyQrData(data);
+    stopQrTimers();
+    qrPollTimer = setInterval(pollQr, 2500);
+    qrTickTimer = setInterval(tickQr, 1000);
+  } catch (e) {
+    stopQrTimers();
+    qr.value.open = false;
+    // QR gagal dibuat → hapus order yang menggantung supaya tidak ada nota hantu.
+    if (orderNumber) await paymentAPI.posQrisCancel(orderNumber).catch(() => {});
+    apiError(e, "Gagal membuat QR pembayaran.");
+  }
+};
+
+// Nota "bayar nanti" (sudah ada di Tagihan): QR dibuat saat pelanggan siap bayar. Nota TIDAK dihapus kalau QR dibatalkan.
+const startBillQris = async (order) => {
+  unlockPaymentAudio();
+  isPaying.value = true;
+  qr.value = { open: true, state: "loading", mode: "bill", name: order.customer_name || "", orderNumber: order.order_number, total: Number(order.total_price || 0), url: "", expiresAt: 0, secondsLeft: 0, busy: false };
+  try {
+    const { data } = await paymentAPI.posQrisCreate(order.order_number);
+    applyQrData(data);
+    stopQrTimers();
+    qrPollTimer = setInterval(pollQr, 2500);
+    qrTickTimer = setInterval(tickQr, 1000);
+  } catch (e) {
+    stopQrTimers();
+    qr.value.open = false;
+    apiError(e, "Gagal membuat QR pembayaran.");
+    fetchUnpaidOrders();
+  } finally {
+    isPaying.value = false;
+  }
+};
+
+const applyQrData = (d) => {
+  qr.value.url = d.qr_url || qr.value.url;
+  qr.value.total = Number(d.total ?? qr.value.total);
+  qr.value.expiresAt = d.expires_at ? new Date(d.expires_at).getTime() : qr.value.expiresAt;
+  qr.value.secondsLeft = Math.floor((qr.value.expiresAt - Date.now()) / 1000);
+  qr.value.state = "waiting";
+};
+
+const tickQr = () => {
+  if (qr.value.state !== "waiting") return;
+  qr.value.secondsLeft = Math.floor((qr.value.expiresAt - Date.now()) / 1000);
+  if (qr.value.secondsLeft <= -5) { qr.value.state = "expired"; stopQrTimers(); }   // jeda 5 dtk: beri waktu status terakhir
+};
+
+const onQrPaid = () => {
+  if (qr.value.state === "paid") return;
+  stopQrTimers();
+  qr.value.state = "paid";
+  playPaymentSuccess({ total: qr.value.total, force: true });
+  setTimeout(() => { if (qr.value.state === "paid") finishQr(); }, 4000);
+};
+
+const pollQr = async () => {
+  if (qr.value.state !== "waiting") return;
+  try {
+    const { data } = await paymentAPI.posQrisStatus(qr.value.orderNumber);
+    if (data.payment_status === "paid") return onQrPaid();
+    if (data.payment_status === "void" || data.status === "cancelled" || data.expired) {
+      qr.value.state = "expired"; stopQrTimers();
+    }
+  } catch { /* jaringan putus sebentar: coba lagi di putaran berikutnya */ }
+};
+
+const finishQr = () => {
+  stopQrTimers();
+  qr.value.open = false;
+  qr.value.state = "idle";
+  if (qr.value.mode === "bill") {
+    showPaymentModal.value = false;
+    selectedUnpaidOrder.value = null;
+    amountPaidModal.value = 0;
+    cardMode.value = { id: null, mode: null };
+  } else {
+    resetForm();
+  }
+  fetchUnpaidOrders();
+};
+
+// QR nota "bayar nanti" kedaluwarsa → buat QR baru tanpa keluar dari layar ini.
+const retryBillQr = () => {
+  if (selectedUnpaidOrder.value) startBillQris(selectedUnpaidOrder.value);
+};
+
+// Batalkan QR (pelanggan ganti cash, salah input, QR kedaluwarsa). Keranjang TIDAK dikosongkan.
+const cancelQr = async () => {
+  if (qr.value.state === "paid") return finishQr();
+  qr.value.busy = true;
+  try {
+    await paymentAPI.posQrisCancel(qr.value.orderNumber);
+    stopQrTimers();
+    qr.value.open = false;
+    qr.value.state = "idle";
+    toast.info(qr.value.mode === "bill" ? "QR ditutup. Tagihan masih tersimpan." : "QR dibatalkan. Pilih metode pembayaran lain.");
+  } catch (e) {
+    if (e?.response?.status === 409) onQrPaid();     // ternyata sudah dibayar → jangan batalkan
+    else apiError(e, "Gagal membatalkan QR.");
+  } finally {
+    qr.value.busy = false;
+  }
+};
+
+onBeforeUnmount(stopQrTimers);
+
 // ── Drawer tagihan: bayar ────────────────────────────────────────────
 const openPaymentModal = (order) => {
   selectedUnpaidOrder.value = order;
@@ -1408,6 +1670,7 @@ const openPaymentModal = (order) => {
 
 const confirmPayment = async () => {
   if (!selectedUnpaidOrder.value || modalUnderpaid.value) return;
+  if (selectedPaymentMethod.value === "gateway") return startBillQris(selectedUnpaidOrder.value);
   isPaying.value = true;
   try {
     await apiClient.patch(`/orders/${selectedUnpaidOrder.value.id}/pay/`, {
@@ -2295,6 +2558,110 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .drawer-pay-btn:hover:not(:disabled) { background: var(--accent-hover); }
 .drawer-pay-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .drawer-actions .drawer-pay-btn { flex: 1; width: auto; min-height: 2.4rem; padding: 0 0.75rem; }
+
+/* ── Modal QRIS otomatis ─────────────────────────────────────────── */
+.toggle-btn--span { grid-column: 1 / -1; }
+.qr-overlay { z-index: 90; }
+.qr-fade-enter-active, .qr-fade-leave-active { transition: opacity 0.2s ease; }
+.qr-fade-enter-from, .qr-fade-leave-to { opacity: 0; }
+.qr-fade-enter-active .qr-box { animation: qr-rise 0.28s cubic-bezier(0.2, 0.8, 0.2, 1); }
+@keyframes qr-rise { from { transform: translateY(14px) scale(0.97); opacity: 0; } to { transform: none; opacity: 1; } }
+
+.qr-box {
+  width: 100%; max-width: 380px; max-height: 94dvh; overflow-y: auto;
+  display: flex; flex-direction: column; align-items: center; gap: 1rem;
+  padding: 1.4rem 1.25rem 1.1rem; text-align: center; color: var(--text);
+  background: var(--surface); border: 1px solid rgb(var(--ink) / 0.08); border-radius: 22px;
+  box-shadow: 0 24px 60px rgb(0 0 0 / 0.35);
+}
+.qr-top { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; }
+.qr-chip {
+  display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.22rem 0.65rem; border-radius: 99px;
+  background: rgb(var(--ink) / 0.06); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim);
+}
+.qr-amount { margin: 0.35rem 0 0; font-family: var(--font-mono); font-size: 2.1rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+.qr-meta { margin: 0; font-size: 0.8rem; color: var(--text-dim); max-width: 100%; overflow-wrap: anywhere; }
+.qr-meta-no { font-family: var(--font-mono); font-size: 0.74rem; color: var(--text-faint); }
+
+.qr-stage { display: flex; flex-direction: column; align-items: center; gap: 0.7rem; width: 100%; }
+.qr-stage--center { padding: 0.6rem 0 0.2rem; }
+
+/* Bingkai QR: selalu putih supaya mudah di-scan, di tema gelap sekalipun */
+.qr-frame { position: relative; padding: 0.9rem; border-radius: 20px; background: #fff; box-shadow: 0 6px 24px rgb(0 0 0 / 0.18); overflow: hidden; }
+.qr-img { display: block; width: min(64vw, 248px); height: auto; aspect-ratio: 1; image-rendering: pixelated; }
+.qr-corner { position: absolute; width: 22px; height: 22px; border: 3px solid var(--accent, #d92b22); opacity: 0.9; }
+.qr-corner--tl { top: 7px; left: 7px; border-right: 0; border-bottom: 0; border-top-left-radius: 8px; }
+.qr-corner--tr { top: 7px; right: 7px; border-left: 0; border-bottom: 0; border-top-right-radius: 8px; }
+.qr-corner--bl { bottom: 7px; left: 7px; border-right: 0; border-top: 0; border-bottom-left-radius: 8px; }
+.qr-corner--br { bottom: 7px; right: 7px; border-left: 0; border-top: 0; border-bottom-right-radius: 8px; }
+.qr-scan {
+  position: absolute; left: 12px; right: 12px; top: 12px; height: 2px; border-radius: 2px; pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--accent, #d92b22), transparent); opacity: 0.55;
+  animation: qr-scan 2.6s ease-in-out infinite;
+}
+@keyframes qr-scan { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(calc(min(64vw, 248px) + 4px)); } }
+
+.qr-skeleton { width: min(64vw, 248px); aspect-ratio: 1; border-radius: 20px; background: linear-gradient(110deg, rgb(var(--ink) / 0.05) 30%, rgb(var(--ink) / 0.11) 50%, rgb(var(--ink) / 0.05) 70%); background-size: 200% 100%; animation: qr-shimmer 1.2s linear infinite; }
+@keyframes qr-shimmer { to { background-position: -200% 0; } }
+
+.qr-status { display: inline-flex; align-items: center; gap: 0.5rem; margin: 0.1rem 0 0; font-size: 0.9rem; font-weight: 700; }
+.qr-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-faint); }
+.qr-dot--live { background: #f59e0b; box-shadow: 0 0 0 0 rgb(245 158 11 / 0.55); animation: qr-pulse 1.6s ease-out infinite; }
+@keyframes qr-pulse { 0% { box-shadow: 0 0 0 0 rgb(245 158 11 / 0.55); } 100% { box-shadow: 0 0 0 10px rgb(245 158 11 / 0); } }
+.qr-hint { margin: 0; max-width: 28ch; font-size: 0.8rem; line-height: 1.45; color: var(--text-dim); }
+
+.qr-timer { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; width: 100%; max-width: 248px; }
+.qr-timer-bar { width: 100%; height: 5px; border-radius: 99px; background: rgb(var(--ink) / 0.08); overflow: hidden; }
+.qr-timer-bar span { display: block; height: 100%; border-radius: inherit; background: var(--text-dim); transition: width 1s linear; }
+.qr-timer-text { font-family: var(--font-mono); font-size: 0.75rem; font-weight: 600; color: var(--text-dim); }
+.qr-timer.is-low .qr-timer-bar span { background: #ef4444; }
+.qr-timer.is-low .qr-timer-text { color: #ef4444; }
+
+/* Sukses */
+.qr-success { position: relative; display: flex; align-items: center; justify-content: center; width: 96px; height: 96px; }
+.qr-ripple { position: absolute; inset: 0; border-radius: 50%; background: rgb(22 163 74 / 0.22); animation: qr-ripple 1.8s ease-out infinite; }
+.qr-ripple--2 { animation-delay: 0.9s; }
+@keyframes qr-ripple { from { transform: scale(0.7); opacity: 0.9; } to { transform: scale(1.5); opacity: 0; } }
+.qr-tick { position: relative; width: 84px; height: 84px; }
+.qr-tick-ring { fill: #16a34a; }
+.qr-tick-path { fill: none; stroke: #fff; stroke-width: 4.5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 40; stroke-dashoffset: 40; animation: qr-draw 0.5s 0.2s ease-out forwards; }
+@keyframes qr-draw { to { stroke-dashoffset: 0; } }
+.qr-ok-title { margin: 0; font-size: 1.15rem; font-weight: 800; }
+.qr-expired { display: flex; align-items: center; justify-content: center; width: 72px; height: 72px; border-radius: 50%; background: rgb(var(--ink) / 0.07); font-size: 2rem; }
+
+/* Aksi */
+.qr-actions { display: flex; flex-direction: column; align-items: stretch; gap: 0.35rem; width: 100%; }
+.qr-actions .submit-btn { width: 100%; }
+.qr-link { min-height: 42px; border: 0; background: transparent; color: var(--text-dim); font-family: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer; border-radius: 10px; }
+.qr-link:hover:not(:disabled) { background: rgb(var(--ink) / 0.06); color: var(--text); }
+.qr-link:disabled { opacity: 0.5; cursor: not-allowed; }
+.qr-auto { height: 3px; border-radius: 99px; background: rgb(var(--ink) / 0.08); overflow: hidden; }
+.qr-auto span { display: block; height: 100%; background: #16a34a; transform-origin: left; animation: qr-auto 4s linear forwards; }
+@keyframes qr-auto { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .qr-scan, .qr-dot--live, .qr-ripple, .qr-skeleton, .qr-fade-enter-active .qr-box { animation: none; }
+  .qr-tick-path { animation: none; stroke-dashoffset: 0; }
+  .qr-auto span { animation-duration: 0.01s; }
+}
+
+/* Pilih metode saat melunasi tagihan */
+.pay-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.pay-tile {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 0.15rem; min-height: 92px; padding: 0.8rem 0.9rem;
+  border: 1.5px solid rgb(var(--ink) / 0.12); border-radius: 14px; background: transparent; color: var(--text);
+  text-align: left; font-family: inherit; cursor: pointer; transition: border-color 0.15s, background 0.15s, transform 0.1s;
+}
+.pay-tile:hover:not(:disabled) { background: rgb(var(--ink) / 0.04); }
+.pay-tile:active:not(:disabled) { transform: scale(0.98); }
+.pay-tile:disabled { opacity: 0.5; cursor: not-allowed; }
+.pay-tile.is-active { border-color: var(--accent, #d92b22); background: var(--tint-accent, rgb(217 43 34 / 0.08)); }
+.pay-tile--qris { border-color: rgb(var(--ink) / 0.2); }
+.pay-tile-ico { display: inline-flex; align-items: center; height: 24px; font-size: 1.25rem; color: var(--text); }
+.pay-tile-name { font-size: 0.95rem; font-weight: 800; }
+.pay-tile-sub { font-size: 0.72rem; line-height: 1.3; color: var(--text-dim); }
+.pay-manual { margin-top: 0.55rem; padding: 0.25rem 0; border: 0; background: none; color: var(--text-dim); font-family: inherit; font-size: 0.75rem; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.pay-manual:hover, .pay-manual.is-active { color: var(--text); }
 
 /* ── Modal pembayaran ────────────────────────────────────────────── */
 .modal-overlay {

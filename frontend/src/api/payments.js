@@ -12,4 +12,14 @@ export const paymentAPI = {
   // bukan callback Snap di browser.
   getStatus: (orderNumber) =>
     apiClient.get(`/payments/status/${orderNumber}/`),
+
+  // ── POS: QRIS dinamis yang ditampilkan kasir ke pelanggan (khusus staf) ──
+  posQrisCreate: (orderNumber) =>
+    apiClient.post(`/payments/pos/${orderNumber}/qris/`),
+  // Menanyakan status langsung ke Midtrans, jadi tetap akurat walau webhook telat.
+  posQrisStatus: (orderNumber) =>
+    apiClient.get(`/payments/pos/${orderNumber}/status/`),
+  // 200 = order dihapus bersih; 409 = ternyata sudah dibayar.
+  posQrisCancel: (orderNumber) =>
+    apiClient.post(`/payments/pos/${orderNumber}/cancel/`),
 };

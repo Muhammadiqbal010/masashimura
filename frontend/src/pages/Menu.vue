@@ -279,6 +279,14 @@
                 <span class="text-xs font-extrabold">Rekomendasi</span>
               </div>
               <div
+                v-if="isNewMenu(menu)"
+                class="sticker sticker--pink inline-flex items-center gap-1"
+                title="Menu baru"
+              >
+                <Sparkles :size="11" />
+                <span class="text-xs font-extrabold">Baru</span>
+              </div>
+              <div
                 v-if="bestSellerIds.has(menu.id)"
                 class="sticker inline-flex items-center gap-1"
                 title="Terlaris"
@@ -468,7 +476,7 @@ import { menuAPI, getMediaUrl } from "@/api"
 import { toast } from "vue-sonner"
 import {
   ShoppingCart, Plus, Minus, Search, X, ChevronDown, Lock,
-  ThumbsUp, Flame, Heart, Share2, RefreshCw, WifiOff,
+  ThumbsUp, Flame, Sparkles, Heart, Share2, RefreshCw, WifiOff,
 } from "lucide-vue-next"
 import Cart from "@/components/ui/Cart.vue"
 import MenuDetailModal from "@/components/ui/MenuDetailModal.vue"
@@ -526,6 +534,14 @@ const toggleFavorite = (id) => {
 }
 
 // ── Terlaris (otomatis dari endpoint best seller) ───────────────────────────
+// ── Baru (menu dibuat < 14 hari lalu; menu lama tidak punya tanggal → tidak dapat badge) ──
+const NEW_MENU_DAYS = 14
+const isNewMenu = (m) => {
+  if (!m.created_at) return false
+  const t = new Date(m.created_at).getTime()
+  return !isNaN(t) && Date.now() - t < NEW_MENU_DAYS * 86400000
+}
+
 const bestSellerIds = ref(new Set())
 const fetchBestSellers = async () => {
   try {

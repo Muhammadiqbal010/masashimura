@@ -1,18 +1,22 @@
 import hashlib
 import hmac
 import logging
+from datetime import timedelta
 from decimal import Decimal, InvalidOperation
 
 from django.conf import settings
 from django.db import transaction
+from django.db.models import Q
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from accounts.permissions import IsStaffLevel
 from order.models import Order, OrderPayment
-from .services import fetch_midtrans_status, snap
+from .services import cancel_midtrans_transaction, core, fetch_midtrans_status, snap
 from .throttles import PaymentCreateThrottle, PaymentStatusThrottle
 
 logger = logging.getLogger(__name__)
@@ -67,6 +71,58 @@ class CreatePaymentView(APIView):
         return Response({"token": trx["token"]})
 
 
+def apply_midtrans_status(order, verified, bill_qr=False):
+    """
+    Terapkan status transaksi yang SUDAH diverifikasi langsung dari Midtrans ke order
+    (order harus sudah di-lock select_for_update). Dipakai webhook DAN pengecekan manual
+    dari POS, supaya perilakunya sama persis. Mengembalikan Response hanya kalau error.
+    """
+    trx_status = verified.get("transaction_status")
+    verified_gross = verified.get("gross_amount")
+
+    # 3a) Lunas
+    if trx_status == "settlement":
+        if order.payment_status == "paid":
+            return None  # webhook dobel, abaikan
+
+        if order.status == "cancelled" or order.payment_status == "void":
+            logger.error("Order %s dibayar SETELAH dibatalkan, perlu refund manual.", order.order_number)
+            return None
+
+        try:
+            gross = Decimal(str(verified_gross))
+        except InvalidOperation:
+            return Response(status=400)
+        if gross != order.total_price:
+            logger.error("Nominal tidak cocok untuk %s: %s vs %s", order.order_number, gross, order.total_price)
+            return None
+
+        order._previous_status = order.status
+        if bill_qr:
+            order.payment_method = "gateway"   # nota "bayar nanti": metode baru ketahuan setelah dibayar
+        order.payment_status = "paid"
+        order.status = "completed"          # memicu signal poin loyalty
+        order.amount_paid = order.total_price
+        order.change_amount = Decimal("0")
+        order.save()
+        OrderPayment.objects.create(order=order, method="gateway", amount=order.total_price)
+
+    # 3b) Gagal / kedaluwarsa → void + cancelled
+    elif trx_status in ("deny", "cancel", "expire", "failure"):
+        if bill_qr:
+            return None          # nota tetap terbuka; QR-nya saja yang mati
+        if order.payment_status not in ("paid", "void") and order.status != "cancelled":
+            order._previous_status = order.status
+            order.payment_status = "void"
+            order.status = "cancelled"
+            order.cancel_reason = "other"
+            order.cancel_note = f"Pembayaran Midtrans: {trx_status}"
+            order.cancelled_at = timezone.now()
+            order.cancelled_by = "midtrans"
+            order.save()
+    return None
+
+
 class MidtransWebhookView(APIView):
     """POST /api/payments/webhook/  — dipanggil server Midtrans."""
     authentication_classes = []   # tanpa auth/CSRF
@@ -87,63 +143,31 @@ class MidtransWebhookView(APIView):
 
         # 2) Cari order. Tidak ketemu (mis. "Test notification" di dashboard)
         #    → tetap 200 supaya Midtrans tidak retry.
+        trx_id = str(d.get("order_id", ""))
         order = (
             Order.objects.select_for_update()
-            .filter(order_number=d.get("order_id"), payment_method="gateway")
+            .filter(Q(order_number=trx_id, payment_method="gateway") | Q(midtrans_qr_ref=trx_id))
             .first()
         )
         if not order:
             return Response({"ok": True})
+        # QR "bayar nanti" (nota yang sudah ada): hanya settlement yang mengubah nota. QR kedaluwarsa /
+        # batal TIDAK boleh membatalkan nota, karena pelanggan masih bisa bayar cash atau minta QR baru.
+        is_bill_qr = bool(order.midtrans_qr_ref) and trx_id == order.midtrans_qr_ref
 
         # 3) Konfirmasi ke Midtrans. Signature valid hanya membuktikan pengirimnya
         #    kenal server key; status & nominal yang dipakai diambil LANGSUNG dari
         #    Midtrans, bukan dari body request. Kalau Midtrans tidak terjangkau,
         #    balas 503 supaya Midtrans mengirim ulang notifikasinya nanti.
         try:
-            verified = fetch_midtrans_status(order.order_number)
+            verified = fetch_midtrans_status(trx_id)
         except Exception:
-            logger.exception("Gagal konfirmasi status Midtrans untuk %s", order.order_number)
+            logger.exception("Gagal konfirmasi status Midtrans untuk %s", trx_id)
             return Response({"detail": "Tidak bisa konfirmasi ke Midtrans."}, status=503)
 
-        trx_status = verified.get("transaction_status")
-        verified_gross = verified.get("gross_amount")
-
-        # 3a) Lunas
-        if trx_status == "settlement":
-            if order.payment_status == "paid":
-                return Response({"ok": True})  # webhook dobel, abaikan
-
-            if order.status == "cancelled" or order.payment_status == "void":
-                logger.error("Order %s dibayar SETELAH dibatalkan, perlu refund manual.", order.order_number)
-                return Response({"ok": True})
-
-            try:
-                gross = Decimal(str(verified_gross))
-            except InvalidOperation:
-                return Response(status=400)
-            if gross != order.total_price:
-                logger.error("Nominal tidak cocok untuk %s: %s vs %s", order.order_number, gross, order.total_price)
-                return Response({"ok": True})
-
-            order._previous_status = order.status
-            order.payment_status = "paid"
-            order.status = "completed"          # memicu signal poin loyalty
-            order.amount_paid = order.total_price
-            order.change_amount = Decimal("0")
-            order.save()
-            OrderPayment.objects.create(order=order, method="gateway", amount=order.total_price)
-
-        # 3b) Gagal / kedaluwarsa → void + cancelled
-        elif trx_status in ("deny", "cancel", "expire", "failure"):
-            if order.payment_status not in ("paid", "void") and order.status != "cancelled":
-                order._previous_status = order.status
-                order.payment_status = "void"
-                order.status = "cancelled"
-                order.cancel_reason = "other"
-                order.cancel_note = f"Pembayaran Midtrans: {trx_status}"
-                order.cancelled_at = timezone.now()
-                order.cancelled_by = "midtrans"
-                order.save()
+        resp = apply_midtrans_status(order, verified, bill_qr=is_bill_qr)
+        if resp is not None:
+            return resp
 
         # "pending" → tidak ada yang perlu diubah
         return Response({"ok": True})
@@ -158,3 +182,209 @@ class PaymentStatusView(APIView):
     def get(self, request, order_number):
         order = get_object_or_404(Order, order_number=order_number)
         return Response({"payment_status": order.payment_status, "status": order.status})
+
+
+# ─────────────────────────────────────────────
+# POS: QRIS dinamis (kasir menampilkan QR ke pelanggan)
+# ─────────────────────────────────────────────
+# Dua mode, endpoint sama:
+#  A) "Bayar sekarang": order dibuat sebagai gateway/pending, transaksi Midtrans = order_number.
+#     QR kedaluwarsa / dibatalkan → order dihapus bersih.
+#  B) "Bayar nanti" (makan dulu / bungkus bayar setelah jadi): nota sudah ada (unpaid). Tiap QR punya
+#     ID transaksi sendiri (NOMOR-Q1, -Q2, ...). QR mati TIDAK mengubah nota; bisa dibuat QR baru atau cash.
+
+POS_QR_EXPIRY_MINUTES = 15
+
+
+def _pos_qr_order(order_number):
+    """Order POS yang bisa dibayar QRIS dinamis (mode A atau B), di-lock. 404 kalau bukan."""
+    return get_object_or_404(
+        Order.objects.select_for_update().filter(
+            Q(payment_method="gateway", payment_status="pending") | Q(payment_status="unpaid"),
+            source="pos",
+        ),
+        order_number=order_number,
+    )
+
+
+def _is_bill_mode(order):
+    return order.payment_status == "unpaid"
+
+
+def _trx_id(order):
+    """ID transaksi Midtrans yang aktif untuk order ini."""
+    return order.midtrans_qr_ref or order.order_number
+
+
+def _next_ref(order):
+    n = 0
+    if order.midtrans_qr_ref and "-Q" in order.midtrans_qr_ref:
+        try:
+            n = int(order.midtrans_qr_ref.rsplit("-Q", 1)[1])
+        except ValueError:
+            n = 0
+    return f"{order.order_number}-Q{n + 1}"
+
+
+def _qr_alive(order):
+    return bool(order.midtrans_qr_url and order.midtrans_qr_expires_at and order.midtrans_qr_expires_at > timezone.now())
+
+
+def _qr_payload(order):
+    return {
+        "order_number": order.order_number,
+        "total": int(order.total_price),
+        "qr_url": order.midtrans_qr_url,
+        "expires_at": order.midtrans_qr_expires_at,
+        "payment_status": order.payment_status,
+        "status": order.status,
+        "mode": "bill" if _is_bill_mode(order) else "new",
+    }
+
+
+class PosQrisCreateView(APIView):
+    """POST /api/payments/pos/<order_number>/qris/  → { qr_url, expires_at, total, mode, ... }"""
+    permission_classes = [IsStaffLevel]
+
+    @transaction.atomic
+    def post(self, request, order_number):
+        order = _pos_qr_order(order_number)
+
+        if order.status == "cancelled" or order.payment_status == "void":
+            return Response({"detail": "Order sudah dibatalkan."}, status=400)
+        if order.total_price <= 0:
+            return Response({"detail": "Total order Rp0, tidak perlu bayar QRIS."}, status=400)
+
+        # QR yang masih berlaku dipakai ulang (tidak bikin transaksi kedua → tidak ada bayar dobel).
+        if _qr_alive(order):
+            return Response(_qr_payload(order))
+
+        bill = _is_bill_mode(order)
+        if order.midtrans_qr_url and not bill:
+            return Response({"detail": "QR sudah kedaluwarsa. Batalkan lalu buat pesanan baru."}, status=410)
+
+        old_ref = order.midtrans_qr_ref
+        ref = _next_ref(order) if bill else order.order_number
+        param = {
+            "payment_type": "qris",
+            "transaction_details": {
+                "order_id": ref,
+                "gross_amount": int(order.total_price),  # selalu dari DB
+            },
+            "qris": {"acquirer": "gopay"},
+            "custom_expiry": {"expiry_duration": POS_QR_EXPIRY_MINUTES, "unit": "minute"},
+        }
+        try:
+            trx = core.charge(param)
+        except Exception:
+            logger.exception("Gagal membuat QRIS POS untuk %s", order.order_number)
+            return Response({"detail": "Gagal membuat QR pembayaran, coba lagi."}, status=502)
+
+        qr_url = ""
+        for action in trx.get("actions") or []:
+            if str(action.get("name", "")).startswith("generate-qr-code"):
+                qr_url = action.get("url", "")
+                break
+        if not qr_url:
+            logger.error("Respons QRIS Midtrans tanpa URL QR untuk %s: %s", order.order_number, trx)
+            return Response({"detail": "Midtrans tidak mengembalikan QR, coba lagi."}, status=502)
+
+        order.midtrans_qr_url = qr_url
+        order.midtrans_qr_expires_at = timezone.now() + timedelta(minutes=POS_QR_EXPIRY_MINUTES)
+        fields = ["midtrans_qr_url", "midtrans_qr_expires_at"]
+        if bill:
+            order.midtrans_qr_ref = ref
+            fields.append("midtrans_qr_ref")
+        order.save(update_fields=fields)
+
+        if bill and old_ref:   # QR lama sudah kedaluwarsa; tutup juga di sisi Midtrans (best-effort)
+            transaction.on_commit(lambda: cancel_midtrans_transaction(old_ref))
+        return Response(_qr_payload(order))
+
+
+class PosQrisStatusView(APIView):
+    """
+    GET /api/payments/pos/<order_number>/status/
+    Dipolling layar POS. Kalau belum lunas, status ditanyakan LANGSUNG ke Midtrans, jadi
+    lunas tetap terdeteksi walau webhook telat atau belum diatur.
+    """
+    permission_classes = [IsStaffLevel]
+
+    @transaction.atomic
+    def get(self, request, order_number):
+        order = get_object_or_404(Order.objects.select_for_update(), order_number=order_number, source="pos")
+
+        if order.payment_status in ("pending", "unpaid") and order.midtrans_qr_url:
+            try:
+                verified = fetch_midtrans_status(_trx_id(order))
+            except Exception:
+                logger.warning("Gagal cek status Midtrans %s", order.order_number, exc_info=True)
+            else:
+                resp = apply_midtrans_status(order, verified, bill_qr=_is_bill_mode(order))
+                if resp is not None:
+                    return resp
+                order.refresh_from_db()
+
+        data = _qr_payload(order)
+        data["expired"] = bool(
+            order.payment_status in ("pending", "unpaid") and order.midtrans_qr_expires_at
+            and order.midtrans_qr_expires_at <= timezone.now()
+        )
+        return Response(data)
+
+
+class PosQrisCancelView(APIView):
+    """
+    POST /api/payments/pos/<order_number>/cancel/
+    Kasir menutup QR. Mode A (bayar sekarang): order yang belum dibayar dihapus bersih (promo & poin
+    dikembalikan). Mode B (bayar nanti): nota TETAP ada, hanya QR-nya yang ditutup.
+    Kalau ternyata SUDAH dibayar → 409 dan nota dilunasi; uang pelanggan tidak boleh hilang.
+    """
+    permission_classes = [IsStaffLevel]
+
+    @transaction.atomic
+    def post(self, request, order_number):
+        from order.views import _delete_order_permanently   # impor lokal: hindari impor melingkar
+
+        order = _pos_qr_order_for_cancel(order_number)
+        bill = _is_bill_mode(order)
+
+        if order.payment_status == "paid":
+            return Response({"paid": True, "detail": "Order ini sudah dibayar."}, status=409)
+
+        if order.midtrans_qr_url:
+            # Pastikan pelanggan belum bayar tepat sebelum dibatalkan.
+            try:
+                verified = fetch_midtrans_status(_trx_id(order))
+            except Exception:
+                logger.exception("Gagal cek status sebelum batal %s", order.order_number)
+                return Response({"detail": "Tidak bisa memastikan status ke Midtrans. Coba lagi."}, status=502)
+            if verified.get("transaction_status") == "settlement":
+                resp = apply_midtrans_status(order, verified, bill_qr=bill)
+                if resp is not None:
+                    return resp
+                return Response({"paid": True, "detail": "Pelanggan ternyata sudah membayar."}, status=409)
+
+        if bill:
+            ref = order.midtrans_qr_ref
+            order.midtrans_qr_url = ""
+            order.midtrans_qr_expires_at = None
+            order.save(update_fields=["midtrans_qr_url", "midtrans_qr_expires_at"])
+            if ref:
+                transaction.on_commit(lambda: cancel_midtrans_transaction(ref))
+            return Response({"closed": True})
+
+        # Mode A: order belum pernah dibayar → hapus bersih (menutup transaksi Midtrans setelah commit).
+        _delete_order_permanently(order, deleted_by=getattr(request.user, "username", "") or "kasir")
+        return Response({"deleted": True})
+
+
+def _pos_qr_order_for_cancel(order_number):
+    order = _pos_qr_order_any(order_number)
+    if order.payment_status not in ("pending", "unpaid", "paid"):
+        raise Http404
+    return order
+
+
+def _pos_qr_order_any(order_number):
+    return get_object_or_404(Order.objects.select_for_update(), order_number=order_number, source="pos")

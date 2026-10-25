@@ -79,7 +79,7 @@ class PublicMenuSerializer(serializers.ModelSerializer):
             "category", "category_name", "category_group",
             "description", "image_url",
             "is_available", "is_active",
-            "is_recommended", "options",
+            "is_recommended", "options", "created_at",
         ]
 
     def get_category_name(self, obj):

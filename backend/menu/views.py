@@ -1,3 +1,6 @@
+from datetime import timedelta
+
+from django.utils import timezone
 from rest_framework import viewsets, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -73,13 +76,20 @@ class MenuViewSet(viewsets.ModelViewSet):
             )
 
 
+BEST_SELLER_DAYS = 30
+BEST_SELLER_COUNT = 5
+
+
 class TopBestSellersMenuView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
         # Endpoint publik: secret menu tidak boleh ikut, dan harga asli (price) tidak boleh bocor.
+        # Terlaris = paling banyak terjual dalam BEST_SELLER_DAYS hari terakhir (bukan sepanjang masa,
+        # supaya menu baru yang laku bisa naik dan menu lama yang sepi turun).
         # Tidak ada fallback: kalau belum ada order lunas, hasilnya kosong supaya
         # badge "Terlaris" tidak menempel di menu acak.
+        since = timezone.now() - timedelta(days=BEST_SELLER_DAYS)
         top_menus = list(
             Menu.objects.select_related("category")
             .annotate(
@@ -89,13 +99,15 @@ class TopBestSellersMenuView(APIView):
                         filter=Q(
                             orderitem__order__status="completed",
                             orderitem__order__payment_status="paid",
+                            orderitem__order__created_at__gte=since,
+                            orderitem__is_point_redemption=False,
                         ),
                     ),
                     0,
                 )
             )
             .filter(total_ordered__gt=0, is_active=True, is_secret=False)
-            .order_by("-total_ordered")[:3]
+            .order_by("-total_ordered")[:BEST_SELLER_COUNT]
         )
 
         return Response(PublicMenuSerializer(top_menus, many=True).data)

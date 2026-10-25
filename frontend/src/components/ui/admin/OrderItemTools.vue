@@ -70,7 +70,16 @@
           </ul>
         </template>
 
-        <p v-if="lastAdded" class="oit-ok"><Check :size="14" /> {{ lastAdded }}</p>
+        <div v-if="addedLog.length" class="oit-added">
+          <p class="oit-ok"><Check :size="14" /> Sudah ditambahkan ke nota ini</p>
+          <ul class="oit-added-list">
+            <li v-for="(a, i) in addedLog" :key="i">
+              <span class="oit-added-qty">{{ a.qty }}×</span>
+              <span class="oit-added-name">{{ a.name }}<small v-if="a.detail"> · {{ a.detail }}</small></span>
+            </li>
+          </ul>
+          <p class="oit-added-total">Total nota sekarang <b>{{ money(addedTotal) }}</b></p>
+        </div>
       </template>
 
       <!-- ───────── PISAH NOTA ───────── -->
@@ -269,7 +278,9 @@ const pickerMenu = ref(null)
 const selection = reactive({})
 const pickQty = ref(1)
 const pickNote = ref('')
-const lastAdded = ref('')
+// Riwayat tambahan selama modal ini terbuka (menu yang sama digabung jumlahnya).
+const addedLog = ref([])
+const addedTotal = ref(0)
 
 const unitPrice = (m) =>
   props.order?.source === 'web' ? Number(m.price_web ?? m.web_price ?? m.price) : Number(m.price)
@@ -322,7 +333,14 @@ const postAdd = async (menu, quantity, options, notes) => {
       options,
       notes,
     })
-    lastAdded.value = `${quantity}× ${menu.name} ditambahkan. Total sekarang ${money(res.data.total_price)}.`
+    const detail = [
+      ...Object.values(options || {}).flat(),
+      notes || '',
+    ].filter(Boolean).join(', ')
+    const hit = addedLog.value.find((a) => a.id === menu.id && a.detail === detail)
+    if (hit) hit.qty += quantity
+    else addedLog.value.push({ id: menu.id, name: menu.name, qty: quantity, detail })
+    addedTotal.value = res.data.total_price
     emit('updated', { order: res.data })
     resetPicker()
   } catch (err) {
@@ -333,7 +351,6 @@ const postAdd = async (menu, quantity, options, notes) => {
 }
 
 const startAdd = (menu) => {
-  lastAdded.value = ''
   if (menu.options?.length) {
     resetPicker()
     pickerMenu.value = menu
@@ -409,7 +426,8 @@ watch(
     unavailNote.value = ''
     soldOutCatalog.value = true
     result.value = null
-    lastAdded.value = ''
+    addedLog.value = []
+    addedTotal.value = 0
     menuQuery.value = ''
     resetPicker()
     if (props.mode === 'add') loadMenus()
@@ -422,6 +440,12 @@ watch(
 .oit { display: flex; flex-direction: column; gap: 0.9rem; }
 .oit-hint { font-size: 0.85rem; color: var(--text-2); line-height: 1.55; margin: 0; }
 .oit-warn { font-size: 0.82rem; color: var(--red-soft); margin: 0; }
+.oit-added { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.7rem 0.9rem; border: 1px solid var(--line-green); border-radius: var(--r-md); background: var(--tint-green); }
+.oit-added-list { display: flex; flex-direction: column; gap: 0.2rem; margin: 0; padding: 0; list-style: none; max-height: 7rem; overflow-y: auto; }
+.oit-added-list li { display: flex; gap: 0.5rem; font-size: 0.85rem; color: var(--text); }
+.oit-added-qty { font-family: var(--font-mono); font-weight: 700; color: var(--green-soft); }
+.oit-added-name small { color: var(--text-dim); }
+.oit-added-total { margin: 0; font-size: 0.8rem; color: var(--text-dim); }
 .oit-ok { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; font-weight: 700; color: var(--green-soft); margin: 0; }
 .oit-faint { color: var(--text-faint); font-size: 0.78rem; }
 .oit-search { position: relative; display: flex; align-items: center; gap: 0.5rem; }

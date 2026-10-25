@@ -243,19 +243,19 @@
           @keydown.enter.self="openOrderModal(order)"
         >
           <div class="ao-a-id ao-id" role="cell">
-            #{{ order.id }}
+            <span class="ao-id-num">#{{ order.id }}</span>
             <span v-if="newIds.has(order.id)" class="ao-new-tag">Baru</span>
-            <span class="ao-svc" :class="{ 'ao-svc--takeaway': order.service_type === 'takeaway' }">
-              {{ order.service_type === 'takeaway' ? '🥡 Bungkus' : '🍽️ Dine In' }}
-            </span>
           </div>
 
           <div class="ao-a-cust" role="cell">
-            <template v-if="order.customer_name || order.customer_phone">
-              <span class="ao-cust-name">{{ order.customer_name || order.customer_phone }}</span>
-              <span v-if="order.customer_name && order.customer_phone" class="ao-cust-phone">{{ order.customer_phone }}</span>
-            </template>
-            <span v-else class="adm-badge ao-guest">Guest</span>
+            <span class="ao-cust-name" :class="{ 'is-guest': !hasCustomer(order) }">{{ order.customer_name || order.customer_phone || 'Guest' }}</span>
+            <span v-if="order.customer_name && order.customer_phone" class="ao-cust-phone">{{ order.customer_phone }}</span>
+            <div class="ao-meta">
+              <span class="ao-svc" :class="{ 'ao-svc--takeaway': order.service_type === 'takeaway' }">
+                {{ order.service_type === 'takeaway' ? '🥡 Bungkus' : '🍽️ Dine In' }}
+              </span>
+              <span class="ao-src" :class="{ 'ao-src--web': order.source === 'web' }">{{ order.source === 'web' ? 'Web' : 'POS' }}</span>
+            </div>
           </div>
 
           <div class="ao-a-menu ao-menu-cell" role="cell" :title="itemsTitle(order)">
@@ -293,7 +293,7 @@
           <div class="ao-a-time ao-time" role="cell">
             <span>{{ formatTime(order.created_at) }}</span>
             <span
-              v-if="isUnpaid(order) && isToday && ageLabel(order)"
+              v-if="showAge(order)"
               class="ao-age"
               :class="{ 'is-old': isStale(order) }"
             >{{ ageLabel(order) }}</span>
@@ -320,14 +320,6 @@
                 :disabled="busyIds.has(order.id)"
                 @click="toggleReady(order, true)"
               ><Check :size="14" /> Siap</button>
-              <button
-                v-else-if="isOpenOrder(order) && order.is_ready && isToday"
-                type="button"
-                class="adm-btn adm-btn--ghost adm-btn--sm"
-                :disabled="busyIds.has(order.id)"
-                title="Cabut tanda siap diambil"
-                @click="toggleReady(order, false)"
-              >Belum siap</button>
 
               <button
                 v-if="order.refund_pending"
@@ -833,7 +825,7 @@ import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import {
   Search, X, ChevronLeft, ChevronRight, ChevronDown, Printer, Send, Plus, Trash2,
   Banknote, QrCode, Shuffle, RefreshCw, AlertTriangle, Receipt, Bell, BellOff,
-  Pause, Play, Download, MessageCircle, Check, MoreHorizontal, Ban,
+  Pause, Play, Download, MessageCircle, Check, MoreHorizontal, Ban, RotateCcw,
 } from 'lucide-vue-next'
 import { orderAPI, apiClient } from '@/api'
 import { toast } from 'vue-sonner'
@@ -1225,6 +1217,13 @@ const ageLabel = (o) => {
   return h < 24 ? `${h} jam lalu` : ''
 }
 const isStale = (o) => ageMinutes(o) >= 30
+const hasCustomer = (o) => !!(o.customer_name || o.customer_phone)
+// Order web sudah punya hitungan menit di pill status, jadi "x mnt lalu" cuma untuk POS yang belum lunas.
+const showAge = (o) => isUnpaid(o) && isToday.value && !o.tracks_readiness && !!ageLabel(o)
+const fmtWait = (m) => {
+  const n = Number(m) || 0
+  return n < 60 ? `${n} mnt` : `${Math.floor(n / 60)}j ${n % 60}m`
+}
 
 // ── Badge & label ───────────────────────────────────────────────────
 const orderBadge = (o) =>
@@ -1235,14 +1234,17 @@ const payBadge = (o) =>
   o.payment_status === 'paid' ? { cls: 'adm-badge--green', label: 'Lunas' }
   : o.payment_status === 'void' ? { cls: '', label: 'Batal' }
   : { cls: 'adm-badge--amber', label: 'Belum bayar' }
-// Pill di kolom Status: paling banyak 2 (kondisi pesanan + status bayar).
+// Pill di kolom Status: paling banyak 2 (kondisi dapur + status bayar).
+// Order POS tidak punya kondisi dapur (pelanggan sudah di warung) → cuma pill bayar.
 const statusPills = (o) => {
   if (o.status === 'cancelled') return [{ cls: 'adm-badge--red', label: 'Dibatalkan' }]
   const pills = []
-  if (o.status === 'completed') pills.push({ cls: 'adm-badge--green', label: 'Selesai' })
-  else if (isOpenOrder(o) && o.is_ready) pills.push({ cls: 'adm-badge--green', label: 'Siap diambil' })
-  else if (isOpenOrder(o) && isToday.value && o.is_late) pills.push({ cls: 'adm-badge--red', label: `Telat ${o.wait_minutes} mnt` })
-  else pills.push({ cls: 'adm-badge--amber', label: 'Proses' })
+  if (o.tracks_readiness && isOpenOrder(o)) {
+    if (o.is_ready) pills.push({ cls: 'adm-badge--green', label: 'Siap diambil' })
+    else if (isToday.value && o.is_late) pills.push({ cls: 'adm-badge--red', label: `Telat ${fmtWait(o.wait_minutes)}` })
+    else if (o.wait_minutes != null) pills.push({ cls: 'adm-badge--amber', label: `Proses ${fmtWait(o.wait_minutes)}` })
+    else pills.push({ cls: 'adm-badge--amber', label: 'Proses' })
+  }
   pills.push(payBadge(o))
   return pills
 }
@@ -1250,6 +1252,8 @@ const statusPills = (o) => {
 const statusFlags = (o) => {
   if (o.status === 'cancelled') return []
   const flags = []
+  if (isOpenOrder(o) && o.ready_source === 'paid') flags.push({ tone: 'muted', label: 'Siap otomatis (lunas)' })
+  else if (isOpenOrder(o) && o.ready_source === 'auto') flags.push({ tone: 'muted', label: `Siap otomatis (${o.auto_ready_hours || 2} jam)` })
   if (isOpenOrder(o) && o.has_additions) flags.push({ tone: 'amber', label: 'Ada tambahan menu' })
   if (o.refund_pending) flags.push({ tone: 'red', label: `Refund ${formatPrice(o.refund_due)}` })
   else if (o.unavailable_items?.length) flags.push({ tone: 'muted', label: 'Ada menu habis' })
@@ -1287,8 +1291,10 @@ const isOpenOrder = (o) => o.status !== 'cancelled' && o.payment_status !== 'voi
 const isGatewayPending = (o) => o.payment_method === 'gateway' && o.payment_status === 'pending'
 // Tambah / ubah / pisah cuma untuk nota yang belum dibayar (aturan yang sama dengan backend).
 const canEditItems = (o) => isOpenOrder(o) && ['unpaid', 'pending'].includes(o.payment_status) && !isGatewayPending(o)
-const canMarkReady = (o) => isOpenOrder(o) && !o.is_ready && isToday.value && !isGatewayPending(o)
-const canMarkUnavailable = (o) => isOpenOrder(o) && !o.is_ready && !isGatewayPending(o) && (o.items?.length || 0) > 0
+const canMarkReady = (o) => o.tracks_readiness && isOpenOrder(o) && !o.is_ready && isToday.value && !isGatewayPending(o)
+// Tanda siap manual bisa dicabut. Siap karena lunas / otomatis 2 jam tidak bisa.
+const canUnmarkReady = (o) => o.tracks_readiness && isOpenOrder(o) && o.ready_source === 'manual' && isToday.value
+const canMarkUnavailable = (o) => isOpenOrder(o) && o.ready_source !== 'manual' && !isGatewayPending(o) && (o.items?.length || 0) > 0
 const canCancelOrder = (o) => o.status !== 'completed' && o.status !== 'cancelled'
 
 const busyIds = ref(new Set())
@@ -1364,6 +1370,7 @@ const rowMenuItems = (o) => {
   const list = []
   // Kabari pelanggan: struk gambar, telat, menu habis, refund, pengingat bayar (semua di satu modal).
   if (canNotify(o)) list.push({ key: 'notify', label: 'Kabari pelanggan', icon: MessageCircle, run: () => openNotify(o) })
+  if (canUnmarkReady(o)) list.push({ key: 'unready', label: 'Tandai belum siap', icon: RotateCcw, run: () => toggleReady(o, false) })
   if (canEditItems(o)) list.push({ key: 'add', label: 'Tambah menu', icon: Plus, run: () => openTool('add', o) })
   if (canEditItems(o) && (o.items?.length || 0) > 0) list.push({ key: 'split', label: 'Pisah nota', icon: Shuffle, run: () => openTool('split', o) })
   if (canMarkUnavailable(o)) list.push({ key: 'unavailable', label: 'Menu habis', icon: AlertTriangle, run: () => openTool('unavailable', o) })
@@ -1373,7 +1380,7 @@ const rowMenuItems = (o) => {
 }
 
 const hasRowActions = (o) =>
-  canPay(o) || canMarkReady(o) || (isOpenOrder(o) && o.is_ready && isToday.value) ||
+  canPay(o) || canMarkReady(o) ||
   !!o.refund_pending || rowMenuItems(o).length > 0
 
 // Menu ⋯: satu instance untuk semua baris. Posisi dihitung dari tombol yang diklik.
@@ -1888,7 +1895,7 @@ const confirmDelete = async () => {
 .ao-head,
 .ao-row {
   display: grid;
-  grid-template-columns: 4rem minmax(6rem, 1fr) minmax(8rem, 1.4fr) 7.5rem 7.5rem 5.5rem 13rem;
+  grid-template-columns: 4.25rem minmax(8rem, 1.2fr) minmax(8rem, 1.5fr) 6.5rem 8rem 5rem 11.5rem;
   grid-template-areas: 'id cust menu bill status time act';
   align-items: center;
   column-gap: 0.75rem;
@@ -1917,8 +1924,9 @@ const confirmDelete = async () => {
 .ao-row:hover { background: var(--surface-hover); }
 .ao-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; background: var(--surface-hover); }
 
-.ao-id { font-family: var(--font-mono); font-weight: 700; color: var(--accent-text); white-space: nowrap; }
-.ao-new-tag { display: inline-block; margin-left: 0.4rem; padding: 0.05rem 0.4rem; border-radius: 99px; background: var(--green); color: #fff; font-family: var(--font-body); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; vertical-align: middle; }
+.ao-id { display: flex; flex-direction: column; align-items: flex-start; gap: 0.25rem; font-family: var(--font-mono); font-weight: 700; color: var(--accent-text); white-space: nowrap; }
+.ao-id-num { line-height: 1.2; }
+.ao-new-tag { display: inline-block; margin-left: 0; padding: 0.05rem 0.4rem; border-radius: 99px; background: var(--green); color: #fff; font-family: var(--font-body); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; vertical-align: middle; }
 
 /* Belum lunas: disorot; makin lama makin tegas */
 .ao-row--unpaid { background: var(--tint-accent); box-shadow: inset 3px 0 0 var(--accent); }
@@ -1934,11 +1942,15 @@ const confirmDelete = async () => {
 @keyframes ao-flash { 0% { background-color: var(--tint-green); } }
 
 /* Customer */
-.ao-cust-name { display: block; font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
+.ao-a-cust { display: flex; flex-direction: column; align-items: flex-start; gap: 0.2rem; }
+.ao-cust-name { display: block; max-width: 100%; font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
+.ao-cust-name.is-guest { font-weight: 500; font-style: italic; color: var(--text-faint); }
+.ao-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; margin-top: 0.1rem; }
 .ao-cust-phone { display: block; font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-faint); }
-.ao-svc { display: inline-block; margin-left: 0.4rem; padding: 0.05rem 0.45rem; border-radius: 99px; background: rgba(120,120,130,0.16); font-family: var(--font-body); font-size: 0.72rem; font-weight: 700; white-space: nowrap; vertical-align: middle; }
+.ao-svc { display: inline-block; padding: 0.05rem 0.45rem; border-radius: 99px; background: rgba(120,120,130,0.16); font-family: var(--font-body); font-size: 0.72rem; font-weight: 700; white-space: nowrap; vertical-align: middle; }
 .ao-svc--takeaway { background: rgba(245,158,11,0.2); color: #b45309; }
-.ao-guest { padding-block: 0.1rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.ao-src { display: inline-block; padding: 0.05rem 0.45rem; border: 1px solid var(--border-strong); border-radius: 99px; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-faint); }
+.ao-src--web { color: var(--blue-soft); border-color: var(--line-blue); background: var(--tint-blue); }
 
 /* Menu */
 .ao-items { display: flex; flex-direction: column; gap: 0.15rem; margin: 0; padding: 0; list-style: none; }
@@ -1980,8 +1992,8 @@ const confirmDelete = async () => {
 .ao-late { margin-top: 2px; font-family: var(--font-body); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--amber-soft); }
 
 /* Aksi (desktop): satu baris, rata kanan: [Lunasi] [Siap] [⋯] */
-.ao-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 0.4rem; min-width: 0; }
-.ao-act-main { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 0.4rem; }
+.ao-actions { display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-end; gap: 0.4rem; min-width: 0; }
+.ao-act-main { display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-end; gap: 0.4rem; }
 .ao-actions .adm-btn { white-space: nowrap; }
 .ao-more-btn.is-open { background: var(--surface-hover); color: var(--text); border-color: var(--border-strong); }
 

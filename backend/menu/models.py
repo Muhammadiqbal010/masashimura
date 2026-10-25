@@ -1,3 +1,4 @@
+from django.utils import timezone
 import math
 from django.core.validators import MinValueValidator
 from django.db import models
@@ -46,6 +47,10 @@ class Menu(models.Model):
     # Badge jempol di halaman Menu. Diatur manual owner (beda dari "Terlaris" yang otomatis).
     is_recommended = models.BooleanField(default=False)
 
+    # Waktu menu dibuat, buat badge "Baru". Kosong untuk menu lama (sebelum field ini ada),
+    # supaya semua menu lama tidak mendadak dianggap baru.
+    created_at = models.DateTimeField(null=True, blank=True, editable=False)
+
     # Secret menu: hanya muncul di POS (New Order), TIDAK dikirim ke publik
     # dan TIDAK bisa dipesan lewat web. Filternya di views + create_order.
     is_secret = models.BooleanField(default=False)
@@ -56,6 +61,8 @@ class Menu(models.Model):
     options = models.JSONField(default=list, blank=True)
 
     def save(self, *args, **kwargs):
+        if self._state.adding and not self.created_at:
+            self.created_at = timezone.now()
         self.price_web = math.ceil((float(self.price) * 1.01) / 500) * 500
         super().save(*args, **kwargs)
 

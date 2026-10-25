@@ -43,6 +43,7 @@ from .models import (
     PointReward,
     StoreSettings,
     WIB,
+    kitchen_open_q,
 )
 from .serializers import (
     LoyaltySettingsSerializer,
@@ -233,9 +234,9 @@ def create_order(request):
             status=400,
         )
 
-    # Gateway (Midtrans) hanya untuk order web.
-    if payment_method == 'gateway' and source != 'web':
-        return Response({"error": "Metode gateway hanya untuk order web"}, status=400)
+    # Gateway (Midtrans): order web, atau order POS yang dibayar QRIS dinamis
+    # (QR ditampilkan kasir ke pelanggan, lunas otomatis lewat webhook).
+    pos_gateway = source == 'pos' and payment_method == 'gateway'
 
     # Order web cuma boleh: cash (bayar di kasir) atau gateway (Midtrans).
     # QRIS manual + upload bukti sudah dihapus.
@@ -251,6 +252,8 @@ def create_order(request):
         backdated_at, backdate_error = _parse_backdate(data.get('created_at'))
         if backdate_error:
             return Response({"error": backdate_error}, status=400)
+        if pos_gateway and backdated_at:
+            return Response({"error": "Input susulan tidak bisa dibayar QRIS otomatis. Pakai Cash atau QRIS Manual."}, status=400)
     time_fields = (
         {"created_at": backdated_at, "entered_at": timezone.now()} if backdated_at else {}
     )
@@ -285,8 +288,8 @@ def create_order(request):
 
     is_qris = payment_method in ('qris', 'qris_manual')   # QRIS di kasir (POS)
 
-    if source == 'web':
-        # Web + gateway → 'pending' sampai webhook Midtrans bilang settlement.
+    if source == 'web' or pos_gateway:
+        # Web / POS + gateway → 'pending' sampai webhook Midtrans bilang settlement.
         # Web + cash    → 'pending' sampai kasir melunasi di toko.
         payment_status = 'pending'
         is_deferred    = False
@@ -1393,6 +1396,9 @@ def pay_order(request, pk):
             {"detail": "Order ini sudah lunas atau dibatalkan, tidak bisa dibayar lagi."},
             status=400,
         )
+    blocked = active_qr_block(order)
+    if blocked:
+        return blocked
 
     if order.payment_method == "gateway" and order.payment_status == "pending":
         return Response(
@@ -1516,6 +1522,9 @@ def cancel_order(request, pk):
     if was_gateway_pending:
         order_number = order.order_number
         transaction.on_commit(lambda: cancel_midtrans_transaction(order_number))
+    elif order.midtrans_qr_ref:
+        qr_ref = order.midtrans_qr_ref
+        transaction.on_commit(lambda: cancel_midtrans_transaction(qr_ref))
 
     order.refresh_from_db()
 
@@ -1900,8 +1909,27 @@ class StoreSettingsView(APIView):
 # EDIT ITEM & PISAH NOTA (order belum lunas)
 # ─────────────────────────────────────────────
 
+def active_qr_block(order):
+    """
+    409 kalau nota "bayar nanti" punya QR QRIS yang masih berlaku. Selama QR hidup, nominal tidak
+    boleh berubah dan nota tidak boleh dilunasi cara lain (pelanggan bisa membayar dobel / nominal tidak cocok).
+    """
+    if (
+        order.midtrans_qr_ref and order.payment_status == "unpaid"
+        and order.midtrans_qr_expires_at and order.midtrans_qr_expires_at > timezone.now()
+    ):
+        return Response(
+            {"detail": "Nota ini punya QR QRIS yang masih aktif. Batalkan QR di layar kasir dulu."},
+            status=409,
+        )
+    return None
+
+
 def _check_editable(order):
     """Item cuma boleh diubah selama order belum dibayar & belum dibatalkan."""
+    blocked = active_qr_block(order)
+    if blocked:
+        return blocked
     if order.payment_method == "gateway" and order.payment_status == "pending":
         return Response(
             {"detail": "Order menunggu pembayaran online, item tidak bisa diubah. Batalkan order lalu input ulang."},
@@ -2208,7 +2236,7 @@ def _open_orders_with_menus(menu_ids, exclude_pk=None):
     since = timezone.now() - timedelta(hours=24)
     qs = (
         Order.objects
-        .filter(items__menu_id__in=menu_ids, created_at__gte=since, ready_at__isnull=True)
+        .filter(kitchen_open_q(), items__menu_id__in=menu_ids, created_at__gte=since)
         .exclude(status="cancelled")
         .exclude(payment_status="void")
         .exclude(GATEWAY_NOT_PAID_Q)
@@ -2257,6 +2285,8 @@ def mark_order_ready(request, pk):
     order = get_object_or_404(Order.objects.select_for_update(), pk=pk)
     if order.status == "cancelled" or order.payment_status == "void":
         return Response({"detail": "Order ini sudah dibatalkan."}, status=400)
+    if not order.tracks_readiness:
+        return Response({"detail": "Order POS tidak memakai status siap (pelanggan sudah di warung)."}, status=400)
 
     raw = request.data.get("ready", True)
     ready = raw if isinstance(raw, bool) else str(raw).strip().lower() in ("1", "true", "yes", "ya")
@@ -2292,6 +2322,9 @@ def mark_items_unavailable(request, pk):
 
     if order.status == "cancelled" or order.payment_status == "void":
         return Response({"detail": "Order ini sudah dibatalkan."}, status=400)
+    blocked = active_qr_block(order)
+    if blocked:
+        return blocked
     if order.payment_method == "gateway" and order.payment_status == "pending":
         return Response(
             {"detail": "Order menunggu pembayaran online, item tidak bisa diubah. Batalkan order lalu input ulang."},
@@ -2476,7 +2509,7 @@ def orders_affected_by_menu(request, menu_id):
     since = timezone.now() - timedelta(hours=24)
     qs = (
         Order.objects
-        .filter(items__menu_id=menu_id, created_at__gte=since, ready_at__isnull=True)
+        .filter(kitchen_open_q(), items__menu_id=menu_id, created_at__gte=since)
         .exclude(status="cancelled")
         .exclude(payment_status="void")
         .exclude(GATEWAY_NOT_PAID_Q)

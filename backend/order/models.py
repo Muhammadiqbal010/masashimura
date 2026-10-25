@@ -4,7 +4,7 @@ from dateutil.relativedelta import relativedelta
 from django.dispatch import receiver
 from django.utils import timezone
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, timedelta
 import random
 import string
 
@@ -62,6 +62,30 @@ PAYMENT_METHOD_CHOICES = (
 # ─────────────────────────────────────────────
 # ORDER
 # ─────────────────────────────────────────────
+
+# Aturan "siap diambil" (HANYA order dari web):
+#  - ditekan manual (ready_at), ATAU
+#  - sudah dilunasi di kasir (bukan gateway online -- itu dibayar di muka, dapur belum masak), ATAU
+#  - tombol Siap tidak disentuh sampai AUTO_READY_HOURS jam sejak order masuk / tambahan menu terakhir.
+# Order POS tidak punya status siap sama sekali: pelanggannya sudah ada di warung.
+AUTO_READY_HOURS = 2
+
+
+def kitchen_open_q(now=None):
+    """
+    Q untuk order yang masih "berjalan" di dapur / belum diserahkan.
+    Web : belum siap manual, belum lunas di kasir, belum lewat AUTO_READY_HOURS.
+    POS : belum lunas, ATAU sudah lunas tapi barusan (dalam AUTO_READY_HOURS) -- POS tidak punya
+          tombol siap, jadi pesanan yang dibayar di muka dianggap masih disiapkan selama jendela itu.
+    """
+    from django.db.models import Q
+    now = now or timezone.now()
+    cutoff = now - timedelta(hours=AUTO_READY_HOURS)
+    paid_at_counter = Q(payment_status='paid') & ~Q(payment_method='gateway')
+    web = Q(source='web', ready_at__isnull=True, created_at__gt=cutoff) & ~paid_at_counter
+    pos = Q(source='pos') & (~Q(payment_status='paid') | Q(created_at__gt=cutoff))
+    return web | pos
+
 
 class Order(models.Model):
     order_number = models.CharField(max_length=30, unique=True, editable=False, blank=True)
@@ -136,6 +160,15 @@ class Order(models.Model):
         max_length=100, blank=True, default="", editable=False,
     )
 
+    # QRIS dinamis Midtrans untuk order POS (Core API). Disimpan supaya QR yang masih
+    # berlaku ditampilkan lagi, bukan bikin transaksi kedua.
+    midtrans_qr_url = models.TextField(blank=True, default="", editable=False)
+    # ID transaksi Midtrans untuk QR "bayar nanti" (nota yang sudah ada). Dibuat unik per QR
+    # (NOMOR-Q1, NOMOR-Q2, ...) supaya QR kedaluwarsa tidak ikut membatalkan nota & bisa dibuat ulang.
+    # Kosong untuk order QRIS "bayar sekarang" (pakai order_number langsung).
+    midtrans_qr_ref = models.CharField(max_length=60, blank=True, default="", editable=False)
+    midtrans_qr_expires_at = models.DateTimeField(null=True, blank=True, editable=False)
+
     # ── Audit trail pembatalan (void) ──────────────────────────────
     # Order yang dibatalkan TIDAK dihapus dari database — cuma diubah
     # statusnya jadi 'cancelled' + dicatat alasannya di sini, biar tetap
@@ -196,6 +229,29 @@ class Order(models.Model):
             # supaya order input susulan tetap bernomor sesuai harinya.
             self.order_number = generate_order_number(self.created_at)
         super().save(*args, **kwargs)
+
+    # ── Status siap (lihat AUTO_READY_HOURS di atas) ─────────────────
+    @property
+    def tracks_readiness(self):
+        return self.source == 'web'
+
+    def kitchen_clock_start(self):
+        """Titik mulai hitungan menit: order masuk, atau tambahan menu terakhir kalau ada."""
+        starts = [self.created_at] + [i.added_at for i in self.items.all() if i.added_at]
+        return max(starts)
+
+    def ready_source(self, now=None):
+        """'manual' | 'paid' | 'auto' | None (belum siap / tidak dilacak)."""
+        if not self.tracks_readiness or self.status == 'cancelled' or self.payment_status == 'void':
+            return None
+        if self.ready_at is not None:
+            return 'manual'
+        if self.payment_status == 'paid' and self.payment_method != 'gateway':
+            return 'paid'
+        now = now or timezone.now()
+        if now - self.kitchen_clock_start() >= timedelta(hours=AUTO_READY_HOURS):
+            return 'auto'
+        return None
 
     def recalculate_totals(self):
         subtotal      = sum((item.subtotal for item in self.items.all()), Decimal('0'))

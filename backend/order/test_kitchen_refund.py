@@ -18,9 +18,9 @@ class _KitchenBase(TestCase):
         self.katsu = Menu.objects.create(name='Katsu', price=20000, category=cat)
         self.teh = Menu.objects.create(name='Teh', price=5000, category=cat)
 
-    def _order(self, paid, method='cash'):
+    def _order(self, paid, method='cash', source='pos'):
         o = Order.objects.create(
-            source='pos', customer_phone='0811', customer_name='A',
+            source=source, customer_phone='0811', customer_name='A',
             payment_method=method, payment_status='paid' if paid else 'unpaid',
         )
         self.i_katsu = OrderItem.objects.create(order=o, menu=self.katsu, quantity=2, price=20000)
@@ -38,15 +38,72 @@ class _KitchenBase(TestCase):
 class KitchenRefundTests(_KitchenBase):
     # ── siap diambil ──
     def test_ready_toggle(self):
-        o = self._order(paid=False)
+        o = self._order(paid=False, source='web')
         r = self.c.patch(f'/api/orders/{o.pk}/ready/', {'ready': True}, format='json')
         self.assertEqual(r.status_code, 200)
         self.assertTrue(r.data['is_ready'])
         r = self.c.patch(f'/api/orders/{o.pk}/ready/', {'ready': False}, format='json')
         self.assertFalse(r.data['is_ready'])
 
+    def test_pos_has_no_ready_state(self):
+        o = self._order(paid=False, source='pos')
+        r = self.c.patch(f'/api/orders/{o.pk}/ready/', {'ready': True}, format='json')
+        self.assertEqual(r.status_code, 400)
+        r = self.c.get(f'/api/orders/{o.pk}/')
+        d = r.data if r.status_code == 200 else None
+        from order.serializers import OrderSerializer
+        d = OrderSerializer(Order.objects.get(pk=o.pk)).data
+        self.assertFalse(d['tracks_readiness'])
+        self.assertFalse(d['is_ready'])
+        self.assertIsNone(d['wait_minutes'])
+        self.assertFalse(d['is_late'])
+
+    def test_web_paid_at_counter_counts_as_ready(self):
+        from order.serializers import OrderSerializer
+        o = self._order(paid=True, source='web')
+        d = OrderSerializer(Order.objects.get(pk=o.pk)).data
+        self.assertTrue(d['is_ready'])
+        self.assertEqual(d['ready_source'], 'paid')
+
+    def test_web_gateway_paid_still_waits_for_kitchen(self):
+        from order.serializers import OrderSerializer
+        o = self._order(paid=True, method='gateway', source='web')
+        d = OrderSerializer(Order.objects.get(pk=o.pk)).data
+        self.assertFalse(d['is_ready'])
+        self.assertIsNotNone(d['wait_minutes'])
+
+    def test_web_auto_ready_after_2_hours(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from order.serializers import OrderSerializer
+        o = self._order(paid=False, source='web')
+        Order.objects.filter(pk=o.pk).update(created_at=timezone.now() - timedelta(minutes=119))
+        d = OrderSerializer(Order.objects.get(pk=o.pk)).data
+        self.assertFalse(d['is_ready']); self.assertTrue(d['is_late'])
+        Order.objects.filter(pk=o.pk).update(created_at=timezone.now() - timedelta(minutes=121))
+        d = OrderSerializer(Order.objects.get(pk=o.pk)).data
+        self.assertTrue(d['is_ready']); self.assertEqual(d['ready_source'], 'auto')
+        self.assertIsNone(d['wait_minutes'])
+
+    def test_kitchen_open_q_pos_and_web(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from order.models import kitchen_open_q
+        old = timezone.now() - timedelta(hours=3)
+        pos_paid_new = self._order(paid=True, source='pos')
+        pos_paid_old = self._order(paid=True, source='pos')
+        pos_unpaid = self._order(paid=False, source='pos')
+        web_paid_counter = self._order(paid=True, source='web')
+        web_gateway_paid = self._order(paid=True, method='gateway', source='web')
+        web_unpaid = self._order(paid=False, source='web')
+        Order.objects.filter(pk=pos_paid_old.pk).update(created_at=old)
+        ids = set(Order.objects.filter(kitchen_open_q()).values_list('pk', flat=True))
+        self.assertEqual(ids, {pos_paid_new.pk, pos_unpaid.pk, web_gateway_paid.pk, web_unpaid.pk})
+        self.assertNotIn(web_paid_counter.pk, ids)   # lunas di kasir = siap
+        self.assertNotIn(pos_paid_old.pk, ids)
+
     def test_ready_rejected_for_cancelled(self):
-        o = self._order(paid=False)
+        o = self._order(paid=False, source='web')
         Order.objects.filter(pk=o.pk).update(status='cancelled', payment_status='void')
         r = self.c.patch(f'/api/orders/{o.pk}/ready/', {'ready': True}, format='json')
         self.assertEqual(r.status_code, 400)
@@ -58,7 +115,8 @@ class KitchenRefundTests(_KitchenBase):
         r = self.c.post(f'/api/orders/{o.pk}/items/', {'menu_id': self.teh.pk, 'quantity': 2}, format='json')
         self.assertEqual(r.status_code, 200)
         self.assertTrue(r.data['has_additions'])
-        self.assertFalse(r.data['is_ready'])
+        o.refresh_from_db()
+        self.assertIsNone(o.ready_at)          # tambahan menu mencabut tanda siap
         teh = OrderItem.objects.get(order=o, menu=self.teh)
         self.assertEqual((teh.quantity, teh.added_qty), (3, 2))
         self.assertIsNotNone(teh.added_at)
@@ -154,7 +212,7 @@ class KitchenRefundTests(_KitchenBase):
         teh = OrderItem.objects.get(order=o, menu=self.teh)   # qty 3, added 2
         r = self.c.post(f'/api/orders/{o.pk}/split/',
                         {'items': [{'item_id': teh.pk, 'quantity': 2}]}, format='json')
-        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.status_code, 201)   # pisah nota = membuat nota baru
         new_item = r.data['new_order']['items'][0]
         self.assertEqual(new_item['added_qty'], 2)
         teh.refresh_from_db()
