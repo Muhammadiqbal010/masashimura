@@ -729,12 +729,15 @@
         <div v-else-if="qr.state === 'waiting'" class="qr-stage">
           <!-- QR ditampilkan Midtrans Snap (jalur sama dengan checkout web) -->
           <div class="qr-frame qr-frame--embed" :class="{ 'is-full': qr.fullEmbed }">
+            <span class="qr-corner qr-corner--tl"></span><span class="qr-corner qr-corner--tr"></span>
+            <span class="qr-corner qr-corner--bl"></span><span class="qr-corner qr-corner--br"></span>
             <div class="qr-embed-loading" aria-hidden="true"><span class="qr-dot qr-dot--live"></span> Memuat QR…</div>
             <div id="pos-snap-embed" class="qr-embed"></div>
           </div>
           <p v-if="qr.embedError" class="qr-hint" role="alert">{{ qr.embedError }}</p>
           <button type="button" class="qr-link qr-open" @click="qr.fullEmbed = !qr.fullEmbed">{{ qr.fullEmbed ? 'Tampilkan hanya QR' : 'QR terpotong? Tampilan lengkap' }}</button>
 
+          <p class="qr-brand" aria-hidden="true"><span class="qr-hanko">支払</span> Masashimura · QRIS</p>
           <p class="qr-status" role="status"><span class="qr-dot qr-dot--live"></span> Menunggu pembayaran</p>
           <p class="qr-hint">Scan dengan GoPay, OVO, DANA, ShopeePay, atau m-banking apa saja.</p>
 
@@ -1615,6 +1618,9 @@ const mountSnapQr = async (token) => {
   try {
     await loadSnap();
     await nextTick();   // kontainer #pos-snap-embed baru muncul setelah state "waiting"
+    // Embed sebelumnya (order lain) masih tercatat aktif di Snap → "Invalid state transition". Tutup dulu.
+    try { window.snap.hide(); } catch { /* belum ada embed aktif */ }
+    await new Promise((r) => setTimeout(r, 80));
     const done = () => pollQr();   // status asli selalu dari backend, bukan dari callback Snap
     window.snap.embed(token, { embedId: "pos-snap-embed", onSuccess: done, onPending: done, onError: done, onClose: done });
   } catch (e) {
@@ -1657,8 +1663,11 @@ const pollQr = async () => {
   } catch { /* jaringan putus sebentar: coba lagi di putaran berikutnya */ }
 };
 
+const hideSnapEmbed = () => { try { window.snap?.hide(); } catch { /* abaikan */ } };
+
 const finishQr = () => {
   stopQrTimers();
+  hideSnapEmbed();
   qr.value.open = false;
   qr.value.state = "idle";
   if (qr.value.mode === "bill") {
@@ -1684,6 +1693,7 @@ const cancelQr = async () => {
   try {
     await paymentAPI.posQrisCancel(qr.value.orderNumber);
     stopQrTimers();
+    hideSnapEmbed();
     qr.value.open = false;
     qr.value.state = "idle";
     toast.info(qr.value.mode === "bill" ? "QR ditutup. Tagihan masih tersimpan." : "QR dibatalkan. Pilih metode pembayaran lain.");
@@ -2657,6 +2667,29 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .is-full .qr-embed :deep(iframe) { height: 100% !important; margin-top: 0; }
 .qr-embed-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.85rem; color: #666; }
 .qr-open { font-size: 0.8rem; text-decoration: none; }
+.qr-frame--embed .qr-corner { z-index: 3; pointer-events: none; }
+.qr-frame--embed::after {   /* garis scan halus di atas QR */
+  content: ""; position: absolute; left: 14px; right: 14px; top: 14px; height: 2px; z-index: 3; pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--accent, #d92b22), transparent); opacity: 0.55;
+  animation: qr-sweep 2.4s ease-in-out infinite alternate;
+}
+@keyframes qr-sweep { from { transform: translateY(0); } to { transform: translateY(268px); } }
+.is-full::after { display: none; }
+.qr-brand { display: inline-flex; align-items: center; gap: 0.45rem; margin: 0; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted, rgb(var(--ink) / 0.55)); }
+.qr-hanko {
+  display: inline-grid; place-items: center; width: 1.5rem; height: 1.5rem; border-radius: 0.3rem;
+  background: var(--accent, #d92b22); color: #fff; font-size: 0.62rem; font-weight: 700; letter-spacing: 0; transform: rotate(-6deg);
+}
+/* Pita merah bergaris + watermark kanji di modal QR */
+.qr-box { position: relative; overflow-x: hidden; }
+.qr-box::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 7px; pointer-events: none;
+  background: repeating-linear-gradient(135deg, var(--accent, #d92b22) 0 10px, rgb(var(--ink) / 0.85) 10px 20px);
+}
+.qr-box::after {
+  content: "支払"; position: absolute; right: -0.4rem; bottom: 2.2rem; font-size: 6.5rem; font-weight: 800; line-height: 1;
+  color: var(--accent, #d92b22); opacity: 0.06; pointer-events: none; user-select: none;
+}
 .qr-img { display: block; width: min(64vw, 248px); height: auto; aspect-ratio: 1; image-rendering: pixelated; }
 .qr-corner { position: absolute; width: 22px; height: 22px; border: 3px solid var(--accent, #d92b22); opacity: 0.9; }
 .qr-corner--tl { top: 7px; left: 7px; border-right: 0; border-bottom: 0; border-top-left-radius: 8px; }

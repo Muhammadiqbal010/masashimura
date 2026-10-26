@@ -22,6 +22,32 @@ from .throttles import PaymentCreateThrottle, PaymentStatusThrottle
 logger = logging.getLogger(__name__)
 
 
+def _snap_item_details(order):
+    """
+    Rincian item untuk halaman Snap (tombol "Rincian"). Midtrans mewajibkan jumlah harga item sama
+    dengan gross_amount, jadi selisih (diskon promo, poin, dll) dimasukkan sebagai satu baris
+    penyesuaian. Kalau ada yang janggal, kirim tanpa rincian (jangan sampai membuat pembayaran gagal).
+    """
+    try:
+        details = []
+        for it in order.items.select_related("menu"):
+            name = it.bundle_name or (it.menu.name if it.menu else "Item")
+            details.append({
+                "id": f"I{it.pk}",
+                "price": int(it.price),
+                "quantity": int(it.quantity),
+                "name": name[:50],
+            })
+        diff = int(order.total_price) - sum(d["price"] * d["quantity"] for d in details)
+        if diff:
+            details.append({"id": "ADJ", "price": diff, "quantity": 1,
+                            "name": "Diskon & penyesuaian" if diff < 0 else "Biaya tambahan"})
+        return details
+    except Exception:
+        logger.warning("Gagal menyusun item_details %s", order.order_number, exc_info=True)
+        return []
+
+
 class CreatePaymentView(APIView):
     """POST /api/payments/create/<order_number>/  → { token }"""
     authentication_classes = []
@@ -60,6 +86,9 @@ class CreatePaymentView(APIView):
             },
             "expiry": {"unit": "minutes", "duration": 30},
         }
+        items = _snap_item_details(order)
+        if items:
+            param["item_details"] = items
         try:
             trx = snap.create_transaction(param)
         except Exception:
@@ -280,6 +309,9 @@ class PosQrisCreateView(APIView):
             },
             "expiry": {"unit": "minutes", "duration": POS_QR_EXPIRY_MINUTES},
         }
+        items = _snap_item_details(order)
+        if items:
+            param["item_details"] = items
         try:
             trx = snap.create_transaction(param)
         except Exception as exc:

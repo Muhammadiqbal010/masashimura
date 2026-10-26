@@ -61,6 +61,15 @@ class PosQrisTests(TestCase):
         self.assertEqual(param['enabled_payments'], ['other_qris'])
         self.assertEqual(param['transaction_details']['gross_amount'], 40000)
 
+    @mock.patch('payments.views.snap')
+    def test_snap_item_details_sum_equals_total(self, core):
+        core.create_transaction.return_value = SNAP_OK
+        no = self._make_order()['order_number']
+        self.c.post(f'/api/payments/pos/{no}/qris/')
+        param = core.create_transaction.call_args[0][0]
+        total = sum(i['price'] * i['quantity'] for i in param['item_details'])
+        self.assertEqual(total, param['transaction_details']['gross_amount'])
+
     @mock.patch('payments.views.fetch_midtrans_status')
     @mock.patch('payments.views.snap')
     def test_status_marks_paid_on_settlement(self, core, status):

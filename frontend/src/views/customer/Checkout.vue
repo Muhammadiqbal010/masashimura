@@ -26,9 +26,10 @@
       <!-- ══ PANEL STATUS PEMBAYARAN ONLINE (muncul setelah order gateway dibuat) ══ -->
       <div
         v-if="payment"
-        class="card mx-auto max-w-md space-y-6 text-center"
+        class="card pay-card mx-auto max-w-md space-y-6 text-center"
         role="status"
       >
+        <p class="eyebrow-jp justify-center"><span class="hanko" aria-hidden="true">支払</span>Pembayaran QRIS</p>
         <div
           class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border-2"
           :class="phaseIconClass"
@@ -1298,6 +1299,18 @@ onBeforeUnmount(() => {
 @media (min-width: 640px) {
   .card-item { padding: 1.25rem; }
 }
+
+/* Ornamen panel pembayaran: pita merah bergaris + watermark kanji */
+.pay-card { position: relative; overflow: hidden; padding-top: 2rem; }
+.pay-card::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 10px; pointer-events: none;
+  background: repeating-linear-gradient(135deg, #D92B22 0 12px, #111113 12px 24px);
+}
+.pay-card::after {
+  content: "支払"; position: absolute; right: -0.6rem; bottom: -1.4rem; font-size: 9rem; font-weight: 800; line-height: 1;
+  color: #D92B22; opacity: 0.06; pointer-events: none; user-select: none;
+}
+.pay-card > * { position: relative; z-index: 1; }
 
 .summary-box {
   border-radius: 1rem;
