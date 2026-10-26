@@ -728,8 +728,12 @@
         <!-- Menunggu bayar -->
         <div v-else-if="qr.state === 'waiting'" class="qr-stage">
           <!-- QR ditampilkan Midtrans Snap (jalur sama dengan checkout web) -->
-          <div id="pos-snap-embed" class="qr-embed"></div>
+          <div class="qr-frame qr-frame--embed" :class="{ 'is-full': qr.fullEmbed }">
+            <div class="qr-embed-loading" aria-hidden="true"><span class="qr-dot qr-dot--live"></span> Memuat QR…</div>
+            <div id="pos-snap-embed" class="qr-embed"></div>
+          </div>
           <p v-if="qr.embedError" class="qr-hint" role="alert">{{ qr.embedError }}</p>
+          <button type="button" class="qr-link qr-open" @click="qr.fullEmbed = !qr.fullEmbed">{{ qr.fullEmbed ? 'Tampilkan hanya QR' : 'QR terpotong? Tampilan lengkap' }}</button>
 
           <p class="qr-status" role="status"><span class="qr-dot qr-dot--live"></span> Menunggu pembayaran</p>
           <p class="qr-hint">Scan dengan GoPay, OVO, DANA, ShopeePay, atau m-banking apa saja.</p>
@@ -1529,7 +1533,7 @@ const submitOrder = async () => {
 
 // ── QRIS otomatis (QR dinamis Midtrans, tampil di layar kasir) ────────
 const QR_TTL = 15 * 60;   // detik; harus sama dengan POS_QR_EXPIRY_MINUTES di backend
-const qr = ref({ open: false, state: "idle", mode: "new", name: "", orderNumber: "", total: 0, url: "", snapToken: "", embedError: "", expiresAt: 0, secondsLeft: 0, busy: false });
+const qr = ref({ open: false, state: "idle", mode: "new", name: "", orderNumber: "", total: 0, url: "", snapToken: "", embedError: "", fullEmbed: false, expiresAt: 0, secondsLeft: 0, busy: false });
 let qrPollTimer = null;
 let qrTickTimer = null;
 
@@ -1548,7 +1552,7 @@ const startQrisCheckout = async (payload) => {
   try {
     const res = await apiClient.post("/orders/", payload);
     orderNumber = res.data?.order_number;
-    qr.value = { open: true, state: "loading", mode: "new", name: customerName.value || "", orderNumber, total: Number(res.data?.total_price || 0), url: "", snapToken: "", embedError: "", expiresAt: 0, secondsLeft: 0, busy: false };
+    qr.value = { open: true, state: "loading", mode: "new", name: customerName.value || "", orderNumber, total: Number(res.data?.total_price || 0), url: "", snapToken: "", embedError: "", fullEmbed: false, expiresAt: 0, secondsLeft: 0, busy: false };
     const { data } = await paymentAPI.posQrisCreate(orderNumber);
     applyQrData(data);
     stopQrTimers();
@@ -1567,7 +1571,7 @@ const startQrisCheckout = async (payload) => {
 const startBillQris = async (order) => {
   unlockPaymentAudio();
   isPaying.value = true;
-  qr.value = { open: true, state: "loading", mode: "bill", name: order.customer_name || "", orderNumber: order.order_number, total: Number(order.total_price || 0), url: "", snapToken: "", embedError: "", expiresAt: 0, secondsLeft: 0, busy: false };
+  qr.value = { open: true, state: "loading", mode: "bill", name: order.customer_name || "", orderNumber: order.order_number, total: Number(order.total_price || 0), url: "", snapToken: "", embedError: "", fullEmbed: false, expiresAt: 0, secondsLeft: 0, busy: false };
   try {
     const { data } = await paymentAPI.posQrisCreate(order.order_number);
     applyQrData(data);
@@ -2624,7 +2628,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 @keyframes qr-rise { from { transform: translateY(14px) scale(0.97); opacity: 0; } to { transform: none; opacity: 1; } }
 
 .qr-box {
-  width: 100%; max-width: 380px; max-height: 94dvh; overflow-y: auto;
+  width: 100%; max-width: 420px; max-height: 94dvh; overflow-y: auto;
   display: flex; flex-direction: column; align-items: center; gap: 1rem;
   padding: 1.4rem 1.25rem 1.1rem; text-align: center; color: var(--text);
   background: var(--surface); border: 1px solid rgb(var(--ink) / 0.08); border-radius: 22px;
@@ -2644,7 +2648,15 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 
 /* Bingkai QR: selalu putih supaya mudah di-scan, di tema gelap sekalipun */
 .qr-frame { position: relative; padding: 0.9rem; border-radius: 20px; background: #fff; box-shadow: 0 6px 24px rgb(0 0 0 / 0.18); overflow: hidden; }
-.qr-embed { width: 100%; min-height: 430px; border-radius: 14px; overflow: hidden; background: #fff; }
+.qr-frame--embed { width: 100%; padding: 0; height: 300px; }
+.qr-frame--embed.is-full { height: min(62dvh, 560px); }
+.qr-embed { position: relative; z-index: 1; width: 100%; height: 100%; overflow: hidden; border-radius: 20px; }
+/* Header, nominal & timer bawaan Snap digeser keluar bingkai: kasir cukup melihat QR-nya (nominal, timer, tombol sudah ada di modal ini). */
+.qr-embed :deep(iframe) { display: block; width: 100% !important; height: 780px !important; border: 0; margin-top: -192px; }
+.is-full .qr-embed { overflow-y: auto; }
+.is-full .qr-embed :deep(iframe) { height: 100% !important; margin-top: 0; }
+.qr-embed-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.85rem; color: #666; }
+.qr-open { font-size: 0.8rem; text-decoration: none; }
 .qr-img { display: block; width: min(64vw, 248px); height: auto; aspect-ratio: 1; image-rendering: pixelated; }
 .qr-corner { position: absolute; width: 22px; height: 22px; border: 3px solid var(--accent, #d92b22); opacity: 0.9; }
 .qr-corner--tl { top: 7px; left: 7px; border-right: 0; border-bottom: 0; border-top-left-radius: 8px; }
