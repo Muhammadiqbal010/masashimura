@@ -666,12 +666,23 @@
 
       <template #footer>
         <button type="button" class="adm-btn adm-btn--ghost" :disabled="isPaying" @click="isPayModalOpen = false">Batal</button>
+        <button
+          type="button" class="adm-btn adm-btn--ghost"
+          :disabled="isPaying || !selectedPayOrder || num(selectedPayOrder.total_price) <= 0"
+          title="Tampilkan QR di layar, lunas otomatis begitu pelanggan membayar"
+          @click="startAutoQris"
+        >
+          <QrCode :size="14" /> QRIS otomatis
+        </button>
         <button type="button" class="adm-btn adm-btn--primary" :disabled="!canConfirmPay" @click="confirmPay">
           <span v-if="isPaying" class="adm-spinner"></span>
           {{ isPaying ? 'Memproses…' : 'Konfirmasi lunas' }}
         </button>
       </template>
     </AdminModal>
+
+    <!-- ── MODAL QRIS OTOMATIS (QR dinamis untuk nota bayar nanti) ─── -->
+    <PosQrisModal ref="qrisModal" @paid="onAutoQrisPaid" @closed="onAutoQrisClosed" />
 
     <!-- ── MODAL BATALKAN ORDER ────────────────────────────────────── -->
     <AdminModal v-model="isCancelModalOpen" :title="`Batalkan ${selectedCancelOrder?.order_number || ''}`" size="sm" :persistent="isCancelling" back-close>
@@ -834,6 +845,7 @@ import html2canvas from 'html2canvas'
 import AdminModal from '@/components/ui/admin/Adminmodal.vue'
 import OrderItemTools from '@/components/ui/admin/OrderItemTools.vue'
 import NotifyCustomerModal from '@/components/ui/admin/NotifyCustomerModal.vue'
+import PosQrisModal from '@/components/ui/admin/PosQrisModal.vue'
 import { groupReceiptLines } from '@/utils/receiptLines'
 import { serviceTypeLabel } from '@/utils/serviceType'
 import { msgReceipt, chatUrl, isMobileDevice } from '@/utils/friendlyMessages'
@@ -1701,6 +1713,21 @@ const fillRemainingToLastRow = () => {
   const others = paySplitTotalEntered.value - (Number(last.amount) || 0)
   last.amount = Math.max(num(selectedPayOrder.value.total_price) - others, 0)
 }
+
+// QRIS otomatis: QR dinamis Midtrans ditampilkan di layar kasir, nota lunas sendiri begitu dibayar.
+const qrisModal = ref(null)
+const startAutoQris = () => {
+  const order = selectedPayOrder.value
+  if (!order) return
+  isPayModalOpen.value = false
+  qrisModal.value?.start(order)
+}
+const onAutoQrisPaid = (order) => {
+  toast.success(`Order ${order?.order_number || ''} berhasil dilunasi via QRIS`)
+  selectedPayOrder.value = null
+  payRows.value = [{ method: 'cash', amount: 0 }]
+}
+const onAutoQrisClosed = () => { fetchActiveOrders({ force: true }) }
 
 const confirmPay = async () => {
   if (!selectedPayOrder.value || !canConfirmPay.value) return

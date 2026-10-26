@@ -1915,7 +1915,8 @@ def active_qr_block(order):
     boleh berubah dan nota tidak boleh dilunasi cara lain (pelanggan bisa membayar dobel / nominal tidak cocok).
     """
     if (
-        order.midtrans_qr_ref and order.payment_status == "unpaid"
+        order.midtrans_qr_ref and order.payment_status in ("unpaid", "pending")
+        and order.payment_method != "gateway"
         and order.midtrans_qr_expires_at and order.midtrans_qr_expires_at > timezone.now()
     ):
         return Response(

@@ -226,18 +226,24 @@ POS_QR_EXPIRY_MINUTES = 15
 
 
 def _pos_qr_order(order_number):
-    """Order POS yang bisa dibayar QRIS dinamis (mode A atau B), di-lock. 404 kalau bukan."""
+    """
+    Order yang bisa dibayar QRIS dinamis dari kasir, di-lock. 404 kalau bukan.
+      A) POS "bayar sekarang": gateway + pending.
+      B) Nota "bayar nanti": POS unpaid, ATAU order web yang bayar di toko (cash + pending).
+    """
     return get_object_or_404(
         Order.objects.select_for_update().filter(
-            Q(payment_method="gateway", payment_status="pending") | Q(payment_status="unpaid"),
-            source="pos",
+            Q(source="pos", payment_method="gateway", payment_status="pending")
+            | Q(source="pos", payment_status="unpaid")
+            | (Q(source="web", payment_status="pending") & ~Q(payment_method="gateway")),
         ),
         order_number=order_number,
     )
 
 
 def _is_bill_mode(order):
-    return order.payment_status == "unpaid"
+    """Nota "bayar nanti" = semua order yang BUKAN gateway-pending (POS unpaid, web bayar di toko)."""
+    return not (order.payment_method == "gateway" and order.payment_status == "pending")
 
 
 def _trx_id(order):
@@ -355,7 +361,9 @@ class PosQrisStatusView(APIView):
 
     @transaction.atomic
     def get(self, request, order_number):
-        order = get_object_or_404(Order.objects.select_for_update(), order_number=order_number, source="pos")
+        order = get_object_or_404(
+            Order.objects.select_for_update(), order_number=order_number, source__in=("pos", "web"),
+        )
 
         if order.payment_status in ("pending", "unpaid") and order.midtrans_qr_url:
             try:
@@ -433,4 +441,4 @@ def _pos_qr_order_for_cancel(order_number):
 
 
 def _pos_qr_order_any(order_number):
-    return get_object_or_404(Order.objects.select_for_update(), order_number=order_number, source="pos")
+    return get_object_or_404(Order.objects.select_for_update(), order_number=order_number, source__in=("pos", "web"))
