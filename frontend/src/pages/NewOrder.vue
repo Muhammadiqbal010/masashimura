@@ -1575,6 +1575,7 @@ const startQrisCheckout = async (payload) => {
 const startBillQris = async (order) => {
   unlockPaymentAudio();
   isPaying.value = true;
+  showPaymentModal.value = false;   // modal pembayaran ditutup supaya QR langsung terlihat (nota tetap terpilih)
   qr.value = { open: true, state: "loading", mode: "bill", name: order.customer_name || "", orderNumber: order.order_number, total: Number(order.total_price || 0), url: "", snapToken: "", embedError: "", fullEmbed: false, expiresAt: 0, secondsLeft: 0, busy: false };
   try {
     const { data } = await paymentAPI.posQrisCreate(order.order_number);
@@ -1586,6 +1587,7 @@ const startBillQris = async (order) => {
     stopQrTimers();
     qr.value.open = false;
     apiError(e, "Gagal membuat QR pembayaran.");
+    showPaymentModal.value = true;   // gagal: kembali ke pilihan metode bayar
     fetchUnpaidOrders();
   } finally {
     isPaying.value = false;
@@ -1738,6 +1740,7 @@ const cancelQr = async () => {
     qr.value.open = false;
     qr.value.state = "idle";
     toast.info(qr.value.mode === "bill" ? "QR ditutup. Tagihan masih tersimpan." : "QR dibatalkan. Pilih metode pembayaran lain.");
+    if (qr.value.mode === "bill" && selectedUnpaidOrder.value) showPaymentModal.value = true;   // kembali ke pilihan metode bayar
   } catch (e) {
     if (e?.response?.status === 409) onQrPaid();     // ternyata sudah dibayar → jangan batalkan
     else apiError(e, "Gagal membatalkan QR.");
@@ -2706,6 +2709,9 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 .qr-embed :deep(iframe) { display: block; width: 100% !important; height: 780px !important; border: 0; margin-top: -192px; }
 .is-full .qr-embed { overflow-y: auto; }
 .is-full .qr-embed :deep(iframe) { height: 100% !important; margin-top: 0; }
+.qr-frame--pop { display: flex; flex-direction: column; align-items: center; gap: 0.9rem; width: 100%; padding: 1.6rem 1rem; color: #202024; }
+.qr-pop-ico { opacity: 0.8; }
+.qr-pop-btn { width: 100%; max-width: 240px; }
 .qr-embed-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.85rem; color: #666; }
 .qr-open { font-size: 0.8rem; text-decoration: none; }
 .qr-frame--embed .qr-corner { z-index: 3; pointer-events: none; }
