@@ -146,32 +146,50 @@ const resetSnap = () => {
 };
 const hideSnapEmbed = () => { try { window.snap?.hide(); } catch { /* abaikan */ } };
 
+// Snap memuat iframe bayangan (snap/v4/popup) begitu snap.js dimuat. Kalau embed dipanggil SEBELUM iframe itu
+// selesai dimuat, snap.js mengirim pesan ke jendela yang masih kosong → "postMessage ... target origin does not match".
+const snapFrameReady = () => {
+  const f = document.querySelector('iframe[src*="/snap/v4/popup"]');
+  if (!f) return true;                 // tidak ada iframe bayangan: tidak ada yang perlu ditunggu
+  try { void f.contentWindow.location.href; return false; }   // bisa dibaca = masih about:blank (satu origin)
+  catch { return true; }               // terblokir lintas-origin = sudah memuat halaman Midtrans
+};
+const waitSnapReady = async (maxMs = 4000) => {
+  const t0 = Date.now();
+  while (!snapFrameReady() && Date.now() - t0 < maxMs) await new Promise((r) => setTimeout(r, 100));
+};
+
 const mountSnapQr = async (token) => {
   if (!token) return;
   qr.value.embedError = "";
-  try {
-    resetSnap();
-    await loadSnap();
-    await nextTick();   // kontainer #pos-snap-embed baru muncul setelah state "waiting"
-    const done = () => pollQr();   // status asli selalu dari backend, bukan dari callback Snap
-    const opts = { embedId: "pos-snap-embed", onSuccess: done, onPending: done, onError: done, onClose: done };
+  const done = () => pollQr();   // status asli selalu dari backend, bukan dari callback Snap
+  const opts = { embedId: "pos-snap-embed", onSuccess: done, onPending: done, onError: done, onClose: done };
+  let lastErr = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
     try {
+      resetSnap();                       // snap.js baru tiap percobaan, tanpa sisa embed lama
+      await loadSnap();
+      await nextTick();                  // kontainer #pos-snap-embed baru muncul setelah state "waiting"
+      await new Promise((r) => setTimeout(r, 150));   // beri waktu snap.js membuat iframe bayangan
+      await waitSnapReady();
       window.snap.embed(token, opts);
-    } catch {
-      // Snap masih mengira ada embed lama aktif ("Invalid state transition"): reset lalu coba sekali lagi.
-      hideSnapEmbed();
+      lastErr = null;
+      break;
+    } catch (e) {
+      lastErr = e;
       await new Promise((r) => setTimeout(r, 400));
-      window.snap.embed(token, opts);
     }
-    // Penjaga: kalau 3 detik kemudian iframe tidak muncul, beri tahu kasir (jangan biarkan kotak kosong).
-    setTimeout(() => {
-      if (qr.value.state === "waiting" && !document.querySelector("#pos-snap-embed iframe")) {
-        qr.value.embedError = "QR belum tampil. Muat ulang halaman (Ctrl+F5) atau buka lewat tautan di bawah.";
-      }
-    }, 3000);
-  } catch (e) {
-    qr.value.embedError = e?.message || "Gagal menampilkan QR. Tutup lalu coba lagi.";
   }
+  if (lastErr) {
+    qr.value.embedError = "QR belum bisa ditampilkan di layar ini. Pakai tautan di bawah, atau tutup lalu coba lagi.";
+    return;
+  }
+  // Penjaga: kalau 4 detik kemudian iframe tidak muncul, beri tahu kasir (jangan biarkan kotak kosong).
+  setTimeout(() => {
+    if (qr.value.state === "waiting" && !document.querySelector("#pos-snap-embed iframe")) {
+      qr.value.embedError = "QR belum tampil. Pakai tautan di bawah, atau muat ulang halaman (Ctrl+F5).";
+    }
+  }, 4000);
 };
 
 const apiError = (e, fallback) => toast.error(e?.response?.data?.detail || fallback);
