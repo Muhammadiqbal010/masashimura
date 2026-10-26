@@ -235,6 +235,7 @@ def _qr_payload(order):
         "order_number": order.order_number,
         "total": int(order.total_price),
         "qr_url": order.midtrans_qr_url,
+        "snap_token": order.midtrans_snap_token if order.midtrans_qr_url else "",
         "expires_at": order.midtrans_qr_expires_at,
         "payment_status": order.payment_status,
         "status": order.status,
@@ -265,20 +266,25 @@ class PosQrisCreateView(APIView):
 
         old_ref = order.midtrans_qr_ref
         ref = _next_ref(order) if bill else order.order_number
+        # Pakai jalur yang SAMA dengan checkout web (Snap + other_qris), karena itu yang terbukti aktif
+        # di akun Midtrans. QR-nya ditampilkan frontend lewat Snap (snap.embed) memakai token ini.
         param = {
-            "payment_type": "qris",
             "transaction_details": {
                 "order_id": ref,
                 "gross_amount": int(order.total_price),  # selalu dari DB
             },
-            "qris": {"acquirer": getattr(settings, "MIDTRANS_QRIS_ACQUIRER", "gopay")},
-            "custom_expiry": {"expiry_duration": POS_QR_EXPIRY_MINUTES, "unit": "minute"},
+            "enabled_payments": ["other_qris"],
+            "customer_details": {
+                "first_name": order.customer_name or "Customer",
+                "phone": order.customer_phone or "",
+            },
+            "expiry": {"unit": "minutes", "duration": POS_QR_EXPIRY_MINUTES},
         }
         try:
-            trx = core.charge(param)
+            trx = snap.create_transaction(param)
         except Exception as exc:
-            # Pesan asli Midtrans ikut dikirim (endpoint ini khusus staf) supaya penyebabnya
-            # (key salah, QRIS belum aktif, dll) langsung kelihatan di layar kasir.
+            # Pesan asli Midtrans ikut dikirim (endpoint ini khusus staf) supaya penyebabnya langsung
+            # kelihatan di layar kasir.
             code = getattr(exc, "http_status_code", None)
             reason = getattr(exc, "message", None) or str(exc) or exc.__class__.__name__
             logger.exception("Gagal membuat QRIS POS untuk %s (Midtrans %s): %s", order.order_number, code, reason)
@@ -287,18 +293,16 @@ class PosQrisCreateView(APIView):
                 status=502,
             )
 
-        qr_url = ""
-        for action in trx.get("actions") or []:
-            if str(action.get("name", "")).startswith("generate-qr-code"):
-                qr_url = action.get("url", "")
-                break
-        if not qr_url:
-            logger.error("Respons QRIS Midtrans tanpa URL QR untuk %s: %s", order.order_number, trx)
-            return Response({"detail": "Midtrans tidak mengembalikan QR, coba lagi."}, status=502)
+        token = trx.get("token", "")
+        if not token:
+            logger.error("Respons Snap tanpa token untuk %s: %s", order.order_number, trx)
+            return Response({"detail": "Midtrans tidak mengembalikan token, coba lagi."}, status=502)
+        qr_url = trx.get("redirect_url") or "snap"   # penanda "QR sudah dibuat"; tampilan pakai snap_token
 
         order.midtrans_qr_url = qr_url
+        order.midtrans_snap_token = token
         order.midtrans_qr_expires_at = timezone.now() + timedelta(minutes=POS_QR_EXPIRY_MINUTES)
-        fields = ["midtrans_qr_url", "midtrans_qr_expires_at"]
+        fields = ["midtrans_qr_url", "midtrans_snap_token", "midtrans_qr_expires_at"]
         if bill:
             order.midtrans_qr_ref = ref
             fields.append("midtrans_qr_ref")
@@ -363,9 +367,12 @@ class PosQrisCancelView(APIView):
             # Pastikan pelanggan belum bayar tepat sebelum dibatalkan.
             try:
                 verified = fetch_midtrans_status(_trx_id(order))
-            except Exception:
-                logger.exception("Gagal cek status sebelum batal %s", order.order_number)
-                return Response({"detail": "Tidak bisa memastikan status ke Midtrans. Coba lagi."}, status=502)
+            except Exception as exc:
+                if getattr(exc, "http_status_code", None) == 404:
+                    verified = {}   # Snap: pelanggan belum memilih/memindai apa pun → belum ada transaksi → belum bayar
+                else:
+                    logger.exception("Gagal cek status sebelum batal %s", order.order_number)
+                    return Response({"detail": "Tidak bisa memastikan status ke Midtrans. Coba lagi."}, status=502)
             if verified.get("transaction_status") == "settlement":
                 resp = apply_midtrans_status(order, verified, bill_qr=bill)
                 if resp is not None:

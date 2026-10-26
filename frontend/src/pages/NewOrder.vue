@@ -727,12 +727,9 @@
 
         <!-- Menunggu bayar -->
         <div v-else-if="qr.state === 'waiting'" class="qr-stage">
-          <div class="qr-frame">
-            <span class="qr-corner qr-corner--tl"></span><span class="qr-corner qr-corner--tr"></span>
-            <span class="qr-corner qr-corner--bl"></span><span class="qr-corner qr-corner--br"></span>
-            <img :src="qr.url" alt="QR pembayaran" class="qr-img" />
-            <span class="qr-scan" aria-hidden="true"></span>
-          </div>
+          <!-- QR ditampilkan Midtrans Snap (jalur sama dengan checkout web) -->
+          <div id="pos-snap-embed" class="qr-embed"></div>
+          <p v-if="qr.embedError" class="qr-hint" role="alert">{{ qr.embedError }}</p>
 
           <p class="qr-status" role="status"><span class="qr-dot qr-dot--live"></span> Menunggu pembayaran</p>
           <p class="qr-hint">Scan dengan GoPay, OVO, DANA, ShopeePay, atau m-banking apa saja.</p>
@@ -910,7 +907,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
 import { menuAPI, orderAPI, bundleAPI, paymentAPI, apiClient } from "@/api";
 import { unlockPaymentAudio, playPaymentSuccess } from "@/utils/paymentSuccessSound.js";
 import { toast } from "vue-sonner";
@@ -1532,7 +1529,7 @@ const submitOrder = async () => {
 
 // ── QRIS otomatis (QR dinamis Midtrans, tampil di layar kasir) ────────
 const QR_TTL = 15 * 60;   // detik; harus sama dengan POS_QR_EXPIRY_MINUTES di backend
-const qr = ref({ open: false, state: "idle", mode: "new", name: "", orderNumber: "", total: 0, url: "", expiresAt: 0, secondsLeft: 0, busy: false });
+const qr = ref({ open: false, state: "idle", mode: "new", name: "", orderNumber: "", total: 0, url: "", snapToken: "", embedError: "", expiresAt: 0, secondsLeft: 0, busy: false });
 let qrPollTimer = null;
 let qrTickTimer = null;
 
@@ -1551,7 +1548,7 @@ const startQrisCheckout = async (payload) => {
   try {
     const res = await apiClient.post("/orders/", payload);
     orderNumber = res.data?.order_number;
-    qr.value = { open: true, state: "loading", mode: "new", name: customerName.value || "", orderNumber, total: Number(res.data?.total_price || 0), url: "", expiresAt: 0, secondsLeft: 0, busy: false };
+    qr.value = { open: true, state: "loading", mode: "new", name: customerName.value || "", orderNumber, total: Number(res.data?.total_price || 0), url: "", snapToken: "", embedError: "", expiresAt: 0, secondsLeft: 0, busy: false };
     const { data } = await paymentAPI.posQrisCreate(orderNumber);
     applyQrData(data);
     stopQrTimers();
@@ -1570,7 +1567,7 @@ const startQrisCheckout = async (payload) => {
 const startBillQris = async (order) => {
   unlockPaymentAudio();
   isPaying.value = true;
-  qr.value = { open: true, state: "loading", mode: "bill", name: order.customer_name || "", orderNumber: order.order_number, total: Number(order.total_price || 0), url: "", expiresAt: 0, secondsLeft: 0, busy: false };
+  qr.value = { open: true, state: "loading", mode: "bill", name: order.customer_name || "", orderNumber: order.order_number, total: Number(order.total_price || 0), url: "", snapToken: "", embedError: "", expiresAt: 0, secondsLeft: 0, busy: false };
   try {
     const { data } = await paymentAPI.posQrisCreate(order.order_number);
     applyQrData(data);
@@ -1587,12 +1584,48 @@ const startBillQris = async (order) => {
   }
 };
 
+// ── Midtrans Snap (QR tampil lewat snap.embed, sama seperti checkout web) ──
+const MIDTRANS_CLIENT_KEY = import.meta.env.VITE_MIDTRANS_CLIENT_KEY || "";
+const SNAP_URL = import.meta.env.VITE_MIDTRANS_IS_PRODUCTION === "true"
+  ? "https://app.midtrans.com/snap/snap.js"
+  : "https://app.sandbox.midtrans.com/snap/snap.js";
+let snapLoading = null;
+const loadSnap = () => {
+  if (window.snap) return Promise.resolve();
+  if (!MIDTRANS_CLIENT_KEY) return Promise.reject(new Error("VITE_MIDTRANS_CLIENT_KEY belum diisi"));
+  if (snapLoading) return snapLoading;
+  snapLoading = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = SNAP_URL;
+    script.setAttribute("data-client-key", MIDTRANS_CLIENT_KEY);
+    script.onload = () => resolve();
+    script.onerror = () => { snapLoading = null; script.remove(); reject(new Error("Gagal memuat Midtrans Snap")); };
+    document.head.appendChild(script);
+  });
+  return snapLoading;
+};
+
+const mountSnapQr = async (token) => {
+  if (!token) return;
+  qr.value.embedError = "";
+  try {
+    await loadSnap();
+    await nextTick();   // kontainer #pos-snap-embed baru muncul setelah state "waiting"
+    const done = () => pollQr();   // status asli selalu dari backend, bukan dari callback Snap
+    window.snap.embed(token, { embedId: "pos-snap-embed", onSuccess: done, onPending: done, onError: done, onClose: done });
+  } catch (e) {
+    qr.value.embedError = e?.message || "Gagal menampilkan QR. Tutup lalu coba lagi.";
+  }
+};
+
 const applyQrData = (d) => {
   qr.value.url = d.qr_url || qr.value.url;
+  qr.value.snapToken = d.snap_token || qr.value.snapToken;
   qr.value.total = Number(d.total ?? qr.value.total);
   qr.value.expiresAt = d.expires_at ? new Date(d.expires_at).getTime() : qr.value.expiresAt;
   qr.value.secondsLeft = Math.floor((qr.value.expiresAt - Date.now()) / 1000);
   qr.value.state = "waiting";
+  mountSnapQr(qr.value.snapToken);
 };
 
 const tickQr = () => {
@@ -2611,6 +2644,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 
 /* Bingkai QR: selalu putih supaya mudah di-scan, di tema gelap sekalipun */
 .qr-frame { position: relative; padding: 0.9rem; border-radius: 20px; background: #fff; box-shadow: 0 6px 24px rgb(0 0 0 / 0.18); overflow: hidden; }
+.qr-embed { width: 100%; min-height: 430px; border-radius: 14px; overflow: hidden; background: #fff; }
 .qr-img { display: block; width: min(64vw, 248px); height: auto; aspect-ratio: 1; image-rendering: pixelated; }
 .qr-corner { position: absolute; width: 22px; height: 22px; border: 3px solid var(--accent, #d92b22); opacity: 0.9; }
 .qr-corner--tl { top: 7px; left: 7px; border-right: 0; border-bottom: 0; border-top-left-radius: 8px; }

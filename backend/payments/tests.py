@@ -9,6 +9,8 @@ from accounts.models import UserProfile
 from menu.models import Category, Menu
 from order.models import Order
 
+SNAP_OK = {'token': 'tok-123', 'redirect_url': 'https://x/redirect'}
+
 
 class PosQrisTests(TestCase):
     def setUp(self):
@@ -31,21 +33,38 @@ class PosQrisTests(TestCase):
         d = self._make_order()
         self.assertEqual((d['payment_status'], d['status']), ('pending', 'pending'))
 
-    @mock.patch('payments.views.core')
+    @mock.patch('payments.views.snap')
     def test_create_qr_then_reuse(self, core):
-        core.charge.return_value = {'actions': [{'name': 'generate-qr-code', 'url': 'https://x/qr.png'}]}
+        core.create_transaction.return_value = SNAP_OK
         no = self._make_order()['order_number']
         r = self.c.post(f'/api/payments/pos/{no}/qris/')
         self.assertEqual(r.status_code, 200, r.data)
-        self.assertEqual(r.data['qr_url'], 'https://x/qr.png')
+        self.assertEqual(r.data['snap_token'], 'tok-123')
         self.assertEqual(r.data['total'], 40000)
         self.c.post(f'/api/payments/pos/{no}/qris/')
-        self.assertEqual(core.charge.call_count, 1)      # QR yang masih berlaku dipakai ulang
+        self.assertEqual(core.create_transaction.call_count, 1)      # QR yang masih berlaku dipakai ulang
+
+    @mock.patch('payments.views.snap')
+    def test_create_qr_failure_shows_midtrans_reason(self, snap):
+        snap.create_transaction.side_effect = Exception('Access denied')
+        no = self._make_order()['order_number']
+        r = self.c.post(f'/api/payments/pos/{no}/qris/')
+        self.assertEqual(r.status_code, 502)
+        self.assertIn('Access denied', r.data['detail'])
+
+    @mock.patch('payments.views.snap')
+    def test_create_qr_uses_snap_other_qris(self, snap):
+        snap.create_transaction.return_value = SNAP_OK
+        no = self._make_order()['order_number']
+        self.c.post(f'/api/payments/pos/{no}/qris/')
+        param = snap.create_transaction.call_args[0][0]
+        self.assertEqual(param['enabled_payments'], ['other_qris'])
+        self.assertEqual(param['transaction_details']['gross_amount'], 40000)
 
     @mock.patch('payments.views.fetch_midtrans_status')
-    @mock.patch('payments.views.core')
+    @mock.patch('payments.views.snap')
     def test_status_marks_paid_on_settlement(self, core, status):
-        core.charge.return_value = {'actions': [{'name': 'generate-qr-code', 'url': 'https://x/qr.png'}]}
+        core.create_transaction.return_value = SNAP_OK
         no = self._make_order()['order_number']
         self.c.post(f'/api/payments/pos/{no}/qris/')
         status.return_value = {'transaction_status': 'settlement', 'gross_amount': '40000.00'}
@@ -58,9 +77,9 @@ class PosQrisTests(TestCase):
         self.assertEqual(o.payments.count(), 1)
 
     @mock.patch('payments.views.fetch_midtrans_status')
-    @mock.patch('payments.views.core')
+    @mock.patch('payments.views.snap')
     def test_cancel_deletes_unpaid_but_refuses_if_paid(self, core, status):
-        core.charge.return_value = {'actions': [{'name': 'generate-qr-code', 'url': 'https://x/qr.png'}]}
+        core.create_transaction.return_value = SNAP_OK
         no = self._make_order()['order_number']
         self.c.post(f'/api/payments/pos/{no}/qris/')
         status.return_value = {'transaction_status': 'pending'}
@@ -103,13 +122,13 @@ class PosQrisBillTests(TestCase):
         self.assertEqual(r.data['payment_status'], 'unpaid')
         return r.data
 
-    @mock.patch('payments.views.core')
+    @mock.patch('payments.views.snap')
     def test_takeaway_bill_can_get_qr_and_blocks_edits(self, core):
-        core.charge.return_value = {'actions': [{'name': 'generate-qr-code', 'url': 'https://x/qr.png'}]}
+        core.create_transaction.return_value = SNAP_OK
         d = self._bill('takeaway')
         r = self.c.post(f"/api/payments/pos/{d['order_number']}/qris/")
         self.assertEqual((r.status_code, r.data['mode']), (200, 'bill'))
-        self.assertEqual(core.charge.call_args[0][0]['transaction_details']['order_id'], f"{d['order_number']}-Q1")
+        self.assertEqual(core.create_transaction.call_args[0][0]['transaction_details']['order_id'], f"{d['order_number']}-Q1")
         # selama QR hidup: tidak boleh ubah item / lunasi cara lain
         r = self.c.post(f"/api/orders/{d['id']}/items/", {'menu_id': self.menu.pk, 'quantity': 1}, format='json')
         self.assertEqual(r.status_code, 409)
@@ -117,9 +136,9 @@ class PosQrisBillTests(TestCase):
         self.assertEqual(r.status_code, 409)
 
     @mock.patch('payments.views.fetch_midtrans_status')
-    @mock.patch('payments.views.core')
+    @mock.patch('payments.views.snap')
     def test_bill_cancel_keeps_order_and_settlement_pays_it(self, core, status):
-        core.charge.return_value = {'actions': [{'name': 'generate-qr-code', 'url': 'https://x/qr.png'}]}
+        core.create_transaction.return_value = SNAP_OK
         d = self._bill()
         no = d['order_number']
         self.c.post(f'/api/payments/pos/{no}/qris/')
@@ -131,7 +150,7 @@ class PosQrisBillTests(TestCase):
         self.assertEqual(o.midtrans_qr_url, '')
         # QR baru → ID transaksi baru (-Q2), lalu dibayar
         self.c.post(f'/api/payments/pos/{no}/qris/')
-        self.assertEqual(core.charge.call_args[0][0]['transaction_details']['order_id'], f'{no}-Q2')
+        self.assertEqual(core.create_transaction.call_args[0][0]['transaction_details']['order_id'], f'{no}-Q2')
         status.return_value = {'transaction_status': 'settlement', 'gross_amount': '20000'}
         r = self.c.get(f'/api/payments/pos/{no}/status/')
         self.assertEqual(r.data['payment_status'], 'paid')
