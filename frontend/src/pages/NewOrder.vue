@@ -2080,6 +2080,29 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 @media (hover: none) { .menu-card-avail .menu-add-indicator { opacity: 0.8; } }
 
 /* ── Order panel ─────────────────────────────────────────────────── */
+/* Komponen bersama (PromoCodeBox, PointRedeemBox) membaca variabel --box-*.
+   Di POS dipetakan ke token tema admin, jadi otomatis ikut mode terang / gelap. */
+.order-panel {
+  --box-field-bg: var(--surface-2);
+  --box-border: var(--border-strong);
+  --box-border-hover: var(--text-faint);
+  --box-text: var(--text);
+  --box-muted: var(--text-dim);
+  --box-faint: var(--text-faint);
+  --box-accent: var(--amber-soft);
+  --box-err: var(--red-soft);
+  --box-ok: var(--green-soft);
+  --box-ok-bg: rgb(var(--ink) / 0.04);
+  --box-ok-border: var(--border-strong);
+  --box-ok-icon-bg: rgb(var(--ink) / 0.08);
+  --box-chip-bg: rgb(var(--ink) / 0.05);
+  --box-lock-border: var(--border);
+  --box-focus-border: var(--amber-soft);
+  --box-focus-ring: rgb(var(--ink) / 0.12);
+  --box-pt-border: 1px solid var(--border-strong);
+  --box-outline: var(--amber-soft);
+}
+
 .order-panel {
   width: 360px; flex-shrink: 0;
   background: var(--surface); border: 1px solid rgb(var(--ink) / 0.06);

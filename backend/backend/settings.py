@@ -135,6 +135,8 @@ DATABASES = {
 MIDTRANS_SERVER_KEY = os.getenv("MIDTRANS_SERVER_KEY", "").strip()
 MIDTRANS_CLIENT_KEY = os.getenv("MIDTRANS_CLIENT_KEY", "").strip()
 MIDTRANS_IS_PRODUCTION = os.getenv("MIDTRANS_IS_PRODUCTION", "False").strip().lower() == "true"
+# Penyedia QRIS untuk QR di POS: "gopay" (bawaan) atau "airpay shopee". Ikuti yang AKTIF di akun Midtrans lo.
+MIDTRANS_QRIS_ACQUIRER = os.getenv("MIDTRANS_QRIS_ACQUIRER", "gopay").strip() or "gopay"
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},

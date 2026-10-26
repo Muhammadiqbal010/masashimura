@@ -271,14 +271,21 @@ class PosQrisCreateView(APIView):
                 "order_id": ref,
                 "gross_amount": int(order.total_price),  # selalu dari DB
             },
-            "qris": {"acquirer": "gopay"},
+            "qris": {"acquirer": getattr(settings, "MIDTRANS_QRIS_ACQUIRER", "gopay")},
             "custom_expiry": {"expiry_duration": POS_QR_EXPIRY_MINUTES, "unit": "minute"},
         }
         try:
             trx = core.charge(param)
-        except Exception:
-            logger.exception("Gagal membuat QRIS POS untuk %s", order.order_number)
-            return Response({"detail": "Gagal membuat QR pembayaran, coba lagi."}, status=502)
+        except Exception as exc:
+            # Pesan asli Midtrans ikut dikirim (endpoint ini khusus staf) supaya penyebabnya
+            # (key salah, QRIS belum aktif, dll) langsung kelihatan di layar kasir.
+            code = getattr(exc, "http_status_code", None)
+            reason = getattr(exc, "message", None) or str(exc) or exc.__class__.__name__
+            logger.exception("Gagal membuat QRIS POS untuk %s (Midtrans %s): %s", order.order_number, code, reason)
+            return Response(
+                {"detail": f"Gagal membuat QR pembayaran. Midtrans: {reason}"[:300], "midtrans_status": code},
+                status=502,
+            )
 
         qr_url = ""
         for action in trx.get("actions") or []:
