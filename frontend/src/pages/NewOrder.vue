@@ -735,6 +735,7 @@
             <div id="pos-snap-embed" class="qr-embed"></div>
           </div>
           <p v-if="qr.embedError" class="qr-hint" role="alert">{{ qr.embedError }}</p>
+          <a v-if="qr.embedError && qr.url && qr.url.startsWith('http')" :href="qr.url" target="_blank" rel="noopener" class="qr-link qr-open">Buka QR di tab baru ↗</a>
           <button type="button" class="qr-link qr-open" @click="qr.fullEmbed = !qr.fullEmbed">{{ qr.fullEmbed ? 'Tampilkan hanya QR' : 'QR terpotong? Tampilan lengkap' }}</button>
 
           <p class="qr-brand" aria-hidden="true"><span class="qr-hanko">支払</span> Masashimura · QRIS</p>
@@ -1618,11 +1619,22 @@ const mountSnapQr = async (token) => {
   try {
     await loadSnap();
     await nextTick();   // kontainer #pos-snap-embed baru muncul setelah state "waiting"
-    // Embed sebelumnya (order lain) masih tercatat aktif di Snap → "Invalid state transition". Tutup dulu.
-    try { window.snap.hide(); } catch { /* belum ada embed aktif */ }
-    await new Promise((r) => setTimeout(r, 80));
     const done = () => pollQr();   // status asli selalu dari backend, bukan dari callback Snap
-    window.snap.embed(token, { embedId: "pos-snap-embed", onSuccess: done, onPending: done, onError: done, onClose: done });
+    const opts = { embedId: "pos-snap-embed", onSuccess: done, onPending: done, onError: done, onClose: done };
+    try {
+      window.snap.embed(token, opts);
+    } catch {
+      // Snap masih mengira ada embed lama aktif ("Invalid state transition"): reset lalu coba sekali lagi.
+      hideSnapEmbed();
+      await new Promise((r) => setTimeout(r, 400));
+      window.snap.embed(token, opts);
+    }
+    // Penjaga: kalau 3 detik kemudian iframe tidak muncul, beri tahu kasir (jangan biarkan kotak kosong).
+    setTimeout(() => {
+      if (qr.value.state === "waiting" && !document.querySelector("#pos-snap-embed iframe")) {
+        qr.value.embedError = "QR belum tampil. Muat ulang halaman (Ctrl+F5) atau buka lewat tautan di bawah.";
+      }
+    }, 3000);
   } catch (e) {
     qr.value.embedError = e?.message || "Gagal menampilkan QR. Tutup lalu coba lagi.";
   }
