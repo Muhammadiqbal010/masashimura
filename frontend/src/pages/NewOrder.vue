@@ -190,6 +190,47 @@
       <!-- Area scroll: semua isi form. Total + tombol submit ada di footer yang selalu kelihatan. -->
       <div class="order-panel-body">
 
+        <!-- Customer info -->
+        <div class="order-section">
+          <div class="field">
+            <label class="field-label">Nomor HP Pelanggan <span class="field-optional">(Opsional)</span></label>
+            <div class="phone-input-row">
+              <div class="phone-avatar">{{ customerInitial }}</div>
+              <input
+                v-model="customerPhone"
+                @input="debounceTrackLoyalty"
+                inputmode="tel"
+                placeholder="081234567xxx"
+                class="pos-input flex-1"
+              />
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Nama Pelanggan <span class="field-optional">(Opsional)</span></label>
+            <input v-model="customerName" type="text" placeholder="Nama pembeli..." class="pos-input" />
+          </div>
+
+          <div
+            v-if="customerPhone.length >= 9"
+            class="loyalty-status"
+            :class="isTrackingLoyalty ? 'ls-loading' : isMember ? 'ls-loyal' : 'ls-regular'"
+          >
+            <template v-if="isTrackingLoyalty">
+              <div class="ls-spinner"></div>
+              <span>Memeriksa status member...</span>
+            </template>
+            <template v-else-if="isMember">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Member — <strong>{{ memberPoints }} poin</strong>{{ pointsExpiringNote ? ` · ${pointsExpiringNote}` : '' }}</span>
+            </template>
+            <template v-else>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <span>Belum pernah order — belum ada poin</span>
+            </template>
+          </div>
+        </div>
+
         <!-- Cart -->
         <div class="order-section">
           <div v-if="orderItems.length === 0 && orderBundles.length === 0" class="cart-empty">
@@ -281,47 +322,6 @@
               </ul>
             </section>
           </template>
-        </div>
-
-        <!-- Customer info -->
-        <div class="order-section">
-          <div class="field">
-            <label class="field-label">Nomor HP Pelanggan <span class="field-optional">(Opsional)</span></label>
-            <div class="phone-input-row">
-              <div class="phone-avatar">{{ customerInitial }}</div>
-              <input
-                v-model="customerPhone"
-                @input="debounceTrackLoyalty"
-                inputmode="tel"
-                placeholder="081234567xxx"
-                class="pos-input flex-1"
-              />
-            </div>
-          </div>
-
-          <div class="field">
-            <label class="field-label">Nama Pelanggan <span class="field-optional">(Opsional)</span></label>
-            <input v-model="customerName" type="text" placeholder="Nama pembeli..." class="pos-input" />
-          </div>
-
-          <div
-            v-if="customerPhone.length >= 9"
-            class="loyalty-status"
-            :class="isTrackingLoyalty ? 'ls-loading' : isMember ? 'ls-loyal' : 'ls-regular'"
-          >
-            <template v-if="isTrackingLoyalty">
-              <div class="ls-spinner"></div>
-              <span>Memeriksa status member...</span>
-            </template>
-            <template v-else-if="isMember">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              <span>Member — <strong>{{ memberPoints }} poin</strong>{{ pointsExpiringNote ? ` · ${pointsExpiringNote}` : '' }}</span>
-            </template>
-            <template v-else>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              <span>Belum pernah order — belum ada poin</span>
-            </template>
-          </div>
         </div>
 
         <!-- Service type: makan di tempat / dibungkus -->
