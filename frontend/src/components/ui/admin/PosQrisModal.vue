@@ -134,12 +134,23 @@ const loadSnap = () => {
   });
   return snapLoading;
 };
+// snap.js menyimpan SATU iframe embed di dalam dirinya. Setelah modal ditutup, iframe itu ikut hilang dari halaman
+// tapi Snap masih menyimpannya, sehingga embed berikutnya mengirim pesan ke iframe yang sudah mati
+// (error "postMessage ... target origin does not match"). Solusinya: muat ulang snap.js setiap sesi QR.
+const resetSnap = () => {
+  try { window.snap?.hide(); } catch { /* abaikan */ }
+  document.querySelectorAll('script[src*="/snap/snap.js"]').forEach((n) => n.remove());
+  document.getElementById("snap-midtrans")?.remove();
+  try { delete window.snap; } catch { window.snap = undefined; }
+  snapLoading = null;
+};
 const hideSnapEmbed = () => { try { window.snap?.hide(); } catch { /* abaikan */ } };
 
 const mountSnapQr = async (token) => {
   if (!token) return;
   qr.value.embedError = "";
   try {
+    resetSnap();
     await loadSnap();
     await nextTick();   // kontainer #pos-snap-embed baru muncul setelah state "waiting"
     const done = () => pollQr();   // status asli selalu dari backend, bukan dari callback Snap
