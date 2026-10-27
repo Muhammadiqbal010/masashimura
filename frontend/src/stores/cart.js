@@ -24,10 +24,20 @@ const loadBundles = () => {
 
 // Baca keranjang tersimpan. Kalau isinya rusak (JSON tidak valid atau bukan object),
 // mulai dari keranjang kosong supaya seluruh aplikasi tidak error saat dibuka.
+// Baris yang rusak (bukan object, jumlah <= 0 / bukan angka) dibuang, dan cartKey selalu
+// disamakan dengan kuncinya, supaya tombol hapus/kurangi tidak menyasar `undefined`.
 const loadCart = () => {
   try {
     const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}")
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {}
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {}
+    const clean = {}
+    for (const [key, item] of Object.entries(parsed)) {
+      if (!item || typeof item !== "object") continue
+      const quantity = Math.floor(Number(item.quantity))
+      if (!Number.isFinite(quantity) || quantity <= 0) continue
+      clean[key] = { ...item, cartKey: key, quantity }
+    }
+    return clean
   } catch {
     return {}
   }
@@ -162,6 +172,9 @@ export const useCartStore = defineStore("cart", () => {
     }
     return null
   }
+
+  // Masih boleh menambah 1 porsi lagi untuk menu ini? (dipakai tombol + di drawer keranjang)
+  const canAddMore = (menuId) => portionLimitError(menuId, 1) === null
 
   // ── Actions: keranjang ──────────────────────────────────────────────────────
   // Tambah menu ke keranjang. `selection` = pilihan opsi (lihat format di atas).
@@ -438,6 +451,7 @@ export const useCartStore = defineStore("cart", () => {
     removeBundle,
     reconcileBundles,
     quantityOfMenu,
+    canAddMore,
     decrementMenu,
     updateQuantity,
     removeFromCart,

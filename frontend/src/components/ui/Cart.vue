@@ -251,11 +251,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue"
+import { ref, onMounted, onUnmounted } from "vue"
 import { useRouter } from "vue-router"
 import { useCartStore } from "@/stores/cart"
 import { getMediaUrl } from "@/api"
 import { useStoreSettings } from "@/composables/useStoreSettings"
+import { useScrollLock } from "@/composables/useScrollLock"
 import { X, ShoppingCart, ArrowRight, Lock, Plus, Minus } from "lucide-vue-next"
 import MenuRecommendations from "@/components/ui/MenuRecommendations.vue"
 
@@ -263,7 +264,18 @@ const router = useRouter()
 const cartStore = useCartStore()
 const { isStoreOpen, settingsReady, nextOpenText, fetchSettings } = useStoreSettings()
 
-onMounted(() => fetchSettings())
+const { lock, unlock } = useScrollLock()
+const onKeydown = (e) => { if (e.key === "Escape") emit("close") }
+
+onMounted(() => {
+  fetchSettings()
+  lock() // halaman di belakang drawer tidak ikut bergulir
+  window.addEventListener("keydown", onKeydown)
+})
+onUnmounted(() => {
+  unlock()
+  window.removeEventListener("keydown", onKeydown)
+})
 
 defineProps({
   formatPrice: Function,
