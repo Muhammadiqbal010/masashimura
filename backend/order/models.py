@@ -594,6 +594,51 @@ class PointAdjustment(models.Model):
 
 
 # ─────────────────────────────────────────────
+# ORDER EVENT (riwayat aksi staff / sistem per order)
+# ─────────────────────────────────────────────
+# Satu baris = satu kejadian penting pada order: diterima, dibatalkan, siap, pengingat, dst.
+# Dipakai untuk (1) timeline di struk Active Orders, (2) mencegah pengingat dobel,
+# (3) audit "siapa menekan apa, dari mana" (admin web atau Telegram),
+# (4) hitungan kinerja di ringkasan staff (waktu respons terima/siap).
+
+ORDER_EVENT_ACTION_CHOICES = (
+    ('accepted',       'Diterima'),
+    ('paid',           'Dilunasi'),
+    ('cancelled',      'Dibatalkan'),
+    ('auto_cancelled', 'Dibatalkan otomatis'),
+    ('ready',          'Siap diambil'),
+    ('unready',        'Tanda siap dicabut'),
+    ('reminded',       'Pengingat dikirim'),
+    ('refunded',       'Refund diserahkan'),
+)
+
+ORDER_EVENT_CHANNEL_CHOICES = (
+    ('staff',    'Aplikasi admin'),
+    ('telegram', 'Telegram'),
+    ('system',   'Sistem'),
+)
+
+
+class OrderEvent(models.Model):
+    order      = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='events')
+    action     = models.CharField(max_length=20, choices=ORDER_EVENT_ACTION_CHOICES)
+    actor      = models.CharField(max_length=100, blank=True, default='')
+    channel    = models.CharField(max_length=10, choices=ORDER_EVENT_CHANNEL_CHOICES, default='staff')
+    note       = models.CharField(max_length=255, blank=True, default='')
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['created_at', 'id']
+        indexes = [
+            models.Index(fields=['order', 'action'], name='orderevent_order_action_idx'),
+            models.Index(fields=['created_at'], name='orderevent_created_idx'),
+        ]
+
+    def __str__(self):
+        return f"{self.order_id} {self.action} oleh {self.actor or '-'} ({self.channel})"
+
+
+# ─────────────────────────────────────────────
 # SIGNALS
 # ─────────────────────────────────────────────
 

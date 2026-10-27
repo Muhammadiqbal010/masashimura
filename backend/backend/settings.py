@@ -143,6 +143,13 @@ MIDTRANS_QRIS_ACQUIRER = os.getenv("MIDTRANS_QRIS_ACQUIRER", "gopay").strip() or
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "").strip()
 ADMIN_ORDERS_URL = os.getenv("ADMIN_ORDERS_URL", "https://masashimura.vercel.app/admin/orders").strip()
+# Bot aksi cepat (tombol Terima/Tolak/Siap di Telegram). Webhook mati total kalau secret kosong.
+# Daftarkan dengan: python manage.py telegram_webhook set https://<backend>/api/telegram/webhook/
+TELEGRAM_WEBHOOK_SECRET = os.getenv("TELEGRAM_WEBHOOK_SECRET", "").strip()
+# Opsional: batasi penekan tombol ke user id Telegram tertentu (dipisah koma). Kosong = semua anggota chat terdaftar.
+TELEGRAM_ALLOWED_USER_IDS = os.getenv("TELEGRAM_ALLOWED_USER_IDS", "").strip()
+# Rahasia untuk Vercel Cron (endpoint /api/orders/cron/). Kosong = endpoint mati.
+CRON_SECRET = os.getenv("CRON_SECRET", "").strip()
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},

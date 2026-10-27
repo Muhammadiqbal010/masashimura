@@ -30,10 +30,10 @@ from .pricing import web_price
 from . import member_pin
 from . import guards
 from . import notify
+from . import events, staff_actions
 from .crowd import to_wib
 from .segmentation import segment_overview
 from .models import (
-    CANCEL_REASON_CHOICES,
     PAYMENT_METHOD_CHOICES,
     CustomerLoyalty,
     LoyaltySettings,
@@ -748,7 +748,7 @@ def get_order(request, pk):
 @api_view(["GET"])
 @permission_classes([IsStaffLevel])
 def active_orders_per_day(request):
-    guards.expire_unconfirmed_orders()
+    guards.process_unconfirmed()
     raw_date = request.query_params.get("target_date")
     if not raw_date:
         return Response({"error": "Parameter target_date wajib diisi"}, status=400)
@@ -1387,7 +1387,7 @@ class AdjustPointsView(APIView):
 @api_view(["GET"])
 @permission_classes([IsStaffLevel])
 def unpaid_orders(request):
-    guards.expire_unconfirmed_orders()
+    guards.process_unconfirmed()
     search = request.query_params.get("search", "")
 
     qs = (
@@ -1442,6 +1442,7 @@ def pay_order(request, pk):
             status=400,
         )
 
+    was_awaiting = bool(order.awaiting_confirmation)
     guards.accept_now(order)   # melunasi = otomatis menerima order (disimpan oleh save() di bawah)
     previous_status = order.status
     kasir_name      = (request.data.get('kasir_name') or '').strip()
@@ -1508,6 +1509,11 @@ def pay_order(request, pk):
     order.save()
     order.refresh_from_db()
 
+    actor = events.actor_from_request(request)
+    if was_awaiting:
+        events.record(order, "accepted", actor=actor, channel="staff", note="Otomatis saat dilunasi")
+    events.record(order, "paid", actor=actor, channel="staff", note=str(order.payment_method or ""))
+
     return Response({
         "success":        True,
         "order_number":   order.order_number,
@@ -1519,73 +1525,38 @@ def pay_order(request, pk):
 
 @api_view(["PATCH"])
 @permission_classes([IsStaffLevel])
-@transaction.atomic
 def accept_order(request, pk):
     """
     Kasir menerima order web bayar-di-toko. Setelah ini order dianggap sah masuk antrean dan tidak
-    ikut dibatalkan otomatis. Aman dipanggil dua kali.
+    ikut dibatalkan otomatis. Aman dipanggil dua kali. (Logika di staff_actions.accept, dipakai juga bot Telegram.)
     """
-    guards.expire_unconfirmed_orders()   # kalau sudah lewat batas waktu, order dibatalkan dulu
-    order = get_object_or_404(Order.objects.select_for_update(), pk=pk)
-
-    if order.status == "cancelled":
-        return Response(
-            {"detail": f"Order ini sudah dibatalkan{' otomatis (tidak diterima dalam ' + str(guards.CONFIRM_TIMEOUT_MINUTES) + ' menit)' if order.cancelled_by == 'sistem' else ''}."},
-            status=409,
-        )
-    if guards.accept_now(order):
-        order.save(update_fields=["awaiting_confirmation", "accepted_at", "updated_at"])
+    try:
+        order, _changed = staff_actions.accept(pk, actor=events.actor_from_request(request), channel="staff")
+    except staff_actions.ActionError as exc:
+        return Response({"detail": exc.message}, status=exc.status)
     return Response(OrderSerializer(order).data)
 
 
 @api_view(["PATCH"])
 @permission_classes([IsStaffLevel])
-@transaction.atomic
 def cancel_order(request, pk):
     """
     Void/batalkan order dengan alasan wajib. Order TIDAK dihapus dari
     database, cuma diubah statusnya jadi 'cancelled' + dicatat alasannya.
+    (Logika di staff_actions.cancel, dipakai juga bot Telegram.)
     """
-    order = get_object_or_404(Order.objects.select_for_update(), pk=pk)
-    previous_status = order.status
-    was_gateway_pending = order.payment_method == "gateway" and order.payment_status == "pending"
-
-    if order.status == "completed":
-        return Response(
-            {"detail": "Order yang sudah selesai (completed) tidak bisa dibatalkan lewat sini."},
-            status=400,
+    kasir = (request.data.get("kasir_name") or "").strip()
+    try:
+        order = staff_actions.cancel(
+            pk,
+            reason=request.data.get("cancel_reason"),
+            note=request.data.get("cancel_note"),
+            actor=events.actor_from_request(request),
+            channel="staff",
+            cancelled_by=kasir,
         )
-    if order.status == "cancelled":
-        return Response({"detail": "Order ini sudah dibatalkan sebelumnya."}, status=400)
-
-    reason = (request.data.get("cancel_reason") or "").strip()
-    valid_reasons = {choice[0] for choice in CANCEL_REASON_CHOICES}
-    if reason not in valid_reasons:
-        return Response(
-            {"detail": "Alasan pembatalan wajib diisi dan harus valid."},
-            status=400,
-        )
-
-    order.status         = "cancelled"
-    order.payment_status = "void"
-    order.awaiting_confirmation = False
-    order.cancel_reason  = reason
-    order.cancel_note    = (request.data.get("cancel_note") or "").strip()
-    order.cancelled_at   = timezone.now()
-    order.cancelled_by   = (request.data.get("kasir_name") or "").strip()
-
-    order._previous_status = previous_status
-    order.save()
-
-    # Tutup transaksi di Midtrans supaya QR lama tidak bisa dibayar lagi.
-    if was_gateway_pending:
-        order_number = order.order_number
-        transaction.on_commit(lambda: cancel_midtrans_transaction(order_number))
-    elif order.midtrans_qr_ref:
-        qr_ref = order.midtrans_qr_ref
-        transaction.on_commit(lambda: cancel_midtrans_transaction(qr_ref))
-
-    order.refresh_from_db()
+    except staff_actions.ActionError as exc:
+        return Response({"detail": exc.message}, status=exc.status)
 
     return Response({
         "success":       True,
@@ -1593,6 +1564,14 @@ def cancel_order(request, pk):
         "status":        order.status,
         "cancel_reason": order.cancel_reason,
     })
+
+
+@api_view(["GET"])
+@permission_classes([IsStaffLevel])
+def order_events(request, pk):
+    """Riwayat aksi satu order (diterima, siap, dibatalkan, pengingat, ...), terurut waktu."""
+    order = get_object_or_404(Order, pk=pk)
+    return Response({"order_id": order.pk, "events": events.timeline(order)})
 
 
 # ─────────────────────────────────────────────
@@ -1613,7 +1592,7 @@ def new_order_notifications(request):
     - new_paid_orders : order gateway yang pembayarannya MASUK sejak
                         after_payment_id (kursor = id OrderPayment).
     """
-    guards.expire_unconfirmed_orders()
+    guards.process_unconfirmed()
     latest_id = Order.objects.order_by("-id").values_list("id", flat=True).first() or 0
     latest_payment_id = (
         OrderPayment.objects.filter(method="gateway")
@@ -2337,24 +2316,18 @@ def _unavailable_extras(order, menu_ids, changed_menus):
 
 @api_view(["PATCH"])
 @permission_classes([IsStaffLevel])
-@transaction.atomic
 def mark_order_ready(request, pk):
     """
     Tandai pesanan siap diambil / batalkan tandanya.
     Body: { "ready": true }   (default true; false = cabut tanda siap)
+    (Logika di staff_actions.set_ready, dipakai juga bot Telegram.)
     """
-    order = get_object_or_404(Order.objects.select_for_update(), pk=pk)
-    if order.status == "cancelled" or order.payment_status == "void":
-        return Response({"detail": "Order ini sudah dibatalkan."}, status=400)
-    if not order.tracks_readiness:
-        return Response({"detail": "Order POS tidak memakai status siap (pelanggan sudah di warung)."}, status=400)
-
     raw = request.data.get("ready", True)
     ready = raw if isinstance(raw, bool) else str(raw).strip().lower() in ("1", "true", "yes", "ya")
-
-    order.ready_at = timezone.now() if ready else None
-    order.save(update_fields=["ready_at"])
-    order.refresh_from_db()
+    try:
+        order, _changed = staff_actions.set_ready(pk, ready, actor=events.actor_from_request(request), channel="staff")
+    except staff_actions.ActionError as exc:
+        return Response({"detail": exc.message}, status=exc.status)
     return Response(OrderSerializer(order).data)
 
 
@@ -2543,6 +2516,9 @@ def confirm_refund(request, pk):
         order.refunded_by = (request.data.get("kasir_name") or "").strip()
     order.save(update_fields=["refunded_at", "refunded_by"])
     order.refresh_from_db()
+    if not request.data.get("undo"):
+        events.record(order, "refunded", actor=events.actor_from_request(request), channel="staff",
+                      note=f"Rp{int(order.refund_due):,}".replace(",", "."))
     return Response(OrderSerializer(order).data)
 
 

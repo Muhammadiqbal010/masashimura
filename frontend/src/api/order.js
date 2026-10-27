@@ -35,6 +35,10 @@ export const orderAPI = {
   confirmRefund: (orderId, payload = {}) => apiClient.patch(`/orders/${orderId}/refund/`, payload),
   getPendingRefunds: () => apiClient.get("/orders/pending-refunds/"),
   getAffectedByMenu: (menuId) => apiClient.get(`/orders/affected-by-menu/${menuId}/`),
+
+  // Alur staff: ringkasan layanan + antrean prioritas (uang hanya terisi untuk owner/admin) dan riwayat aksi per order.
+  getStaffSummary: (date) => apiClient.get("/orders/staff-summary/", { params: date ? { date } : {} }),
+  getEvents: (orderId) => apiClient.get(`/orders/${orderId}/events/`),
 };
 
 // Admin CRUD buat katalog reward poin (AdminPointRewards.vue)

@@ -16,6 +16,7 @@ WEB_MAX_PER_ITEM = 10
 WEB_MAX_PORTIONS = 30
 WEB_CASH_MAX = Decimal("150000")
 CONFIRM_TIMEOUT_MINUTES = 15
+REMINDER_LEAD_MINUTES = 5   # pengingat Telegram dikirim saat sisa waktu terima tinggal sekian menit
 
 
 # ── Nomor HP ────────────────────────────────────────────────────────────────
@@ -75,11 +76,25 @@ def accept_now(order):
     return False
 
 
+def _notify_later(func_name, order_pk):
+    """Kirim notifikasi Telegram SETELAH transaksi commit; error Telegram tidak boleh merusak apa pun."""
+    def _go():
+        try:
+            from . import notify
+            getattr(notify, func_name)(order_pk)
+        except Exception:   # noqa: BLE001
+            import logging
+            logging.getLogger(__name__).exception("Notifikasi %s gagal untuk order %s", func_name, order_pk)
+    transaction.on_commit(_go)
+
+
 def expire_unconfirmed_orders(now=None):
     """
     Batalkan order web bayar-di-toko yang tidak diterima kasir dalam CONFIRM_TIMEOUT_MINUTES.
-    Dipanggil setiap kali staf memuat daftar order (tidak ada cron di Vercel). Mengembalikan jumlah yang dibatalkan.
+    Dipanggil setiap kali staf memuat daftar order dan oleh cron (lihat process_unconfirmed).
+    Setiap pembatalan dicatat di riwayat order dan dikabarkan ke Telegram. Mengembalikan jumlah yang dibatalkan.
     """
+    from . import events
     from .models import Order
 
     now = now or timezone.now()
@@ -105,5 +120,48 @@ def expire_unconfirmed_orders(now=None):
             order.cancelled_at = now
             order.cancelled_by = "sistem"
             order.save()
+            events.record(order, "auto_cancelled", actor="sistem", channel="system", note=order.cancel_note)
+            _notify_later("order_auto_cancelled", order.pk)
             cancelled += 1
     return cancelled
+
+
+def remind_unconfirmed_orders(now=None):
+    """
+    Kirim SATU pengingat Telegram per order yang sisa waktu terimanya tinggal REMINDER_LEAD_MINUTES.
+    Dijamin tidak dobel: pengingat dicatat sebagai OrderEvent 'reminded' di dalam kunci baris order.
+    Mengembalikan jumlah pengingat yang dikirim.
+    """
+    from . import events
+    from .models import Order
+
+    now = now or timezone.now()
+    expire_cutoff = now - timedelta(minutes=CONFIRM_TIMEOUT_MINUTES)
+    remind_cutoff = now - timedelta(minutes=CONFIRM_TIMEOUT_MINUTES - REMINDER_LEAD_MINUTES)
+    ids = list(
+        Order.objects.filter(
+            source="web", awaiting_confirmation=True, status="pending",
+            created_at__lte=remind_cutoff, created_at__gte=expire_cutoff,
+        ).exclude(events__action="reminded").values_list("pk", flat=True)[:50]
+    )
+    sent = 0
+    for pk in ids:
+        with transaction.atomic():
+            order = Order.objects.select_for_update().filter(pk=pk, awaiting_confirmation=True, status="pending").first()
+            if not order or order.events.filter(action="reminded").exists():
+                continue
+            events.record(order, "reminded", actor="sistem", channel="system",
+                          note=f"Sisa waktu terima ±{REMINDER_LEAD_MINUTES} menit")
+            _notify_later("order_reminder", order.pk)
+            sent += 1
+    return sent
+
+
+def process_unconfirmed(now=None):
+    """
+    Satu pintu untuk pekerjaan berkala order yang belum diterima: batalkan yang kedaluwarsa,
+    lalu ingatkan yang hampir kedaluwarsa. Dipanggil dari endpoint daftar order (tidak ada proses
+    latar di Vercel) dan dari cron. Aman dipanggil berkali-kali.
+    """
+    now = now or timezone.now()
+    return {"cancelled": expire_unconfirmed_orders(now), "reminded": remind_unconfirmed_orders(now)}

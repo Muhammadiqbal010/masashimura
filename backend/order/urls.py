@@ -1,6 +1,8 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
+from .staff_views import cron_run, staff_summary_view
+from .telegram_bot import telegram_webhook
 from .views import (
     # Orders
     list_orders,
@@ -9,6 +11,7 @@ from .views import (
     pay_order,
     accept_order,
     cancel_order,
+    order_events,
     unpaid_orders,
     order_history,
     new_order_notifications,
@@ -117,6 +120,11 @@ urlpatterns = [
     # ── Strip Briefing Dashboard (admin) ─────────────────────────────────────
     path("orders/briefing/",                   BriefingView.as_view(),        name="briefing"),
 
+    # ── Alur staff: ringkasan, bot Telegram, cron ────────────────────────────
+    path("orders/staff-summary/",  staff_summary_view, name="staff-summary"),
+    path("orders/cron/",           cron_run,           name="order-cron"),
+    path("telegram/webhook/",      telegram_webhook,   name="telegram-webhook"),
+
     # ── Store settings ───────────────────────────────────────────────────────
     path("orders/settings/", StoreSettingsView.as_view(), name="store-settings"),
 
@@ -125,6 +133,7 @@ urlpatterns = [
     path("orders/<int:pk>/pay/",               pay_order,           name="pay-order"),
     path("orders/<int:pk>/accept/",            accept_order,        name="accept-order"),
     path("orders/<int:pk>/cancel/",            cancel_order,        name="cancel-order"),
+    path("orders/<int:pk>/events/",            order_events,        name="order-events"),
     path("orders/<int:pk>/items/",             add_order_item,      name="order-item-add"),
     path("orders/<int:pk>/items/<int:item_id>/", order_item_detail, name="order-item-detail"),
     path("orders/<int:pk>/split/",             split_order,         name="order-split"),

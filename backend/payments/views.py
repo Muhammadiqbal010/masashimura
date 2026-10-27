@@ -15,7 +15,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.permissions import IsStaffLevel
-from order import notify
+from order import events as order_events, notify
 from order.models import Order, OrderPayment
 from .services import cancel_midtrans_transaction, core, fetch_midtrans_status, snap
 from .throttles import PaymentCreateThrottle, PaymentStatusThrottle
@@ -136,6 +136,7 @@ def apply_midtrans_status(order, verified, bill_qr=False):
         order.change_amount = Decimal("0")
         order.save()
         OrderPayment.objects.create(order=order, method="gateway", amount=order.total_price)
+        order_events.record(order, "paid", actor="Midtrans", channel="system", note="Pembayaran online")
         if order.source == "web" and not bill_qr:   # order online baru lunas → kabari pemilik (Telegram)
             order_pk = order.pk
             transaction.on_commit(lambda: notify.web_order_paid(order_pk))

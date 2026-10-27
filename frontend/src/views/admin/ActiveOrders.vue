@@ -55,6 +55,155 @@
       </div>
     </header>
 
+    <!-- ── PERLU TINDAKAN: antrean prioritas, yang paling mendesak di atas ───── -->
+    <section v-if="isToday && attention.length" class="ao-attn" aria-label="Perlu tindakan">
+      <div class="ao-attn-head">
+        <div class="ao-attn-title">
+          <ListChecks :size="16" />
+          <strong>Perlu tindakan</strong>
+          <span class="ao-attn-count">{{ attention.length }}</span>
+        </div>
+        <div class="ao-attn-chips">
+          <span v-if="attnCounts.awaiting" class="adm-badge adm-badge--amber">{{ attnCounts.awaiting }} menunggu diterima</span>
+          <span v-if="attnCounts.late" class="adm-badge adm-badge--red">{{ attnCounts.late }} telat</span>
+          <span v-if="attnCounts.refund" class="adm-badge adm-badge--red">{{ attnCounts.refund }} refund</span>
+          <span v-if="attnCounts.unpaid" class="adm-badge adm-badge--amber">{{ attnCounts.unpaid }} belum dibayar</span>
+          <span v-if="attnCounts.preparing" class="adm-badge">{{ attnCounts.preparing }} sedang disiapkan</span>
+        </div>
+        <button
+          v-if="attnCounts.awaiting > 1"
+          type="button"
+          class="adm-btn adm-btn--primary adm-btn--sm"
+          :disabled="acceptingAll"
+          @click="acceptAll"
+        ><Check :size="14" /> Terima semua ({{ attnCounts.awaiting }})</button>
+      </div>
+
+      <ul class="ao-attn-list">
+        <li
+          v-for="it in shownAttention"
+          :key="`${it.kind}-${it.order.id}`"
+          class="ao-attn-item"
+          :class="[`is-${it.kind}`, { 'is-urgent': it.urgent }]"
+          tabindex="0"
+          :aria-label="`Buka struk order ${it.order.order_number || it.order.id}`"
+          @click="openOrderModal(it.order)"
+          @keydown.enter.self="openOrderModal(it.order)"
+        >
+          <span class="ao-attn-tag">{{ it.tag }}</span>
+          <div class="ao-attn-main">
+            <b class="ao-attn-name">{{ it.order.customer_name || it.order.customer_phone || 'Guest' }}</b>
+            <span class="ao-attn-meta">#{{ it.order.id }} · {{ attnSummary(it.order) }}</span>
+          </div>
+          <span class="ao-attn-hint">{{ it.hint }}</span>
+          <div class="ao-attn-act" @click.stop>
+            <template v-if="it.kind === 'awaiting'">
+              <button type="button" class="adm-btn adm-btn--primary adm-btn--sm" :disabled="busyIds.has(it.order.id)" @click="acceptOrder(it.order)"><Check :size="14" /> Terima</button>
+              <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" @click="openCancelModal(it.order)">Tolak</button>
+            </template>
+            <template v-else-if="it.kind === 'late'">
+              <button v-if="canMarkReady(it.order)" type="button" class="adm-btn adm-btn--soft adm-btn--sm" :disabled="busyIds.has(it.order.id)" @click="toggleReady(it.order, true)"><Check :size="14" /> Siap</button>
+              <button v-if="canNotify(it.order)" type="button" class="adm-btn adm-btn--ghost adm-btn--sm" @click="openNotify(it.order, 'late')"><MessageCircle :size="14" /> Kabari</button>
+            </template>
+            <template v-else-if="it.kind === 'refund'">
+              <button type="button" class="adm-btn adm-btn--danger adm-btn--sm" :disabled="busyIds.has(it.order.id)" @click="giveRefund(it.order)">Refund diberikan</button>
+              <button v-if="canNotify(it.order)" type="button" class="adm-btn adm-btn--ghost adm-btn--sm" @click="openNotify(it.order, 'refund')"><MessageCircle :size="14" /></button>
+            </template>
+            <template v-else>
+              <button v-if="canPay(it.order)" type="button" class="adm-btn adm-btn--primary adm-btn--sm" @click="openPayModal(it.order)">Lunasi</button>
+              <button v-if="canNotify(it.order)" type="button" class="adm-btn adm-btn--ghost adm-btn--sm" @click="openNotify(it.order, 'unpaid')"><MessageCircle :size="14" /> Ingatkan</button>
+            </template>
+          </div>
+        </li>
+      </ul>
+
+      <button
+        v-if="attention.length > ATTN_LIMIT"
+        type="button"
+        class="adm-btn adm-btn--ghost adm-btn--sm ao-attn-more"
+        @click="showAllAttn = !showAllAttn"
+      >
+        <ChevronDown :size="14" :class="{ 'ao-flip': showAllAttn }" />
+        {{ showAllAttn ? 'Ringkas' : `Tampilkan ${attention.length - ATTN_LIMIT} lainnya` }}
+      </button>
+    </section>
+    <section v-else-if="isToday && orders.length && !isLoading" class="ao-attn ao-attn--clear" aria-label="Perlu tindakan">
+      <ListChecks :size="16" /> <strong>Semua beres.</strong>
+      <span class="ao-attn-meta">Tidak ada order yang menunggu diterima, telat, atau perlu ditagih.<template v-if="attnCounts.preparing"> {{ attnCounts.preparing }} sedang disiapkan.</template></span>
+    </section>
+
+    <!-- ── RINGKASAN LAYANAN (dari server, diperbarui tiap menit) ──────────── -->
+    <section v-if="staffSummary" class="ao-sum" aria-label="Ringkasan layanan">
+      <button type="button" class="ao-sum-toggle" :aria-expanded="summaryOpen" @click="toggleSummary">
+        <Gauge :size="15" />
+        <span>Ringkasan layanan</span>
+        <span class="ao-sum-date">{{ staffSummary.date_label }}</span>
+        <ChevronDown :size="15" class="ao-sum-chev" :class="{ 'ao-flip': summaryOpen }" />
+      </button>
+      <div v-show="summaryOpen" class="ao-sum-body">
+        <div class="ao-sum-grid">
+          <div class="ao-stat">
+            <span class="ao-stat-label">Order masuk</span>
+            <strong class="ao-stat-value">{{ staffSummary.today.orders }}</strong>
+            <span class="ao-stat-hint">Web {{ staffSummary.today.web }} · POS {{ staffSummary.today.pos }}</span>
+          </div>
+          <div class="ao-stat">
+            <span class="ao-stat-label">Dibatalkan</span>
+            <strong class="ao-stat-value">{{ staffSummary.today.cancelled }}</strong>
+            <span class="ao-stat-hint">{{ staffSummary.today.auto_cancelled }} otomatis</span>
+          </div>
+          <div class="ao-stat">
+            <span class="ao-stat-label">Rata-rata diterima</span>
+            <strong class="ao-stat-value">{{ fmtMinutes(staffSummary.service.avg_accept_minutes) }}</strong>
+            <span class="ao-stat-hint">sejak order web masuk</span>
+          </div>
+          <div class="ao-stat">
+            <span class="ao-stat-label">Rata-rata siap</span>
+            <strong class="ao-stat-value">{{ fmtMinutes(staffSummary.service.avg_ready_minutes) }}</strong>
+            <span class="ao-stat-hint">sejak order web masuk</span>
+          </div>
+          <div class="ao-stat">
+            <span class="ao-stat-label">Porsi terjual</span>
+            <strong class="ao-stat-value">{{ staffSummary.today.items_sold }}</strong>
+            <span class="ao-stat-hint">{{ summaryCompare }}</span>
+          </div>
+          <div v-if="staffSummary.today.revenue != null" class="ao-stat ao-stat--total">
+            <span class="ao-stat-label">Omzet</span>
+            <strong class="ao-stat-value">{{ formatPrice(staffSummary.today.revenue) }}</strong>
+            <span class="ao-stat-hint">rata-rata {{ formatPrice(staffSummary.today.avg_order) }}/order</span>
+          </div>
+        </div>
+
+        <div v-if="staffSummary.busy_hours.length" class="ao-sum-block">
+          <p class="ao-sum-title"><Gauge :size="13" /> Jam sibuk<template v-if="staffSummary.peak_hour != null"> · puncak {{ String(staffSummary.peak_hour).padStart(2, '0') }}.00</template></p>
+          <div class="ao-hours" role="list">
+            <div v-for="h in staffSummary.busy_hours" :key="h.hour" class="ao-hour" role="listitem" :title="`${h.orders} order jam ${String(h.hour).padStart(2, '0')}.00`">
+              <span class="ao-hour-bar"><i :style="{ height: Math.max((h.orders / maxHourOrders) * 100, 8) + '%' }" :class="{ 'is-peak': h.hour === staffSummary.peak_hour }"></i></span>
+              <span class="ao-hour-n">{{ h.orders }}</span>
+              <span class="ao-hour-l">{{ String(h.hour).padStart(2, '0') }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="staffSummary.staff.length" class="ao-sum-block">
+          <p class="ao-sum-title"><Users :size="13" /> Aksi staff hari ini</p>
+          <ul class="ao-staff">
+            <li v-for="st in staffSummary.staff" :key="st.actor">
+              <b>{{ st.actor }}</b>
+              <span>terima {{ st.accepted }} · siap {{ st.ready }}<template v-if="st.cancelled"> · batal {{ st.cancelled }}</template></span>
+            </li>
+          </ul>
+        </div>
+
+        <div v-if="staffSummary.top_menus.length" class="ao-sum-block">
+          <p class="ao-sum-title">Menu terlaris</p>
+          <p class="ao-sum-top">
+            <span v-for="(m, i) in staffSummary.top_menus" :key="m.name">{{ i + 1 }}. {{ m.name }} <b>{{ m.qty }}</b></span>
+          </p>
+        </div>
+      </div>
+    </section>
+
     <!-- ── RINGKASAN HARI INI ──────────────────────────────────────── -->
     <section v-if="orders.length" class="ao-stats" aria-label="Ringkasan pesanan">
       <div class="ao-stat">
@@ -397,6 +546,20 @@
             <span>Refund</span>
             <b>{{ formatPrice(selectedOrder.refund_due) }} · {{ selectedOrder.refunded_at ? 'sudah dikembalikan' : 'belum dikembalikan' }}</b>
           </div>
+        </div>
+
+        <div v-if="orderEvents.length" class="rcpt-timeline">
+          <p class="rcpt-heading"><History :size="12" /> Riwayat aksi</p>
+          <ul>
+            <li v-for="e in orderEvents" :key="e.id" :class="`is-${e.action}`">
+              <span class="rcpt-time-at">{{ formatTime(e.created_at) }}</span>
+              <span class="rcpt-time-what">
+                <b>{{ e.label }}</b><template v-if="e.actor"> · {{ e.actor }}</template>
+                <em> via {{ e.channel_label }}</em>
+                <i v-if="e.note"> — {{ e.note }}</i>
+              </span>
+            </li>
+          </ul>
         </div>
 
         <hr class="rcpt-div" />
@@ -845,6 +1008,7 @@ import {
   Search, X, ChevronLeft, ChevronRight, ChevronDown, Printer, Send, Plus, Trash2,
   Banknote, QrCode, Shuffle, RefreshCw, AlertTriangle, Receipt, Bell, BellOff,
   Pause, Play, Download, MessageCircle, Check, MoreHorizontal, Ban, RotateCcw,
+  ListChecks, History, Gauge, Users,
 } from 'lucide-vue-next'
 import { orderAPI, apiClient } from '@/api'
 import { toast } from 'vue-sonner'
@@ -1061,11 +1225,14 @@ const onKeydown = (e) => {
 
 let pollingTimer = null
 let clockTimer = null
+let summaryTimer = null
 const onVisibility = () => { if (!document.hidden && !paused.value) fetchActiveOrders() }
 onMounted(() => {
   applyPageSize()
   buildBlackLogo()
   fetchActiveOrders()
+  fetchStaffSummary()
+  summaryTimer = setInterval(() => { if (!document.hidden && !paused.value) fetchStaffSummary() }, SUMMARY_MS)
   // Tab yang tidak dilihat atau sedang dijeda tidak perlu menembak server tiap 5 detik.
   pollingTimer = setInterval(() => { if (!document.hidden && !paused.value) fetchActiveOrders() }, POLL_MS)
   // Label "x mnt lalu" tetap berjalan walau polling dijeda.
@@ -1084,6 +1251,7 @@ onMounted(() => {
 onUnmounted(() => {
   if (pollingTimer) clearInterval(pollingTimer)
   if (clockTimer) clearInterval(clockTimer)
+  if (summaryTimer) clearInterval(summaryTimer)
   clearTimeout(flashTimer)
   document.removeEventListener('visibilitychange', onVisibility)
   window.removeEventListener('keydown', onKeydown)
@@ -1203,10 +1371,7 @@ const summary = computed(() => {
 
 // Jumlah order belum lunas di judul tab browser: kelihatan walau admin sedang buka tab lain.
 let baseTitle = typeof document !== 'undefined' ? document.title : ''
-const unpaidTotal = computed(() => orders.value.filter(isUnpaid).length)
-watch([unpaidTotal, isToday], ([n, today]) => {
-  document.title = n > 0 && today ? `(${n}) ${baseTitle}` : baseTitle
-})
+// Judul tab memakai jumlah order "perlu tindakan" (lihat `attention` di bawah), bukan sekadar belum lunas.
 
 // ── Ringkasan menu di daftar ────────────────────────────────────────
 const ITEMS_PREVIEW = 2
@@ -1389,6 +1554,121 @@ const giveRefund = (o) => withBusy(o.id, async () => {
   }
 })
 
+// ── Perlu tindakan: antrean prioritas ───────────────────────────────
+// Urutan: menunggu diterima (sisa waktu terkecil dulu) → telat → refund → belum dibayar lama.
+// Aturan sama dengan server (staff_summary.queue_items) yang dipakai bot Telegram.
+const ATTN_LIMIT = 6
+const ATTN_RANK = { awaiting: 0, late: 1, refund: 2, unpaid: 3 }
+const ATTN_TAG = { awaiting: 'Terima', late: 'Telat', refund: 'Refund', unpaid: 'Belum bayar' }
+const showAllAttn = ref(false)
+const minutesLeft = (o) => (o.confirm_deadline ? Math.ceil((new Date(o.confirm_deadline).getTime() - now.value) / 60000) : null)
+
+const attention = computed(() => {
+  if (!isToday.value) return []
+  const out = []
+  const push = (o, kind, hint, urgent, sort) => out.push({ order: o, kind, tag: ATTN_TAG[kind], hint, urgent, sort })
+  for (const o of orders.value) {
+    if (!isOpenOrder(o)) continue
+    if (canAccept(o)) {
+      const left = minutesLeft(o)
+      push(o, 'awaiting', left == null ? 'Menunggu diterima' : (left > 0 ? `sisa ${left} mnt` : 'segera batal'), left != null && left <= 5, left ?? 0)
+    } else if (o.tracks_readiness && o.is_late && !o.is_ready && !isGatewayPending(o)) {
+      push(o, 'late', `telat ${fmtWait(o.wait_minutes)}`, true, -(Number(o.wait_minutes) || 0))
+    } else if (isUnpaid(o) && !o.tracks_readiness && isStale(o) && !isGatewayPending(o)) {
+      push(o, 'unpaid', `${ageLabel(o)} · ${formatPrice(o.amount_to_pay_now || o.total_price)}`, false, -ageMinutes(o))
+    }
+    if (o.refund_pending) push(o, 'refund', formatPrice(o.refund_due), false, -ageMinutes(o))
+  }
+  return out.sort((a, b) => (ATTN_RANK[a.kind] - ATTN_RANK[b.kind]) || (a.sort - b.sort))
+})
+const shownAttention = computed(() => (showAllAttn.value ? attention.value : attention.value.slice(0, ATTN_LIMIT)))
+const attnCounts = computed(() => {
+  const c = { awaiting: 0, late: 0, refund: 0, unpaid: 0, preparing: 0 }
+  for (const it of attention.value) c[it.kind]++
+  if (isToday.value) {
+    c.preparing = orders.value.filter((o) =>
+      isOpenOrder(o) && o.tracks_readiness && !o.awaiting_confirmation && !o.is_ready && !o.is_late && !isGatewayPending(o)
+    ).length
+  }
+  return c
+})
+const attnSummary = (o) => {
+  const items = mergedItems(o)
+  if (!items.length) return 'Tidak ada item'
+  const head = items.slice(0, 2).map((i) => `${i.quantity}× ${i.menu_name}`).join(', ')
+  return items.length > 2 ? `${head} +${items.length - 2}` : head
+}
+// Judul tab: "(3) Riwayat Pesanan" selama ada yang perlu tindakan, kelihatan walau tab lain yang dibuka.
+watch([() => attention.value.length, isToday], ([n, today]) => {
+  document.title = n > 0 && today ? `(${n}) ${baseTitle}` : baseTitle
+})
+
+// Banyak order web bisa masuk berbarengan (jam makan siang): terima semuanya sekali tekan.
+const acceptingAll = ref(false)
+const acceptAll = async () => {
+  const list = attention.value.filter((i) => i.kind === 'awaiting').map((i) => i.order)
+  if (list.length < 2 || acceptingAll.value) return
+  acceptingAll.value = true
+  let ok = 0
+  try {
+    for (const o of list) {   // satu per satu: server mengunci tiap order, urutan tetap rapi
+      try {
+        const res = await orderAPI.acceptOrder(o.id)
+        patchOrder(res.data)
+        ok++
+      } catch (err) {
+        toast.error(`${o.order_number || '#' + o.id}: ${errText(err, 'Gagal menerima pesanan.')}`)
+      }
+    }
+  } finally {
+    acceptingAll.value = false
+  }
+  if (ok) toast.success(`${ok} pesanan diterima`)
+  fetchActiveOrders({ force: true })
+}
+
+// ── Ringkasan layanan dari server ───────────────────────────────────
+const SUMMARY_KEY = 'masashimura-ao-summary-open'
+const SUMMARY_MS = 60000
+const staffSummary = ref(null)
+const summaryOpen = ref(readPref(SUMMARY_KEY, '1') === '1')
+const toggleSummary = () => { summaryOpen.value = !summaryOpen.value; writePref(SUMMARY_KEY, summaryOpen.value ? '1' : '0') }
+let summarySeq = 0
+const fetchStaffSummary = async () => {
+  const seq = ++summarySeq
+  try {
+    const res = await orderAPI.getStaffSummary(targetDateString.value)
+    if (seq === summarySeq && res.data?.today) staffSummary.value = res.data
+  } catch { /* ringkasan hanya pelengkap: gagal memuat tidak boleh mengganggu daftar order */ }
+}
+const maxHourOrders = computed(() => Math.max(1, ...(staffSummary.value?.busy_hours || []).map((h) => h.orders)))
+const fmtMinutes = (m) => {
+  if (m == null) return '—'
+  if (m < 1) return '<1 mnt'
+  return m >= 90 ? `${(m / 60).toFixed(1)} jam` : `${Math.round(m)} mnt`
+}
+const summaryCompare = computed(() => {
+  const s = staffSummary.value
+  const before = s?.compare?.orders
+  if (!s || !before) return s?.compare?.label ? `vs ${s.compare.label}: —` : ''
+  const pct = Math.round(((s.today.orders - before) / before) * 100)
+  return `order ${pct === 0 ? 'sama' : (pct > 0 ? '↑' : '↓') + Math.abs(pct) + '%'} vs ${s.compare.label}`
+})
+watch(targetDateString, () => { staffSummary.value = null; fetchStaffSummary() })
+
+// ── Riwayat aksi per order (struk) ──────────────────────────────────
+const orderEvents = ref([])
+let eventsSeq = 0
+const loadEvents = async (id) => {
+  const seq = ++eventsSeq
+  try {
+    const res = await orderAPI.getEvents(id)
+    if (seq === eventsSeq) orderEvents.value = res.data?.events || []
+  } catch {
+    if (seq === eventsSeq) orderEvents.value = []
+  }
+}
+
 const toolMode = ref(null)
 const toolOrderId = ref(null)
 const toolSnapshot = ref(null)
@@ -1536,8 +1816,16 @@ const selectedOrder = computed(() => orders.value.find((o) => o.id === selectedI
 const openOrderModal = (order) => {
   selectedId.value = order.id
   selectedSnapshot.value = order
+  orderEvents.value = []
+  loadEvents(order.id)
   isModalOpen.value = true
 }
+// Struk yang terbuka ikut menyegarkan riwayatnya saat status order berubah (diterima, siap, dibatalkan, ...).
+const selectedSignature = computed(() => {
+  const o = selectedOrder.value
+  return o ? [o.status, o.payment_status, o.awaiting_confirmation, o.is_ready, o.refunded_at].join('|') : ''
+})
+watch(selectedSignature, () => { if (isModalOpen.value && selectedId.value) loadEvents(selectedId.value) })
 
 const receiptLines = computed(() => groupReceiptLines(selectedOrder.value?.items))
 
@@ -1902,6 +2190,75 @@ const confirmDelete = async () => {
 .ao-stat--qris { box-shadow: inset 3px 0 0 var(--blue-soft); }
 .ao-stat--total { box-shadow: inset 3px 0 0 var(--green); }
 @media (max-width: 480px) { .ao-stats { grid-template-columns: 1fr 1fr; } }
+
+/* ── Perlu tindakan ──────────────────────────────────────────────── */
+.ao-attn {
+  display: flex; flex-direction: column; gap: 0.6rem;
+  padding: 0.75rem 0.9rem; border: 1px solid var(--line-accent); border-radius: var(--r-md);
+  background: var(--tint-accent);
+}
+.ao-attn--clear { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 0.5rem; border-color: var(--line-green); background: var(--tint-green); color: var(--green-soft); }
+.ao-attn-head { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem 0.75rem; }
+.ao-attn-title { display: inline-flex; align-items: center; gap: 0.4rem; color: var(--text); }
+.ao-attn-count { min-width: 1.4rem; padding: 0 0.4rem; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-size: 0.72rem; font-weight: 800; text-align: center; line-height: 1.4rem; }
+.ao-attn-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; flex: 1 1 auto; }
+.ao-attn-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+.ao-attn-item {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 0.6rem;
+  padding: 0.55rem 0.7rem; border: 1px solid var(--border); border-radius: var(--r-md);
+  background: var(--surface-2); cursor: pointer;
+}
+.ao-attn-item:hover, .ao-attn-item:focus-visible { border-color: var(--border-strong); background: var(--surface-hover); outline: none; }
+.ao-attn-item.is-awaiting { box-shadow: inset 3px 0 0 var(--amber); }
+.ao-attn-item.is-late, .ao-attn-item.is-refund { box-shadow: inset 3px 0 0 var(--red-soft); }
+.ao-attn-item.is-unpaid { box-shadow: inset 3px 0 0 var(--blue-soft); }
+.ao-attn-item.is-urgent .ao-attn-hint { color: var(--red-soft); font-weight: 800; }
+.ao-attn-tag { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); min-width: 4.4rem; }
+.ao-attn-main { display: flex; flex-direction: column; min-width: 0; }
+.ao-attn-name { font-size: 0.85rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ao-attn-meta { font-size: 0.75rem; color: var(--text-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ao-attn-hint { font-family: var(--font-mono); font-size: 0.78rem; font-weight: 700; color: var(--text-2); white-space: nowrap; }
+.ao-attn-act { display: flex; gap: 0.35rem; justify-content: flex-end; flex-wrap: wrap; }
+.ao-attn-more { align-self: center; }
+.ao-flip { transform: rotate(180deg); }
+@media (max-width: 720px) {
+  .ao-attn-item { grid-template-columns: minmax(0, 1fr) auto; }
+  .ao-attn-tag { grid-column: 1; min-width: 0; }
+  .ao-attn-hint { grid-column: 2; grid-row: 1; justify-self: end; }
+  .ao-attn-main { grid-column: 1 / -1; }
+  .ao-attn-act { grid-column: 1 / -1; justify-content: stretch; }
+  .ao-attn-act .adm-btn { flex: 1 1 0; justify-content: center; min-height: 2.5rem; }
+}
+
+/* ── Ringkasan layanan ───────────────────────────────────────────── */
+.ao-sum { border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); }
+.ao-sum-toggle { display: flex; align-items: center; gap: 0.5rem; width: 100%; padding: 0.65rem 0.9rem; background: none; border: 0; color: var(--text); font: inherit; font-weight: 700; font-size: 0.85rem; cursor: pointer; text-align: left; }
+.ao-sum-date { margin-left: auto; font-weight: 500; font-size: 0.75rem; color: var(--text-faint); }
+.ao-sum-chev { transition: transform 0.15s; }
+.ao-sum-body { display: flex; flex-direction: column; gap: 0.9rem; padding: 0 0.9rem 0.9rem; }
+.ao-sum-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: 0.6rem; }
+.ao-sum-title { display: flex; align-items: center; gap: 0.35rem; margin: 0 0 0.45rem; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); }
+.ao-hours { display: flex; align-items: flex-end; gap: 0.3rem; overflow-x: auto; padding-bottom: 0.2rem; }
+.ao-hour { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; min-width: 1.6rem; flex: 1 1 0; }
+.ao-hour-bar { display: flex; align-items: flex-end; width: 100%; height: 3.4rem; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+.ao-hour-bar i { display: block; width: 100%; background: var(--blue-soft); border-radius: 4px 4px 0 0; }
+.ao-hour-bar i.is-peak { background: var(--accent); }
+.ao-hour-n { font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700; color: var(--text-2); }
+.ao-hour-l { font-size: 0.66rem; color: var(--text-faint); }
+.ao-staff { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; }
+.ao-staff li { display: flex; justify-content: space-between; gap: 0.75rem; color: var(--text-2); }
+.ao-staff li span { color: var(--text-faint); }
+.ao-sum-top { margin: 0; display: flex; flex-wrap: wrap; gap: 0.25rem 0.9rem; font-size: 0.8rem; color: var(--text-2); }
+
+/* ── Riwayat aksi di struk ───────────────────────────────────────── */
+.rcpt-timeline { margin-top: 0.85rem; }
+.rcpt-timeline ul { list-style: none; margin: 0; padding: 0 0 0 0.9rem; border-left: 2px solid var(--border-strong); display: flex; flex-direction: column; gap: 0.4rem; }
+.rcpt-timeline li { display: flex; gap: 0.6rem; font-size: 0.78rem; color: var(--text-2); }
+.rcpt-time-at { font-family: var(--font-mono); color: var(--text-faint); min-width: 2.6rem; }
+.rcpt-time-what em { color: var(--text-faint); font-style: normal; }
+.rcpt-time-what i { color: var(--text-dim); font-style: normal; }
+.rcpt-timeline li.is-cancelled b, .rcpt-timeline li.is-auto_cancelled b { color: var(--red-soft); }
+.rcpt-timeline li.is-ready b, .rcpt-timeline li.is-accepted b, .rcpt-timeline li.is-paid b { color: var(--green-soft); }
 
 /* ── Toolbar ─────────────────────────────────────────────────────── */
 .ao-toolbar { justify-content: space-between; }
