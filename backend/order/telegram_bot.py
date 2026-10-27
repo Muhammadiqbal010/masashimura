@@ -1,5 +1,6 @@
 """
-Webhook bot Telegram: menangani tombol (Terima / Tolak / Siap) dan perintah (/antrean, /ringkasan).
+Webhook bot Telegram: menangani tombol (Terima / Tolak / Siap / Blokir) dan perintah
+(/antrean, /ringkasan, /lacak, /blokir, /bukablokir, /daftarblokir).
 
 Keamanan:
   - Telegram mengirim header X-Telegram-Bot-Api-Secret-Token yang kita set saat setWebhook
@@ -14,11 +15,12 @@ import logging
 
 from django.conf import settings
 from django.http import Http404
+from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
-from . import notify, staff_actions
+from . import blocklist, notify, staff_actions
 from . import telegram_ui as ui
 from .models import Order
 
@@ -79,6 +81,15 @@ def handle_callback(cq):
         elif act == ui.ACT_UNREADY:
             _, changed = staff_actions.set_ready(order_pk, False, actor=actor, channel="telegram")
             toast = "Tanda siap dicabut" if changed else "Order belum ditandai siap."
+        elif act == ui.ACT_BLOCK:
+            fresh, targets = blocklist.block_order(get_object_or_404(Order, pk=order_pk), actor=actor)
+            if not targets:
+                toast = "Tidak ada nomor/IP untuk diblokir."
+            else:
+                toast = "🚫 Nomor & IP diblokir" if fresh else "Sudah diblokir sebelumnya."
+        elif act == ui.ACT_UNBLOCK:
+            opened, targets = blocklist.unblock_order(get_object_or_404(Order, pk=order_pk), actor=actor)
+            toast = "♻ Blokir dibuka" if opened else "Tidak ada blokir aktif."
         # ACT_REFRESH: hanya menyegarkan tampilan
     except staff_actions.ActionError as exc:
         toast = exc.message
@@ -90,18 +101,58 @@ def handle_callback(cq):
     _refresh(chat_id, message_id, order_pk, prompt_reject=prompt_reject)
 
 
+def _block_command(cmd, arg, actor=""):
+    """/blokir <nomor|ip> dan /bukablokir <nomor|ip>. Mengembalikan teks balasan."""
+    target = blocklist.parse_target(arg)
+    name = "bukablokir" if cmd == "/bukablokir" else "blokir"
+    if not target:
+        return f"Cara pakai: /{name} 081234567890  (nomor WA)  atau  /{name} 114.122.1.2  (IP)"
+    kind, value = target
+    label = "Nomor" if kind == blocklist.KIND_PHONE else "IP"
+    if name == "blokir":
+        fresh = blocklist.block(kind, value, actor=actor, reason="Manual lewat Telegram")
+        if not fresh:
+            return f"{label} {value} sudah ada di daftar blokir."
+        effect = "ditolak total" if kind == blocklist.KIND_PHONE else "dipaksa bayar QRIS"
+        return f"🚫 {label} {value} diblokir: pesanan web {effect}."
+    return f"♻ Blokir {label} {value} dibuka." if blocklist.unblock(kind, value) else f"{label} {value} tidak ada di daftar blokir."
+
+
+def _block_list_text():
+    rows = blocklist.active_list()
+    if not rows:
+        return "Daftar blokir kosong."
+    lines = [f"🚫 Daftar blokir ({len(rows)}):"]
+    for r in rows:
+        label = "WA" if r.kind == blocklist.KIND_PHONE else "IP"
+        when = r.blocked_at.strftime("%d/%m")
+        extra = f" · {r.order_number}" if r.order_number else ""
+        lines.append(f"• {label} {r.value} · {when}{extra}")
+    lines.append("Buka blokir: /bukablokir <nomor|ip>")
+    return "\n".join(lines)
+
+
 def handle_command(message):
     chat_id = (message.get("chat") or {}).get("id")
     user = message.get("from") or {}
     if not notify.is_allowed_chat(chat_id) or not notify.is_allowed_user(user.get("id")):
         return   # diam saja: jangan bocorkan bahwa bot ini hidup ke orang asing
-    cmd = (message.get("text") or "").split()[0].split("@")[0].lower()
+    parts = (message.get("text") or "").split()
+    cmd = parts[0].split("@")[0].lower()
+    arg = " ".join(parts[1:])
 
     if cmd in ("/start", "/bantuan", "/help"):
         notify.send(ui.HELP_TEXT, chat_ids=[str(chat_id)])
     elif cmd == "/antrean":
         from . import staff_summary
         notify.send(ui.render_queue(staff_summary.queue_items()), chat_ids=[str(chat_id)])
+    elif cmd == "/lacak":
+        from . import trace
+        notify.send(trace.lookup(arg), chat_ids=[str(chat_id)])
+    elif cmd in ("/blokir", "/bukablokir"):
+        notify.send(_block_command(cmd, arg, actor=_actor_name(user)), chat_ids=[str(chat_id)])
+    elif cmd == "/daftarblokir":
+        notify.send(_block_list_text(), chat_ids=[str(chat_id)])
     elif cmd == "/ringkasan":
         from . import report_format, staff_summary
         text = report_format.format_daily_report(staff_summary.build_summary(include_money=True))

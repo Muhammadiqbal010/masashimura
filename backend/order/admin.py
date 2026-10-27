@@ -23,6 +23,7 @@ class OrderAdmin(admin.ModelAdmin):
         "order_number",
         "customer_name",
         "customer_phone",
+        "client_ip",
         "total_price",
         "payment_method",
         "payment_status",
@@ -41,11 +42,14 @@ class OrderAdmin(admin.ModelAdmin):
         "order_number",
         "customer_name",
         "customer_phone",
+        "client_ip",
     )
 
     readonly_fields = (
         "created_at",
         "updated_at",
+        "client_ip",
+        "client_info",
     )
 
     inlines = [OrderItemInline]

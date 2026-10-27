@@ -222,6 +222,13 @@ class Order(models.Model):
     refunded_at = models.DateTimeField(null=True, blank=True)
     refunded_by = models.CharField(max_length=100, blank=True, default="")
 
+    # ── Jejak asal pemesan (hanya order web; untuk melacak scam) ──────────────
+    # IP dipisah ke kolom sendiri supaya bisa dicari/diindeks ("semua order dari IP ini").
+    # client_info = {country, region, city, lat, lng, tz, device, ua, bot} — PERKIRAAN dari header
+    # Vercel (lihat client_info.py). Sengaja TIDAK masuk OrderSerializer agar tidak sampai ke pelanggan.
+    client_ip = models.GenericIPAddressField(null=True, blank=True, db_index=True, editable=False)
+    client_info = models.JSONField(default=dict, blank=True, editable=False)
+
     class Meta:
         ordering = ['-created_at']
 
@@ -610,6 +617,8 @@ ORDER_EVENT_ACTION_CHOICES = (
     ('unready',        'Tanda siap dicabut'),
     ('reminded',       'Pengingat dikirim'),
     ('refunded',       'Refund diserahkan'),
+    ('blocked',        'Nomor diblokir'),
+    ('unblocked',      'Blokir dibuka'),
 )
 
 ORDER_EVENT_CHANNEL_CHOICES = (
@@ -636,6 +645,33 @@ class OrderEvent(models.Model):
 
     def __str__(self):
         return f"{self.order_id} {self.action} oleh {self.actor or '-'} ({self.channel})"
+
+
+# ─────────────────────────────────────────────
+# DAFTAR BLOKIR (anti-scam)
+# ─────────────────────────────────────────────
+# Diisi lewat tombol "🚫 Blokir" / perintah /blokir di Telegram (lihat blocklist.py).
+#   phone → pesanan web dari nomor ini DITOLAK total.
+#   ip    → pesanan cash dari IP ini dipaksa QRIS (tidak ditolak: IP bisa dipakai bersama banyak orang).
+# Blokir IP kedaluwarsa otomatis (blocklist.IP_BLOCK_DAYS) karena IP sering berganti pemilik.
+class BlockedContact(models.Model):
+    KIND_CHOICES = (('phone', 'Nomor WA'), ('ip', 'IP'))
+
+    kind       = models.CharField(max_length=5, choices=KIND_CHOICES)
+    value      = models.CharField(max_length=64, db_index=True)
+    is_active  = models.BooleanField(default=True)
+    reason     = models.CharField(max_length=255, blank=True, default='')
+    blocked_by = models.CharField(max_length=100, blank=True, default='')
+    order_number = models.CharField(max_length=40, blank=True, default='')   # order yang memicu blokir
+    blocked_at = models.DateTimeField(default=timezone.now)
+    unblocked_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = [('kind', 'value')]
+        ordering = ['-blocked_at']
+
+    def __str__(self):
+        return f"{self.kind}:{self.value} ({'aktif' if self.is_active else 'dibuka'})"
 
 
 # ─────────────────────────────────────────────

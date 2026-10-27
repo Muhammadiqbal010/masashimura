@@ -51,4 +51,7 @@ class WebOrderLimitTests(TestCase):
     def test_pending_cash_per_phone_capped(self):
         for _ in range(2):
             self.assertEqual(self.post([{'menu_id': self.b.id, 'quantity': 1}]).status_code, 201)
-        self.assertEqual(self.post([{'menu_id': self.b.id, 'quantity': 1}]).status_code, 429)
+        r = self.post([{'menu_id': self.b.id, 'quantity': 1}])
+        self.assertEqual(r.status_code, 409)           # dialihkan ke QRIS, bukan ditolak
+        self.assertTrue(r.data['require_qris'])
+        self.assertEqual(Order.objects.count(), 2)

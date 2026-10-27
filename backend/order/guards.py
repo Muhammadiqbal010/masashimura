@@ -3,6 +3,8 @@ Pengaman order web (anti-iseng) dan format nomor HP.
 
 - Batas porsi: tiap menu maks WEB_MAX_PER_ITEM, seluruh pesanan maks WEB_MAX_PORTIONS.
 - Cash di atas WEB_CASH_MAX wajib bayar online (QRIS).
+- Cash yang lewat batas "menunggu diterima" (per nomor / per IP), nomor baru di atas WEB_CASH_NEW_PHONE_MAX,
+  atau IP yang diblokir: tidak ditolak, tapi DIALIHKAN ke QRIS (web_qris_reason). Nomor yang diblokir ditolak total.
 - Order web bayar di toko harus DITERIMA kasir dalam CONFIRM_TIMEOUT_MINUTES, kalau tidak dibatalkan otomatis.
 """
 import re
@@ -15,6 +17,7 @@ from django.utils import timezone
 WEB_MAX_PER_ITEM = 10
 WEB_MAX_PORTIONS = 30
 WEB_CASH_MAX = Decimal("150000")
+WEB_CASH_NEW_PHONE_MAX = Decimal("50000")   # nomor yang belum pernah punya pesanan selesai: cash maks segini
 CONFIRM_TIMEOUT_MINUTES = 15
 REMINDER_LEAD_MINUTES = 5   # pengingat Telegram dikirim saat sisa waktu terima tinggal sekian menit
 
@@ -59,6 +62,83 @@ def web_cash_error(total_price):
             + " harus dibayar online (QRIS). Pilih QRIS atau kurangi pesanan."
         )
     return None
+
+
+# ── Batas order web yang menunggu diterima (anti-spam) ──────────────────────
+
+WEB_MAX_PENDING_PER_PHONE = 2   # order bayar-di-toko yang menunggu diterima, per nomor WA
+WEB_MAX_PENDING_PER_IP_DEFAULT = 5   # per IP; ubah lewat env WEB_MAX_PENDING_PER_IP (0 = matikan)
+
+
+def _max_pending_per_ip():
+    from django.conf import settings
+    try:
+        return int(getattr(settings, "WEB_MAX_PENDING_PER_IP", WEB_MAX_PENDING_PER_IP_DEFAULT))
+    except (TypeError, ValueError):
+        return WEB_MAX_PENDING_PER_IP_DEFAULT
+
+
+# Kode alasan pengalihan ke QRIS (dikirim ke frontend di field `reason`, tidak ditampilkan ke pelanggan).
+QRIS_PHONE_PENDING = "phone_pending"
+QRIS_IP_PENDING = "ip_pending"
+QRIS_IP_BLOCKED = "ip_blocked"
+QRIS_NEW_PHONE = "new_phone"
+
+# Pesan ke pelanggan sengaja netral: tidak membocorkan aturan atau ambang batasnya.
+QRIS_MESSAGE = "Untuk pesanan ini, pembayaran lewat QRIS ya. Metode pembayaran sudah kami ganti otomatis."
+BLOCKED_MESSAGE = "Pesanan ini tidak dapat diproses saat ini. Silakan hubungi toko."
+
+
+def web_blocked_error(phone):
+    """Pesan error (HTTP 403) kalau nomor WA ini ada di daftar blokir; kalau aman, None."""
+    from . import blocklist
+
+    if phone and blocklist.is_phone_blocked(phone):
+        return BLOCKED_MESSAGE
+    return None
+
+
+def web_pending_qris_reason(phone, ip):
+    """
+    Kode alasan (QRIS_*) kalau order cash dari nomor/IP ini harus dialihkan ke QRIS, atau None.
+    Dicek SEBELUM order dibuat (tidak butuh total). Hanya menghitung order yang MASIH menunggu diterima kasir,
+    jadi pelanggan asli tidak terkunci setelah pesanannya diterima.
+    """
+    from . import blocklist
+    from .models import Order
+
+    waiting = Order.objects.filter(source="web", awaiting_confirmation=True, status="pending")
+    if phone and waiting.filter(customer_phone=phone).count() >= WEB_MAX_PENDING_PER_PHONE:
+        return QRIS_PHONE_PENDING
+    limit = _max_pending_per_ip()
+    if ip and limit > 0 and waiting.filter(client_ip=ip).count() >= limit:
+        return QRIS_IP_PENDING
+    if ip and blocklist.is_ip_blocked(ip):
+        return QRIS_IP_BLOCKED
+    return None
+
+
+def completed_orders_count(phone, exclude_pk=None):
+    """Jumlah pesanan SELESAI dari nomor ini (semua sumber). 0 = nomor baru / belum pernah selesai."""
+    from .models import Order
+
+    if not phone:
+        return 0
+    qs = Order.objects.filter(customer_phone=phone, status="completed")
+    if exclude_pk:
+        qs = qs.exclude(pk=exclude_pk)
+    return qs.count()
+
+
+def web_new_phone_qris_reason(phone, total_price):
+    """QRIS_NEW_PHONE kalau nomor baru (belum pernah ada pesanan selesai) memesan cash di atas batas kecil."""
+    if Decimal(total_price) > WEB_CASH_NEW_PHONE_MAX and completed_orders_count(phone) == 0:
+        return QRIS_NEW_PHONE
+    return None
+
+
+def qris_required_payload(reason):
+    return {"error": QRIS_MESSAGE, "require_qris": True, "reason": reason}
 
 
 # ── Konfirmasi kasir & pembatalan otomatis ──────────────────────────────────

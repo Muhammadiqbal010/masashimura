@@ -151,6 +151,14 @@ TELEGRAM_ALLOWED_USER_IDS = os.getenv("TELEGRAM_ALLOWED_USER_IDS", "").strip()
 # Rahasia untuk Vercel Cron (endpoint /api/orders/cron/). Kosong = endpoint mati.
 CRON_SECRET = os.getenv("CRON_SECRET", "").strip()
 
+# Pelacakan asal pemesan web (IP + lokasi perkiraan, lihat order/client_info.py). Semua opsional.
+# Koordinat toko (isi dari Google Maps → klik kanan lokasi toko) mengaktifkan tanda "Jauh dari toko".
+STORE_LATITUDE = os.getenv("STORE_LATITUDE", "").strip()
+STORE_LONGITUDE = os.getenv("STORE_LONGITUDE", "").strip()
+STORE_RADIUS_KM = os.getenv("STORE_RADIUS_KM", "30").strip()
+# Maks order web bayar-di-toko yang menunggu diterima dari SATU IP (0 = tanpa batas per IP).
+WEB_MAX_PENDING_PER_IP = os.getenv("WEB_MAX_PENDING_PER_IP", "5").strip()
+
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},

@@ -11,10 +11,12 @@ import json
 import logging
 import math
 import urllib.request
+from datetime import timedelta
 
 from django.conf import settings
 from django.utils import timezone
 
+from . import client_info as ci
 from . import telegram_ui as ui
 from .guards import CONFIRM_TIMEOUT_MINUTES, confirm_deadline
 
@@ -24,6 +26,7 @@ TIMEOUT_SECONDS = 3   # Vercel serverless: jangan menahan respons ke pelanggan t
 EVENT_LABELS = {
     "accepted": "Diterima", "paid": "Dilunasi", "cancelled": "Dibatalkan", "auto_cancelled": "Dibatalkan otomatis",
     "ready": "Siap diambil", "unready": "Tanda siap dicabut", "refunded": "Refund diserahkan",
+    "blocked": "Diblokir", "unblocked": "Blokir dibuka",
 }
 CHANNEL_LABELS = {"staff": "Admin", "telegram": "Telegram", "system": "Sistem"}
 
@@ -123,6 +126,100 @@ def answer_callback(callback_id, text="", alert=False):
     })[0]
 
 
+# ── Jejak asal pemesan (anti-scam) ─────────────────────────────────────────
+
+def store_coords():
+    """(lat, lng) toko dari env STORE_LATITUDE / STORE_LONGITUDE, atau None kalau belum diisi."""
+    try:
+        lat = float(str(getattr(settings, "STORE_LATITUDE", "") or "").strip())
+        lng = float(str(getattr(settings, "STORE_LONGITUDE", "") or "").strip())
+    except ValueError:
+        return None
+    return (lat, lng) if -90 <= lat <= 90 and -180 <= lng <= 180 else None
+
+
+def _radius_km():
+    try:
+        return float(str(getattr(settings, "STORE_RADIUS_KM", "") or "").strip() or ci.DEFAULT_RADIUS_KM)
+    except ValueError:
+        return ci.DEFAULT_RADIUS_KM
+
+
+def client_history(order):
+    """
+    Riwayat order ini dibanding order lain (IP yang sama, nomor yang sama, kebiasaan toko), dihitung
+    relatif terhadap waktu order ini supaya pesan Telegram stabil. Kunci: lihat client_info.assess_detail.
+    """
+    from . import blocklist, guards, scam_signals
+    from .models import Order
+
+    ip = order.client_ip
+    hist = {}
+    if ip:
+        same_ip = Order.objects.filter(source="web", client_ip=ip)
+        recent = same_ip.filter(created_at__gte=order.created_at - timedelta(hours=24), created_at__lte=order.created_at)
+        name = ci.normalize_name(order.customer_name)
+        same_name = 0
+        if name:
+            same_name = len({
+                o.customer_phone for o in recent.exclude(customer_phone="").only("customer_phone", "customer_name")
+                if ci.normalize_name(o.customer_name) == name
+            })
+        hist.update({
+            "orders_24h": recent.count(),
+            "phones_24h": recent.exclude(customer_phone="").values("customer_phone").distinct().count(),
+            "auto_cancelled_7d": same_ip.filter(
+                created_at__gte=order.created_at - timedelta(days=7), created_at__lt=order.created_at,
+                events__action="auto_cancelled",
+            ).distinct().count(),
+            "same_name_phones": same_name,
+            "ip_blocked": blocklist.is_ip_blocked(ip),
+        })
+    if order.customer_phone:
+        hist["completed_orders"] = guards.completed_orders_count(order.customer_phone, exclude_pk=order.pk)
+    if order.source == "web":
+        hist["after_hours"] = scam_signals.after_hours(order.created_at)
+        hist["portions"] = scam_signals.order_portions(order)
+        hist["avg_portions"] = scam_signals.avg_portions(exclude_pk=order.pk, now=order.created_at)
+        hist["link_in_notes"] = scam_signals.notes_have_link(order)
+    return hist
+
+
+def customer_tag(completed_orders):
+    """Label pelanggan lama/baru untuk pesan Telegram ('' kalau nomor tidak diketahui)."""
+    if completed_orders is None:
+        return ""
+    if completed_orders >= 1:
+        return f"Pelanggan lama ({completed_orders} pesanan selesai)"
+    return "Nomor baru, belum pernah ada pesanan selesai"
+
+
+def client_view(order):
+    """(info untuk tampilan, daftar tanda). (None, []) untuk order POS / order lama tanpa jejak."""
+    info = dict(order.client_info or {})
+    ip = order.client_ip or ""
+    if order.source != "web" or not (ip or info):
+        return None, []
+    distance = ci.distance_from_store(info, store_coords())
+    history = client_history(order)
+    details = ci.assess_detail(ip, info, history=history, distance=distance, radius_km=_radius_km())
+    completed = history.get("completed_orders")
+    view = {
+        "ip": ip,
+        "city": info.get("city") or "",
+        "region": info.get("region") or "",
+        "country": info.get("country") or "",
+        "country_label": ci.country_label(info.get("country")),
+        "device": info.get("device") or "",
+        "maps_url": ci.maps_url(info.get("lat"), info.get("lng")),
+        "distance_km": distance,
+        "customer_tag": customer_tag(completed),
+        "is_known_customer": bool(completed and completed >= 1),
+        "risk": ci.risk_level(details, completed),
+    }
+    return view, [text for text, _ in details]
+
+
 # ── Perakit tampilan order ─────────────────────────────────────────────────
 
 def order_view(order, banner=None):
@@ -151,6 +248,12 @@ def order_view(order, banner=None):
             "channel_label": CHANNEL_LABELS.get(last.channel, last.channel),
         }
 
+    client, client_flags = client_view(order)
+
+    from . import blocklist
+    can_block = order.source == "web" and bool(order.customer_phone or order.client_ip)
+    blocked = blocklist.order_status(order) if can_block else {"phone": False, "ip": False}
+
     return {
         "id": order.pk,
         "order_number": order.order_number,
@@ -177,6 +280,10 @@ def order_view(order, banner=None):
         "last_event": last_event,
         "banner": banner,
         "admin_url": _admin_url(),
+        "client": client,
+        "client_flags": client_flags,
+        "can_block": can_block,
+        "blocked": blocked,
     }
 
 

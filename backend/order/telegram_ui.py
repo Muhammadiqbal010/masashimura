@@ -11,7 +11,9 @@ Kunci view yang dipakai (semua opsional kecuali id):
   payment_status, payment_method, source, service_type, table_number, notes,
   awaiting, tracks_readiness, is_ready, ready_manual, confirm_minutes, minutes_left,
   cancel_reason, cancel_note, cancelled_by, last_event{label,actor,channel_label},
-  banner ('reminder'), admin_url
+  banner ('reminder'), admin_url,
+  client{ip,city,region,country,country_label,device,maps_url,distance_km,customer_tag,risk}, client_flags[list teks],
+  can_block (bool), blocked{phone,ip} (bool)
 """
 from urllib.parse import quote
 
@@ -23,7 +25,11 @@ ACT_REJECT_DO = "rjd"     # tolak dengan alasan (arg = kode alasan)
 ACT_READY = "rdy"
 ACT_UNREADY = "unr"
 ACT_REFRESH = "ref"       # tampilkan ulang status terbaru / kembali dari menu alasan
-ACTIONS = {ACT_ACCEPT, ACT_REJECT, ACT_REJECT_DO, ACT_READY, ACT_UNREADY, ACT_REFRESH}
+ACT_BLOCK = "blk"         # blokir nomor WA + IP pemesan
+ACT_UNBLOCK = "unb"       # buka blokir
+ACTIONS = {ACT_ACCEPT, ACT_REJECT, ACT_REJECT_DO, ACT_READY, ACT_UNREADY, ACT_REFRESH, ACT_BLOCK, ACT_UNBLOCK}
+
+RISK_LABELS = {"green": "🟢 AMAN", "yellow": "🟡 PERIKSA", "red": "🔴 CURIGA"}
 
 # Urutan = urutan tampil di tombol.
 REASON_LABELS = {
@@ -129,6 +135,8 @@ def wa_message(kind, v):
         return f"Halo {nama}, pesanan {no} sudah kami terima dan sedang disiapkan. Terima kasih 🙏"
     if kind == "ready":
         return f"Halo {nama}, pesanan {no} sudah siap diambil. Silakan ke kasir ya 🙏"
+    if kind == "confirm":
+        return f"Halo {nama}, kami dari Masashimura. Mau konfirmasi pesanan {no}, benar Kakak yang pesan? Balas OK ya 🙏"
     reason = v.get("cancel_reason")
     alasan = {
         "out_of_stock": "karena stok menu habis",
@@ -141,9 +149,13 @@ def wa_message(kind, v):
 
 def _headline(v, state):
     if v.get("banner") == "reminder" and state == S_AWAITING:
-        return f"⏰ SEGERA TERIMA — sisa ±{v.get('minutes_left') or '?'} menit"
+        risk = ((v.get("client") or {}).get("risk"))
+        prefix = f"{RISK_LABELS[risk]} · " if risk in RISK_LABELS else ""
+        return f"{prefix}⏰ SEGERA TERIMA — sisa ±{v.get('minutes_left') or '?'} menit"
     if state == S_AWAITING:
-        return "🛎️ PESANAN WEB BARU (bayar di toko)"
+        risk = ((v.get("client") or {}).get("risk"))
+        prefix = f"{RISK_LABELS[risk]} · " if risk in RISK_LABELS else ""
+        return f"{prefix}🛎️ PESANAN WEB BARU (bayar di toko)"
     if state == S_PROCESSING:
         return "✅ PESANAN WEB LUNAS (QRIS)" if is_paid(v) and v.get("payment_method") == "gateway" else "🍳 SEDANG DISIAPKAN"
     if state == S_READY:
@@ -173,6 +185,39 @@ def _footer(v, state):
     return ""
 
 
+def client_lines(v):
+    """Blok 'Asal pemesan' (IP, lokasi perkiraan, perangkat, tanda mencurigakan). Kosong untuk order POS/lama."""
+    c = v.get("client")
+    if not c:
+        return []
+    lines = ["", "🌐 Asal pemesan (perkiraan)", f"IP: {c.get('ip') or 'tidak terbaca'}"]
+    blocked = v.get("blocked") or {}
+    if blocked.get("phone") or blocked.get("ip"):
+        what = " & ".join(n for n, on in (("nomor WA", blocked.get("phone")), ("IP", blocked.get("ip"))) if on)
+        lines.insert(2, f"🚫 DIBLOKIR: {what}")
+    place = ", ".join(p for p in (c.get("city"), c.get("region")) if p)
+    where = " ".join(p for p in (place, c.get("country_label")) if p)
+    if where:
+        lines.append(f"📍 {where}")
+    if c.get("distance_km") is not None:
+        lines.append(f"📏 ±{round(c['distance_km'])} km dari toko")
+    if c.get("device"):
+        lines.append(f"📱 {c['device']}")
+    if c.get("customer_tag"):
+        lines.append(f"👤 {c['customer_tag']}")
+    if c.get("maps_url"):
+        lines.append(f"🗺 {c['maps_url']}")
+    flags = v.get("client_flags") or []
+    if flags:
+        lines.append("🚩 Perhatikan:")
+        lines += [f"• {f}" for f in flags]
+    else:
+        lines.append("✅ Tidak ada tanda janggal terdeteksi")
+    if c.get("risk") in RISK_LABELS:
+        lines.append(f"Penilaian: {RISK_LABELS[c['risk']]}")
+    return lines
+
+
 def render_text(v):
     state = state_of(v)
     lines = [
@@ -193,6 +238,7 @@ def render_text(v):
     footer = _footer(v, state)
     if footer:
         lines.append(footer)
+    lines += client_lines(v)
     last = v.get("last_event")
     if last and last.get("label"):
         who = f" · {last['actor']}" if last.get("actor") else ""
@@ -229,11 +275,20 @@ def render_keyboard(v):
         links.append({"text": "Buka Active Orders", "url": v["admin_url"]})
     kind = {S_PROCESSING: "accepted", S_READY: "ready", S_CANCELLED: "cancelled"}.get(state)
     label = {"accepted": "💬 Kabari: diterima", "ready": "💬 Kabari: siap", "cancelled": "💬 Kabari: dibatalkan"}.get(kind)
+    risky = state == S_AWAITING and (v.get("client") or {}).get("risk") in ("yellow", "red")
+    if risky:   # order mencurigakan: kirim satu pesan konfirmasi dulu, terima hanya kalau dibalas
+        kind, label = "confirm", "💬 Konfirmasi dulu (WA)"
     wa = wa_link(v.get("customer_phone"), wa_message(kind, v) if kind else None)
     if wa:
         links.append({"text": label or "💬 Chat pemesan (WA)", "url": wa})
     if links:
         rows.append(links)
+    if v.get("can_block"):
+        blocked = v.get("blocked") or {}
+        if blocked.get("phone") or blocked.get("ip"):
+            rows.append([_cb("♻ Buka blokir", ACT_UNBLOCK, oid)])
+        else:
+            rows.append([_cb("🚫 Blokir nomor & IP", ACT_BLOCK, oid)])
     return rows
 
 
@@ -256,8 +311,12 @@ HELP_TEXT = (
     "Perintah bot Masashimura:\n"
     "/antrean — order yang perlu tindakan sekarang\n"
     "/ringkasan — ringkasan hari ini\n"
+    "/lacak — asal pemesan: /lacak MSM-261027-AB12 atau /lacak 114.122.1.2\n"
+    "/blokir 0812xxxx — nomor ditolak total (atau IP: dipaksa QRIS)\n"
+    "/bukablokir 0812xxxx — buka blokir nomor/IP\n"
+    "/daftarblokir — yang sedang diblokir\n"
     "/bantuan — pesan ini\n\n"
-    "Tombol di tiap pesan order: Terima, Tolak, Siap diambil."
+    "Tombol di tiap pesan order: Terima, Tolak, Siap diambil, Blokir."
 )
 
 

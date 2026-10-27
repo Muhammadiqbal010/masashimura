@@ -403,7 +403,7 @@
               <div class="grid grid-cols-2 gap-2.5">
                 <button
                   type="button"
-                  :disabled="cashTooBig"
+                  :disabled="cashTooBig || !!qrisForced"
                   @click="selectPayment('cash')"
                   :aria-pressed="paymentMethod === 'cash'"
                   :class="[
@@ -414,7 +414,7 @@
                   ]"
                 >
                   <span class="block font-sora text-sm font-semibold text-[#111113]">Cash</span>
-                  <span class="block text-xs text-[#55555D]">{{ cashTooBig ? "Maks. Rp150.000" : "Bayar di toko" }}</span>
+                  <span class="block text-xs text-[#55555D]">{{ cashTooBig ? "Maks. Rp150.000" : qrisForced ? "Tidak tersedia" : "Bayar di toko" }}</span>
                 </button>
                 <button
                   type="button"
@@ -442,6 +442,10 @@
               </p>
               <p v-if="cashTooBig" class="text-xs text-[#B8201A]">
                 Pesanan di atas Rp150.000 harus dibayar online (QRIS).
+              </p>
+              <!-- Server meminta pesanan ini dibayar QRIS (batas cash / pengamanan): metode sudah dipindah otomatis -->
+              <p v-if="qrisForced" class="text-xs font-medium text-[#55555D]">
+                {{ qrisForced }}
               </p>
               <p v-if="gatewayUnavailable && !cartStore.isEmpty" class="text-xs text-[#B8201A]">
                 Total Rp0 (semua item tukar poin), pembayaran online tidak diperlukan. Pakai Cash.
@@ -708,11 +712,17 @@ const gatewayUnavailable = computed(() => finalTotal.value <= 0)
 const CASH_MAX = 150000
 const cashTooBig = computed(() => finalTotal.value > CASH_MAX)
 
+// Server menolak Cash untuk pesanan ini dan meminta QRIS (HTTP 409 + require_qris). Berisi pesan ramah dari server.
+// Dikosongkan kalau nomor WA / total berubah, karena keputusan server bisa berbeda untuk data yang baru.
+const qrisForced = ref("")
+
 const selectPayment = (method) => {
   if (method === "gateway" && gatewayUnavailable.value) return
-  if (method === "cash" && cashTooBig.value) return
+  if (method === "cash" && (cashTooBig.value || qrisForced.value)) return
   paymentMethod.value = method
 }
+
+watch([phone, finalTotal], () => { qrisForced.value = "" })
 
 // ══════════════════════════════════════════════════════════════════════════════
 // PEMBAYARAN ONLINE (MIDTRANS SNAP)
@@ -1010,7 +1020,7 @@ const isCheckoutDisabled = computed(() => {
   if (!isStoreOpen.value) return true
   if (cartStore.isEmpty || !isNameValid.value || !isPhoneValid.value || isProcessing.value) return true
   if (paymentMethod.value === "gateway" && gatewayUnavailable.value) return true
-  if (paymentMethod.value === "cash" && cashTooBig.value) return true
+  if (paymentMethod.value === "cash" && (cashTooBig.value || qrisForced.value)) return true
   return false
 })
 
@@ -1107,6 +1117,7 @@ const resetForm = () => {
   phoneTouched.value = false
   promoBoxRef.value?.removePromo()
   resetMember()
+  qrisForced.value = ""
 }
 
 const checkout = async () => {
@@ -1214,6 +1225,21 @@ const checkout = async () => {
     toast.success("Pesanan berhasil dibuat!")
     window.scrollTo({ top: 0, behavior: "smooth" })
   } catch (error) {
+    // Server meminta pesanan ini dibayar QRIS (bukan error): pindahkan metode bayar, pelanggan tinggal
+    // menekan "Bayar Sekarang". Tidak dikirim ulang otomatis supaya popup pembayaran tidak diblok browser.
+    if (error.response?.status === 409 && error.response?.data?.require_qris) {
+      const notice = error.response.data.error || "Untuk pesanan ini, pembayaran lewat QRIS ya."
+      if (gatewayUnavailable.value) {
+        // Total Rp0 (semua item tukar poin) tidak bisa dibayar QRIS.
+        toast.error("Pesanan ini belum bisa dibuat saat ini. Silakan hubungi toko.")
+      } else {
+        qrisForced.value = notice
+        paymentMethod.value = "gateway"
+        toast.info(notice)
+      }
+      return
+    }
+
     const message = error.response?.data?.detail || error.response?.data?.error || "Koneksi terputus"
     // PIN ditolak server (mis. PIN diganti admin): verifikasi lama tidak berlaku, minta masukkan ulang.
     if (error.response?.data?.pin_error) resetMember()

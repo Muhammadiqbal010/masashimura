@@ -28,6 +28,7 @@ from promotions.models import Promo  # validasi & kunci kuota server-side saat c
 from payments.services import cancel_midtrans_transaction
 from .pricing import web_price
 from . import member_pin
+from . import client_info
 from . import guards
 from . import notify
 from . import events, staff_actions
@@ -247,6 +248,24 @@ def create_order(request):
             {"error": "Metode pembayaran web hanya cash atau gateway"}, status=400
         )
 
+    # Jejak asal pemesan (IP + lokasi perkiraan + perangkat) untuk melacak scam. Hanya order web:
+    # order POS dibuat staff yang login, IP-nya tidak relevan.
+    client_data, client_ip = {}, None
+    if source == 'web':
+        # Nomor yang diblokir lewat Telegram ditolak total (kasir yang memutuskan; bisa dibuka lagi dari sana).
+        blocked_error = guards.web_blocked_error(phone)
+        if blocked_error:
+            return Response({"error": blocked_error, "blocked": True}, status=403)
+
+        client_data = client_info.collect(request.META)
+        client_ip = client_data.pop('ip', '') or None
+        if payment_method == 'cash':
+            # Terlalu banyak order cash menunggu dari nomor/IP ini, atau IP diblokir:
+            # bukan ditolak, tapi dialihkan ke QRIS (frontend otomatis memindahkan pilihan bayarnya).
+            qris_reason = guards.web_pending_qris_reason(phone, client_ip)
+            if qris_reason:
+                return Response(guards.qris_required_payload(qris_reason), status=409)
+
     # Waktu order manual — HANYA berlaku untuk source='pos' (di titik ini sudah
     # dipastikan staff login). Dari order web / tanpa login, created_at diabaikan.
     backdated_at = None
@@ -338,6 +357,8 @@ def create_order(request):
         promo=promo_obj,
         # Order web bayar di toko: harus diterima kasir dulu, kalau tidak dibatalkan otomatis (guards.py).
         awaiting_confirmation=(source == 'web' and payment_method == 'cash'),
+        client_ip=client_ip,
+        client_info=client_data,
         **time_fields,
     )
 
@@ -493,6 +514,12 @@ def create_order(request):
         if cash_error:
             transaction.set_rollback(True)
             return Response({"error": cash_error}, status=400)
+        # Nomor baru (belum pernah ada pesanan selesai) hanya boleh cash sampai batas kecil;
+        # di atasnya dialihkan ke QRIS. Pelanggan lama tetap boleh cash sampai WEB_CASH_MAX.
+        qris_reason = guards.web_new_phone_qris_reason(phone, order.total_price)
+        if qris_reason:
+            transaction.set_rollback(True)
+            return Response(guards.qris_required_payload(qris_reason), status=409)
 
     # Bayar langsung cash tapi uang diterima kurang dari total → tolak
     # (jangan sampai order ke-mark lunas padahal kurang bayar).
