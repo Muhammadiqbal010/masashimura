@@ -530,6 +530,7 @@ import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue"
 import { useRouter } from "vue-router"
 import { useCartStore } from "@/stores/cart"
 import { orderAPI, paymentAPI, menuAPI, getMediaUrl } from "@/api"
+import { getCustomerLocation } from "@/composables/useGeolocation"
 import { toast } from "vue-sonner"
 import { X, Check, Clock, ShoppingCart, ArrowRight, ArrowLeft } from "lucide-vue-next"
 import { useStoreSettings } from "@/composables/useStoreSettings"
@@ -1167,8 +1168,13 @@ const checkout = async () => {
       }
     }
 
+    // Lokasi GPS pelanggan (opsional). Ditolak/timeout = null, order tetap jalan
+    // dan backend memakai lokasi dari IP sebagai perkiraan.
+    const location = await getCustomerLocation()
+
     const orderData = {
       source:         "web",
+      ...(location ? { location } : {}),
       customer:       { phone: phone.value, name: cleanName(name.value) },
       payment_method: paymentMethod.value,
       service_type:   serviceType.value,
