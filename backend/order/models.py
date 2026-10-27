@@ -169,6 +169,11 @@ class Order(models.Model):
     midtrans_qr_ref = models.CharField(max_length=60, blank=True, default="", editable=False)
     midtrans_qr_expires_at = models.DateTimeField(null=True, blank=True, editable=False)
 
+    # Order web bayar-di-toko harus DITERIMA kasir dulu (anti-iseng). True = menunggu diterima; kalau lewat
+    # CONFIRM_TIMEOUT_MINUTES (lihat guards.py) order dibatalkan otomatis. Order lama & POS selalu False.
+    awaiting_confirmation = models.BooleanField(default=False)
+    accepted_at = models.DateTimeField(null=True, blank=True)
+
     # ── Audit trail pembatalan (void) ──────────────────────────────
     # Order yang dibatalkan TIDAK dihapus dari database — cuma diubah
     # statusnya jadi 'cancelled' + dicatat alasannya di sini, biar tetap

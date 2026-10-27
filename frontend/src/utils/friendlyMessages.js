@@ -66,6 +66,14 @@ export const msgRefundReminder = (o) => [
   'Terima kasih banyak kak 😊',
 ].join('\n')
 
+// Dikirim kasir setelah menerima order web yang bayar di toko.
+export const msgOrderAccepted = (o) => [
+  hello(o),
+  `Pesanan kakak (nota ${nota(o)}) sebesar ${rp(o?.total_price)} sudah kami terima dan sedang kami siapkan 🍽️`,
+  'Pembayarannya bisa dilakukan di kasir ya kak, cash atau QRIS.',
+  thanks,
+].join('\n')
+
 export const msgPaymentReminder = (o) => [
   hello(o),
   `Kami mau mengingatkan ya kak, pesanan kakak (nota ${nota(o)}) sebesar ${rp(o?.total_price)} belum dibayar.`,

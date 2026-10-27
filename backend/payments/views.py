@@ -15,6 +15,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.permissions import IsStaffLevel
+from order import notify
 from order.models import Order, OrderPayment
 from .services import cancel_midtrans_transaction, core, fetch_midtrans_status, snap
 from .throttles import PaymentCreateThrottle, PaymentStatusThrottle
@@ -135,6 +136,9 @@ def apply_midtrans_status(order, verified, bill_qr=False):
         order.change_amount = Decimal("0")
         order.save()
         OrderPayment.objects.create(order=order, method="gateway", amount=order.total_price)
+        if order.source == "web" and not bill_qr:   # order online baru lunas → kabari pemilik (Telegram)
+            order_pk = order.pk
+            transaction.on_commit(lambda: notify.web_order_paid(order_pk))
 
     # 3b) Gagal / kedaluwarsa → void + cancelled
     elif trx_status in ("deny", "cancel", "expire", "failure"):
@@ -290,6 +294,12 @@ class PosQrisCreateView(APIView):
             return Response({"detail": "Order sudah dibatalkan."}, status=400)
         if order.total_price <= 0:
             return Response({"detail": "Total order Rp0, tidak perlu bayar QRIS."}, status=400)
+
+        # Menagih lewat QRIS = kasir menerima order (order web bayar-di-toko tidak dibatalkan otomatis).
+        if order.awaiting_confirmation:
+            order.awaiting_confirmation = False
+            order.accepted_at = timezone.now()
+            order.save(update_fields=["awaiting_confirmation", "accepted_at"])
 
         # QR yang masih berlaku dipakai ulang (tidak bikin transaksi kedua → tidak ada bayar dobel).
         if _qr_alive(order):

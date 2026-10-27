@@ -162,7 +162,9 @@
                     type="button"
                     :aria-label="'Tambah ' + item.name"
                     @click="cartStore.updateQuantity(item.cartKey, 1)"
-                    class="flex h-8 w-8 items-center justify-center rounded-full bg-[#D92B22] text-outline text-white transition-colors hover:bg-[#B8201A]"
+                    :disabled="!cartStore.canAddMore(item.id)"
+                    :title="cartStore.canAddMore(item.id) ? '' : 'Batas porsi tercapai. Untuk jumlah besar, hubungi kasir.'"
+                    class="flex h-8 w-8 items-center justify-center rounded-full bg-[#D92B22] text-outline text-white transition-colors hover:bg-[#B8201A] disabled:cursor-not-allowed disabled:opacity-35"
                   >
                     <Plus :size="14" />
                   </button>

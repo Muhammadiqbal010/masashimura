@@ -122,6 +122,13 @@ class OrderSerializer(serializers.ModelSerializer):
     auto_ready_hours = serializers.SerializerMethodField()
     late_after_minutes = serializers.SerializerMethodField()
 
+    # ── Konfirmasi kasir (order web bayar di toko) ────────────────
+    confirm_deadline = serializers.SerializerMethodField()
+
+    def get_confirm_deadline(self, obj):
+        from .guards import confirm_deadline
+        return confirm_deadline(obj) if obj.awaiting_confirmation else None
+
     # ── Penanda tambahan item ─────────────────────────────────────
     has_additions = serializers.SerializerMethodField()
 
@@ -226,6 +233,9 @@ class OrderSerializer(serializers.ModelSerializer):
             "refunded_by",
             "refund_pending",
             "amount_to_pay_now",
+            "awaiting_confirmation",
+            "accepted_at",
+            "confirm_deadline",
         ]
 
 

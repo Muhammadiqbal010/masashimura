@@ -307,6 +307,14 @@
           <div class="ao-a-act ao-actions" role="cell" @click.stop>
             <div v-if="hasRowActions(order)" class="ao-act-main">
               <button
+                v-if="canAccept(order)"
+                type="button"
+                class="adm-btn adm-btn--primary adm-btn--sm"
+                :disabled="busyIds.has(order.id)"
+                @click="acceptOrder(order)"
+              ><Check :size="14" /> Terima</button>
+
+              <button
                 v-if="canPay(order)"
                 type="button"
                 class="adm-btn adm-btn--primary adm-btn--sm"
@@ -848,7 +856,7 @@ import NotifyCustomerModal from '@/components/ui/admin/NotifyCustomerModal.vue'
 import PosQrisModal from '@/components/ui/admin/PosQrisModal.vue'
 import { groupReceiptLines } from '@/utils/receiptLines'
 import { serviceTypeLabel } from '@/utils/serviceType'
-import { msgReceipt, chatUrl, isMobileDevice } from '@/utils/friendlyMessages'
+import { msgReceipt, msgOrderAccepted, chatUrl, isMobileDevice } from '@/utils/friendlyMessages'
 // Di-import (bukan "/src/assets/…") supaya path-nya ikut di-hash & tetap jalan di build production.
 import logoUrl from '@/assets/masashimura-logo.png'
 
@@ -1251,7 +1259,9 @@ const payBadge = (o) =>
 const statusPills = (o) => {
   if (o.status === 'cancelled') return [{ cls: 'adm-badge--red', label: 'Dibatalkan' }]
   const pills = []
-  if (o.tracks_readiness && isOpenOrder(o)) {
+  if (o.awaiting_confirmation && isOpenOrder(o)) {
+    pills.push({ cls: 'adm-badge--amber', label: acceptCountdown(o) })
+  } else if (o.tracks_readiness && isOpenOrder(o)) {
     if (o.is_ready) pills.push({ cls: 'adm-badge--green', label: 'Siap diambil' })
     else if (isToday.value && o.is_late) pills.push({ cls: 'adm-badge--red', label: `Telat ${fmtWait(o.wait_minutes)}` })
     else if (o.wait_minutes != null) pills.push({ cls: 'adm-badge--amber', label: `Proses ${fmtWait(o.wait_minutes)}` })
@@ -1303,7 +1313,7 @@ const isOpenOrder = (o) => o.status !== 'cancelled' && o.payment_status !== 'voi
 const isGatewayPending = (o) => o.payment_method === 'gateway' && o.payment_status === 'pending'
 // Tambah / ubah / pisah cuma untuk nota yang belum dibayar (aturan yang sama dengan backend).
 const canEditItems = (o) => isOpenOrder(o) && ['unpaid', 'pending'].includes(o.payment_status) && !isGatewayPending(o)
-const canMarkReady = (o) => o.tracks_readiness && isOpenOrder(o) && !o.is_ready && isToday.value && !isGatewayPending(o)
+const canMarkReady = (o) => o.tracks_readiness && isOpenOrder(o) && !o.is_ready && isToday.value && !isGatewayPending(o) && !o.awaiting_confirmation
 // Tanda siap manual bisa dicabut. Siap karena lunas / otomatis 2 jam tidak bisa.
 const canUnmarkReady = (o) => o.tracks_readiness && isOpenOrder(o) && o.ready_source === 'manual' && isToday.value
 const canMarkUnavailable = (o) => isOpenOrder(o) && o.ready_source !== 'manual' && !isGatewayPending(o) && (o.items?.length || 0) > 0
@@ -1330,6 +1340,28 @@ const notifyType = ref('')
 const notifyOrderObj = computed(() => orders.value.find((o) => o.id === notifyOrderId.value) ?? notifySnapshot.value)
 const openNotify = (o, type = '') => { notifyOrderId.value = o.id; notifySnapshot.value = o; notifyType.value = type }
 const closeNotify = () => { notifyOrderId.value = null; notifySnapshot.value = null; notifyType.value = '' }
+
+// Order web bayar-di-toko menunggu diterima kasir; kalau tidak, dibatalkan otomatis oleh server (guards.py).
+const canAccept = (o) => !!o.awaiting_confirmation && isOpenOrder(o)
+const acceptCountdown = (o) => {
+  const left = o.confirm_deadline ? Math.ceil((new Date(o.confirm_deadline).getTime() - now.value) / 60000) : null
+  if (left == null) return 'Menunggu diterima'
+  return left > 0 ? `Menunggu diterima · ${left} mnt` : 'Menunggu diterima · segera batal'
+}
+const acceptOrder = (o) => withBusy(o.id, async () => {
+  try {
+    const res = await orderAPI.acceptOrder(o.id)
+    patchOrder(res.data)
+    const link = chatUrl(res.data.customer_phone || o.customer_phone, msgOrderAccepted(res.data))
+    toast.success(`Pesanan ${o.order_number || '#' + o.id} diterima`, {
+      duration: 20000,
+      ...(link ? { action: { label: 'Kabari pemesan via WA', onClick: () => window.open(link, '_blank', 'noopener') } } : {}),
+    })
+  } catch (err) {
+    toast.error(errText(err, 'Gagal menerima pesanan.'))
+    fetchActiveOrders({ force: true })   // mungkin sudah dibatalkan otomatis
+  }
+})
 
 const toggleReady = (o, ready) => withBusy(o.id, async () => {
   try {
@@ -1392,7 +1424,7 @@ const rowMenuItems = (o) => {
 }
 
 const hasRowActions = (o) =>
-  canPay(o) || canMarkReady(o) ||
+  canAccept(o) || canPay(o) || canMarkReady(o) ||
   !!o.refund_pending || rowMenuItems(o).length > 0
 
 // Menu ⋯: satu instance untuk semua baris. Posisi dihitung dari tombol yang diklik.

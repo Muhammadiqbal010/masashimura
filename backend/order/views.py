@@ -28,6 +28,8 @@ from promotions.models import Promo  # validasi & kunci kuota server-side saat c
 from payments.services import cancel_midtrans_transaction
 from .pricing import web_price
 from . import member_pin
+from . import guards
+from . import notify
 from .crowd import to_wib
 from .segmentation import segment_overview
 from .models import (
@@ -209,7 +211,7 @@ def create_order(request):
         return Response({"error": "Format items/bundles tidak valid"}, status=400)
 
     customer_data = data.get('customer') or {}
-    phone = (customer_data.get('phone') or data.get('customer_phone', '') or '').strip()
+    phone = guards.normalize_phone(customer_data.get('phone') or data.get('customer_phone', '') or '')
     name  = ' '.join((customer_data.get('name') or data.get('customer_name', '') or '').split())
 
     source         = data.get('source', 'pos')
@@ -334,11 +336,15 @@ def create_order(request):
         notes=notes,
         kasir_name=kasir_name,
         promo=promo_obj,
+        # Order web bayar di toko: harus diterima kasir dulu, kalau tidak dibatalkan otomatis (guards.py).
+        awaiting_confirmation=(source == 'web' and payment_method == 'cash'),
         **time_fields,
     )
 
     # ── Bikin OrderItem dari items_data ──────────────────────────────
     subtotal = Decimal('0')
+    portions_by_menu = {}     # batas porsi order web (anti-iseng)
+    total_portions = 0
     for item in items_data:
         menu_id    = item.get('menu_id') or item.get('menu')
         item_notes = (item.get('notes') or '').strip()
@@ -352,6 +358,14 @@ def create_order(request):
             return Response({"error": "Data item tidak valid (menu_id/quantity)"}, status=400)
 
         menu = get_object_or_404(Menu, pk=menu_id)
+
+        if source == 'web':
+            portions_by_menu[menu.pk] = portions_by_menu.get(menu.pk, 0) + quantity
+            total_portions += quantity
+            limit_error = guards.web_portion_error(portions_by_menu, total_portions)
+            if limit_error:
+                transaction.set_rollback(True)
+                return Response({"error": limit_error}, status=400)
 
         problem = _orderable_problem(menu, source, backdated=bool(backdated_at))
         if problem:
@@ -385,7 +399,7 @@ def create_order(request):
         except (TypeError, ValueError, AttributeError):
             transaction.set_rollback(True)
             return Response({"error": "Data paket tidak valid (bundle_id/quantity)"}, status=400)
-        if bundle_qty <= 0 or bundle_qty > 50:
+        if bundle_qty <= 0 or bundle_qty > (guards.WEB_MAX_PER_ITEM if source == 'web' else 50):
             transaction.set_rollback(True)
             return Response({"error": "Jumlah paket tidak valid"}, status=400)
 
@@ -399,6 +413,13 @@ def create_order(request):
             return Response({"error": f"Paket {bundle.name}: {problem}"}, status=400)
 
         for menu, unit, qty in bundle_logic.order_rows(bundle, bundle_qty, source):
+            if source == 'web':
+                portions_by_menu[menu.pk] = portions_by_menu.get(menu.pk, 0) + qty
+                total_portions += qty
+                limit_error = guards.web_portion_error(portions_by_menu, total_portions)
+                if limit_error:
+                    transaction.set_rollback(True)
+                    return Response({"error": limit_error}, status=400)
             OrderItem.objects.create(
                 order=order, menu=menu, quantity=qty, price=unit, bundle_name=bundle.name,
             )
@@ -466,6 +487,13 @@ def create_order(request):
     order.total_price = total if total > 0 else Decimal('0')
     order.status      = order_status   # trigger signal loyalty dengan total yang sudah benar
 
+    # Cash di atas batas wajib online: order bodong bernilai besar tidak bisa masuk antrean kasir.
+    if source == 'web' and payment_method == 'cash':
+        cash_error = guards.web_cash_error(order.total_price)
+        if cash_error:
+            transaction.set_rollback(True)
+            return Response({"error": cash_error}, status=400)
+
     # Bayar langsung cash tapi uang diterima kurang dari total → tolak
     # (jangan sampai order ke-mark lunas padahal kurang bayar).
     if payment_status == 'paid' and payment_method == 'cash' and 0 < amount_paid < order.total_price:
@@ -493,6 +521,12 @@ def create_order(request):
             OrderPayment.objects.filter(pk=payment_row.pk).update(created_at=order.created_at)
 
     order.refresh_from_db()
+
+    # Kabari pemilik lewat Telegram begitu order web bayar-di-toko masuk (setelah commit, tidak pernah menggagalkan order).
+    if source == 'web' and payment_method == 'cash':
+        order_pk = order.pk
+        transaction.on_commit(lambda: notify.new_web_cash_order(order_pk))
+
     return Response(OrderSerializer(order).data, status=201)
 
 
@@ -714,6 +748,7 @@ def get_order(request, pk):
 @api_view(["GET"])
 @permission_classes([IsStaffLevel])
 def active_orders_per_day(request):
+    guards.expire_unconfirmed_orders()
     raw_date = request.query_params.get("target_date")
     if not raw_date:
         return Response({"error": "Parameter target_date wajib diisi"}, status=400)
@@ -785,7 +820,7 @@ def check_loyalty_status(request):
     if not _is_pos_staff(request):
         return Response(empty)
 
-    phone = request.query_params.get("phone", "").strip()
+    phone = guards.normalize_phone(request.query_params.get("phone", ""))
     loyalty = CustomerLoyalty.objects.filter(phone=phone).first() if phone else None
     if not loyalty:
         return Response(empty)
@@ -856,7 +891,7 @@ def member_verify(request):
     PIN benar → saldo poin, kapan poin hangus, bar menuju reward termurah, dan daftar reward.
     Apa pun yang salah → 403 dengan pesan yang sama (tidak membedakan alasan).
     """
-    loyalty = member_pin.verify_pin(request.data.get("phone"), request.data.get("pin"))
+    loyalty = member_pin.verify_pin(guards.normalize_phone(request.data.get("phone")), request.data.get("pin"))
     if not loyalty:
         return Response({"detail": member_pin.NEUTRAL_ERROR}, status=403)
 
@@ -1352,6 +1387,7 @@ class AdjustPointsView(APIView):
 @api_view(["GET"])
 @permission_classes([IsStaffLevel])
 def unpaid_orders(request):
+    guards.expire_unconfirmed_orders()
     search = request.query_params.get("search", "")
 
     qs = (
@@ -1406,6 +1442,7 @@ def pay_order(request, pk):
             status=400,
         )
 
+    guards.accept_now(order)   # melunasi = otomatis menerima order (disimpan oleh save() di bawah)
     previous_status = order.status
     kasir_name      = (request.data.get('kasir_name') or '').strip()
     payments_data   = request.data.get('payments')
@@ -1483,6 +1520,27 @@ def pay_order(request, pk):
 @api_view(["PATCH"])
 @permission_classes([IsStaffLevel])
 @transaction.atomic
+def accept_order(request, pk):
+    """
+    Kasir menerima order web bayar-di-toko. Setelah ini order dianggap sah masuk antrean dan tidak
+    ikut dibatalkan otomatis. Aman dipanggil dua kali.
+    """
+    guards.expire_unconfirmed_orders()   # kalau sudah lewat batas waktu, order dibatalkan dulu
+    order = get_object_or_404(Order.objects.select_for_update(), pk=pk)
+
+    if order.status == "cancelled":
+        return Response(
+            {"detail": f"Order ini sudah dibatalkan{' otomatis (tidak diterima dalam ' + str(guards.CONFIRM_TIMEOUT_MINUTES) + ' menit)' if order.cancelled_by == 'sistem' else ''}."},
+            status=409,
+        )
+    if guards.accept_now(order):
+        order.save(update_fields=["awaiting_confirmation", "accepted_at", "updated_at"])
+    return Response(OrderSerializer(order).data)
+
+
+@api_view(["PATCH"])
+@permission_classes([IsStaffLevel])
+@transaction.atomic
 def cancel_order(request, pk):
     """
     Void/batalkan order dengan alasan wajib. Order TIDAK dihapus dari
@@ -1510,6 +1568,7 @@ def cancel_order(request, pk):
 
     order.status         = "cancelled"
     order.payment_status = "void"
+    order.awaiting_confirmation = False
     order.cancel_reason  = reason
     order.cancel_note    = (request.data.get("cancel_note") or "").strip()
     order.cancelled_at   = timezone.now()
@@ -1554,6 +1613,7 @@ def new_order_notifications(request):
     - new_paid_orders : order gateway yang pembayarannya MASUK sejak
                         after_payment_id (kursor = id OrderPayment).
     """
+    guards.expire_unconfirmed_orders()
     latest_id = Order.objects.order_by("-id").values_list("id", flat=True).first() or 0
     latest_payment_id = (
         OrderPayment.objects.filter(method="gateway")

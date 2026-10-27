@@ -7,6 +7,7 @@ from .views import (
     get_order,
     create_order,
     pay_order,
+    accept_order,
     cancel_order,
     unpaid_orders,
     order_history,
@@ -122,6 +123,7 @@ urlpatterns = [
     # ── Per-order (<int:pk>) — taruh paling bawah biar rapi ──────────────────
     path("orders/<int:pk>/",                   get_order,           name="order-detail"),
     path("orders/<int:pk>/pay/",               pay_order,           name="pay-order"),
+    path("orders/<int:pk>/accept/",            accept_order,        name="accept-order"),
     path("orders/<int:pk>/cancel/",            cancel_order,        name="cancel-order"),
     path("orders/<int:pk>/items/",             add_order_item,      name="order-item-add"),
     path("orders/<int:pk>/items/<int:item_id>/", order_item_detail, name="order-item-detail"),

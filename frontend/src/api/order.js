@@ -28,6 +28,8 @@ export const orderAPI = {
   updateItem: (orderId, itemId, quantity) =>
     apiClient.patch(`/orders/${orderId}/items/${itemId}/`, { quantity }),
   splitOrder: (orderId, payload) => apiClient.post(`/orders/${orderId}/split/`, payload),
+  // Kasir menerima order web bayar-di-toko (tanpa ini dibatalkan otomatis setelah 15 menit).
+  acceptOrder: (orderId) => apiClient.patch(`/orders/${orderId}/accept/`, {}),
   markReady: (orderId, ready = true) => apiClient.patch(`/orders/${orderId}/ready/`, { ready }),
   markUnavailable: (orderId, payload) => apiClient.post(`/orders/${orderId}/unavailable/`, payload),
   confirmRefund: (orderId, payload = {}) => apiClient.patch(`/orders/${orderId}/refund/`, payload),

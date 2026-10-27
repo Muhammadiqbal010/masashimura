@@ -138,6 +138,12 @@ MIDTRANS_IS_PRODUCTION = os.getenv("MIDTRANS_IS_PRODUCTION", "False").strip().lo
 # Penyedia QRIS untuk QR di POS: "gopay" (bawaan) atau "airpay shopee". Ikuti yang AKTIF di akun Midtrans lo.
 MIDTRANS_QRIS_ACQUIRER = os.getenv("MIDTRANS_QRIS_ACQUIRER", "gopay").strip() or "gopay"
 
+# Notifikasi pesanan web ke Telegram (opsional). Kosong = nonaktif.
+# TELEGRAM_CHAT_ID boleh beberapa, dipisah koma (mis. chat pribadi + grup).
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "").strip()
+ADMIN_ORDERS_URL = os.getenv("ADMIN_ORDERS_URL", "https://masashimura.vercel.app/admin/orders").strip()
+
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},

@@ -128,7 +128,10 @@
         <div class="space-y-2">
           <h2 class="font-sora text-2xl font-semibold tracking-tight text-[#111113]">Pesanan dibuat</h2>
           <p class="text-sm leading-relaxed text-[#55555D]">
-            Bayar langsung di toko, kasir yang mengonfirmasi pembayaranmu. Kabari admin lewat WhatsApp supaya pesananmu cepat diproses.
+            Bayar langsung di toko, kasir yang mengonfirmasi pembayaranmu. Kabari admin lewat WhatsApp supaya pesananmu cepat diterima.
+          </p>
+          <p class="text-xs leading-relaxed text-[#6B6B73]">
+            Pesanan perlu diterima kasir dalam 15 menit. Kalau belum, pesanan dibatalkan otomatis.
           </p>
         </div>
 
@@ -400,17 +403,18 @@
               <div class="grid grid-cols-2 gap-2.5">
                 <button
                   type="button"
+                  :disabled="cashTooBig"
                   @click="selectPayment('cash')"
                   :aria-pressed="paymentMethod === 'cash'"
                   :class="[
-                    'rounded-2xl border-2 px-4 py-3 text-left transition-all duration-150',
+                    'rounded-2xl border-2 px-4 py-3 text-left transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-35',
                     paymentMethod === 'cash'
                       ? 'border-[#D92B22] bg-[#D92B22]/10'
                       : 'border-[#111113]/15 bg-[#111113]/[0.03] hover:border-[#111113]/40'
                   ]"
                 >
                   <span class="block font-sora text-sm font-semibold text-[#111113]">Cash</span>
-                  <span class="block text-xs text-[#55555D]">Bayar di toko</span>
+                  <span class="block text-xs text-[#55555D]">{{ cashTooBig ? "Maks. Rp150.000" : "Bayar di toko" }}</span>
                 </button>
                 <button
                   type="button"
@@ -430,11 +434,14 @@
               </div>
               <p class="pt-0.5 text-xs leading-relaxed text-[#6B6B73]">
                 <template v-if="paymentMethod === 'cash'">
-                  Bayar langsung di toko. Kasir yang mengonfirmasi pembayaranmu.
+                  Bayar langsung di toko. Pesanan masuk setelah kasir menerimanya (maksimal 15 menit), lalu kasir yang mengonfirmasi pembayaranmu.
                 </template>
                 <template v-else>
                   Bayar lewat QRIS di popup. Pesanan diproses setelah pembayaran terkonfirmasi otomatis.
                 </template>
+              </p>
+              <p v-if="cashTooBig" class="text-xs text-[#B8201A]">
+                Pesanan di atas Rp150.000 harus dibayar online (QRIS).
               </p>
               <p v-if="gatewayUnavailable && !cartStore.isEmpty" class="text-xs text-[#B8201A]">
                 Total Rp0 (semua item tukar poin), pembayaran online tidak diperlukan. Pakai Cash.
@@ -697,8 +704,13 @@ watch(phone, () => {
 // Order Rp0 (semua item tukar poin) ditolak endpoint pembayaran, jadi QRIS dimatikan.
 const gatewayUnavailable = computed(() => finalTotal.value <= 0)
 
+// Pesanan besar wajib dibayar online (anti-iseng). Harus sama dengan WEB_CASH_MAX di backend (order/guards.py).
+const CASH_MAX = 150000
+const cashTooBig = computed(() => finalTotal.value > CASH_MAX)
+
 const selectPayment = (method) => {
   if (method === "gateway" && gatewayUnavailable.value) return
+  if (method === "cash" && cashTooBig.value) return
   paymentMethod.value = method
 }
 
@@ -717,6 +729,16 @@ const payment = ref(null)
 // cashDone = { orderNumber, total, waMessage, items }
 // Tidak perlu disimpan ke localStorage: order sudah ada di backend, ini hanya layar konfirmasi.
 const cashDone = ref(null)
+
+// Total naik melewati batas cash → pindah otomatis ke QRIS.
+watch(cashTooBig, (tooBig) => {
+  if (tooBig && paymentMethod.value === "cash" && !gatewayUnavailable.value) {
+    paymentMethod.value = "gateway"
+    if (!cartStore.isEmpty && !payment.value) {
+      toast.info("Pesanan di atas Rp150.000 dibayar online (QRIS).")
+    }
+  }
+}, { immediate: true })
 
 // Watch ini ditaruh setelah `payment` dideklarasikan karena membacanya.
 watch(gatewayUnavailable, (unavailable) => {
@@ -988,6 +1010,7 @@ const isCheckoutDisabled = computed(() => {
   if (!isStoreOpen.value) return true
   if (cartStore.isEmpty || !isNameValid.value || !isPhoneValid.value || isProcessing.value) return true
   if (paymentMethod.value === "gateway" && gatewayUnavailable.value) return true
+  if (paymentMethod.value === "cash" && cashTooBig.value) return true
   return false
 })
 

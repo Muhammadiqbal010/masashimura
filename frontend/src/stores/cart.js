@@ -2,11 +2,15 @@
 
 import { defineStore } from "pinia"
 import { ref, computed, watch } from "vue"
+import { toast } from "vue-sonner"
 import { orderAPI } from "@/api"
 
 const STORAGE_KEY = "cart"
 const BUNDLE_STORAGE_KEY = "cartBundles"
-const MAX_BUNDLE_QTY = 20
+// Batas pesanan online (anti-iseng). Harus sama dengan guards.py di backend (WEB_MAX_PER_ITEM / WEB_MAX_PORTIONS).
+export const MAX_PORTIONS_PER_MENU = 10
+export const MAX_PORTIONS_PER_ORDER = 30
+const MAX_BUNDLE_QTY = MAX_PORTIONS_PER_MENU
 
 // Paket di keranjang disimpan terpisah dari menu biasa (tidak bercampur dengan logika opsi/catatan).
 const loadBundles = () => {
@@ -148,6 +152,17 @@ export const useCartStore = defineStore("cart", () => {
 
   const isEmpty = computed(() => cartItems.value.length === 0 && bundleLines.value.length === 0)
 
+  // Pesan error kalau menambah `addPortions` porsi (untuk menu `menuId`, atau null untuk paket) melewati batas.
+  const portionLimitError = (menuId, addPortions) => {
+    if (menuId != null && quantityOfMenu(menuId) + addPortions > MAX_PORTIONS_PER_MENU) {
+      return `Maksimal ${MAX_PORTIONS_PER_MENU} porsi per menu untuk pesanan online.`
+    }
+    if (cartItemCount.value + addPortions > MAX_PORTIONS_PER_ORDER) {
+      return `Maksimal ${MAX_PORTIONS_PER_ORDER} porsi per pesanan online. Untuk pesanan besar, hubungi toko.`
+    }
+    return null
+  }
+
   // ── Actions: keranjang ──────────────────────────────────────────────────────
   // Tambah menu ke keranjang. `selection` = pilihan opsi (lihat format di atas).
   // Return { ok: true } atau { ok: false, error } kalau ada opsi wajib yang belum dipilih.
@@ -162,6 +177,9 @@ export const useCartStore = defineStore("cart", () => {
     const chosen = normalizeSelection(selection)
     const signature = selectionSignature(chosen)
     const qty = Math.max(1, Math.floor(Number(quantity) || 1))
+
+    const limitError = portionLimitError(menu.id, qty)
+    if (limitError) return { ok: false, error: limitError }
 
     const existing = cartItems.value.find(
       (item) =>
@@ -206,6 +224,12 @@ export const useCartStore = defineStore("cart", () => {
       return { ok: false, error: bundle?.unavailable_reason || "Paket tidak tersedia." }
     }
     const qty = Math.max(1, Math.floor(Number(quantity) || 1))
+    const perBundle = (bundle.contents || []).reduce((s, c) => s + (Number(c.quantity) || 0), 0) || 1
+    const limitError = portionLimitError(null, perBundle * qty)
+    if (limitError) return { ok: false, error: limitError }
+    if ((bundleCart.value[bundle.id]?.quantity || 0) + qty > MAX_BUNDLE_QTY) {
+      return { ok: false, error: `Maksimal ${MAX_BUNDLE_QTY} paket yang sama untuk pesanan online.` }
+    }
     const existing = bundleCart.value[bundle.id]
     if (existing) {
       existing.quantity = Math.min(MAX_BUNDLE_QTY, existing.quantity + qty)
@@ -229,6 +253,13 @@ export const useCartStore = defineStore("cart", () => {
   const updateBundleQuantity = (bundleId, delta) => {
     const line = bundleCart.value[bundleId]
     if (!line) return
+    if (delta > 0) {
+      const perBundle = (line.contents || []).reduce((s, c) => s + (Number(c.quantity) || 0), 0) || 1
+      const limitError = line.quantity + delta > MAX_BUNDLE_QTY
+        ? `Maksimal ${MAX_BUNDLE_QTY} paket yang sama untuk pesanan online.`
+        : portionLimitError(null, perBundle * delta)
+      if (limitError) { toast.error(limitError); return }
+    }
     line.quantity = Math.min(MAX_BUNDLE_QTY, line.quantity + delta)
     if (line.quantity <= 0) delete bundleCart.value[bundleId]
   }
@@ -281,6 +312,10 @@ export const useCartStore = defineStore("cart", () => {
     const item = cart.value[cartKey]
     if (!item) return
 
+    if (delta > 0) {
+      const limitError = portionLimitError(item.id, delta)
+      if (limitError) { toast.error(limitError); return }
+    }
     item.quantity += delta
     if (item.quantity <= 0) delete cart.value[cartKey]
   }
