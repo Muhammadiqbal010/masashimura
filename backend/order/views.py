@@ -36,6 +36,7 @@ from .crowd import to_wib
 from .segmentation import segment_overview
 from .models import (
     PAYMENT_METHOD_CHOICES,
+    BlockedContact,
     CustomerLoyalty,
     LoyaltySettings,
     Order,
@@ -633,25 +634,22 @@ def _delete_order_permanently(order, deleted_by=""):
         ).first()
 
     if loyalty:
-        adjustments = []
-
         # (2) Kembalikan poin yang dipakai buat tukar reward di order ini. Jumlahnya diambil dari
         # catatan potongan saat order dibuat (bukan dihitung ulang dari point_cost sekarang,
         # yang bisa saja sudah diubah admin). Dilakukan SEBELUM reversal poin earn supaya
         # saldo tidak ke-clamp padahal poinnya sebenarnya cukup.
         if has_redemption:
-            spent = PointAdjustment.objects.filter(
+            redeem_qs = PointAdjustment.objects.filter(
                 customer=loyalty,
                 amount__lt=0,
                 note__startswith=f"Redeem reward saat order {order.order_number}",
-            ).aggregate(total=Sum("amount"))["total"] or 0
+            )
+            spent = redeem_qs.aggregate(total=Sum("amount"))["total"] or 0
             loyalty_points_refunded = -spent
             if loyalty_points_refunded > 0:
                 loyalty.points += loyalty_points_refunded
-                adjustments.append((
-                    loyalty_points_refunded,
-                    f"Poin tukar reward dikembalikan — order {order.order_number} dihapus permanen",
-                ))
+            # Catatan redeem order ini ikut dihapus (saldo sudah dikembalikan, tanpa catatan pengganti).
+            redeem_qs.delete()
 
         # (3) Tarik balik poin yang di-earn HANYA kalau order ini memang pernah menambah poin.
         if order.loyalty_applied:
@@ -673,23 +671,17 @@ def _delete_order_permanently(order, deleted_by=""):
                 .aggregate(latest=Max("created_at"))["latest"]
             )
 
-            if loyalty_points_reverted:
-                adjustments.append((
-                    -loyalty_points_reverted,
-                    f"Reversal otomatis — order {order.order_number} dihapus permanen"
-                    + (" (poin di-clamp ke 0, saldo sudah kurang dari yang di-reverse)" if loyalty_clamped else ""),
-                ))
-
         loyalty.save()
 
-        for amount, note in adjustments:
-            PointAdjustment.objects.create(
-                customer=loyalty,
-                amount=amount,
-                reason="manual",
-                note=note,
-                admin_name=deleted_by or "system",
-            )
+        # Pelanggan yang cuma ada karena order ini (tanpa order lain, poin, PIN, atau riwayat poin)
+        # ikut dihapus supaya tidak jadi baris kosong.
+        if (
+            loyalty.points == 0
+            and not loyalty.pin_hash
+            and not loyalty.adjustments.exists()
+            and not Order.objects.filter(customer_phone=order.customer_phone).exclude(pk=order.pk).exists()
+        ):
+            loyalty.delete()
 
     # (4) Reverse kuota promo (jangan sampai used_count jadi minus).
     promo_code_reverted = ""
@@ -697,25 +689,30 @@ def _delete_order_permanently(order, deleted_by=""):
         Promo.objects.filter(pk=order.promo_id, used_count__gt=0).update(used_count=F("used_count") - 1)
         promo_code_reverted = getattr(order.promo, "code", str(order.promo_id))
 
+    # Jejak audit MINIMAL: hanya nomor order, sumber, nominal, siapa & kapan dihapus.
+    # Nama/nomor HP pelanggan, isi menu, dan rincian pembayaran sengaja TIDAK disimpan.
     OrderDeletionLog.objects.create(
         order_number=order.order_number,
         order_source=order.source,
         order_status=order.status,
         payment_status=order.payment_status,
         payment_method=order.payment_method,
-        customer_name=order.customer_name,
-        customer_phone=order.customer_phone,
+        customer_name="",
+        customer_phone="",
         total_price=order.total_price,
         amount_paid=order.amount_paid,
         original_created_at=order.created_at,
-        items_snapshot=items_snapshot,
-        payments_snapshot=payments_snapshot,
+        items_snapshot=[],
+        payments_snapshot=[],
         loyalty_points_reverted=loyalty_points_reverted,
         loyalty_points_refunded=loyalty_points_refunded,
         loyalty_clamped=loyalty_clamped,
         promo_code_reverted=promo_code_reverted,
         deleted_by=deleted_by,
     )
+
+    # Daftar blokir anti-scam: lepas rujukan ke order yang dihapus (blokirnya sendiri tetap).
+    BlockedContact.objects.filter(order_number=order.order_number).update(order_number="")
 
     order_number = order.order_number
 
@@ -1716,238 +1713,9 @@ def order_history(request):
 @api_view(["GET"])
 @permission_classes([IsAdminLevel])
 def order_full_report(request):
-    from django.db.models.functions import ExtractHour, TruncDate, TruncMonth
-
-    period = request.query_params.get("period", "lifetime")
-    now    = timezone.now()
-    year   = _int_param(request, "year",   now.year)
-    month  = _int_param(request, "month",  now.month)
-    days   = _int_param(request, "days",   7)
-    offset = _int_param(request, "offset", 0)
-
-    if days not in (7, 14, 28, 30):
-        days = 7
-    if not 1 <= month <= 12:
-        month = now.month
-
-    # ── 1. Tentukan period_start / period_end ──────────────────────────
-    period_start = None
-    period_end   = None
-
-    if period == "week":
-        period_end   = now.date() - timedelta(days=offset)
-        period_start = period_end - timedelta(days=days - 1)
-
-    elif period == "month":
-        period_start = datetime.date(year, month, 1)
-        period_end   = datetime.date(year, month, calendar.monthrange(year, month)[1])
-
-    elif period == "year":
-        period_start = datetime.date(year, 1, 1)
-        period_end   = datetime.date(year, 12, 31)
-
-    # ── 2. Base queryset ───────────────────────────────────────────────
-    paid_qs = Order.objects.filter(payment_status="paid").exclude(status="cancelled")
-
-    qualifying_qs = paid_qs
-    if period_start and period_end:
-        qualifying_qs = qualifying_qs.filter(
-            created_at__date__gte=period_start,
-            created_at__date__lte=period_end,
-        )
-
-    qualifying_ids = list(qualifying_qs.values_list("id", flat=True))
-
-    # ── 3. Stats utama ─────────────────────────────────────────────────
-    main_stats = qualifying_qs.aggregate(
-        total_omzet=Sum("total_price"),
-        total_transaksi=Count("id"),
-    )
-    total_omzet     = main_stats["total_omzet"] or 0
-    total_transaksi = main_stats["total_transaksi"] or 0
-    rata_rata       = (total_omzet / total_transaksi) if total_transaksi else 0
-    menu_aktif      = Menu.objects.filter(is_active=True).count()
-
-    # ── 4. Trend ───────────────────────────────────────────────────────
-    if period == "year":
-        BULAN_ID = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"]
-        trend_qs = (
-            qualifying_qs
-            .annotate(period_label=TruncMonth("created_at"))
-            .values("period_label")
-            .annotate(omzet=Sum("total_price"), transaksi=Count("id"))
-            .order_by("period_label")
-        )
-        trend_labels    = [BULAN_ID[t["period_label"].month - 1] for t in trend_qs]
-        trend_dates     = [str(t["period_label"].date()) for t in trend_qs]
-        trend_omzet     = [float(t["omzet"] or 0) for t in trend_qs]
-        trend_transaksi = [t["transaksi"] for t in trend_qs]
-
-    elif period in ("week", "month") and period_start and period_end:
-        trend_qs = (
-            qualifying_qs
-            .annotate(day=TruncDate("created_at"))
-            .values("day")
-            .annotate(omzet=Sum("total_price"), transaksi=Count("id"))
-        )
-        trend_map = {}
-        for row in trend_qs:
-            d = row["day"]
-            if hasattr(d, "date"):
-                d = d.date()
-            trend_map[d] = row
-
-        HARI_ID = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"]
-        trend_labels, trend_dates, trend_omzet, trend_transaksi = [], [], [], []
-        for i in range((period_end - period_start).days + 1):
-            d   = period_start + timedelta(days=i)
-            row = trend_map.get(d)
-            trend_labels.append(HARI_ID[d.weekday()])
-            trend_dates.append(str(d))
-            trend_omzet.append(float(row["omzet"]) if row else 0)
-            trend_transaksi.append(row["transaksi"] if row else 0)
-
-    else:
-        # Lifetime — by date
-        trend_qs = (
-            qualifying_qs
-            .annotate(day=TruncDate("created_at"))
-            .values("day")
-            .annotate(omzet=Sum("total_price"), transaksi=Count("id"))
-            .order_by("day")
-        )
-        trend_labels    = [str(t["day"]) for t in trend_qs]
-        trend_dates     = trend_labels[:]
-        trend_omzet     = [float(t["omzet"] or 0) for t in trend_qs]
-        trend_transaksi = [t["transaksi"] for t in trend_qs]
-
-    # ── 5. Top menu ────────────────────────────────────────────────────
-    base_item_qs = OrderItem.objects.filter(order_id__in=qualifying_ids)
-
-    top_by_qty = list(
-        base_item_qs.values("menu__name")
-        .annotate(qty=Sum("quantity"), omzet=Sum(LINE_TOTAL))
-        .order_by("-qty")[:10]
-    )
-    top_by_omzet = list(
-        base_item_qs.values("menu__name")
-        .annotate(omzet=Sum(LINE_TOTAL))
-        .order_by("-omzet")[:5]
-    )
-
-    # ── 6. Menu tidak laku ─────────────────────────────────────────────
-    menu_tidak_laku = list(
-        Menu.objects.filter(is_active=True)
-        .annotate(
-            transaksi=Count("orderitem", filter=Q(orderitem__order_id__in=qualifying_ids))
-        )
-        .order_by("transaksi", "name")
-        .values("name", "transaksi")[:10]
-    )
-
-    # ── 7. Metode pembayaran ───────────────────────────────────────────
-    pembayaran_qs = (
-        qualifying_qs.values("payment_method")
-        .annotate(count=Count("id"), total=Sum("total_price"))
-        .order_by("-total")
-    )
-    method_labels         = dict(PAYMENT_METHOD_CHOICES)
-    total_revenue_for_pct = float(total_omzet) or 1
-    metode_pembayaran = [
-        {
-            "method":  row["payment_method"],
-            "label":   method_labels.get(row["payment_method"], row["payment_method"] or "Lainnya"),
-            "count":   row["count"],
-            "total":   float(row["total"] or 0),
-            "percent": round(float(row["total"] or 0) / total_revenue_for_pct * 100, 1),
-        }
-        for row in pembayaran_qs
-    ]
-
-    # ── 8. Pelanggan ───────────────────────────────────────────────────
-    first_order_map = {
-        row["customer_phone"]: row["first_date"]
-        for row in (
-            paid_qs.exclude(customer_phone="")
-            .values("customer_phone")
-            .annotate(first_date=Min("created_at"))
-        )
-    }
-    phones_in_period = list(
-        qualifying_qs.exclude(customer_phone="")
-        .values_list("customer_phone", flat=True)
-        .distinct()
-    )
-    pelanggan_baru = 0
-    pelanggan_lama = 0
-    for phone in phones_in_period:
-        first_date = first_order_map.get(phone)
-        if not first_date:
-            continue
-        if period_start and first_date.date() < period_start:
-            pelanggan_lama += 1
-        else:
-            pelanggan_baru += 1
-
-    # Member loyal = customer di periode ini yang punya poin aktif.
-    member_loyal = CustomerLoyalty.objects.filter(
-        phone__in=phones_in_period, points__gt=0
-    ).count()
-
-    # ── 9. Jam teramai ─────────────────────────────────────────────────
-    jam_qs = (
-        qualifying_qs.annotate(hour=ExtractHour("created_at"))
-        .values("hour")
-        .annotate(count=Count("id"))
-        .order_by("-count")[:5]
-    )
-    jam_teramai = [
-        {
-            "hour":  row["hour"],
-            "label": f"{row['hour']:02d}.00 - {(row['hour'] + 1) % 24:02d}.00",
-            "count": row["count"],
-        }
-        for row in sorted(jam_qs, key=lambda x: x["hour"])
-    ]
-
-    return Response({
-        "period": {
-            "mode":  period,
-            "year":  year,
-            "month": month,
-            "days":  days,
-            "start": str(period_start) if period_start else None,
-            "end":   str(period_end)   if period_end   else None,
-        },
-        "stats": {
-            "total_omzet":         float(total_omzet),
-            "total_transaksi":     total_transaksi,
-            "rata_rata_transaksi": float(rata_rata),
-            "menu_aktif":          menu_aktif,
-        },
-        "trend": {
-            "labels":    trend_labels,
-            "dates":     trend_dates,
-            "omzet":     trend_omzet,
-            "transaksi": trend_transaksi,
-        },
-        "top_menu": [
-            {"name": r["menu__name"], "qty": r["qty"], "omzet": float(r["omzet"] or 0)}
-            for r in top_by_qty
-        ],
-        "menu_paling_menghasilkan": [
-            {"name": r["menu__name"], "omzet": float(r["omzet"] or 0)}
-            for r in top_by_omzet
-        ],
-        "menu_tidak_laku":   menu_tidak_laku,
-        "metode_pembayaran": metode_pembayaran,
-        "pelanggan": {
-            "baru":         pelanggan_baru,
-            "lama":         pelanggan_lama,
-            "loyal_member": member_loyal,
-        },
-        "jam_teramai": jam_teramai,
-    })
+    """GET /orders/reports/full/ — Ringkasan Order Reports. Logika di report_summary.full_report."""
+    from .report_summary import full_report
+    return Response(full_report(request.query_params))
 
 
 # ─────────────────────────────────────────────

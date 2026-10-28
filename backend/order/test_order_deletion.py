@@ -42,7 +42,30 @@ class OrderDeletionTests(TestCase):
         self.assertFalse(OrderPayment.objects.filter(order_id=o.pk).exists())
         log = OrderDeletionLog.objects.get(order_number=o.order_number)
         self.assertEqual(log.loyalty_points_refunded, 7)
-        self.assertEqual(log.items_snapshot[0]['bundle_name'], 'Paket X')
+        # jejak audit minimal: tanpa data pelanggan / isi nota
+        self.assertEqual((log.customer_name, log.customer_phone, log.items_snapshot, log.payments_snapshot), ('', '', [], []))
+        # tidak ada catatan poin tersisa untuk order ini (tidak ada redeem lama, tidak ada reversal baru)
+        self.assertFalse(PointAdjustment.objects.filter(customer=l, note__contains=o.order_number).exists())
+
+    def test_delete_removes_customer_created_only_by_order(self):
+        o = Order.objects.create(source='web', customer_phone='0899', customer_name='Baru',
+                                 payment_method='cash', payment_status='paid')
+        OrderItem.objects.create(order=o, menu=self.katsu, quantity=1, price=100000)
+        OrderPayment.objects.create(order=o, method='cash', amount=100000)
+        o.recalculate_totals(); o.status = 'completed'; o.amount_paid = 100000; o.save()
+        self.assertTrue(CustomerLoyalty.objects.filter(phone='0899').exists())
+        from order.views import _delete_order_permanently
+        _delete_order_permanently(o)
+        self.assertFalse(CustomerLoyalty.objects.filter(phone='0899').exists())
+
+    def test_delete_clears_blocklist_order_reference(self):
+        from order.models import BlockedContact
+        o = Order.objects.create(source='web', payment_method='cash', payment_status='pending')
+        BlockedContact.objects.create(kind='phone', value='0877', order_number=o.order_number)
+        from order.views import _delete_order_permanently
+        _delete_order_permanently(o)
+        b = BlockedContact.objects.get(value='0877')
+        self.assertEqual(b.order_number, '')
 
     def test_delete_without_loyalty_is_clean(self):
         o = Order.objects.create(source='pos', payment_method='cash', payment_status='pending')

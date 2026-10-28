@@ -932,6 +932,8 @@
           <li v-if="selectedDeleteOrder.items?.some((i) => i.is_point_redemption)">Poin yang dipakai untuk tukar reward <strong>dikembalikan</strong> ke pelanggan.</li>
           <li v-if="selectedDeleteOrder.customer_phone">Poin yang didapat dari order ini ditarik kembali, begitu juga total belanja dan jumlah order pelanggan.</li>
           <li v-if="selectedDeleteOrder.promo_discount_amount > 0">Kuota promo yang terpakai dikembalikan.</li>
+          <li>Riwayat poin dan data pelanggan yang hanya muncul karena order ini ikut dibersihkan.</li>
+          <li>Yang tersisa hanya jejak minimal untuk owner: nomor order, nominal, siapa yang menghapus, dan waktunya.</li>
         </ul>
 
         <div class="adm-field">

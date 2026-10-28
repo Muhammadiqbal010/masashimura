@@ -102,7 +102,26 @@ const chartOpts = computed(() => {
       tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${rp(c.parsed.y)}` } },
     },
     scales: {
-      x: { stacked: true, grid: { display: false }, ticks: { color: tick, font: { size: 11 }, maxRotation: 0, autoSkip: true } },
+      x: {
+        stacked: true,
+        grid: { display: false },
+        ticks: {
+          color: tick,
+          font: { size: 11 },
+          maxRotation: 0,
+          autoSkip: true,
+          autoSkipPadding: 28,
+          maxTicksLimit: 12,
+          // Cuma angka tanggal; nama bulan hanya di label pertama & saat bulan berganti.
+          callback(value) {
+            const cur = String(this.getLabelForValue(value) || "")
+            const [day, mon] = cur.split(" ")
+            if (!mon) return cur
+            const prev = value > 0 ? String(this.getLabelForValue(value - 1) || "").split(" ")[1] : null
+            return prev === mon ? day : cur
+          },
+        },
+      },
       y: { stacked: true, grid: { color: grid }, ticks: { color: tick, font: { size: 11 } }, border: { display: false } },
     },
   }

@@ -37,9 +37,24 @@
       </div>
 
       <section class="rt-card">
-        <h3 class="rt-title">Semua menu aktif <template v-if="filter">· {{ data.class_labels[filter] }}</template></h3>
+        <div class="mp-head">
+          <h3 class="rt-title mp-head-title">
+            Semua menu aktif <template v-if="filter">· {{ data.class_labels[filter] }}</template>
+            <span class="mp-count">{{ rows.length }} menu</span>
+          </h3>
+          <div class="mp-tools">
+            <input v-model.trim="query" type="search" class="adm-input mp-search" placeholder="Cari menu atau kategori…"
+                   aria-label="Cari menu" />
+            <select v-model="sortKey" class="adm-input mp-sort" aria-label="Urutkan menu">
+              <option value="revenue">Omzet tertinggi</option>
+              <option value="qty">Paling banyak terjual</option>
+              <option value="qty_asc">Paling sedikit terjual</option>
+              <option value="name">Nama A–Z</option>
+            </select>
+          </div>
+        </div>
 
-        <div v-if="!rows.length" class="rt-empty"><p class="rt-empty-sub">Tidak ada menu di kelompok ini.</p></div>
+        <div v-if="!rows.length" class="rt-empty"><p class="rt-empty-sub">{{ query ? "Tidak ada menu yang cocok dengan pencarian." : "Tidak ada menu di kelompok ini." }}</p></div>
         <div v-else class="rt-scroll" tabindex="0" role="region" aria-label="Tabel performa menu, geser untuk melihat semua kolom">
           <table class="rt-table">
             <thead>
@@ -57,7 +72,7 @@
                 <td class="num">{{ m.qty.toLocaleString('id-ID') }}</td>
                 <td class="num">{{ rp(m.revenue) }}</td>
                 <td class="mp-share">
-                  <span class="rt-bar" aria-hidden="true"><span :style="{ width: Math.min(100, m.revenue_share * 2) + '%' }"></span></span>
+                  <span class="rt-bar" aria-hidden="true"><span :style="{ width: barWidth(m.revenue_share) + '%' }"></span></span>
                   <span class="mp-share-n">{{ m.revenue_share }}%</span>
                 </td>
                 <td><span class="rt-badge" :class="badgeTone[m.class]">{{ m.class_label }}</span></td>
@@ -88,7 +103,27 @@ const { data, loading, error, load } = useReportLoad(analyticsAPI.getMenuPerform
 defineExpose({ reload: load, loading })
 
 const filter = ref(null)
-const rows = computed(() => (data.value?.menus || []).filter((m) => !filter.value || m.class === filter.value))
+const query = ref("")
+const sortKey = ref("revenue")
+
+const rows = computed(() => {
+  const q = query.value.toLowerCase()
+  const list = (data.value?.menus || []).filter((m) =>
+    (!filter.value || m.class === filter.value) &&
+    (!q || m.name.toLowerCase().includes(q) || (m.category || "").toLowerCase().includes(q)),
+  )
+  const by = {
+    revenue: (a, b) => b.revenue - a.revenue || b.qty - a.qty,
+    qty: (a, b) => b.qty - a.qty || b.revenue - a.revenue,
+    qty_asc: (a, b) => a.qty - b.qty || a.revenue - b.revenue,
+    name: (a, b) => a.name.localeCompare(b.name, "id"),
+  }[sortKey.value]
+  return [...list].sort((a, b) => by(a, b) || a.name.localeCompare(b.name, "id"))
+})
+
+// Bar kontribusi relatif ke menu dengan kontribusi terbesar (dulu dikali 2 dan dipotong 100: tidak proporsional).
+const maxShare = computed(() => Math.max(0.1, ...(data.value?.menus || []).map((m) => m.revenue_share)))
+const barWidth = (share) => (share > 0 ? Math.max(2, Math.round((share / maxShare.value) * 100)) : 0)
 const rp = (v) => "Rp " + Math.round(v || 0).toLocaleString("id-ID")
 const badgeTone = { bintang: "is-green", andalan: "is-blue", potensial: "is-amber", evaluasi: "is-red" }
 </script>
@@ -107,4 +142,10 @@ const badgeTone = { bintang: "is-green", andalan: "is-blue", potensial: "is-ambe
 .mp-share .rt-bar { flex: 1; }
 .mp-share-n { font-size: 0.75rem; font-variant-numeric: tabular-nums; color: var(--text-faint); min-width: 36px; text-align: right; }
 .mp-note { margin-top: 0.9rem; font-size: 0.75rem; }
+.mp-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.9rem; }
+.mp-head-title { margin: 0; }
+.mp-count { margin-left: 0.5rem; font-size: 0.75rem; font-weight: 400; color: var(--text-faint); }
+.mp-tools { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.mp-search { width: 14rem; max-width: 100%; min-height: 40px; }
+.mp-sort { width: auto; min-height: 40px; font-weight: 600; }
 </style>

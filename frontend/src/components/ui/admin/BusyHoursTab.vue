@@ -228,15 +228,18 @@ const cellTitle = (d, h) => {
 }
 
 const busiestDay = computed(() => {
-  const by = data.value?.by_weekday || []
+  const by = (data.value?.by_weekday || []).map((v, i) => (isClosedDay(i) ? 0 : v))
   if (!by.some((v) => v > 0)) return null
   const d = by.indexOf(Math.max(...by))
   return { name: data.value.day_names[d], avg: by[d] }
 })
 
+const isClosedDay = (d) => hasSchedule.value && !data.value.open_hours[d]
+
 const dayPct = (d) => {
+  if (isClosedDay(d)) return 0   // hari libur ditulis "Libur": barnya tidak boleh terisi
   const by = data.value.by_weekday
-  const max = Math.max(...by, 0)
+  const max = Math.max(...by.filter((_, i) => !isClosedDay(i)), 0)
   return max ? Math.round((by[d] / max) * 100) : 0
 }
 

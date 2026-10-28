@@ -26,12 +26,12 @@
         <!-- Export dropdown -->
         <div class="relative" ref="exportMenuRef">
           <button
-            v-if="activeTab === 'ringkasan' && canExport"
+            v-if="activeTab === 'ringkasan'"
             type="button"
             @click="exportOpen = !exportOpen"
             aria-haspopup="menu"
             :aria-expanded="exportOpen"
-            :disabled="loading"
+            :disabled="loading || !report"
             class="adm-btn adm-btn--ghost"
           >
             <Download :size="13" class="text-[color:var(--accent-text)]" />
@@ -48,12 +48,16 @@
             leave-to-class="opacity-0"
           >
             <div v-if="exportOpen" class="rep-menu" role="menu">
-              <button type="button" role="menuitem" @click="exportDocument('pdf')" class="rep-menu-item">
+              <button type="button" role="menuitem" @click="exportCsv" class="rep-menu-item">
+                <Table2 :size="13" class="text-[color:var(--blue-soft)]" /> Unduh CSV (tampilan ini)
+              </button>
+              <button type="button" role="menuitem" :disabled="!canExport" @click="exportDocument('pdf')" class="rep-menu-item">
                 <FileText :size="13" class="text-[color:var(--accent-text)]" /> Export PDF
               </button>
-              <button type="button" role="menuitem" @click="exportDocument('excel')" class="rep-menu-item">
+              <button type="button" role="menuitem" :disabled="!canExport" @click="exportDocument('excel')" class="rep-menu-item">
                 <Sheet :size="13" class="text-[color:var(--green-soft)]" /> Export Excel
               </button>
+              <p v-if="!canExport" class="rd-menu-hint">PDF &amp; Excel keuangan hanya tersedia untuk periode Bulanan atau Tahunan.</p>
             </div>
           </Transition>
         </div>
@@ -130,7 +134,11 @@
       </div>
 
       <!-- ═══ PERIOD BADGE ════════════════════════════════════════════ -->
-      <p class="adm-hint rep-period">{{ periodLabel }}</p>
+      <p class="rd-period-line rep-period">
+        <strong>{{ periodLabel }}</strong>
+        <span v-if="rangeText">{{ rangeText }}</span>
+        <span v-if="report?.previous">Pembanding: {{ report.previous.label }}</span>
+      </p>
     </template>
 
     <div class="rep-body">
@@ -144,182 +152,177 @@
         </template>
 
         <!-- ═══ LOADING SKELETON ═══════════════════════════════════════ -->
-        <div v-else-if="loading" class="space-y-5 animate-pulse">
-          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            <div v-for="i in 4" :key="i" class="adm-card p-5 h-[112px]">
-              <div class="w-10 h-10 rounded-[var(--r-sm)] bg-[color:rgb(var(--ink)/0.06)] mb-4"></div>
-              <div class="w-16 h-4 bg-[color:rgb(var(--ink)/0.06)] rounded mb-2"></div>
-              <div class="w-20 h-2.5 bg-[color:rgb(var(--ink)/0.06)] rounded"></div>
-            </div>
+        <div v-else-if="loading && !report" class="rd animate-pulse" aria-busy="true">
+          <div class="rd-kpis">
+            <div v-for="i in 4" :key="i" class="rd-kpi" style="min-height: 10.5rem"></div>
           </div>
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <div class="adm-card p-6 h-64"></div>
-            <div class="adm-card p-6 h-64"></div>
+          <div class="rd-grid">
+            <div class="rd-card rd-col-8" style="height: 20rem"></div>
+            <div class="rd-card rd-col-4" style="height: 20rem"></div>
           </div>
-          <p class="text-center text-[color:var(--text-faint)] text-[11px] font-semibold pt-2">
-            Memuat data laporan...
-          </p>
+          <p class="text-center text-[color:var(--text-faint)] text-[11px] font-semibold pt-2">Memuat data laporan...</p>
         </div>
 
         <!-- ═══ CONTENT ═════════════════════════════════════════════════ -->
-        <template v-else-if="report">
+        <div v-else-if="report" class="rd" :class="{ 'opacity-60 pointer-events-none transition-opacity': loading }">
 
-          <!-- 1. KPI STATS -->
-          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-5 sm:mb-6">
-            <StatCard icon="DollarSign" color="red"     label="Total Omzet"         :value="formatRp(report.stats.total_omzet)" :sub="vsLabel" />
-            <StatCard icon="ShoppingBag" color="amber"  label="Total Transaksi"     :value="report.stats.total_transaksi.toLocaleString('id-ID')" />
-            <StatCard icon="TrendingUp"  color="emerald" label="Rata-rata Transaksi" :value="formatRp(report.stats.rata_rata_transaksi)" />
-            <StatCard icon="Utensils"    color="sky"    label="Menu Aktif"           :value="report.stats.menu_aktif" />
-          </div>
+          <!-- 1. KPI -->
+          <section class="rd-kpis" aria-label="Ringkasan angka utama">
+            <ReportKpi hero :icon="DollarSign" label="Total Omzet" :value="formatRp(report.stats.total_omzet)"
+              :delta="report.delta?.omzet ?? null" :delta-label="report.previous?.label" :spark="report.trend.omzet"
+              :sub="omzetSub" />
+            <ReportKpi :icon="ShoppingBag" label="Total Transaksi" :value="num(report.stats.total_transaksi)"
+              :delta="report.delta?.transaksi ?? null" :delta-label="report.previous?.label" :spark="report.trend.transaksi"
+              :sub="trxSub" />
+            <ReportKpi :icon="TrendingUp" label="Rata-rata Transaksi" :value="formatRp(report.stats.rata_rata_transaksi)"
+              :delta="report.delta?.rata_rata ?? null" :delta-label="report.previous?.label" :spark="avgSpark"
+              sub="Omzet dibagi jumlah transaksi" />
+            <ReportKpi :icon="Utensils" label="Porsi Terjual" :value="num(report.stats.porsi_terjual)"
+              :delta="report.delta?.porsi ?? null" :delta-label="report.previous?.label"
+              :sub="`${report.stats.menu_aktif} menu aktif · ${report.menu_tidak_terjual} belum terjual`" />
+          </section>
 
-          <!-- 2. TREND CHARTS -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 mb-4 sm:mb-5">
-            <RCard title="Omzet" :subtitle="trendSubtitle" icon="TrendingUp" accent="red">
-              <div class="h-56 sm:h-64">
-                <Bar :data="omzetData" :options="barOpts" />
-              </div>
-            </RCard>
-            <RCard title="Transaksi" :subtitle="trendSubtitle" icon="ShoppingBag" accent="amber">
-              <div class="h-56 sm:h-64">
-                <Bar :data="transaksiData" :options="barOpts" />
-              </div>
-            </RCard>
-          </div>
-
-          <!-- 3. TOP MENU + PALING MENGHASILKAN -->
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 mb-4 sm:mb-5">
-            <RCard title="Top 10 Menu Terlaris" icon="Award" accent="amber" class="lg:col-span-2">
-              <!-- Desktop table -->
-              <table class="adm-table hidden sm:table">
-                <thead>
-                  <tr>
-                    <th class="w-8">#</th>
-                    <th >Menu</th>
-                    <th class="adm-th-r">Qty</th>
-                    <th class="adm-th-r">Omzet</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(m, i) in report.top_menu" :key="i">
-                    <td class="text-[color:var(--text-faint)] font-bold">{{ String(i+1).padStart(2,'0') }}</td>
-                    <td class="text-[color:var(--text)] font-semibold">{{ m.name }}</td>
-                    <td class="adm-td-r">
-                      <span class="adm-badge adm-badge--amber">{{ m.qty }}</span>
-                    </td>
-                    <td class="adm-td-r adm-mono">{{ formatRp(m.omzet) }}</td>
-                  </tr>
-                </tbody>
-              </table>
-
-              <!-- Mobile stacked cards -->
-              <div class="flex flex-col gap-2 sm:hidden">
-                <div
-                  v-for="(m, i) in report.top_menu"
-                  :key="i"
-                  class="flex items-center justify-between bg-[color:var(--surface-2)] border border-[color:var(--border)] rounded-[var(--r-md)] px-3.5 py-3"
-                >
-                  <div class="flex items-center gap-3 min-w-0">
-                    <span class="text-[color:var(--text-faint)] text-[11px] font-semibold shrink-0">{{ String(i+1).padStart(2,'0') }}</span>
-                    <div class="min-w-0">
-                      <p class="text-[color:var(--text)] font-semibold text-xs truncate">{{ m.name }}</p>
-                      <p class="text-[color:var(--text-faint)] text-[11px] font-mono mt-0.5">{{ formatRp(m.omzet) }}</p>
-                    </div>
-                  </div>
-                  <span class="adm-badge adm-badge--amber shrink-0 ml-2">{{ m.qty }}</span>
-                </div>
-              </div>
-
-              <EmptyState v-if="!report.top_menu.length" text="Belum ada data penjualan" />
-            </RCard>
-
-            <RCard title="Paling Menghasilkan" icon="Gem" accent="emerald">
-              <div class="space-y-5">
-                <div v-for="(m, i) in report.menu_paling_menghasilkan" :key="i">
-                  <div class="flex justify-between text-xs mb-2 gap-2">
-                    <span class="text-[color:var(--text)] font-semibold truncate">{{ m.name }}</span>
-                    <span class="text-[color:var(--green-soft)] font-bold tabular-nums shrink-0">{{ formatRp(m.omzet) }}</span>
-                  </div>
-                  <div class="w-full bg-[color:rgb(var(--ink)/0.06)] h-1.5 rounded-full overflow-hidden">
-                    <div
-                      class="h-full rounded-full transition-all duration-700"
-                      :style="{ width: pct(m.omzet, maxMenghasilkan) + '%', background: 'linear-gradient(90deg, var(--green), var(--green-soft))' }"
-                    ></div>
-                  </div>
-                </div>
-                <EmptyState v-if="!report.menu_paling_menghasilkan.length" text="Belum ada data" compact />
-              </div>
-            </RCard>
-          </div>
-
-          <!-- 4. BOTTOM ROW -->
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 mb-4 sm:mb-5">
-
-            <!-- Menu Tidak Laku -->
-            <RCard title="Menu Tidak Laku" icon="AlertTriangle" accent="red">
-              <div class="space-y-2 max-h-64 overflow-y-auto pr-1 custom-scroll">
-                <div
-                  v-for="(m, i) in report.menu_tidak_laku"
-                  :key="i"
-                  class="flex justify-between items-center bg-[color:var(--tint-accent)] border border-[color:var(--line-accent)] rounded-[var(--r-md)] px-4 py-3"
-                >
-                  <span class="text-[color:var(--text)] text-xs font-semibold truncate mr-2">{{ m.name }}</span>
-                  <span class="text-[color:var(--red-soft)] text-[11px] font-bold uppercase tracking-wider shrink-0">
-                    {{ m.transaksi }}×
-                  </span>
-                </div>
-                <EmptyState v-if="!report.menu_tidak_laku.length" text="Semua menu terjual" emoji="🎉" />
-              </div>
-            </RCard>
-
-            <!-- Metode Pembayaran -->
-            <RCard title="Metode Pembayaran" icon="CreditCard" accent="sky">
-              <div class="flex flex-col items-center">
-                <div class="w-36 h-36 sm:w-40 sm:h-40 mb-5">
-                  <Pie :data="paymentData" :options="pieOpts" />
-                </div>
-                <div class="w-full space-y-2.5">
-                  <div
-                    v-for="(p, i) in report.metode_pembayaran"
-                    :key="i"
-                    class="flex items-center justify-between"
-                  >
-                    <div class="flex items-center gap-2 min-w-0">
-                      <div class="w-2 h-2 rounded-full shrink-0" :style="{ background: payColors[p.method] || '#9a9aa3' }"></div>
-                      <span class="text-[color:var(--text-dim)] text-xs truncate">{{ p.label }}</span>
-                    </div>
-                    <span class="text-[color:var(--text)] text-xs font-bold tabular-nums shrink-0">{{ p.percent }}%</span>
-                  </div>
-                  <EmptyState v-if="!report.metode_pembayaran.length" text="Belum ada transaksi" compact />
-                </div>
-              </div>
-            </RCard>
-
-            <!-- Jam Teramai -->
-            <RCard title="Jam Teramai" icon="Clock" accent="violet">
-              <div class="h-52 sm:h-56">
-                <Bar :data="jamData" :options="barOptsY" />
-              </div>
-            </RCard>
-          </div>
-
-          <!-- 5. PELANGGAN -->
-          <RCard title="Pelanggan" icon="Users" accent="pink">
-            <div class="grid grid-cols-3 gap-3 sm:gap-6 text-center">
-              <div class="py-3 sm:py-4">
-                <p class="font-display text-2xl sm:text-4xl text-[color:var(--text)] mb-1">{{ report.pelanggan.baru }}</p>
-                <p class="text-xs text-[color:var(--text-faint)] uppercase tracking-[0.15em] sm:tracking-[0.2em]">Pelanggan Baru</p>
-              </div>
-              <div class="py-3 sm:py-4 border-x border-[color:rgb(var(--ink)/0.05)]">
-                <p class="font-display text-2xl sm:text-4xl text-[color:var(--text)] mb-1">{{ report.pelanggan.lama }}</p>
-                <p class="text-xs text-[color:var(--text-faint)] uppercase tracking-[0.15em] sm:tracking-[0.2em]">Pelanggan Lama</p>
-              </div>
-              <div class="py-3 sm:py-4">
-                <p class="font-display text-2xl sm:text-4xl text-[color:var(--amber-soft)] mb-1">{{ report.pelanggan.loyal_member }}</p>
-                <p class="text-xs text-[color:var(--text-faint)] uppercase tracking-[0.15em] sm:tracking-[0.2em]">Member Loyal</p>
-              </div>
+          <!-- 2. INSIGHT OTOMATIS -->
+          <section v-if="insights.length" class="rd-insights" aria-label="Sorotan otomatis">
+            <div v-for="(it, i) in insights" :key="i" class="rd-insight" :class="`is-${it.tone}`">
+              <span class="rd-insight-ico" aria-hidden="true"><component :is="it.icon" :size="14" /></span>
+              <span v-html="it.html"></span>
             </div>
-          </RCard>
-        </template>
+          </section>
+
+          <!-- 3. TREN + PEMBAYARAN -->
+          <div class="rd-grid">
+            <section class="rd-card rd-col-8">
+              <div class="rd-card-head">
+                <div>
+                  <h3 class="rd-card-title">Tren {{ metric === 'omzet' ? 'Omzet' : 'Transaksi' }}</h3>
+                  <p class="rd-card-sub">{{ trendSub }}</p>
+                </div>
+                <div class="rd-toggle" role="group" aria-label="Metrik tren">
+                  <button type="button" :aria-pressed="metric === 'omzet'" @click="metric = 'omzet'">Omzet</button>
+                  <button type="button" :aria-pressed="metric === 'transaksi'" @click="metric = 'transaksi'">Transaksi</button>
+                </div>
+              </div>
+              <div v-if="hasTrend" class="rd-chart"><Bar :data="trendData" :options="trendOpts" /></div>
+              <p v-else class="rd-empty">Belum ada transaksi di periode ini.</p>
+            </section>
+
+            <section class="rd-card rd-col-4">
+              <div class="rd-card-head">
+                <div>
+                  <h3 class="rd-card-title">Metode Pembayaran</h3>
+                  <p class="rd-card-sub">Porsi dari total omzet</p>
+                </div>
+              </div>
+              <ReportDonut v-if="report.metode_pembayaran.length" :segments="paySegments"
+                :center-value="rpShort(report.stats.total_omzet)" center-label="total omzet" />
+              <p v-else class="rd-empty">Belum ada transaksi.</p>
+            </section>
+          </div>
+
+          <!-- 4. MENU -->
+          <div class="rd-grid">
+            <section class="rd-card rd-col-8">
+              <div class="rd-card-head">
+                <div>
+                  <h3 class="rd-card-title">Menu Terbaik</h3>
+                  <p class="rd-card-sub">10 teratas menurut {{ rankBy === 'qty' ? 'jumlah porsi' : 'omzet' }}</p>
+                </div>
+                <div class="rd-toggle" role="group" aria-label="Urutkan menu">
+                  <button type="button" :aria-pressed="rankBy === 'qty'" @click="rankBy = 'qty'">Terlaris</button>
+                  <button type="button" :aria-pressed="rankBy === 'omzet'" @click="rankBy = 'omzet'">Paling menghasilkan</button>
+                </div>
+              </div>
+              <ReportRank v-if="rankItems.length" :items="rankItems"
+                :color="rankBy === 'qty' ? 'var(--amber-soft)' : 'var(--green)'" />
+              <p v-else class="rd-empty">Belum ada data penjualan.</p>
+            </section>
+
+            <section class="rd-card rd-col-4">
+              <div class="rd-card-head">
+                <div>
+                  <h3 class="rd-card-title">Omzet per Kategori</h3>
+                  <p class="rd-card-sub">Dari penjualan menu</p>
+                </div>
+              </div>
+              <ReportDonut v-if="report.kategori.length" :segments="kategoriSegments"
+                :center-value="String(report.kategori.length)" center-label="kategori" />
+              <p v-else class="rd-empty">Belum ada data.</p>
+            </section>
+          </div>
+
+          <!-- 5. WAKTU -->
+          <div class="rd-grid">
+            <section class="rd-card rd-col-8">
+              <div class="rd-card-head">
+                <div>
+                  <h3 class="rd-card-title">Jam Ramai</h3>
+                  <p class="rd-card-sub">Jumlah transaksi menurut jam (WIB){{ peakHour ? ` · puncak ${peakHour.range}` : '' }}</p>
+                </div>
+              </div>
+              <div v-if="report.jam_distribusi.length" class="rd-chart rd-chart--sm"><Bar :data="jamData" :options="jamOpts" /></div>
+              <p v-else class="rd-empty">Belum ada transaksi.</p>
+            </section>
+
+            <section class="rd-card rd-col-4">
+              <div class="rd-card-head">
+                <div>
+                  <h3 class="rd-card-title">Hari dalam Seminggu</h3>
+                  <p class="rd-card-sub">Rata-rata omzet per hari aktif</p>
+                </div>
+              </div>
+              <ul class="rd-days">
+                <li v-for="d in report.per_hari" :key="d.day" :class="{ 'is-best': d.day === bestWeekday }">
+                  <span class="rd-days-name">{{ d.short }}</span>
+                  <span class="rd-days-track" aria-hidden="true"><span :style="{ width: weekdayPct(d) + '%' }"></span></span>
+                  <span class="rd-days-val" :class="{ 'is-none': !d.active_days }">{{ d.active_days ? rpShort(d.avg_omzet) : 'Tidak ada' }}</span>
+                </li>
+              </ul>
+              <p class="rd-note">Hari tanpa transaksi tidak ikut dirata-rata.</p>
+            </section>
+          </div>
+
+          <!-- 6. PELANGGAN + MENU KURANG LAKU -->
+          <div class="rd-grid">
+            <section class="rd-card rd-col-8">
+              <div class="rd-card-head">
+                <div>
+                  <h3 class="rd-card-title">Pelanggan &amp; Layanan</h3>
+                  <p class="rd-card-sub">Pelanggan dikenali dari nomor telepon pesanan</p>
+                </div>
+              </div>
+              <div class="rd-mini">
+                <div class="rd-mini-item"><strong>{{ num(report.pelanggan.baru) }}</strong><span>Pelanggan baru</span></div>
+                <div class="rd-mini-item"><strong>{{ num(report.pelanggan.lama) }}</strong><span>Pelanggan lama</span></div>
+                <div class="rd-mini-item is-amber"><strong>{{ num(report.pelanggan.loyal_member) }}</strong><span>Member loyal</span></div>
+                <div class="rd-mini-item"><strong>{{ pct(report.pelanggan.repeat_rate) }}</strong><span>Kembali berbelanja</span></div>
+              </div>
+              <p v-if="report.pelanggan.tanpa_nomor" class="rd-note">
+                {{ num(report.pelanggan.tanpa_nomor) }} transaksi tanpa nomor telepon tidak masuk hitungan pelanggan.
+              </p>
+
+              <h4 class="rd-subhead">Jenis layanan</h4>
+              <ReportRank v-if="report.layanan.length" :items="layananItems" color="var(--blue-soft)" />
+              <p v-else class="rd-empty">Belum ada transaksi.</p>
+            </section>
+
+            <section class="rd-card rd-col-4">
+              <div class="rd-card-head">
+                <div>
+                  <h3 class="rd-card-title">Menu Kurang Laku</h3>
+                  <p class="rd-card-sub">{{ report.menu_tidak_terjual }} dari {{ report.stats.menu_aktif }} menu aktif belum terjual</p>
+                </div>
+              </div>
+              <div v-if="report.menu_tidak_laku.length" class="rd-unsold custom-scroll">
+                <div v-for="(m, i) in report.menu_tidak_laku" :key="i" class="rd-unsold-row">
+                  <span>{{ m.name }}</span><span>{{ m.transaksi }}×</span>
+                </div>
+              </div>
+              <p v-else class="rd-empty">Semua menu terjual 🎉</p>
+              <p class="rd-note">Detail kelompok tiap menu ada di tab Performa Menu.</p>
+            </section>
+          </div>
+        </div>
 
         <!-- ═══ ERROR / EMPTY ═════════════════════════════════════════════ -->
         <div v-else class="flex flex-col items-center justify-center py-24 sm:py-32 text-center">
@@ -338,26 +341,27 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onBeforeUnmount, h } from "vue";
-import { Bar, Pie } from "vue-chartjs";
+import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
+import { Bar } from "vue-chartjs";
 import {
-  Chart as ChartJS, BarElement, CategoryScale, LinearScale,
-  ArcElement, Tooltip, Legend,
+  Chart as ChartJS, BarElement, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend, Filler,
 } from "chart.js";
 import {
-  TrendingUp, Award, Download, ShoppingBag, DollarSign, Utensils,
-  AlertTriangle, CreditCard, Clock, Users, Gem, Calendar,
+  TrendingUp, Download, ShoppingBag, DollarSign, Utensils, AlertTriangle, Calendar,
   CalendarDays, CalendarRange, Infinity as InfinityIcon, RefreshCw, ChevronDown,
-  FileText, Sheet,
+  FileText, Sheet, Table2, Trophy, Clock, Tag, Users, TrendingDown,
 } from "lucide-vue-next";
 import apiClient from "@/api/client";
 import BusyHoursTab from "@/components/ui/admin/BusyHoursTab.vue";
 import MenuPerformanceTab from "@/components/ui/admin/MenuPerformanceTab.vue";
 import MenuPairsTab from "@/components/ui/admin/MenuPairsTab.vue";
 import ChannelTab from "@/components/ui/admin/ChannelTab.vue";
+import ReportKpi from "@/components/ui/admin/report/ReportKpi.vue";
+import ReportDonut from "@/components/ui/admin/report/ReportDonut.vue";
+import ReportRank from "@/components/ui/admin/report/ReportRank.vue";
 import { useTheme } from "@/composables/useTheme";
 
-ChartJS.register(BarElement, CategoryScale, LinearScale, ArcElement, Tooltip, Legend);
+ChartJS.register(BarElement, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend, Filler);
 
 // ── Filter state ──────────────────────────────────────────────────────────
 const now        = new Date();
@@ -366,7 +370,7 @@ const report     = ref(null);
 const exportOpen = ref(false);
 const exportMenuRef = ref(null);
 
-// Tab halaman: Ringkasan (laporan yang sudah ada) | Jam Sibuk (dimuat saat dibuka)
+// Tab halaman: Ringkasan | Performa Menu | Pasangan Menu | Channel | Jam Sibuk
 const activeTab = ref("ringkasan");
 const tabRef    = ref(null);
 const pageTabs  = [
@@ -380,7 +384,7 @@ const activeTabSubtitle = computed(() => pageTabs.find((t) => t.value === active
 const refresh = () => (activeTab.value === "ringkasan" ? fetchReport() : tabRef.value?.reload());
 
 const activeGroup = ref("lifetime");   // lifetime | weekly | monthly | yearly
-const activeWeek  = ref("this");       // this | last
+const activeWeek  = ref("this");       // this | last | 2w | 4w
 const activeMonth = ref(now.getMonth() + 1);
 const activeYear  = ref(now.getFullYear());
 
@@ -405,9 +409,7 @@ const monthName = (m) => BULAN[m - 1];
 
 // ── Close export menu on outside click ───────────────────────────────────
 const handleClickOutside = (e) => {
-  if (exportMenuRef.value && !exportMenuRef.value.contains(e.target)) {
-    exportOpen.value = false;
-  }
+  if (exportMenuRef.value && !exportMenuRef.value.contains(e.target)) exportOpen.value = false;
 };
 const handleEsc = (e) => { if (e.key === "Escape") exportOpen.value = false; };
 onMounted(() => { document.addEventListener("click", handleClickOutside); document.addEventListener("keydown", handleEsc); });
@@ -416,16 +418,27 @@ onBeforeUnmount(() => { document.removeEventListener("click", handleClickOutside
 // ── Derived labels ────────────────────────────────────────────────────────
 const periodLabel = computed(() => {
   if (activeGroup.value === "lifetime") return "Semua data tersimpan";
-  if (activeGroup.value === "weekly") {
-    const w = weekOptions.find(w => w.value === activeWeek.value);
-    return w?.label || "Mingguan";
-  }
+  if (activeGroup.value === "weekly") return weekOptions.find((w) => w.value === activeWeek.value)?.label || "Mingguan";
   if (activeGroup.value === "monthly") return `${monthName(activeMonth.value)} ${activeYear.value}`;
   return `Tahun ${activeYear.value}`;
 });
 
-const trendSubtitle = computed(() => periodLabel.value);
-const vsLabel       = computed(() => "vs. periode sebelumnya");
+const fmtDate = (iso) => {
+  const [y, m, d] = iso.split("-").map(Number);
+  return `${d} ${BULAN[m - 1]} ${y}`;
+};
+// Rentang tanggal nyata dari server, supaya "Minggu ini" / "4 minggu" tidak ambigu.
+const rangeText = computed(() => {
+  const p = report.value?.period;
+  if (!p?.start || !p?.end || activeGroup.value === "monthly" || activeGroup.value === "yearly") return "";
+  return `${fmtDate(p.start)} – ${fmtDate(p.end)}`;
+});
+
+const trendSub = computed(() => {
+  const t = report.value?.trend;
+  const unit = t?.unit === "month" ? "per bulan" : "per hari";
+  return `${periodLabel.value} · ${unit}`;
+});
 
 // ── API params ────────────────────────────────────────────────────────────
 const buildParams = () => {
@@ -441,11 +454,9 @@ const buildParams = () => {
 };
 
 // ── Fetch ─────────────────────────────────────────────────────────────────
-// Klik filter berturut-turut menjalankan beberapa request sekaligus. Hanya request TERAKHIR yang
-// boleh mengisi layar, supaya jawaban lambat dari filter lama tidak menimpa filter yang aktif.
+// Hanya request TERAKHIR yang boleh mengisi layar, supaya jawaban lambat dari filter lama tidak menimpa filter aktif.
 let reportRequestId = 0;
 const fetchReport = async () => {
-  // Tab lain memuat datanya sendiri dan memantau periodParams. Ringkasan dimuat ulang saat tab dibuka lagi.
   if (activeTab.value !== "ringkasan") return;
   const requestId = ++reportRequestId;
   loading.value = true;
@@ -470,70 +481,88 @@ const selectGroup = (g) => {
   fetchReport();
 };
 
-// ── Chart data ────────────────────────────────────────────────────────────
-const omzetData = computed(() => ({
-  labels: report.value?.trend.labels || [],
-  datasets: [{
-    label: "Omzet",
-    data: report.value?.trend.omzet || [],
-    backgroundColor: "#d92b22",
-    borderRadius: 6,
-    borderSkipped: false,
-    maxBarThickness: 36,
-  }],
-}));
+// ── Format ────────────────────────────────────────────────────────────────
+const formatRp = (v) => "Rp " + Math.round(v || 0).toLocaleString("id-ID");
+const num = (v) => Number(v || 0).toLocaleString("id-ID");
+const pct = (v) => `${Number(v || 0).toLocaleString("id-ID", { maximumFractionDigits: 1 })}%`;
+const dec1 = (v, max = 1) => Number(v || 0).toLocaleString("id-ID", { maximumFractionDigits: max });
+// Rupiah ringkas untuk sumbu grafik, pusat donat, dan daftar sempit.
+const rpShort = (v) => {
+  const n = Math.round(v || 0), a = Math.abs(n);
+  if (a >= 1e9) return `Rp ${dec1(n / 1e9, 2)} M`;
+  if (a >= 1e6) return `Rp ${dec1(n / 1e6, 2)} jt`;
+  if (a >= 1e3) return `Rp ${dec1(n / 1e3, 1)} rb`;
+  return `Rp ${n}`;
+};
 
-const transaksiData = computed(() => ({
-  labels: report.value?.trend.labels || [],
-  datasets: [{
-    label: "Transaksi",
-    data: report.value?.trend.transaksi || [],
-    backgroundColor: "#f4c542",
-    borderRadius: 6,
-    borderSkipped: false,
-    maxBarThickness: 36,
-  }],
-}));
+// ── KPI ───────────────────────────────────────────────────────────────────
+const omzetSub = computed(() => {
+  const h = report.value?.highlights;
+  if (!h?.active_days) return "";
+  return `≈ ${rpShort(h.avg_omzet_per_active_day)} per hari aktif`;
+});
+const trxSub = computed(() => {
+  const h = report.value?.highlights;
+  if (!h?.active_days) return "";
+  return `≈ ${dec1(h.avg_trx_per_active_day)} transaksi per hari aktif`;
+});
+// Rata-rata per titik tren; titik tanpa transaksi mewarisi nilai sebelumnya supaya garis tidak jatuh ke 0.
+const avgSpark = computed(() => {
+  const t = report.value?.trend;
+  if (!t) return [];
+  let last = 0;
+  return t.omzet.map((o, i) => (t.transaksi[i] ? (last = o / t.transaksi[i]) : last));
+});
 
-const jamData = computed(() => ({
-  labels: report.value?.jam_teramai.map(j => j.label) || [],
-  datasets: [{
-    label: "Transaksi",
-    data: report.value?.jam_teramai.map(j => j.count) || [],
-    backgroundColor: "#c79bf7",
-    borderRadius: 6,
-    borderSkipped: false,
-  }],
-}));
+// ── Insight otomatis ──────────────────────────────────────────────────────
+const peakHour = computed(() => {
+  const j = report.value?.jam_distribusi || [];
+  const best = j.reduce((a, b) => (b.count > (a?.count ?? 0) ? b : a), null);
+  return best && best.count > 0 ? best : null;
+});
+const bestWeekday = computed(() => {
+  const d = report.value?.per_hari || [];
+  const best = d.reduce((a, b) => (b.avg_omzet > (a?.avg_omzet ?? 0) ? b : a), null);
+  return best && best.avg_omzet > 0 ? best.day : null;
+});
 
-const payColors = { cash: "#2fb36d", qris: "#7cc4f5", qris_manual: "#f4c542", gateway: "#c79bf7" };
-const paymentData = computed(() => ({
-  labels: report.value?.metode_pembayaran.map(p => p.label) || [],
-  datasets: [{
-    data: report.value?.metode_pembayaran.map(p => p.total) || [],
-    backgroundColor: report.value?.metode_pembayaran.map(p => payColors[p.method] || "#9a9aa3") || [],
-    borderWidth: 0,
-    hoverOffset: 6,
-  }],
-}));
+const insights = computed(() => {
+  const r = report.value;
+  if (!r || !r.stats.total_transaksi) return [];
+  const out = [];
+  const b = (s) => `<strong>${s}</strong>`;
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-const maxMenghasilkan = computed(() =>
-  Math.max(1, ...(report.value?.menu_paling_menghasilkan.map(m => m.omzet) || [1]))
-);
-const pct = (v, max) => Math.round((v / max) * 100);
+  if (r.delta?.omzet != null && Math.abs(r.delta.omzet) >= 0.1) {
+    const up = r.delta.omzet > 0;
+    out.push({
+      tone: up ? "good" : "bad", icon: up ? TrendingUp : TrendingDown,
+      html: `Omzet ${up ? "naik" : "turun"} ${b(pct(Math.abs(r.delta.omzet)))} dibanding ${esc(r.previous.label)}.`,
+    });
+  }
+  const best = r.highlights.best_day;
+  if (best) out.push({ tone: "good", icon: Trophy, html: `Hari terbaik: ${b(esc(best.label))} dengan omzet ${b(rpShort(best.omzet))} dari ${best.transaksi} transaksi.` });
+  if (peakHour.value) out.push({ tone: "warn", icon: Clock, html: `Paling ramai pukul ${b(peakHour.value.range)} (${peakHour.value.count} transaksi).` });
+  const top = r.top_menu[0];
+  if (top) out.push({ tone: "warn", icon: Utensils, html: `${b(esc(top.name))} paling laris: ${num(top.qty)} porsi.` });
+  const cat = r.kategori[0];
+  if (cat && r.kategori.length > 1) out.push({ tone: "warn", icon: Tag, html: `Kategori ${b(esc(cat.name))} menyumbang ${b(pct(cat.share))} omzet menu.` });
+  if (r.pelanggan.unik >= 5) out.push({ tone: "warn", icon: Users, html: `${b(pct(r.pelanggan.repeat_rate))} pelanggan adalah pelanggan lama yang kembali.` });
+  return out.slice(0, 4);
+});
 
-// ── Chart options (ikut tema: canvas tidak bisa baca CSS variable) ───────
+// ── Chart theme (canvas tidak bisa baca CSS variable) ─────────────────────
 const { isDark } = useTheme();
 const chartTheme = computed(() => isDark.value
-  ? { grid: "rgba(255,255,255,0.05)", tick: "rgba(255,255,255,0.5)", tipBg: "#151518", tipBorder: "rgba(255,255,255,0.12)", tipTitle: "#fafafa", tipBody: "rgba(255,255,255,0.7)" }
-  : { grid: "rgba(24,24,27,0.07)",   tick: "rgba(24,24,27,0.62)",    tipBg: "#ffffff", tipBorder: "rgba(24,24,27,0.15)",    tipTitle: "#18181b", tipBody: "#3f3f46" });
+  ? { grid: "rgba(255,255,255,0.05)", tick: "rgba(255,255,255,0.55)", tipBg: "#151518", tipBorder: "rgba(255,255,255,0.12)", tipTitle: "#fafafa", tipBody: "rgba(255,255,255,0.75)", line: "#f5f3ef", muted: "rgba(199,155,247,0.35)" }
+  : { grid: "rgba(24,24,27,0.07)",   tick: "rgba(24,24,27,0.65)",    tipBg: "#ffffff", tipBorder: "rgba(24,24,27,0.15)",    tipTitle: "#18181b", tipBody: "#3f3f46", line: "#18181b", muted: "rgba(122,46,194,0.28)" });
 
-const barOpts = computed(() => {
-  const c = chartTheme.value;
+const baseOpts = (c, { yFormat } = {}) => {
   const tick = { color: c.tick, font: { size: 11, family: "Plus Jakarta Sans" } };
   return {
     responsive: true,
     maintainAspectRatio: false,
+    interaction: { mode: "index", intersect: false },
     plugins: {
       legend: { display: false },
       tooltip: {
@@ -543,33 +572,134 @@ const barOpts = computed(() => {
       },
     },
     scales: {
-      x: { grid: { display: false }, ticks: tick, border: { display: false } },
-      y: { grid: { color: c.grid }, ticks: tick, border: { display: false } },
+      x: {
+        grid: { display: false },
+        ticks: {
+          ...tick,
+          maxRotation: 0,
+          autoSkip: true,
+          autoSkipPadding: 24,
+          maxTicksLimit: 12,
+          // Cuma angka tanggal; nama bulan hanya di label pertama & saat bulan berganti.
+          callback(value) {
+            const cur = String(this.getLabelForValue(value) || "");
+            const [day, mon] = cur.split(" ");
+            if (!mon) return cur;
+            const prev = value > 0 ? String(this.getLabelForValue(value - 1) || "").split(" ")[1] : null;
+            return prev === mon ? day : cur;
+          },
+        },
+        border: { display: false },
+      },
+      y: { beginAtZero: true, grid: { color: c.grid }, ticks: { ...tick, ...(yFormat ? { callback: yFormat } : {}) }, border: { display: false } },
     },
   };
+};
+
+// ── Tren ──────────────────────────────────────────────────────────────────
+const metric = ref("omzet");
+const hasTrend = computed(() => (report.value?.trend.transaksi || []).some((n) => n > 0));
+
+const trendData = computed(() => {
+  const t = report.value?.trend;
+  if (!t) return { labels: [], datasets: [] };
+  const isOmzet = metric.value === "omzet";
+  const datasets = [{
+    type: "bar",
+    label: isOmzet ? "Omzet" : "Transaksi",
+    data: isOmzet ? t.omzet : t.transaksi,
+    backgroundColor: isOmzet ? "#d92b22" : "#f4c542",
+    borderRadius: 6, borderSkipped: false, maxBarThickness: 34, order: 2,
+  }];
+  if (isOmzet && t.moving_avg?.length) {
+    datasets.push({
+      type: "line", label: "Rata-rata 7 hari", data: t.moving_avg, order: 1,
+      borderColor: chartTheme.value.line, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, tension: 0.35,
+    });
+  }
+  return { labels: t.labels, datasets };
 });
 
-const barOptsY = computed(() => ({ ...barOpts.value, indexAxis: "y" }));
+const trendOpts = computed(() => {
+  const c = chartTheme.value;
+  const isOmzet = metric.value === "omzet";
+  const o = baseOpts(c, { yFormat: isOmzet ? (v) => rpShort(v) : (v) => (Number.isInteger(v) ? v : "") });
+  o.plugins.legend = { display: isOmzet && !!report.value?.trend.moving_avg?.length, labels: { color: c.tick, boxWidth: 10, boxHeight: 2, font: { size: 11 } } };
+  o.plugins.tooltip.callbacks = {
+    label: (ctx) => ` ${ctx.dataset.label}: ${isOmzet ? formatRp(ctx.parsed.y) : num(ctx.parsed.y) + " transaksi"}`,
+  };
+  return o;
+});
 
-const pieOpts = computed(() => {
+// ── Pembayaran / kategori / layanan ───────────────────────────────────────
+const payColors = { cash: "#2fb36d", qris: "#7cc4f5", qris_manual: "#f4c542", gateway: "#c79bf7" };
+const fallbackColors = ["#d92b22", "#f4c542", "#2fb36d", "#7cc4f5", "#c79bf7", "#ff9f5a", "#9a9aa3"];
+
+const paySegments = computed(() => (report.value?.metode_pembayaran || []).map((p, i) => ({
+  label: p.label, value: p.total, color: payColors[p.method] || fallbackColors[i % fallbackColors.length],
+  text: `${rpShort(p.total)} · ${pct(p.percent)}`,
+})));
+
+const kategoriSegments = computed(() => {
+  const k = report.value?.kategori || [];
+  const MAX = 5;
+  const head = k.slice(0, MAX);
+  const rest = k.slice(MAX);
+  const segs = head.map((c, i) => ({ label: c.name, value: c.omzet, color: fallbackColors[i], text: `${rpShort(c.omzet)} · ${pct(c.share)}` }));
+  if (rest.length) {
+    const omzet = rest.reduce((a, c) => a + c.omzet, 0);
+    segs.push({ label: `Lainnya (${rest.length})`, value: omzet, color: "#9a9aa3", text: `${rpShort(omzet)} · ${pct(rest.reduce((a, c) => a + c.share, 0))}` });
+  }
+  return segs;
+});
+
+const layananItems = computed(() => (report.value?.layanan || []).map((l) => ({
+  name: l.label, value: l.count, valueText: `${num(l.count)} transaksi · ${pct(l.percent)}`,
+  meta: `Omzet ${formatRp(l.total)}`,
+})));
+
+// ── Menu ──────────────────────────────────────────────────────────────────
+const rankBy = ref("qty");
+const rankItems = computed(() => {
+  const r = report.value;
+  if (!r) return [];
+  const list = rankBy.value === "qty" ? r.top_menu : r.menu_paling_menghasilkan;
+  return list.map((m) => ({
+    name: m.name,
+    value: rankBy.value === "qty" ? m.qty : m.omzet,
+    valueText: rankBy.value === "qty" ? `${num(m.qty)} porsi` : formatRp(m.omzet),
+    meta: rankBy.value === "qty" ? `${formatRp(m.omzet)} · ${pct(m.share)} omzet menu` : `${num(m.qty)} porsi · ${pct(m.share)} omzet menu`,
+  }));
+});
+
+// ── Jam & hari ────────────────────────────────────────────────────────────
+const jamData = computed(() => {
+  const j = report.value?.jam_distribusi || [];
+  const peak = peakHour.value?.hour;
   const c = chartTheme.value;
   return {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: { backgroundColor: c.tipBg, borderColor: c.tipBorder, borderWidth: 1, titleColor: c.tipTitle, bodyColor: c.tipBody, padding: 10, cornerRadius: 8 },
-    },
-    cutout: "62%",
+    labels: j.map((x) => x.label),
+    datasets: [{
+      label: "Transaksi", data: j.map((x) => x.count),
+      backgroundColor: j.map((x) => (x.hour === peak ? "#d92b22" : c.muted)),
+      borderRadius: 6, borderSkipped: false, maxBarThickness: 30,
+    }],
   };
 });
+const jamOpts = computed(() => {
+  const o = baseOpts(chartTheme.value, { yFormat: (v) => (Number.isInteger(v) ? v : "") });
+  o.plugins.tooltip.callbacks = {
+    title: (items) => report.value?.jam_distribusi[items[0].dataIndex]?.range || "",
+    label: (ctx) => ` ${num(ctx.parsed.y)} transaksi`,
+  };
+  return o;
+});
 
-// ── Format ────────────────────────────────────────────────────────────────
-const formatRp = (v) => "Rp " + Math.round(v || 0).toLocaleString("id-ID");
+const weekdayMax = computed(() => Math.max(1, ...(report.value?.per_hari || []).map((d) => d.avg_omzet)));
+const weekdayPct = (d) => (d.active_days ? Math.max(3, Math.round((d.avg_omzet / weekdayMax.value) * 100)) : 0);
 
 // ── Export ────────────────────────────────────────────────────────────────
-// Endpoint export hanya mengenal laporan bulanan dan tahunan. Mingguan/lifetime tidak diekspor:
-// dulu keduanya diam-diam mengunduh laporan BULAN INI, tidak sesuai dengan angka di layar.
+// PDF/Excel keuangan hanya mengenal laporan bulanan dan tahunan.
 const canExport = computed(() => activeGroup.value === "monthly" || activeGroup.value === "yearly");
 
 const exportDocument = (type) => {
@@ -581,57 +711,60 @@ const exportDocument = (type) => {
   window.open(`${apiClient.defaults.baseURL}/orders/export/finance-${type === "pdf" ? "pdf" : "excel"}/?${params}`, "_blank");
 };
 
-// ── Komponen lokal ────────────────────────────────────────────────────────
-const iconMap = { TrendingUp, Award, ShoppingBag, DollarSign, Utensils, AlertTriangle, CreditCard, Clock, Users, Gem };
-
-const accentText = {
-  red: "text-[color:var(--red-soft)]", amber: "text-[color:var(--amber-soft)]", emerald: "text-[color:var(--green-soft)]",
-  sky: "text-[color:var(--blue-soft)]", violet: "text-[color:var(--purple-soft)]", pink: "text-[color:var(--purple-soft)]",
+// CSV dari data yang sedang tampil: berlaku untuk semua periode (Lifetime & Mingguan juga).
+const csvCell = (v) => {
+  let s = String(v ?? "");
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;           // cegah formula injection saat dibuka di Excel
+  return /[",;\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
-
-const RCard = (props, { slots }) =>
-  h("div", { class: "adm-card p-4 sm:p-6" }, [
-    h("div", { class: "flex items-center gap-2 mb-4 sm:mb-5" }, [
-      props.icon && iconMap[props.icon]
-        ? h(iconMap[props.icon], { size: 13, class: accentText[props.accent] || "text-[color:var(--red-soft)]" })
-        : null,
-      h("h3", { class: "text-[color:var(--text-dim)] text-sm font-bold" }, props.title),
-      props.subtitle
-        ? h("span", { class: "text-[color:var(--text-faint)] text-xs ml-1" }, `· ${props.subtitle}`)
-        : null,
-    ]),
-    slots.default ? slots.default() : null,
-  ]);
-
-const StatCard = (props) => {
-  const bgMap  = { red: "tone-accent", amber: "tone-amber", emerald: "tone-green", sky: "tone-blue" };
-  const txtMap = { red: "text-[color:var(--red-soft)]", amber: "text-[color:var(--amber-soft)]", emerald: "text-[color:var(--green-soft)]", sky: "text-[color:var(--blue-soft)]" };
-  return h("div", { class: "adm-stat !block" }, [
-    h("div", { class: `w-9 h-9 sm:w-10 sm:h-10 rounded-[var(--r-sm)] ${bgMap[props.color]} flex items-center justify-center mb-3 sm:mb-4` }, [
-      iconMap[props.icon] ? h(iconMap[props.icon], { size: 17, class: txtMap[props.color] }) : null,
-    ]),
-    h("p", { class: "adm-stat-value truncate" }, String(props.value)),
-    h("p", { class: "text-xs text-[color:var(--text-faint)] uppercase tracking-[0.15em] sm:tracking-[0.18em] mt-1" }, props.label),
-    props.sub
-      ? h("p", { class: "text-[11px] text-[color:var(--text-faint)] mt-1.5" }, props.sub)
-      : null,
-  ]);
+const exportCsv = () => {
+  exportOpen.value = false;
+  const r = report.value;
+  if (!r) return;
+  const rows = [
+    ["Order Reports Masashimura", periodLabel.value, r.period.start || "", r.period.end || ""],
+    [],
+    ["RINGKASAN"],
+    ["Total omzet", Math.round(r.stats.total_omzet)],
+    ["Total transaksi", r.stats.total_transaksi],
+    ["Rata-rata transaksi", Math.round(r.stats.rata_rata_transaksi)],
+    ["Porsi terjual", r.stats.porsi_terjual],
+    [],
+    ["TREN", "Omzet", "Transaksi"],
+    ...r.trend.labels.map((l, i) => [l, Math.round(r.trend.omzet[i]), r.trend.transaksi[i]]),
+    [],
+    ["MENU TERLARIS", "Porsi", "Omzet"],
+    ...r.top_menu.map((m) => [m.name, m.qty, Math.round(m.omzet)]),
+    [],
+    ["KATEGORI", "Porsi", "Omzet", "Persen"],
+    ...r.kategori.map((k) => [k.name, k.qty, Math.round(k.omzet), k.share]),
+    [],
+    ["METODE PEMBAYARAN", "Transaksi", "Omzet", "Persen"],
+    ...r.metode_pembayaran.map((p) => [p.label, p.count, Math.round(p.total), p.percent]),
+    [],
+    ["JAM", "Transaksi"],
+    ...r.jam_distribusi.map((j) => [j.range, j.count]),
+  ];
+  const csv = "\ufeff" + rows.map((row) => row.map(csvCell).join(",")).join("\r\n");
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `order-report-${r.period.start || "lifetime"}${r.period.end ? "_" + r.period.end : ""}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 };
-
-const EmptyState = (props) =>
-  h("div", { class: `text-center text-[color:var(--text-faint)] text-xs ${props.compact ? "py-4" : "py-8 sm:py-10"}` }, [
-    props.emoji ? h("p", { class: "mb-1 text-base" }, props.emoji) : null,
-    h("p", null, props.text),
-  ]);
 
 onMounted(fetchReport);
 </script>
 
+<style src="@/assets/report-dashboard.css"></style>
 <style scoped>
 .rep-select { width: auto; min-height: 40px; padding-block: 0.4rem; font-weight: 600; }
 .rep-period { margin: 0; }
 .rep-menu {
-  position: absolute; right: 0; z-index: 40; width: 11rem; margin-top: 0.5rem; overflow: hidden;
+  position: absolute; right: 0; z-index: 40; width: 15rem; margin-top: 0.5rem; overflow: hidden;
   background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--r-md); box-shadow: var(--shadow-lg);
 }
 .rep-menu-item {
@@ -639,9 +772,9 @@ onMounted(fetchReport);
   border: 0; background: transparent; color: var(--text-2); cursor: pointer;
   font-family: var(--font-body); font-size: 0.8125rem; font-weight: 600; text-align: left;
 }
-.rep-menu-item:hover { background: var(--surface-hover); color: var(--text); }
+.rep-menu-item:hover:not(:disabled) { background: var(--surface-hover); color: var(--text); }
+.rep-menu-item:disabled { opacity: 0.45; cursor: not-allowed; }
 .custom-scroll::-webkit-scrollbar { width: 3px; }
 .custom-scroll::-webkit-scrollbar-track { background: transparent; }
 .custom-scroll::-webkit-scrollbar-thumb { background: rgb(var(--ink) / 0.1); border-radius: 99px; }
-
 </style>
