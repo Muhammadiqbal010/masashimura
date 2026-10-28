@@ -17,6 +17,7 @@ Semua key lama tetap ada supaya klien lain tidak rusak.
 """
 import calendar
 import datetime
+from zoneinfo import ZoneInfo
 from collections import defaultdict
 from datetime import timedelta
 
@@ -29,6 +30,10 @@ from .models import (
     CustomerLoyalty, Order, OrderItem,
     ORDER_SERVICE_TYPE_CHOICES, PAYMENT_METHOD_CHOICES, WIB,
 )
+
+# Offset tetap (WIB) menghasilkan nama zona "+0700" yang diubah Django jadi "-0700:00" dan ditolak
+# PostgreSQL. Untuk konversi di sisi database pakai zona bernama; Jakarta tanpa DST, hasilnya sama.
+WIB_DB_TZ = ZoneInfo("Asia/Jakarta")
 
 HARI = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"]
 HARI_PENUH = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"]
@@ -265,7 +270,7 @@ def full_report(params, now=None):
     # ── Waktu: jam penuh + hari dalam seminggu ────────────────────────
     hour_counts = {
         r["hour"]: r["count"]
-        for r in qs.annotate(hour=ExtractHour("created_at", tzinfo=WIB)).values("hour").annotate(count=Count("id"))
+        for r in qs.annotate(hour=ExtractHour("created_at", tzinfo=WIB_DB_TZ)).values("hour").annotate(count=Count("id"))
     }
     jam_distribusi = []
     if hour_counts:
