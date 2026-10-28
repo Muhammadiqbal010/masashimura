@@ -134,8 +134,8 @@
         <div class="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-12">
           <div class="space-y-4 lg:col-span-4 lg:pt-3">
             <p class="eyebrow-jp"><span class="hanko" aria-hidden="true">人気</span>Favorit</p>
-            <h2 class="h-section">Menu terlaris</h2>
-            <p class="max-w-xs text-base leading-relaxed text-[#5A5A62]">Yang paling sering dipesan pelanggan kami.</p>
+            <h2 class="h-section">{{ bestCopy.title }}</h2>
+            <p class="max-w-xs text-base leading-relaxed text-[#5A5A62]">{{ bestCopy.sub }}</p>
             <router-link to="/menu" class="link-pop hidden lg:inline-flex">
               Lihat semua menu
               <ArrowUpRight :size="16" aria-hidden="true" />
@@ -163,8 +163,11 @@
               >
                 <div class="relative aspect-[4/3] w-full overflow-hidden rounded-t-[18px] bg-[#E9E5DC]">
                   <img v-blur-img :src="item.image" :alt="item.name" loading="lazy" class="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.05]" />
-                  <span v-if="idx === 0" class="sticker sticker--red absolute left-2.5 top-2.5">Terlaris</span>
-                  <span v-else-if="idx === 1" class="sticker absolute left-2.5 top-2.5">Favorit</span>
+                  <span
+                    v-if="item.badge"
+                    class="sticker absolute left-2.5 top-2.5"
+                    :class="idx === 0 || item.badge === 'Rekomendasi' ? 'sticker--red' : item.badge === 'Baru' ? 'sticker--pink' : ''"
+                  >{{ item.badge }}</span>
                 </div>
                 <div class="flex items-end justify-between gap-2 border-t-2 border-[#111113] p-3.5 sm:p-4">
                   <div class="min-w-0">
@@ -716,28 +719,73 @@ const fetchPromos = async () => {
   }
 }
 
+// Kartu menu di homepage. badge: "Terlaris" | "Rekomendasi" | "Baru"
+const toCard = (item, badge) => ({
+  name:  item.name,
+  desc:  item.description || "Menu favorit pilihan squad Masashimura.",
+  price: getWebPrice(item),   // sama persis dengan halaman Menu
+  image: item.image_url || defaultHeroFood,
+  badge,
+})
+
+// "best" = terlaris dari data order | "recommended" = ditandai rekomendasi di Kelola Menu | "new" = menu terbaru
+const bestSource = ref("best")
+const bestCopy = computed(() => ({
+  best:        { title: "Menu terlaris",   sub: "Yang paling sering dipesan pelanggan kami." },
+  recommended: { title: "Menu rekomendasi", sub: "Pilihan tim Masashimura yang wajib kamu coba." },
+  new:         { title: "Menu pilihan",     sub: "Menu-menu andalan yang bisa kamu pesan sekarang." },
+}[bestSource.value]))
+
 const fetchBestSellers = async () => {
   try {
-    const { data } = await apiClient.get("/menus/bestsellers/")
-    if (Array.isArray(data) && data.length > 0) {
-      bestSellers.value = data.map(item => ({
-        name:  item.name,
-        desc:  item.description || "Menu favorit pilihan squad Masashimura.",
-        price: getWebPrice(item),   // sama persis dengan halaman Menu
-        image: item.image_url || defaultHeroFood,
-      }))
+    // 1) Terlaris dari data penjualan
+    try {
+      const { data } = await apiClient.get("/menus/bestsellers/")
+      if (Array.isArray(data) && data.length > 0) {
+        bestSellers.value = data.map(item => toCard(item, "Terlaris"))
+        bestSource.value = "best"
+        return
+      }
+    } catch (err) {
+      console.error("Best sellers:", err)
+    }
+
+    // 2) Belum ada data penjualan → rekomendasi, lalu menu terbaru. Section jangan sampai kosong.
+    const { data } = await apiClient.get("/menus/")
+    const list = (Array.isArray(data) ? data : data?.results || [])
+      .filter(m => m.is_active !== false && m.is_available !== false && m.image_url)
+    const rec = list.filter(m => m.is_recommended)
+    if (rec.length) {
+      bestSellers.value = rec.slice(0, 6).map(m => toCard(m, "Rekomendasi"))
+      bestSource.value = "recommended"
+    } else {
+      const newest = [...list].sort((a, b) => {
+        const ta = a.created_at ? new Date(a.created_at).getTime() : 0
+        const tb = b.created_at ? new Date(b.created_at).getTime() : 0
+        return tb - ta || b.id - a.id
+      })
+      bestSellers.value = newest.slice(0, 6).map(m => toCard(m, null))
+      bestSource.value = "new"
     }
   } catch (err) {
-    console.error("Best sellers:", err)
+    console.error("Menu homepage:", err)
   } finally {
     loading.best = false
   }
 }
 
+// Cadangan kalau API testimoni gagal (mis. server baru bangun). Isinya sama dengan backend.
 const fallbackReviews = [
-  { name: "Irfan Setya",  status: "Maps Local Guide", text: "WiFi kenceng, makanannya enak, harga mahasiswa — Masashimura jawara nongkrong di Bekasi!" },
-  { name: "Helen S",      status: "Maps Reviewer",    text: "Tiap kali nyari tempat yang gak bising tapi estetik minimalis, selalu balik ke Masashimura." },
-  { name: "Dimas R",      status: "Regular Customer", text: "Beef yakiniku-nya gak ada lawannya di harga segitu. Seriously underrated." },
+  { name: "Deny Yusuf Akbar",   status: "Local Guide", text: "Cozy place, like Izakaya in Japan. Cheap food, very delicious especially Mie Jebew with Chili oil." },
+  { name: "rifky aziz",         status: "Local Guide", text: "Makanannya murah murah, rasanya mantul, pelayanan cepat, ada wifinya, cocok buat nobar." },
+  { name: "Issa Xander",        status: "Local Guide", text: "Tempat Nya asik full musik juga. Ayam goreng sama Milkshake nya mantap." },
+  { name: "nabil khalid",       status: "Customer",    text: "Tempaaat rekomendassiii bangettt daah, gabakall nyesel, mao ajak pacar, rekanan jugaaa bisaa bangetttt!" },
+  { name: "ayimuhammad taupik", status: "Customer",    text: "Harga merakyat, makanannya enak, ada wifinya lagi. Recomended buat tempat nongkrong." },
+  { name: "Fajri Azhari",       status: "Customer",    text: "Tempat nongkrong rekomendasi, harga terjangkau, makanan nya juga enak, tempat nya bersih, pelayan nya oke, gass keun kesini." },
+  { name: "Muhamad Riandy",     status: "Customer",    text: "Solusi nongkrong hemat budget, harga kaki lima rasa bintang 5." },
+  { name: "Ceplik -_-",         status: "Customer",    text: "Tempatnya asik, bersih, nyaman. Serta harga murah juga euy." },
+  { name: "Zyss",               status: "Customer",    text: "Mantap, paling cocok buat nongkrong." },
+  { name: "joss tv",            status: "Customer",    text: "Tempat nya orang santuy." },
 ]
 
 const fetchGoogleReviews = async () => {

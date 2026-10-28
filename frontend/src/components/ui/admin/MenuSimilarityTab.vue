@@ -215,7 +215,7 @@ const formatRp = (n) =>
 .ms-select {
   width: 100%; min-height: 44px; padding: 0 0.85rem;
   border-radius: var(--r-md); border: 1px solid var(--border-strong);
-  background: rgb(var(--ink) / 0.04); color: var(--text);
+  background-color: var(--surface-2); color: var(--text); color-scheme: inherit;
   font-family: inherit; font-size: 1rem; cursor: pointer;
 }
 .ms-select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

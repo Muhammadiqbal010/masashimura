@@ -567,3 +567,13 @@ html, body { max-width: 100%; overflow-x: clip; }
   .adm-stat-value { font-size: 1.25rem; }
   .adm-toolbar > .adm-search { flex: 1 1 100%; max-width: none; }
 }
+
+
+/* ── Dropdown <select> bawaan browser ikut tema ─────────────────────────
+   Popup select memakai warna latar & teks milik <option>. Tanpa ini, latar yang
+   transparan (mis. rgb(var(--ink) / 0.04)) tampil PUTIH dan teks terang jadi tak terbaca. */
+html[data-admin-theme] select { color-scheme: inherit; }
+html[data-admin-theme] select option,
+html[data-admin-theme] select optgroup { background-color: var(--surface); color: var(--text); }
+html[data-admin-theme] select optgroup { color: var(--text-dim); font-weight: 700; }
+html[data-admin-theme] select option:checked { background-color: var(--surface-hover); }

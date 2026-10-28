@@ -87,8 +87,8 @@ class TopBestSellersMenuView(APIView):
         # Endpoint publik: secret menu tidak boleh ikut, dan harga asli (price) tidak boleh bocor.
         # Terlaris = paling banyak terjual dalam BEST_SELLER_DAYS hari terakhir (bukan sepanjang masa,
         # supaya menu baru yang laku bisa naik dan menu lama yang sepi turun).
-        # Tidak ada fallback: kalau belum ada order lunas, hasilnya kosong supaya
-        # badge "Terlaris" tidak menempel di menu acak.
+        # Tidak ada fallback di sini: kalau belum ada order lunas, hasilnya kosong supaya
+        # badge "Terlaris" tidak menempel di menu acak. (Homepage punya fallback sendiri.)
         since = timezone.now() - timedelta(days=BEST_SELLER_DAYS)
         top_menus = list(
             Menu.objects.select_related("category")
@@ -97,7 +97,9 @@ class TopBestSellersMenuView(APIView):
                     Sum(
                         "orderitem__quantity",
                         filter=Q(
-                            orderitem__order__status="completed",
+                            # Pesanan lunas yang tidak dibatalkan. Dulu hanya "completed", padahal kasir
+                            # sering tidak menandai selesai, jadi hasilnya kosong terus.
+                            orderitem__order__status__in=("processing", "completed"),
                             orderitem__order__payment_status="paid",
                             orderitem__order__created_at__gte=since,
                             orderitem__is_point_redemption=False,
