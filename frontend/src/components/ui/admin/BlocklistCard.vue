@@ -206,6 +206,47 @@
               </div>
             </dl>
 
+            <div class="bl-trace">
+              <p class="bl-trace-title"><MapPin :size="12" /> Jejak asal <span class="bl-faint">· perkiraan dari IP, bukan alamat rumah</span></p>
+              <dl class="bl-meta bl-meta--trace">
+                <div>
+                  <dt>Perkiraan lokasi</dt>
+                  <dd>
+                    <template v-if="it.location && it.location.text">
+                      {{ it.location.text }}
+                      <a v-if="it.location.maps_url" :href="it.location.maps_url" target="_blank" rel="noopener noreferrer" class="bl-link">Lihat peta <ExternalLink :size="11" /></a>
+                    </template>
+                    <template v-else>–</template>
+                  </dd>
+                </div>
+                <div>
+                  <dt>Perangkat</dt>
+                  <dd>
+                    {{ (it.location && it.location.device) || '–' }}
+                    <span v-if="it.location && it.location.bot" class="adm-badge adm-badge--amber">Mirip bot</span>
+                  </dd>
+                </div>
+                <div>
+                  <dt>Dari order</dt>
+                  <dd>
+                    <template v-if="it.location_order_number">
+                      <span class="adm-mono">{{ it.location_order_number }}</span>
+                      <span class="bl-faint">· {{ fmt(it.location_at) }}</span>
+                    </template>
+                    <template v-else>Belum ada order, jadi lokasi belum diketahui</template>
+                  </dd>
+                </div>
+                <div v-if="it.other_locations && it.other_locations.length" class="bl-meta-wide">
+                  <dt>Lokasi lain yang pernah terbaca</dt>
+                  <dd>{{ it.other_locations.join(' · ') }}</dd>
+                </div>
+                <div v-if="it.related && it.related.length" class="bl-meta-wide">
+                  <dt>{{ it.related_label }}</dt>
+                  <dd class="adm-mono">{{ it.related.join(', ') }}</dd>
+                </div>
+              </dl>
+            </div>
+
             <div class="bl-actions">
               <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" @click="copy(it.value)">
                 <Copy :size="13" /> Salin
@@ -247,7 +288,7 @@ import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { toast } from 'vue-sonner'
 import {
   ShieldAlert, ShieldCheck, Info, Plus, Ban, Search, X, Phone, Globe, Clock,
-  Copy, RotateCcw, RefreshCw, AlertTriangle, Lock,
+  Copy, RotateCcw, RefreshCw, AlertTriangle, Lock, MapPin, ExternalLink,
 } from 'lucide-vue-next'
 import { blocklistAPI } from '@/api/order'
 import { useAdminConfirm } from '@/composables/useAdminConfirm'
@@ -544,6 +585,15 @@ async function copy(value) {
   text-transform: uppercase; color: var(--text-faint);
 }
 .bl-meta dd { margin: 0; font-size: 0.8125rem; line-height: 1.5; color: var(--text-2); overflow-wrap: anywhere; }
+
+.bl-trace { margin-top: 0.85rem; padding: 0.7rem 0.85rem; border-radius: var(--r-sm); background: rgb(var(--ink) / 0.03); }
+.bl-trace-title {
+  display: flex; align-items: center; gap: 0.35rem; margin: 0;
+  font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint);
+}
+.bl-meta--trace { margin-top: 0.6rem; padding-top: 0; border-top: 0; }
+.bl-link { display: inline-flex; align-items: center; gap: 0.2rem; margin-left: 0.4rem; color: var(--blue-soft); font-size: 0.75rem; text-decoration: none; }
+.bl-link:hover { text-decoration: underline; }
 
 .bl-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem; margin-top: 0.85rem; }
 .bl-limit { margin: 0.6rem 0 0; text-align: center; }

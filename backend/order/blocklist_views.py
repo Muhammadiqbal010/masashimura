@@ -22,7 +22,7 @@ from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from . import blocklist, events
+from . import blocklist, client_info as ci, events
 from .models import BlockedContact, Order
 
 LIST_LIMIT = 500          # daftar aktif tidak dipotong sampai sejauh ini
@@ -111,10 +111,64 @@ def _activity(rows):
     return counts, names
 
 
+def _location(info):
+    """Perkiraan lokasi dari client_info satu order (header Vercel). Hanya petunjuk level kota."""
+    info = info or {}
+    city, region = info.get("city") or "", info.get("region") or ""
+    country = info.get("country") or ""
+    parts = [p for p in (city, region) if p]
+    if country:
+        parts.append("Indonesia" if country == "ID" else country)
+    lat, lng = info.get("lat"), info.get("lng")
+    return {
+        "city": city,
+        "region": region,
+        "country": country,
+        "text": ", ".join(parts),
+        "device": info.get("device") or "",
+        "timezone": info.get("tz") or "",
+        "bot": bool(info.get("bot")),
+        "maps_url": ci.maps_url(lat, lng) if isinstance(lat, (int, float)) and isinstance(lng, (int, float)) else "",
+    }
+
+
+def _footprint(rows):
+    """
+    Jejak asal tiap nomor/IP dari order-ordernya (query tunggal, order terbaru dulu):
+      latest[key]  = (order_number, created_at, client_info, ip_atau_nomor_lawan)
+      places[key]  = daftar lokasi berbeda (maks 5), terbaru dulu
+      related[key] = IP yang pernah dipakai nomor itu / nomor yang pernah muncul dari IP itu (maks 5)
+    """
+    phones = {r.value for r in rows if r.kind == blocklist.KIND_PHONE}
+    ips = {r.value for r in rows if r.kind == blocklist.KIND_IP}
+    latest, places, related = {}, defaultdict(list), defaultdict(list)
+    if not (phones or ips):
+        return latest, places, related
+
+    recent = (Order.objects.filter(Q(customer_phone__in=phones) | Q(client_ip__in=ips))
+              .order_by("-created_at")
+              .values_list("order_number", "created_at", "customer_phone", "client_ip", "client_info")[:3000])
+    for number, created, phone, ip, info in recent:
+        pairs = ((blocklist.KIND_PHONE, phone, ip), (blocklist.KIND_IP, ip, phone))
+        for kind, mine, other in pairs:
+            if not mine or (kind == blocklist.KIND_PHONE and mine not in phones) or (kind == blocklist.KIND_IP and mine not in ips):
+                continue
+            key = (kind, mine)
+            if key not in latest:
+                latest[key] = (number, created, info or {}, other)
+            text = _location(info)["text"]
+            if text and text not in places[key] and len(places[key]) < 5:
+                places[key].append(text)
+            if other and other not in related[key] and len(related[key]) < 5:
+                related[key].append(other)
+    return latest, places, related
+
+
 def _serialize(rows, now=None):
     now = now or timezone.now()
     rows = list(rows)
     counts, names = _activity(rows)
+    latest, places, related = _footprint(rows)
     order_numbers = {r.order_number for r in rows if r.order_number}
     order_ids = dict(Order.objects.filter(order_number__in=order_numbers).values_list("order_number", "id")) if order_numbers else {}
 
@@ -122,6 +176,9 @@ def _serialize(rows, now=None):
     for r in rows:
         st, expires_at, days_left = _state(r, now)
         n, last = counts.get((r.kind, r.value), (0, None))
+        key = (r.kind, r.value)
+        seen = latest.get(key)
+        loc = _location(seen[2]) if seen else None
         out.append({
             "id": r.pk,
             "kind": r.kind,
@@ -141,7 +198,14 @@ def _serialize(rows, now=None):
             "expiring_soon": st == "active" and days_left is not None and days_left <= EXPIRING_SOON_DAYS,
             "order_count": n,
             "last_order_at": last,
-            "names": names.get((r.kind, r.value), []),
+            "names": names.get(key, []),
+            # Jejak asal (PERKIRAAN dari header Vercel pada order terakhir; bukan alamat jalan/rumah)
+            "location": loc,
+            "location_order_number": seen[0] if seen else "",
+            "location_at": seen[1] if seen else None,
+            "other_locations": [p for p in places.get(key, []) if not loc or p != loc["text"]],
+            "related_label": "IP yang pernah dipakai" if r.kind == blocklist.KIND_PHONE else "Nomor WA yang pernah muncul",
+            "related": related.get(key, []),
         })
     return out
 

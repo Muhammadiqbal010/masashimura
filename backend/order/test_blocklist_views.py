@@ -136,10 +136,31 @@ class ListTests(TestCase):
         self.assertEqual(rows["114.122.1.4"]["order_count"], 0)
         self.assertEqual(rows["114.122.1.4"]["names"], [])
 
+    def test_location_footprint(self):
+        info = {"city": "Bekasi", "region": "Jawa Barat", "country": "ID", "lat": -6.2383, "lng": 106.9756,
+                "device": "Android 13 · Chrome", "tz": "Asia/Jakarta", "bot": False}
+        old = dict(info, city="Cikarang")
+        Order.objects.create(order_number="MSH-OLD", customer_name="Budi", customer_phone="081234567890",
+                             client_ip="114.122.1.2", client_info=old, source="web")
+        Order.objects.create(order_number="MSH-NEW", customer_name="Budi", customer_phone="081234567890",
+                             client_ip="114.122.1.9", client_info=info, source="web")
+        rows, _ = self.values()
+        phone, ip = rows["081234567890"], rows["114.122.1.2"]
+        self.assertEqual(phone["location"]["text"], "Bekasi, Jawa Barat, Indonesia")
+        self.assertEqual(phone["location"]["device"], "Android 13 · Chrome")
+        self.assertIn("google.com/maps", phone["location"]["maps_url"])
+        self.assertEqual(phone["location_order_number"], "MSH-NEW")
+        self.assertEqual(phone["other_locations"], ["Cikarang, Jawa Barat, Indonesia"])
+        self.assertEqual(sorted(phone["related"]), ["114.122.1.2", "114.122.1.9"])
+        self.assertEqual(ip["location"]["city"], "Cikarang")
+        self.assertEqual(ip["related"], ["081234567890"])
+        self.assertIsNone(rows["114.122.1.4"]["location"])     # blokir manual tanpa order
+        self.assertEqual(rows["114.122.1.4"]["related"], [])
+
     def test_list_runs_constant_queries(self):
         for i in range(30):
             blocklist.block("phone", f"0822000000{i:02d}")
-        with self.assertNumQueries(10):   # tetap 10 berapa pun jumlah barisnya (tidak N+1)
+        with self.assertNumQueries(11):   # tetap 11 berapa pun jumlah barisnya (tidak N+1)
             self.c.get(URL)
 
 

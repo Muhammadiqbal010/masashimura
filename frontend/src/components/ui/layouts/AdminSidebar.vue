@@ -210,7 +210,7 @@ import {
   ShoppingCart, ChefHat, BarChart3, Wallet, UserPlus,
   UserCheck, Edit3, ChevronDown, Zap, FolderOpen, ShieldCheck,
   CheckCircle2, XCircle, AlertTriangle, Info, X, Tag,
-  Crown, User, BriefcaseBusiness, Gift, KeyRound, Sun, Moon,
+  Crown, User, BriefcaseBusiness, Gift, KeyRound, Sun, Moon, ShieldAlert,
 } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import { useOrderNotificationsStore } from '@/stores/orderNotifications'
@@ -232,11 +232,18 @@ const userRole = computed(() => auth.user?.role?.toLowerCase() || 'kasir')
 // ── Penentuan menu aktif ────────────────────────────────────────────
 // Rute turunan (mis. /admin/menus/12) tetap menyorot induknya.
 const normalize = (p = '') => (p.length > 1 ? p.replace(/\/+$/, '') : p)
+// Tautan boleh berhash (mis. /admin/settings#blokir). Tautan berhash aktif hanya saat hash cocok;
+// tautan tanpa hash di path yang sama tidak ikut menyala saat hash itu sedang dibuka.
+const HASH_LINKS = ['#blokir']
 const isActive = (path) => {
+  const [rawPath, hash = ''] = path.split('#')
   const current = normalize(route.path)
-  const target  = normalize(path)
+  const target  = normalize(rawPath)
   if (target === '/admin') return current === '/admin'
-  return current === target || current.startsWith(target + '/')
+  const samePath = current === target || current.startsWith(target + '/')
+  if (!samePath) return false
+  if (hash) return route.hash === `#${hash}`
+  return !HASH_LINKS.includes(route.hash)
 }
 
 const handleNavClick = (path) => {
@@ -262,6 +269,7 @@ const internalLinks = [
   { to: '/admin/registerinternal', icon: UserPlus, label: 'Daftarkan Staf Baru' },
   { to: '/admin/staff',            icon: KeyRound, label: 'Kelola PIN Staf' },
   { to: '/admin/settings',         icon: Settings, label: 'Pengaturan Sistem' },
+  { to: '/admin/settings#blokir',  icon: ShieldAlert, label: 'Daftar Blokir' },
 ]
 const groups = [
   { key: 'operational',    label: 'Operasional', icon: Zap,         tone: 'amber', roles: ['owner', 'admin', 'kasir'], links: operationalLinks },
@@ -280,7 +288,7 @@ const visibleGroups = computed(() =>
 
 const findActiveGroup = (path) =>
   groups.find((g) => g.links.some((l) => {
-    const target = normalize(l.to)
+    const target = normalize(l.to.split('#')[0])
     const current = normalize(path)
     return current === target || current.startsWith(target + '/')
   }))?.key
