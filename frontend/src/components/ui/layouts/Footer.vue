@@ -67,7 +67,7 @@
       <!-- Bottom bar -->
       <div class="flex flex-col items-center justify-between gap-3 pt-2 sm:flex-row">
         <p class="text-[0.8125rem] text-[#9A9AA3]">&copy; {{ currentYear }} Masashimura. All rights reserved.</p>
-        <div class="flex flex-col items-center gap-2 text-center sm:flex-row sm:gap-3 sm:text-right" role="status">
+        <div v-if="status.ready" class="flex flex-col items-center gap-2 text-center sm:flex-row sm:gap-3 sm:text-right" role="status">
           <span class="inline-flex items-center gap-2 rounded-full border-2 border-white/15 bg-[#111113]/80 px-3.5 py-1.5">
             <span class="relative flex h-2 w-2 shrink-0">
               <span v-if="status.isOpen" class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
@@ -75,7 +75,7 @@
             </span>
             <span class="text-[0.8125rem] font-bold text-white">{{ status.label }}<template v-if="status.detail"> · {{ status.detail }}</template></span>
           </span>
-          <span class="text-[0.8125rem] text-[#9A9AA3]">{{ scheduleText }}</span>
+          <span v-if="scheduleText" class="text-[0.8125rem] text-[#9A9AA3]">{{ scheduleText }}</span>
         </div>
       </div>
     </div>

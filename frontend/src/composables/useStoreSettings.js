@@ -10,6 +10,11 @@
  *   isStoreOpen     → computed boolean (sudah handle override + jadwal + hari, ikut waktu berjalan)
  *   closedMessage   → string pesan saat tutup
  *   nextOpenText    → "Buka hari ini pukul 11.00" / "Buka besok pukul 11.00" / "" (kosong kalau tidak relevan)
+ *   closesText      → "Buka sampai pukul 22.30 WIB" saat buka menurut jadwal, selain itu ""
+ *   openStatus      → { ready, isOpen, label, detail } untuk pil status (Home, Footer, Kontak)
+ *   scheduleRows    → jadwal per kelompok hari: [{ label, time, closed, dayKeys }] (hari berurutan yang jamnya sama digabung)
+ *   scheduleText    → ringkasan satu baris, mis. "Senin – Sabtu · 11.00 – 22.30 WIB" ("" kalau jadwal belum diisi)
+ *   todayIndex      → hari ini (WIB) dalam sistem jadwal: 0=Senin … 6=Minggu
  *   adminWhatsapp   → string nomor WA admin
  *   fetchSettings() → fetch dari API (safe dipanggil berkali-kali)
  *   refetchSettings() → paksa fetch ulang (dipakai setelah admin save)
@@ -212,12 +217,93 @@ export function useStoreSettings() {
 
   const adminWhatsapp = computed(() => settings.value.admin_whatsapp || "")
 
+  // ── Tampilan jadwal & status ke pelanggan ────────────────────────────────────
+  // Semua teks jam buka di situs diturunkan dari sini, jadi selalu sama dengan
+  // yang diatur admin di Pengaturan Sistem (tidak ada jam yang ditulis manual di halaman).
+  const todayIndex = computed(() => Number(getNowWIB(nowTick.value).dayKey))
+
+  // Jadwal valid satu hari: { open, close } atau null (libur / jam tutup <= jam buka, sama seperti server).
+  const rangeOf = (entry) => {
+    if (!entry?.open || !entry?.close) return null
+    return timeToMinutes(entry.close) > timeToMinutes(entry.open)
+      ? { open: entry.open, close: entry.close }
+      : null
+  }
+
+  const dayRangeLabel = (keys) => {
+    if (keys.length === 7) return "Setiap hari"
+    if (keys.length === 1) return DAY_NAMES[keys[0]]
+    if (keys.length === 2) return `${DAY_NAMES[keys[0]]} & ${DAY_NAMES[keys[1]]}`
+    return `${DAY_NAMES[keys[0]]} – ${DAY_NAMES[keys[keys.length - 1]]}`
+  }
+
+  const scheduleRows = computed(() => {
+    const map = settings.value.operating_hours || {}
+    if (Object.keys(map).length === 0) return []
+    const days = Array.from({ length: 7 }, (_, i) => rangeOf(map[String(i)]))
+    const sig = (r) => (r ? `${r.open}-${r.close}` : "off")
+    const rows = []
+    let start = 0
+    for (let i = 1; i <= 7; i++) {
+      if (i === 7 || sig(days[i]) !== sig(days[start])) {
+        const keys = Array.from({ length: i - start }, (_, k) => start + k)
+        const r = days[start]
+        rows.push({
+          label: dayRangeLabel(keys),
+          time: r ? `${displayTime(r.open)} – ${displayTime(r.close)}` : "Tutup",
+          closed: !r,
+          dayKeys: keys,
+        })
+        start = i
+      }
+    }
+    return rows
+  })
+
+  const scheduleText = computed(() => {
+    const open = scheduleRows.value.filter((r) => !r.closed)
+    if (!open.length) return ""
+    return open.map((r) => `${r.label} · ${r.time}`).join("; ") + " WIB"
+  })
+
+  // Jadwal hari ini (null kalau libur / belum diatur)
+  const todayRange = computed(() => rangeOf((settings.value.operating_hours || {})[String(todayIndex.value)]))
+
+  const closesText = computed(() => {
+    if (!settingsReady.value || !isStoreOpen.value) return ""
+    if (settings.value.is_open_override === true) return ""   // dibuka paksa: jam tutup jadwal tidak berlaku
+    return todayRange.value ? `Buka sampai pukul ${displayTime(todayRange.value.close)} WIB` : ""
+  })
+
+  const openStatus = computed(() => {
+    if (!settingsReady.value) return { ready: false, isOpen: false, label: "", detail: "" }
+    if (isStoreOpen.value) {
+      return {
+        ready: true,
+        isOpen: true,
+        label: "Buka sekarang",
+        detail: closesText.value ? `Tutup ${displayTime(todayRange.value.close)}` : "",
+      }
+    }
+    return {
+      ready: true,
+      isOpen: false,
+      label: "Tutup",
+      detail: settings.value.is_open_override === false ? "Sedang ditutup sementara" : nextOpenText.value,
+    }
+  })
+
   return {
     settings,
     settingsReady,
     isStoreOpen,
     closedMessage,
     nextOpenText,
+    closesText,
+    openStatus,
+    scheduleRows,
+    scheduleText,
+    todayIndex,
     adminWhatsapp,
     fetchSettings,
     refetchSettings,

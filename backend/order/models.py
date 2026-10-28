@@ -619,6 +619,7 @@ ORDER_EVENT_ACTION_CHOICES = (
     ('refunded',       'Refund diserahkan'),
     ('blocked',        'Nomor diblokir'),
     ('unblocked',      'Blokir dibuka'),
+    ('time_changed',   'Waktu order diubah'),
 )
 
 ORDER_EVENT_CHANNEL_CHOICES = (

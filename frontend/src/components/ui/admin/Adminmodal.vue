@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <Transition name="adm-modal">
-      <div v-if="modelValue" class="adm-overlay" @mousedown.self="onBackdrop">
+      <div v-if="modelValue" ref="overlayEl" class="adm-overlay" @mousedown.self="onBackdrop">
         <div
           ref="dialogEl"
           class="adm-modal"
@@ -47,6 +47,7 @@ let rewinding = false   // true selama history.back() buatan modal sendiri; moda
 // "Tambah Kategori" di atas "Edit Menu") hanya menutup yang paling atas.
 import { ref, watch, nextTick, onBeforeUnmount } from 'vue'
 import { X } from 'lucide-vue-next'
+import { isTouchDevice, isTextEntry } from '@/utils/touch'
 
 const props = defineProps({
   modelValue: Boolean,
@@ -58,6 +59,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'close'])
 
 const titleId = `adm-modal-title-${++uid}`
+const overlayEl = ref(null)
 const dialogEl = ref(null)
 const bodyEl = ref(null)
 const token = {}
@@ -66,6 +68,33 @@ let active = false
 
 const FOCUSABLE =
   'a[href],button:not([disabled]),input:not([disabled]):not([type=hidden]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
+
+// ── Keyboard layar (HP) ─────────────────────────────────────────────
+// Saat keyboard muncul, viewport visual mengecil tapi layout viewport tidak, sehingga
+// bottom-sheet tertutup keyboard. Kita samakan tinggi overlay dengan viewport visual
+// (lewat CSS var) dan gulirkan kolom yang sedang diketik ke tengah layar.
+const syncViewport = () => {
+  const vv = window.visualViewport
+  const el = overlayEl.value
+  if (!vv || !el) return
+  el.style.setProperty('--adm-vvh', `${vv.height}px`)
+  el.style.setProperty('--adm-vvt', `${vv.offsetTop}px`)
+}
+const onFocusIn = (e) => {
+  if (!isTouchDevice() || !isTextEntry(e.target)) return
+  // Tunggu keyboard selesai naik, baru gulirkan.
+  setTimeout(() => e.target?.scrollIntoView?.({ block: 'center', behavior: 'smooth' }), 300)
+}
+const bindViewport = () => {
+  if (!isTouchDevice() || !window.visualViewport) return
+  window.visualViewport.addEventListener('resize', syncViewport)
+  window.visualViewport.addEventListener('scroll', syncViewport)
+  syncViewport()
+}
+const unbindViewport = () => {
+  window.visualViewport?.removeEventListener('resize', syncViewport)
+  window.visualViewport?.removeEventListener('scroll', syncViewport)
+}
 
 const close = () => {
   if (props.persistent) return
@@ -140,10 +169,15 @@ const activate = async () => {
   if (lockCount++ === 0) document.body.classList.add('adm-no-scroll')
   document.addEventListener('keydown', onKey)
   await nextTick()
-  const target =
+  bindViewport()
+  dialogEl.value?.addEventListener('focusin', onFocusIn)
+  let target =
     bodyEl.value?.querySelector('[data-autofocus]') ||
     bodyEl.value?.querySelector(FOCUSABLE) ||
     dialogEl.value
+  // HP/tablet: jangan fokus otomatis ke kolom ketik — itu langsung memunculkan keyboard
+  // yang menutupi separuh modal. Fokus ke dialog saja; keyboard baru muncul saat kolom diketuk.
+  if (isTouchDevice() && isTextEntry(target)) target = dialogEl.value
   target?.focus({ preventScroll: true })
 }
 
@@ -155,7 +189,10 @@ const deactivate = ({ rewind = true } = {}) => {
   if (i !== -1) stack.splice(i, 1)
   if (--lockCount <= 0) { lockCount = 0; document.body.classList.remove('adm-no-scroll') }
   document.removeEventListener('keydown', onKey)
-  if (opener && document.contains(opener)) opener.focus?.({ preventScroll: true })
+  unbindViewport()
+  dialogEl.value?.removeEventListener('focusin', onFocusIn)
+  // Di HP jangan kembalikan fokus ke kolom ketik (keyboard akan muncul lagi tanpa diminta).
+  if (opener && document.contains(opener) && !(isTouchDevice() && isTextEntry(opener))) opener.focus?.({ preventScroll: true })
   opener = null
 }
 

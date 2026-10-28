@@ -2157,6 +2157,75 @@ def order_item_detail(request, pk, item_id):
     return Response(OrderSerializer(order).data)
 
 
+def _fmt_wib(dt):
+    return to_wib(dt).strftime("%d/%m/%Y %H.%M")
+
+
+@api_view(["PATCH"])
+@permission_classes([IsStaffLevel])
+@transaction.atomic
+def update_order_time(request, pk):
+    """
+    Ubah tanggal & jam order (created_at). HANYA untuk order yang belum lunas.
+    Body: { "created_at": "2026-10-27T19:30:00+07:00", "kasir_name": "Wawan" }
+    (tanpa offset = dianggap WIB). Order yang sudah lunas / dibatalkan ditolak (400),
+    karena laporan keuangan & poin sudah memakai waktu aslinya.
+    """
+    order = get_object_or_404(Order.objects.select_for_update(), pk=pk)
+
+    if order.status == "cancelled" or order.payment_status == "void":
+        return Response({"detail": "Order ini sudah dibatalkan, waktunya tidak bisa diubah."}, status=400)
+    if order.status == "completed" or order.payment_status not in ("unpaid", "pending"):
+        return Response(
+            {"detail": "Order ini sudah lunas, tanggal dan jamnya tidak bisa diubah lagi."},
+            status=400,
+        )
+
+    raw = request.data.get("created_at")
+    if raw in (None, ""):
+        return Response({"detail": "Tanggal dan jam wajib diisi."}, status=400)
+    try:
+        new_dt = parse_datetime(str(raw))
+    except ValueError:
+        new_dt = None
+    if new_dt is None:
+        return Response({"detail": "Format tanggal/jam tidak valid."}, status=400)
+    if timezone.is_naive(new_dt):
+        new_dt = timezone.make_aware(new_dt, WIB)   # tanpa offset = dianggap WIB
+
+    now = timezone.now()
+    if new_dt > now + BACKDATE_FUTURE_TOLERANCE:
+        return Response({"detail": "Waktu order tidak boleh di masa depan."}, status=400)
+    if new_dt < now - timedelta(days=BACKDATE_MAX_DAYS):
+        return Response(
+            {"detail": f"Waktu order terlalu lama (maksimal {BACKDATE_MAX_DAYS} hari ke belakang). Cek tahunnya."},
+            status=400,
+        )
+    if new_dt > now:
+        new_dt = now   # selisih toleransi: jangan sampai tersimpan di masa depan
+
+    old_dt = order.created_at
+    # Dibandingkan per menit (form hanya sampai menit), jadi simpan ulang jam yang sama tidak dianggap perubahan.
+    if old_dt.replace(second=0, microsecond=0) == new_dt.replace(second=0, microsecond=0):
+        return Response(OrderSerializer(order).data)
+
+    order.created_at = new_dt
+    update_fields = ["created_at"]
+    # Diubah ke waktu lampau = input susulan; tandai (kalau belum) supaya terlihat di daftar & laporan.
+    if new_dt < now - BACKDATE_NOW_TOLERANCE and not order.entered_at:
+        order.entered_at = now
+        update_fields.append("entered_at")
+    order.save(update_fields=update_fields)
+
+    events.record(
+        order, "time_changed",
+        actor=events.actor_from_request(request), channel="staff",
+        note=f"{_fmt_wib(old_dt)} -> {_fmt_wib(new_dt)} WIB",
+    )
+    order.refresh_from_db()
+    return Response(OrderSerializer(order).data)
+
+
 @api_view(["POST"])
 @permission_classes([IsStaffLevel])
 @transaction.atomic

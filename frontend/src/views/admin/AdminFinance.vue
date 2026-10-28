@@ -522,6 +522,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, nextTick } from "vue";
 import apiClient from "@/api/client";
 import { toast } from "vue-sonner";
+import { focusOnDesktop } from "@/utils/touch";
 
 const monthNames = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
 const viewModes  = [{ key: "daily", label: "Harian" }, { key: "monthly", label: "Bulanan" }, { key: "yearly", label: "Tahunan" }];
@@ -737,14 +738,14 @@ const resetExpenseForm = () => { expenseForm.value = { description: "", amount: 
 const cancelEdit = () => { editingId.value = null; resetExpenseForm(); };
 const pickQuick = (text) => {
   expenseForm.value.description = text;
-  nextTick(() => descInput.value?.focus());
+  nextTick(() => focusOnDesktop(descInput.value));
 };
 const startEdit = (exp) => {
   editingId.value = exp.id;
   expenseForm.value = { description: exp.description, amount: Number(exp.amount), payment_method: exp.payment_method || "cash" };
   nextTick(() => {
     formCard.value?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    descInput.value?.focus();
+    focusOnDesktop(descInput.value);
   });
 };
 const submitExpense = async () => {
@@ -762,7 +763,7 @@ const submitExpense = async () => {
     cancelEdit();
     await fetchDailyData();
     toast.success(isEdit ? "Pengeluaran diperbarui." : "Pengeluaran dicatat.");
-    if (!isEdit) nextTick(() => descInput.value?.focus());   // siap input berikutnya
+    if (!isEdit) nextTick(() => focusOnDesktop(descInput.value));   // siap input berikutnya
   } catch {
     toast.error(isEdit ? "Gagal memperbarui pengeluaran." : "Gagal mencatat pengeluaran.");
   } finally { isSubmittingExpense.value = false; }

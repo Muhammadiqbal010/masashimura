@@ -7,6 +7,7 @@ import { useAuthStore } from "./stores/auth";
 import "./index.css";
 import "@/assets/admin-theme.css";
 import "@/assets/admin-ui.css";
+import { initViewportVars } from "@/utils/touch";
 
 const app = createApp(App);
 const pinia = createPinia();
@@ -18,4 +19,5 @@ app.use(router);
 const auth = useAuthStore();
 auth.checkAuth(); // Ini penting agar user langsung ter-load
 
+initViewportVars();
 app.mount("#app");

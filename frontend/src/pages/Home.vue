@@ -27,7 +27,7 @@
         <div class="space-y-6 lg:col-span-6">
 
           <div class="hero-in flex flex-wrap items-center gap-3" style="--d: 0ms">
-            <div class="flex w-fit items-center gap-2.5 rounded-full border-2 border-white/15 bg-white/[0.05] px-3.5 py-2" role="status">
+            <div v-if="openStatus.ready" class="flex w-fit items-center gap-2.5 rounded-full border-2 border-white/15 bg-white/[0.05] px-3.5 py-2" role="status">
               <span class="relative flex h-2 w-2 shrink-0">
                 <span v-if="openStatus.isOpen" class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60"></span>
                 <span class="relative inline-flex h-2 w-2 rounded-full" :class="openStatus.isOpen ? 'bg-emerald-400' : 'bg-[#D92B22]'"></span>

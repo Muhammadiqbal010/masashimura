@@ -2877,6 +2877,28 @@ button:focus-visible, input:focus-visible { outline: 2px solid color-mix(in srgb
 
 .modal-section { padding: 0.85rem 1.5rem; border-bottom: 1px solid rgb(var(--ink) / 0.04); display: flex; flex-direction: column; gap: 0.55rem; }
 .modal-box > .submit-btn { margin: 1rem 1.5rem 1.25rem; }
+/* Anak langsung modal tidak boleh mengerut: tanpa ini daftar item (overflow:auto) terjepit
+   jadi hampir kosong saat modal lebih pendek dari isinya. */
+.modal-box > * { flex-shrink: 0; }
+
+/* Modal pembayaran / opsi menu: bottom sheet di HP, selalu di atas keyboard layar */
+@media (max-width: 560px) {
+  .modal-overlay:not(.qr-overlay) {
+    align-items: flex-end; padding: 0;
+    inset: auto; top: var(--vvt, 0px); left: 0; right: 0;
+    height: var(--vvh, 100vh); height: var(--vvh, 100dvh);
+  }
+  .modal-overlay:not(.qr-overlay) > .modal-box { max-width: none; max-height: 92%; border-radius: 18px 18px 0 0; border-bottom: 0; }
+  .modal-head { padding: 1.1rem 1rem 0.85rem; position: sticky; top: 0; z-index: 1; background: var(--surface); }
+  .modal-customer, .modal-items, .modal-totals, .modal-section { padding-inline: 1rem; }
+  .modal-box > .submit-btn { position: sticky; bottom: 0; margin: 0.75rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px)); }
+  .modal-items { max-height: 28dvh; }
+}
+@media (pointer: coarse) {
+  .modal-close-btn { width: 40px; height: 40px; }
+  .search-clear-btn { width: 32px; height: 32px; }
+  .unpaid-trigger, .time-chip { min-height: 40px; }
+}
 
 /* Sembunyikan spinner input number */
 input[type="number"]::-webkit-inner-spin-button,

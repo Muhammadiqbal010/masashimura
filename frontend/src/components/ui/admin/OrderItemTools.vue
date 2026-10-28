@@ -183,6 +183,30 @@
           </p>
         </div>
       </template>
+
+      <!-- ───────── UBAH TANGGAL & JAM ───────── -->
+      <template v-else-if="mode === 'time'">
+        <p class="oit-hint">
+          Ubah tanggal dan jam nota <b>{{ order.order_number || '#' + order.id }}</b>. Hanya bisa selama nota
+          <b>belum lunas</b>; setelah lunas waktunya dikunci supaya laporan keuangan tidak bergeser.
+          Waktu tidak boleh di masa depan.
+        </p>
+        <div class="oit-time">
+          <div class="oit-field">
+            <label class="oit-label" for="oit-date">Tanggal</label>
+            <input id="oit-date" v-model="timeDate" type="date" :max="wibToday()" class="adm-input" />
+          </div>
+          <div class="oit-field">
+            <label class="oit-label" for="oit-clock">Jam (WIB)</label>
+            <input id="oit-clock" v-model="timeClock" type="time" class="adm-input" />
+          </div>
+        </div>
+        <p class="oit-sum">
+          Waktu sekarang: <b>{{ fmtWib(order.created_at) }}</b>
+        </p>
+        <p v-if="timeError" class="oit-warn">{{ timeError }}</p>
+        <p v-else-if="timeChanged" class="oit-sum">Jadi: <b>{{ timeLabel }}</b></p>
+      </template>
     </div>
 
     <template #footer>
@@ -193,6 +217,12 @@
         <button type="button" class="adm-btn adm-btn--ghost" @click="close">Batal</button>
         <button type="button" class="adm-btn adm-btn--primary" :disabled="busy || !pickedUnits || !!splitBlocked" @click="submitSplit">
           Pisahkan nota
+        </button>
+      </template>
+      <template v-else-if="mode === 'time'">
+        <button type="button" class="adm-btn adm-btn--ghost" @click="close">Batal</button>
+        <button type="button" class="adm-btn adm-btn--primary" :disabled="busy || !timeChanged || !!timeError" @click="submitTime">
+          Simpan waktu
         </button>
       </template>
       <template v-else-if="mode === 'unavailable'">
@@ -227,7 +257,7 @@ import { orderAPI, menuAPI } from '@/api'
 import { waLink } from '@/utils/orderMessages'
 
 const props = defineProps({
-  // 'add' | 'split' | 'unavailable' | null (tertutup)
+  // 'add' | 'split' | 'unavailable' | 'time' | null (tertutup)
   mode: { type: String, default: null },
   order: { type: Object, default: null },
   kasirName: { type: String, default: '' },
@@ -239,7 +269,12 @@ const money = (n) =>
 
 const title = computed(() => {
   const no = props.order?.order_number || (props.order ? '#' + props.order.id : '')
-  return { add: `Tambah menu · ${no}`, split: `Pisah nota · ${no}`, unavailable: `Menu habis · ${no}` }[props.mode] || ''
+  return {
+    add: `Tambah menu · ${no}`,
+    split: `Pisah nota · ${no}`,
+    unavailable: `Menu habis · ${no}`,
+    time: `Ubah tanggal & jam · ${no}`,
+  }[props.mode] || ''
 })
 
 const busy = ref(false)
@@ -418,6 +453,58 @@ const close = () => emit('close')
 // PENTING: kuncinya STRING, bukan array. Getter yang mengembalikan array baru dianggap
 // "berubah" setiap kali props.order diganti objek baru (polling 5 detik menggantinya terus),
 // akibatnya jumlah yang sudah dipilih & layar "Tersimpan" ter-reset sendiri.
+// ── ubah tanggal & jam ──
+// Semua dihitung dalam WIB (UTC+7) tanpa bergantung zona waktu perangkat; dikirim lengkap dengan offset +07:00.
+const WIB_OFFSET_MS = 7 * 60 * 60 * 1000
+const wibParts = (input = Date.now()) => {
+  const ms = typeof input === 'number' ? input : new Date(input).getTime()
+  const iso = new Date(ms + WIB_OFFSET_MS).toISOString()
+  return { date: iso.slice(0, 10), time: iso.slice(11, 16) }
+}
+const wibToday = () => wibParts().date
+const fmtWib = (v) => {
+  if (!v) return '-'
+  const p = wibParts(v)
+  const day = new Date(`${p.date}T12:00:00+07:00`).toLocaleDateString('id-ID', {
+    day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta',
+  })
+  return `${day} · ${p.time.replace(':', '.')} WIB`
+}
+const timeDate = ref('')
+const timeClock = ref('')
+const timeValue = () => `${timeDate.value}T${timeClock.value}:00+07:00`
+const timeChanged = computed(() => {
+  if (!props.order?.created_at || !timeDate.value || !timeClock.value) return false
+  const cur = wibParts(props.order.created_at)
+  return cur.date !== timeDate.value || cur.time !== timeClock.value
+})
+const timeError = computed(() => {
+  if (!timeDate.value || !timeClock.value) return 'Isi tanggal dan jam.'
+  const picked = new Date(timeValue())
+  if (Number.isNaN(picked.getTime())) return 'Tanggal/jam tidak valid.'
+  if (picked.getTime() > Date.now() + 60_000) return 'Waktu order tidak boleh di masa depan.'
+  if (picked.getTime() < Date.now() - 366 * 86400000) return 'Terlalu lama (maksimal 366 hari ke belakang). Cek tahunnya.'
+  return ''
+})
+const timeLabel = computed(() => fmtWib(timeValue()))
+const submitTime = async () => {
+  if (timeError.value || !timeChanged.value) return
+  busy.value = true
+  try {
+    const res = await orderAPI.updateTime(props.order.id, {
+      created_at: timeValue(),
+      kasir_name: props.kasirName,
+    })
+    toast.success(`Waktu order diubah ke ${fmtWib(res.data.created_at)}`)
+    emit('updated', { order: res.data })
+    close()
+  } catch (err) {
+    toast.error(apiError(err, 'Gagal mengubah waktu order.'))
+  } finally {
+    busy.value = false
+  }
+}
+
 watch(
   () => `${props.mode || ''}:${props.order?.id ?? ''}`,
   () => {
@@ -431,6 +518,11 @@ watch(
     menuQuery.value = ''
     resetPicker()
     if (props.mode === 'add') loadMenus()
+    if (props.mode === 'time' && props.order?.created_at) {
+      const cur = wibParts(props.order.created_at)
+      timeDate.value = cur.date
+      timeClock.value = cur.time
+    }
   },
   { immediate: true }
 )
@@ -461,6 +553,8 @@ watch(
 .oit-qty { min-width: 1.5rem; text-align: center; font-weight: 800; font-variant-numeric: tabular-nums; }
 .oit-sum { margin: 0; font-size: 0.9rem; color: var(--text); }
 .oit-field { display: flex; flex-direction: column; gap: 0.35rem; }
+.oit-time { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+@media (max-width: 420px) { .oit-time { grid-template-columns: 1fr; } }
 .oit-label { font-size: 0.78rem; font-weight: 700; color: var(--text-2); }
 .oit-picker { display: flex; flex-direction: column; gap: 0.8rem; padding: 0.9rem; border: 1px solid var(--border-strong); border-radius: 0.9rem; }
 .oit-picker-title { margin: 0; font-weight: 800; color: var(--text); }

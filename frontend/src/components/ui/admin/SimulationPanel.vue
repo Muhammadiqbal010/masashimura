@@ -175,6 +175,7 @@ onMounted(load)
 .sim-link { color: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
 .sim-progress { display: flex; flex-direction: column; gap: .55rem; }
 .sim-prog-row { display: grid; grid-template-columns: 8.5rem 1fr 2.6rem; gap: .6rem; align-items: center; font-size: .75rem; color: var(--text-2); }
+@media (max-width: 480px) { .sim-prog-row { grid-template-columns: 1fr 2.6rem; } .sim-prog-row .sim-prog-track { grid-column: 1 / -1; grid-row: 2; } }
 .sim-prog-track { height: 6px; border-radius: 99px; background: var(--border); overflow: hidden; }
 .sim-prog-fill { display: block; height: 100%; border-radius: 99px; background: var(--amber-soft); }
 .sim-prog-fill.done { background: var(--green-soft); }

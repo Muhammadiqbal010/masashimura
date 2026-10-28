@@ -26,7 +26,7 @@
       </div>
       <div v-if="todaySchedule" class="banner-hours">
         <span class="hours-label">Jam buka hari ini</span>
-        <span class="hours-value">{{ todaySchedule.open }} – {{ todaySchedule.close }}</span>
+        <span class="hours-value">{{ todaySchedule.open.replace(":", ".") }} – {{ todaySchedule.close.replace(":", ".") }}</span>
       </div>
     </div>
   </transition>

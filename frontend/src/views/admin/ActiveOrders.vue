@@ -1008,7 +1008,7 @@ import {
   Search, X, ChevronLeft, ChevronRight, ChevronDown, Printer, Send, Plus, Trash2,
   Banknote, QrCode, Shuffle, RefreshCw, AlertTriangle, Receipt, Bell, BellOff,
   Pause, Play, Download, MessageCircle, Check, MoreHorizontal, Ban, RotateCcw,
-  ListChecks, History, Gauge, Users,
+  ListChecks, History, Gauge, Users, Clock,
 } from 'lucide-vue-next'
 import { orderAPI, apiClient } from '@/api'
 import { toast } from 'vue-sonner'
@@ -1477,6 +1477,8 @@ const normalizePhone = (raw) => {
 const isOpenOrder = (o) => o.status !== 'cancelled' && o.payment_status !== 'void'
 const isGatewayPending = (o) => o.payment_method === 'gateway' && o.payment_status === 'pending'
 // Tambah / ubah / pisah cuma untuk nota yang belum dibayar (aturan yang sama dengan backend).
+// Ubah tanggal & jam: hanya selama belum lunas (sama dengan aturan server).
+const canEditTime = (o) => isOpenOrder(o) && ['unpaid', 'pending'].includes(o.payment_status)
 const canEditItems = (o) => isOpenOrder(o) && ['unpaid', 'pending'].includes(o.payment_status) && !isGatewayPending(o)
 const canMarkReady = (o) => o.tracks_readiness && isOpenOrder(o) && !o.is_ready && isToday.value && !isGatewayPending(o) && !o.awaiting_confirmation
 // Tanda siap manual bisa dicabut. Siap karena lunas / otomatis 2 jam tidak bisa.
@@ -1697,6 +1699,7 @@ const rowMenuItems = (o) => {
   if (canUnmarkReady(o)) list.push({ key: 'unready', label: 'Tandai belum siap', icon: RotateCcw, run: () => toggleReady(o, false) })
   if (canEditItems(o)) list.push({ key: 'add', label: 'Tambah menu', icon: Plus, run: () => openTool('add', o) })
   if (canEditItems(o) && (o.items?.length || 0) > 0) list.push({ key: 'split', label: 'Pisah nota', icon: Shuffle, run: () => openTool('split', o) })
+  if (canEditTime(o)) list.push({ key: 'time', label: 'Ubah tanggal & jam', icon: Clock, run: () => openTool('time', o) })
   if (canMarkUnavailable(o)) list.push({ key: 'unavailable', label: 'Menu habis', icon: AlertTriangle, run: () => openTool('unavailable', o) })
   if (canCancelOrder(o)) list.push({ key: 'cancel', label: 'Batalkan pesanan', icon: Ban, danger: true, sep: list.length > 0, run: () => openCancelModal(o) })
   if (isOwner.value) list.push({ key: 'delete', label: 'Hapus permanen', icon: Trash2, danger: true, sep: list.length > 0 && !canCancelOrder(o), run: () => openDeleteModal(o) })
@@ -2545,14 +2548,14 @@ const confirmDelete = async () => {
 .ao-person-name { margin: 0 0 0.15rem; font-size: 0.9rem; font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
 .ao-person-phone { margin: 0; font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-dim); }
 
-.ao-order-items { display: flex; flex-direction: column; gap: 0.3rem; max-height: 9.5rem; margin: 0; padding: 0.7rem 1rem; overflow-y: auto; list-style: none; border: 1px solid var(--border); border-radius: var(--r-md); }
-.ao-order-items li { display: flex; align-items: baseline; gap: 0.5rem; font-size: 0.8rem; }
+.ao-order-items { display: flex; flex-direction: column; gap: 0.3rem; max-height: min(12rem, 34dvh); margin: 0; padding: 0.7rem 1rem; overflow-y: auto; overscroll-behavior: contain; list-style: none; border: 1px solid var(--border); border-radius: var(--r-md); }
+.ao-order-items li { display: flex; align-items: baseline; gap: 0.5rem; font-size: 0.8125rem; flex-shrink: 0; }
 .ao-oi-name { flex: 1; min-width: 0; overflow-wrap: anywhere; color: var(--text); }
 .ao-oi-price { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-dim); white-space: nowrap; }
 
 .ao-total { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.8rem 1rem; border: 1px solid var(--line-accent); border-radius: var(--r-md); background: var(--tint-accent); }
 .ao-total span { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); }
-.ao-total strong { font-family: var(--font-mono); font-size: 1.2rem; font-weight: 800; color: var(--accent-text); }
+.ao-total strong { font-family: var(--font-mono); font-size: clamp(1.05rem, 0.9rem + 1vw, 1.25rem); font-weight: 800; color: var(--accent-text); }
 
 .ao-payrow { display: flex; align-items: center; gap: 0.5rem; }
 .ao-payrow .adm-seg { flex-shrink: 0; }

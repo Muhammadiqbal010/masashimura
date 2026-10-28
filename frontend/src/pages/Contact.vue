@@ -6,6 +6,7 @@
       <!-- ── HEADER ──────────────────────────────────────────────────────── -->
       <header class="pt-28 pb-10 sm:pt-32 sm:pb-12">
         <div
+          v-if="ready"
           class="mb-6 inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-medium backdrop-blur"
           :class="isOpen
             ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-700'
@@ -127,6 +128,7 @@
                 <h2 class="font-sora text-base font-semibold text-[#111113]">Jam buka</h2>
               </div>
               <span
+                v-if="ready"
                 class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium"
                 :class="isOpen
                   ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-700'
@@ -141,6 +143,9 @@
             </div>
 
             <div class="space-y-2">
+              <p v-if="ready && !schedule.length" class="rounded-xl bg-[#111113]/[0.025] px-4 py-3.5 text-sm text-[#55555D]">
+                Jam operasional belum tersedia. Hubungi kami lewat kontak di bawah.
+              </p>
               <div
                 v-for="row in schedule"
                 :key="row.label"
@@ -166,7 +171,7 @@
             </div>
 
             <div class="mt-auto space-y-0.5 border-t border-[#111113]/10 pt-4">
-              <p class="text-sm font-medium" :class="isOpen ? 'text-emerald-700' : 'text-[#111113]'">{{ statusNote }}</p>
+              <p v-if="statusNote" class="text-sm font-medium" :class="isOpen ? 'text-emerald-700' : 'text-[#111113]'">{{ statusNote }}</p>
               <p class="text-xs text-[#6B6B73]">Waktu Indonesia Barat (WIB)</p>
             </div>
           </article>
@@ -224,9 +229,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue"
+import { ref, computed, onUnmounted } from "vue"
 import { MapPin, Clock, Mail, ArrowRight, ArrowUpRight, Copy, Check } from "lucide-vue-next"
 import { toast } from "vue-sonner"
+import { useOpenStatus } from "@/composables/useOpenStatus"
 
 const locationUrl = ref(
   "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.2474247843616!2d106.9974506!3d-6.231077499999999!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e698d4a2a564acb%3A0x5647f35252d3d568!2sMasashimura!5e0!3m2!1sid!2sid!4v1781883172371!5m2!1sid!2sid"
@@ -256,58 +262,23 @@ const onMapLeave = (e) => {
 }
 
 // ── Jam buka ──────────────────────────────────────────────────────────────
-// Selalu dihitung pakai WIB, jadi status "Buka/Tutup" tetap benar
-// walau pengunjung membuka dari zona waktu lain.
-const OPEN_MIN  = 11 * 60        // 11.00
-const CLOSE_MIN = 22 * 60 + 30   // 22.30
+// Semua dibaca dari pengaturan toko di admin (Pengaturan Sistem), tidak ada jam yang ditulis manual di sini.
+// Status memakai waktu WIB, jadi tetap benar walau pengunjung membuka dari zona waktu lain.
+const { status, scheduleRows, todayIndex, closesText, nextOpenText, closedMessage, ready } = useOpenStatus()
 
-const schedule = [
-  { label: "Senin – Sabtu", time: "11.00 – 22.30", closed: false, days: [1, 2, 3, 4, 5, 6] },
-  { label: "Minggu",        time: "Tutup",         closed: true,  days: [0] },
-]
+const schedule = scheduleRows
+const isOpen = computed(() => ready.value && status.value.isOpen)
 
-const getWIB = () => {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Asia/Jakarta",
-    weekday: "short",
-    hour: "numeric",
-    minute: "numeric",
-    hour12: false,
-  }).formatToParts(new Date())
-  const get = (t) => parts.find(p => p.type === t)?.value
-  const dayMap = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 }
-  let hour = parseInt(get("hour"), 10)
-  if (hour === 24) hour = 0
-  return { day: dayMap[get("weekday")] ?? 0, minutes: hour * 60 + parseInt(get("minute"), 10) }
-}
-
-const now = ref(getWIB())
-let clockTimer = null
-let copyTimer = null
-onMounted(() => {
-  now.value = getWIB()
-  clockTimer = setInterval(() => { now.value = getWIB() }, 60000) // update tiap menit
-})
-onUnmounted(() => {
-  clearInterval(clockTimer)
-  clearTimeout(copyTimer)
-})
-
-const isOpen = computed(() => {
-  const { day, minutes } = now.value
-  if (day === 0) return false // Tutup Minggu
-  return minutes >= OPEN_MIN && minutes < CLOSE_MIN
-})
-
-const isToday = (row) => row.days.includes(now.value.day)
+const isToday = (row) => row.dayKeys.includes(todayIndex.value)
 
 const statusNote = computed(() => {
-  const { day, minutes } = now.value
-  if (isOpen.value) return "Buka sampai pukul 22.30"
-  if (day === 0) return "Buka lagi Senin pukul 11.00"
-  if (minutes < OPEN_MIN) return "Buka hari ini pukul 11.00"
-  return day === 6 ? "Buka lagi Senin pukul 11.00" : "Buka lagi besok pukul 11.00"
+  if (!ready.value) return ""
+  if (isOpen.value) return closesText.value || "Buka sekarang"
+  return nextOpenText.value || closedMessage.value
 })
+
+let copyTimer = null
+onUnmounted(() => clearTimeout(copyTimer))
 
 // ── Salin alamat ──────────────────────────────────────────────────────────
 const copied = ref(false)
