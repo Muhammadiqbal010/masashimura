@@ -274,6 +274,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
+import { useRouteSearch } from '@/composables/useRouteSearch';
 import { Plus, Pencil, Trash2, ChevronDown, Check, Gift, CheckCircle2, Coins, Settings2, Search, AlertTriangle } from 'lucide-vue-next';
 import { pointRewardAPI, loyaltySettingsAPI, menuAPI } from '@/api';
 import { toast } from 'vue-sonner';
@@ -288,6 +289,7 @@ const togglingId = ref(null);
 
 // ── Pencarian & filter status ───────────────────────────────────────
 const searchQuery  = ref('');
+useRouteSearch(searchQuery); // ?q= dari pencarian global
 const statusFilter = ref('all');
 const statusFilters = [
   { key: 'all',      label: 'Semua' },

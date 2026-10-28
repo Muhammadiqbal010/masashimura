@@ -405,6 +405,7 @@
 <script setup>
 import { ref, computed, onMounted, reactive } from 'vue'
 import { useRouter } from 'vue-router'
+import { useRouteSearch } from '@/composables/useRouteSearch'
 import { toast } from 'vue-sonner'
 import {
   Plus, Search, X, Pencil, Trash2, Save, ImagePlus, Salad, AlertTriangle,
@@ -429,6 +430,7 @@ const deleteTarget   = ref(null)
 const saving         = ref(false)
 const reactivatingId = ref(null)
 const searchQuery    = ref('')
+useRouteSearch(searchQuery) // ?q= dari pencarian global
 const filterStatus   = ref('')
 const filterCategory = ref('')
 const photoPreview   = ref(null)

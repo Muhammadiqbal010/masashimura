@@ -67,6 +67,7 @@
       </div>
 
       <div class="lc-body">
+        <input v-model="searchQuery" type="search" class="adm-input" placeholder="Cari nama atau nomor HP…" aria-label="Cari pelanggan" />
         <p class="adm-hint">
           <template v-if="expiryMonths > 0">
             Poin hangus kalau pelanggan <strong>tidak belanja selama {{ expiryMonths }} bulan</strong> sejak order terakhir.
@@ -346,6 +347,7 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
+import { useRouteSearch } from "@/composables/useRouteSearch";
 import { useAuthStore } from "@/stores/auth";
 import { useLoyaltyStore } from "@/stores/loyalty";
 import { toast } from "vue-sonner";
@@ -369,11 +371,15 @@ const fetchAdminLoyalData = () => loyalty.fetchLoyalCustomers();
 
 // ── Segmentasi & saringan ───────────────────────────────────────────
 const segmentFilter = ref(null);
-const filteredCustomers = computed(() =>
-  segmentFilter.value
-    ? loyalty.loyalCustomers.filter(c => c.segment === segmentFilter.value)
-    : loyalty.loyalCustomers
-);
+const searchQuery = ref("");
+useRouteSearch(searchQuery); // ?q= dari pencarian global
+const filteredCustomers = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase();
+  return loyalty.loyalCustomers.filter(c =>
+    (!segmentFilter.value || c.segment === segmentFilter.value) &&
+    (!q || String(c.name || "").toLowerCase().includes(q) || String(c.phone || "").includes(q))
+  );
+});
 const segmentInfo = (key) => loyalty.segments.find(s => s.key === key);
 const segmentLabel = (key) => segmentInfo(key)?.label || key || '—';
 const segmentHint = (key) => segmentInfo(key)?.hint || '';

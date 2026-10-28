@@ -1006,6 +1006,7 @@
 
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { useRoute } from 'vue-router'
 import {
   Search, X, ChevronLeft, ChevronRight, ChevronDown, Printer, Send, Plus, Trash2,
   Banknote, QrCode, Shuffle, RefreshCw, AlertTriangle, Receipt, Bell, BellOff,
@@ -1107,6 +1108,19 @@ const jumpToDate = (value) => {
   resetForNewDate()
   fetchActiveOrders({ force: true })
 }
+// ── Tautan dari pencarian global: ?date=YYYY-MM-DD&q=nomor-order ─────
+const route = useRoute()
+const applyRouteQuery = (fetchNow) => {
+  const { date, q } = route.query
+  if (typeof q === 'string') searchQuery.value = q
+  if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date) && date !== targetDateString.value) {
+    if (fetchNow) { jumpToDate(date); return }
+    const [y, m, d] = date.split('-').map(Number)
+    currentDate.value = new Date(y, m - 1, d)
+    followToday.value = date === toDateString(new Date())
+  }
+}
+watch(() => [route.query.date, route.query.q], () => applyRouteQuery(true))
 const goToday = () => {
   currentDate.value = new Date()
   followToday.value = true
@@ -1230,6 +1244,7 @@ let clockTimer = null
 let summaryTimer = null
 const onVisibility = () => { if (!document.hidden && !paused.value) fetchActiveOrders() }
 onMounted(() => {
+  applyRouteQuery(false)
   applyPageSize()
   buildBlackLogo()
   fetchActiveOrders()

@@ -233,6 +233,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouteSearch } from '@/composables/useRouteSearch'
 import { Plus, Pencil, Trash2, Tag, CheckCircle2, Ticket, Search, AlertTriangle } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import apiClient from '@/api/client'
@@ -261,6 +262,7 @@ const statusInfo = (promo) => {
 
 // ── Pencarian & filter ──────────────────────────────────────────────
 const searchQuery  = ref('')
+useRouteSearch(searchQuery) // ?q= dari pencarian global
 const statusFilter = ref('all')
 const statusFilters = [
   { key: 'all',      label: 'Semua' },

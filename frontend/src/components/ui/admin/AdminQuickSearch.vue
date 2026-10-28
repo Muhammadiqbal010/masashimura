@@ -8,12 +8,12 @@
       :class="`qs-trigger--${variant}`"
       aria-haspopup="dialog"
       :aria-expanded="open"
-      aria-label="Cari halaman admin"
+      aria-label="Cari di admin"
       @click="openPalette"
     >
       <Search :size="16" aria-hidden="true" />
       <template v-if="variant === 'field'">
-        <span class="qs-trigger-text">Cari halaman…</span>
+        <span class="qs-trigger-text">Cari apa saja…</span>
         <kbd class="qs-kbd" aria-hidden="true">{{ shortcutLabel }}</kbd>
       </template>
     </button>
@@ -25,7 +25,7 @@
             class="qs-dialog"
             role="dialog"
             aria-modal="true"
-            aria-label="Pencarian halaman admin"
+            aria-label="Pencarian admin"
             @keydown="onDialogKeydown"
           >
             <div class="qs-input-row">
@@ -35,14 +35,14 @@
                 v-model="query"
                 type="text"
                 class="qs-input"
-                placeholder="Ketik: promo, kas, poin, menu…"
+                placeholder="Cari halaman, pesanan, menu, pelanggan, promo…"
                 autocomplete="off"
                 spellcheck="false"
                 role="combobox"
                 aria-expanded="true"
                 aria-controls="qs-list"
                 :aria-activedescendant="results.length ? `qs-opt-${active}` : undefined"
-                aria-label="Cari halaman"
+                aria-label="Cari di admin"
                 @keydown.down.prevent="move(1)"
                 @keydown.up.prevent="move(-1)"
                 @keydown.enter.prevent="go(results[active])"
@@ -51,22 +51,26 @@
             </div>
 
             <ul v-if="results.length" id="qs-list" class="qs-list" role="listbox" aria-label="Hasil pencarian">
-              <li
-                v-for="(r, i) in results"
-                :id="`qs-opt-${i}`"
-                :key="r.to"
-                role="option"
-                :aria-selected="i === active"
-                class="qs-item"
-                :class="{ 'is-active': i === active }"
-                @mousemove="active = i"
-                @click="go(r)"
-              >
-                <span class="qs-item-label">{{ r.label }}</span>
-                <span class="qs-item-group">{{ r.group }}</span>
-              </li>
+              <template v-for="sec in sections" :key="sec.title">
+                <li class="qs-sec" role="presentation">{{ sec.title }}</li>
+                <li
+                  v-for="r in sec.items"
+                  :id="`qs-opt-${r.idx}`"
+                  :key="r.key"
+                  role="option"
+                  :aria-selected="r.idx === active"
+                  class="qs-item"
+                  :class="{ 'is-active': r.idx === active }"
+                  @mousemove="active = r.idx"
+                  @click="go(r)"
+                >
+                  <span class="qs-item-label">{{ r.label }}</span>
+                  <span class="qs-item-group">{{ r.hint }}</span>
+                </li>
+              </template>
             </ul>
-            <p v-else class="qs-empty" role="status">Tidak ada halaman yang cocok dengan “{{ query }}”.</p>
+            <p v-else-if="!loadingData" class="qs-empty" role="status">Tidak ada hasil untuk “{{ query }}”.</p>
+            <p v-if="loadingData && query.trim().length >= 2" class="qs-loading" role="status">Memuat pesanan, menu, dan data lain…</p>
 
             <footer class="qs-foot" aria-hidden="true">
               <span><kbd class="qs-kbd">↑</kbd> <kbd class="qs-kbd">↓</kbd> pilih</span>
@@ -81,11 +85,17 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Search } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import { searchDestinations } from '@/utils/adminNav'
+import { searchEntities, matchScore, norm } from '@/utils/adminSearch'
+import { useTheme } from '@/composables/useTheme'
+import { menuAPI } from '@/api/menu'
+import { orderAPI, pointRewardAPI } from '@/api/order'
+import { statsAPI } from '@/api/stats'
+import apiClient from '@/api/client'
 
 defineProps({
   // 'field' = kolom lebar (desktop), 'icon' = tombol ikon (HP)
@@ -102,12 +112,59 @@ const inputRef = ref(null)
 const triggerRef = ref(null)
 
 const role = computed(() => auth.user?.role?.toLowerCase() || 'kasir')
-const results = computed(() => searchDestinations(query.value, role.value))
+const { toggleTheme } = useTheme()
+
+// ── Data yang dicari (dimuat sekali saat palet dibuka, disegarkan bila sudah > 1 menit) ──
+const data = reactive({ orders: [], menus: [], customers: [], promos: [], rewards: [] })
+const loadingData = ref(false)
+let loadedAt = 0
+const asList = (d) => (Array.isArray(d) ? d : (d?.results || d?.customers || []))
+const todayWib = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' })
+
+const loadData = async () => {
+  if (Date.now() - loadedAt < 60_000) return
+  loadingData.value = true
+  const staff = role.value === 'owner' || role.value === 'admin'
+  const jobs = staff
+    ? [
+        ['orders', orderAPI.getAll()],
+        ['menus', menuAPI.getAll()],
+        ['customers', statsAPI.getLoyalCustomers()],
+        ['promos', apiClient.get('/promotions/')],
+        ['rewards', pointRewardAPI.getAll()],
+      ]
+    // Kasir tidak punya akses daftar lengkap: cukup order hari ini (sama seperti halaman Pesanan).
+    : [['orders', orderAPI.getActiveOrders(todayWib())]]
+  const settled = await Promise.allSettled(jobs.map(([, p]) => p))
+  settled.forEach((r, i) => { if (r.status === 'fulfilled') data[jobs[i][0]] = asList(r.value.data) })
+  loadedAt = Date.now()
+  loadingData.value = false
+}
+
+// Aksi cepat (bukan halaman): dijalankan langsung.
+const ACTIONS = [
+  { key: 'act-theme', label: 'Ganti tema gelap / terang', hint: 'Tampilan', keywords: 'tema mode gelap terang dark light tampilan', run: () => toggleTheme() },
+]
+
+// Susunan hasil: Halaman → Aksi → data. Tiap item diberi idx berurutan untuk navigasi keyboard.
+const sections = computed(() => {
+  const words = norm(query.value).split(/\s+/).filter(Boolean)
+  const secs = []
+  const pages = searchDestinations(query.value, role.value).map((d) => ({ key: d.to, label: d.label, hint: d.group, to: d.to }))
+  if (pages.length) secs.push({ title: 'Halaman', items: pages })
+  const acts = ACTIONS.filter((a) => !words.length || matchScore(words, [a.label, a.keywords]) > 0)
+  if (acts.length && words.length) secs.push({ title: 'Aksi', items: acts })
+  secs.push(...searchEntities(query.value, data))
+  let n = 0
+  return secs.map((sec) => ({ ...sec, items: sec.items.map((it) => ({ ...it, idx: n++ })) }))
+})
+const results = computed(() => sections.value.flatMap((s) => s.items))
 
 const isMac = typeof navigator !== 'undefined' && /mac|iphone|ipad/i.test(navigator.platform || navigator.userAgent || '')
 const shortcutLabel = isMac ? '⌘K' : 'Ctrl K'
 
 watch(query, () => { active.value = 0 })
+watch(query, (v) => { if (v.trim().length >= 2) loadData() })
 
 const openPalette = async () => {
   if (open.value) return
@@ -116,6 +173,7 @@ const openPalette = async () => {
   open.value = true
   await nextTick()
   inputRef.value?.focus()
+  loadData()
 }
 
 const closePalette = () => {
@@ -134,7 +192,8 @@ const move = (step) => {
 const go = (item) => {
   if (!item) return
   open.value = false
-  router.push(item.to)
+  if (item.run) item.run()
+  else router.push(item.to)
 }
 
 // Esc menutup; Tab dijaga di dalam dialog (hanya ada input dan tombol Esc).
@@ -192,7 +251,7 @@ onUnmounted(() => window.removeEventListener('keydown', onGlobalKeydown))
   background: var(--overlay); backdrop-filter: blur(2px);
 }
 .qs-dialog {
-  width: 100%; max-width: 34rem; max-height: min(32rem, 80dvh);
+  width: 100%; max-width: 38rem; max-height: min(34rem, 80dvh);
   display: flex; flex-direction: column; overflow: hidden;
   background: var(--surface); color: var(--text);
   border: 1px solid var(--border-strong); border-radius: var(--r-lg); box-shadow: var(--shadow-lg);
@@ -216,10 +275,12 @@ onUnmounted(() => window.removeEventListener('keydown', onGlobalKeydown))
   min-height: 44px; padding: 0 0.85rem; border-radius: var(--r-md); cursor: pointer;
 }
 .qs-item.is-active { background: var(--accent); color: var(--on-accent); }
-.qs-item-label { font-weight: 600; font-size: 0.9375rem; }
-.qs-item-group { font-size: 0.75rem; color: var(--text-dim); white-space: nowrap; }
+.qs-sec { padding: 0.55rem 0.85rem 0.25rem; font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-faint); }
+.qs-item-label { font-weight: 600; font-size: 0.9375rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qs-item-group { font-size: 0.75rem; color: var(--text-dim); white-space: nowrap; flex-shrink: 0; max-width: 55%; overflow: hidden; text-overflow: ellipsis; }
 .qs-item.is-active .qs-item-group { color: color-mix(in srgb, var(--on-accent) 85%, transparent); }
 
+.qs-loading { margin: 0; padding: 0.6rem 1rem; text-align: center; font-size: 0.8125rem; color: var(--text-faint); }
 .qs-empty { margin: 0; padding: 1.75rem 1rem; text-align: center; font-size: 0.875rem; color: var(--text-dim); }
 .qs-foot {
   display: flex; gap: 1rem; padding: 0.6rem 1rem; border-top: 1px solid var(--border);

@@ -342,6 +342,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
+import { useRoute } from "vue-router";
 import { Bar } from "vue-chartjs";
 import {
   Chart as ChartJS, BarElement, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend, Filler,
@@ -380,6 +381,13 @@ const pageTabs  = [
   { label: "Channel",       value: "channel",   sub: "Perbandingan pesanan web pelanggan dan POS kasir" },
   { label: "Jam Sibuk",     value: "jam",       sub: "Pola jam dan hari tersibuk dari data pesanan" },
 ];
+// ?tab= dari pencarian global (mis. /admin/reports?tab=jam)
+const route = useRoute();
+watch(
+  () => route.query.tab,
+  (t) => { if (pageTabs.some((x) => x.value === t)) activeTab.value = t; },
+  { immediate: true },
+);
 const activeTabSubtitle = computed(() => pageTabs.find((t) => t.value === activeTab.value)?.sub || "");
 const refresh = () => (activeTab.value === "ringkasan" ? fetchReport() : tabRef.value?.reload());
 
