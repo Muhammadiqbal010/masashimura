@@ -278,6 +278,9 @@
       </ul>
     </section>
 
+    <!-- ── CARD — Daftar blokir anti-scam (owner; terpisah dari tombol Simpan) ── -->
+    <BlocklistCard v-if="isOwner" id="blokir" class="set-anchor" />
+
     <!-- ── Bar simpan melayang ────────────────────────────────────────────── -->
     <div class="adm-savebar" :class="{ 'is-clean': !hasChanges }">
       <p class="adm-savebar-text" aria-live="polite">
@@ -299,7 +302,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { useRoute } from 'vue-router'
 import { toast } from 'vue-sonner'
 import {
   MessageCircle, Power, Clock, Info, AlertTriangle, WifiOff, Check, Copy, Save,
@@ -309,8 +313,14 @@ import apiClient from '@/api/client'
 import { useStoreSettings } from '@/composables/useStoreSettings'
 import { useAdminConfirm } from '@/composables/useAdminConfirm'
 import AdminConfirm from '@/components/ui/admin/Adminconfirm.vue'
+import BlocklistCard from '@/components/ui/admin/BlocklistCard.vue'
+import { useAuthStore } from '@/stores/auth'
 
 const { isStoreOpen, refetchSettings } = useStoreSettings()
+// Halaman ini memang khusus owner (lihat router). Cek ini hanya pengaman tambahan untuk kartu blokir;
+// penegakan sebenarnya ada di backend (403 untuk non-owner).
+const auth = useAuthStore()
+const isOwner = computed(() => auth.isOwner || localStorage.getItem('role') === 'owner')
 const { state: confirmState, ask, accept: acceptConfirm, cancel: cancelConfirm } = useAdminConfirm()
 
 const DAY_OPTIONS = [
@@ -550,15 +560,26 @@ const onBeforeUnload = (e) => {
   e.preventDefault()
   e.returnValue = ''
 }
+// Pencarian cepat admin membuka "/admin/settings#blokir": gulir ke kartu Daftar Blokir.
+const route = useRoute()
+const scrollToHash = async () => {
+  if (route.hash !== '#blokir') return
+  await nextTick()
+  document.getElementById('blokir')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+watch(() => route.hash, scrollToHash)
+
 onMounted(() => {
   fetchData()
   window.addEventListener('beforeunload', onBeforeUnload)
+  setTimeout(scrollToHash, 400)   // tunggu pengaturan toko selesai dimuat supaya tinggi halaman sudah stabil
 })
 onBeforeUnmount(() => window.removeEventListener('beforeunload', onBeforeUnload))
 </script>
 
 <style scoped>
 /* ── Banner status ─────────────────────────────────────────────── */
+.set-anchor { scroll-margin-top: 5rem; }
 .set-banner {
   display: flex; align-items: center; gap: 0.7rem;
   padding: 0.75rem 1.1rem;

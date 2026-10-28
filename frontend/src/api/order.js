@@ -56,3 +56,12 @@ export const loyaltySettingsAPI = {
   get: () => apiClient.get("/orders/loyalty-settings/"),
   update: (data) => apiClient.put("/orders/loyalty-settings/", data),
 };
+
+// Daftar blokir anti-scam (khusus owner; BlocklistCard.vue di Pengaturan Sistem).
+// list: params { view: 'active' | 'history' | 'all', kind: 'phone' | 'ip', q }
+// add: target = nomor WA atau IP (server yang menormalkan dan memvalidasi)
+export const blocklistAPI = {
+  list: (params = {}) => apiClient.get("/orders/blocklist/", { params }),
+  add: (target, reason = "") => apiClient.post("/orders/blocklist/", { target, reason }),
+  unblock: (id) => apiClient.post(`/orders/blocklist/${id}/unblock/`),
+};

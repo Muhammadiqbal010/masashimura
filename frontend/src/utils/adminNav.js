@@ -18,6 +18,7 @@ export const ADMIN_DESTINATIONS = [
   { to: '/admin/registerinternal', label: 'Daftarkan Staf Baru', group: 'Internal', roles: ['owner'], keywords: 'staf staff daftar register akun' },
   { to: '/admin/staff', label: 'Kelola PIN Staf', group: 'Internal', roles: ['owner'], keywords: 'staf staff pin' },
   { to: '/admin/settings', label: 'Pengaturan Sistem', group: 'Internal', roles: ['owner'], keywords: 'settings pengaturan sistem toko jam buka' },
+  { to: '/admin/settings#blokir', label: 'Daftar Blokir Anti-Scam', group: 'Internal', roles: ['owner'], keywords: 'blokir blacklist scam penipu nomor ip buka blokir telegram' },
   { to: '/admin/profile', label: 'Profil Saya', group: 'Akun', roles: ['owner', 'admin', 'kasir'], keywords: 'profil akun password' },
 ]
 
