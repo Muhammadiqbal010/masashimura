@@ -15,9 +15,11 @@ from django.utils import timezone
 
 from . import client_info as ci
 from . import events, guards
-from .models import BlockedContact
+from .models import BlockedAttempt, BlockedContact
 
 IP_BLOCK_DAYS = 90
+ATTEMPT_ALERT_GAP_MINUTES = 30   # alert Telegram untuk nomor/IP yang sama paling sering sekali per jeda ini
+ATTEMPT_KEEP_DAYS = 180          # percobaan lebih tua dari ini boleh dibersihkan
 KIND_PHONE = "phone"
 KIND_IP = "ip"
 
@@ -139,3 +141,50 @@ def expire_old_ip_blocks():
     return BlockedContact.objects.filter(
         kind=KIND_IP, is_active=True, blocked_at__lt=_ip_cutoff(),
     ).update(is_active=False, unblocked_at=timezone.now())
+
+
+# ── Percobaan order dari nomor/IP yang diblokir ─────────────────────────────
+
+def record_attempt(kind, value, phone="", name="", ip=None, info=None):
+    """
+    Catat satu percobaan order web dari nomor/IP yang sedang diblokir.
+    Mengembalikan (attempt, kirim_alert): kirim_alert True kalau sudah lewat ATTEMPT_ALERT_GAP_MINUTES
+    sejak percobaan sebelumnya dari nomor/IP yang sama (supaya Telegram tidak banjir saat orang yang sama
+    menekan tombol pesan berulang-ulang). Tidak pernah melempar error ke pemanggil.
+    """
+    value = str(value or "").strip()
+    if kind not in (KIND_PHONE, KIND_IP) or not value:
+        return None, False
+    try:
+        gap_from = timezone.now() - timedelta(minutes=ATTEMPT_ALERT_GAP_MINUTES)
+        recent = BlockedAttempt.objects.filter(kind=kind, value=value, created_at__gte=gap_from).exists()
+        attempt = BlockedAttempt.objects.create(
+            kind=kind, value=value[:64], phone=str(phone or "")[:20], name=str(name or "")[:100],
+            client_ip=ip or None, client_info=dict(info or {}),
+        )
+        return attempt, not recent
+    except Exception:   # noqa: BLE001 - mencatat percobaan tidak boleh menggagalkan respons ke pelanggan
+        import logging
+        logging.getLogger(__name__).exception("Gagal mencatat percobaan order terblokir")
+        return None, False
+
+
+def attempt_counts(keys):
+    """{(kind, value): (jumlah, terakhir)} untuk daftar kunci (kind, value) — 1 query per jenis."""
+    from django.db.models import Count, Max
+
+    out = {}
+    for kind in (KIND_PHONE, KIND_IP):
+        values = {v for k, v in keys if k == kind}
+        if not values:
+            continue
+        for r in (BlockedAttempt.objects.filter(kind=kind, value__in=values).order_by()
+                  .values("value").annotate(n=Count("id"), last=Max("created_at"))):
+            out[(kind, r["value"])] = (r["n"], r["last"])
+    return out
+
+
+def purge_old_attempts(now=None):
+    """Hapus catatan percobaan yang sudah lewat ATTEMPT_KEEP_DAYS. Mengembalikan jumlah yang dihapus."""
+    cutoff = (now or timezone.now()) - timedelta(days=ATTEMPT_KEEP_DAYS)
+    return BlockedAttempt.objects.filter(created_at__lt=cutoff).delete()[0]

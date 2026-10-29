@@ -443,7 +443,7 @@ button.adm-badge:disabled { opacity: 0.5; cursor: wait; }
 .adm-modal-title { margin: 0; min-width: 0; font-family: var(--font-display); font-size: clamp(1rem, 0.95rem + 0.25vw, 1.125rem); font-weight: 700; line-height: 1.25; letter-spacing: -0.01em; overflow-wrap: anywhere; }
 .adm-modal-body { display: flex; flex-direction: column; gap: 1rem; flex: 1; min-height: 0; padding: 1.25rem; overflow-y: auto; overscroll-behavior: contain; }
 .adm-modal-foot {
-  display: flex; justify-content: flex-end; gap: 0.6rem; flex-shrink: 0;
+  display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.6rem; flex-shrink: 0;
   padding: 0.9rem 1.25rem calc(0.9rem + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid var(--border);
 }
@@ -476,7 +476,9 @@ button.adm-badge:disabled { opacity: 0.5; cursor: wait; }
   }
   .adm-modal-body { padding: 1rem 1rem 1.1rem; -webkit-overflow-scrolling: touch; }
   .adm-modal-foot { padding-inline: 1rem; }
-  .adm-modal-foot .adm-btn { flex: 1; }
+  /* Footer dengan 3+ tombol (mis. Batal / QRIS otomatis / Konfirmasi lunas) turun ke baris baru, bukan terpotong
+     di tepi kiri layar 360px. Tombol terakhir (aksi utama) mengisi baris sendiri kalau ganjil. */
+  .adm-modal-foot .adm-btn { flex: 1 1 calc(50% - 0.3rem); min-width: 0; }
 }
 /* Layar sangat pendek (HP landscape / keyboard terbuka): rapatkan jarak */
 @media (max-height: 520px) {
@@ -577,3 +579,16 @@ html[data-admin-theme] select option,
 html[data-admin-theme] select optgroup { background-color: var(--surface); color: var(--text); }
 html[data-admin-theme] select optgroup { color: var(--text-dim); font-weight: 700; }
 html[data-admin-theme] select option:checked { background-color: var(--surface-hover); }
+
+/* ── Aksesibilitas global admin ───────────────────────────────────────────────
+   Cincin fokus yang jelas untuk navigasi keyboard di semua tombol/tautan/kolom admin, dan animasi
+   dimatikan untuk pengguna yang memilih "kurangi gerak". */
+.adm-btn:focus-visible, .adm-seg-btn:focus-visible, .adm-icon-btn:focus-visible,
+.adm-modal a:focus-visible, .adm-modal button:focus-visible, .adm-table a:focus-visible {
+  outline: 2px solid var(--blue-soft, #60a5fa); outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .adm-modal-enter-active, .adm-modal-leave-active,
+  .adm-modal-enter-active .adm-modal, .adm-modal-leave-active .adm-modal { transition: none; }
+  .adm-spinner { animation-duration: 1.6s; }
+}

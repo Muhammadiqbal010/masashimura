@@ -98,6 +98,24 @@ def web_blocked_error(phone):
     return None
 
 
+def note_blocked_attempt(kind, value, phone, name, ip, info):
+    """
+    Catat percobaan order dari nomor/IP terblokir + kabari Telegram (dibatasi: 1 kali per nomor/IP per
+    blocklist.ATTEMPT_ALERT_GAP_MINUTES). Tidak pernah melempar error dan tidak membocorkan apa pun ke pelanggan.
+    """
+    from . import blocklist
+
+    attempt, alert = blocklist.record_attempt(kind, value, phone=phone, name=name, ip=ip, info=info)
+    if attempt and alert:
+        try:
+            from . import notify
+            notify.blocked_attempt(attempt.pk)
+        except Exception:   # noqa: BLE001
+            import logging
+            logging.getLogger(__name__).exception("Alert percobaan terblokir gagal")
+    return attempt
+
+
 def web_pending_qris_reason(phone, ip):
     """
     Kode alasan (QRIS_*) kalau order cash dari nomor/IP ini harus dialihkan ke QRIS, atau None.

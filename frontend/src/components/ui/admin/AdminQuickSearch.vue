@@ -64,13 +64,32 @@
                   @mousemove="active = r.idx"
                   @click="go(r)"
                 >
-                  <span class="qs-item-label">{{ r.label }}</span>
-                  <span class="qs-item-group">{{ r.hint }}</span>
+                  <div class="qs-item-row">
+                    <span class="qs-item-label">{{ r.label }}</span>
+                    <span class="qs-item-group">{{ r.hint }}</span>
+                  </div>
+                  <div v-if="r.details && r.details.length" class="qs-item-details">
+                    <span class="qs-detail-text">{{ r.details.join(' · ') }}</span>
+                    <a
+                      v-if="r.maps_url"
+                      :href="r.maps_url"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="qs-maps"
+                      aria-label="Buka perkiraan lokasi di Google Maps"
+                      @click.stop
+                    >Maps</a>
+                  </div>
                 </li>
               </template>
             </ul>
-            <p v-else-if="!loadingData" class="qs-empty" role="status">Tidak ada hasil untuk “{{ query }}”.</p>
-            <p v-if="loadingData && query.trim().length >= 2" class="qs-loading" role="status">Memuat pesanan, menu, dan data lain…</p>
+            <p v-else-if="!loadingData && !searching" class="qs-empty" role="status">Tidak ada hasil untuk “{{ query }}”.</p>
+            <p v-if="(loadingData || searching) && query.trim().length >= 2" class="qs-loading" role="status">
+              {{ searching ? 'Mencari di semua data…' : 'Memuat pesanan, menu, dan data lain…' }}
+            </p>
+            <p v-if="searchFailed && query.trim().length >= 2" class="qs-loading" role="status">
+              Pencarian lengkap gagal, menampilkan data yang sudah dimuat saja.
+            </p>
 
             <footer class="qs-foot" aria-hidden="true">
               <span><kbd class="qs-kbd">↑</kbd> <kbd class="qs-kbd">↓</kbd> pilih</span>
@@ -93,7 +112,7 @@ import { searchDestinations } from '@/utils/adminNav'
 import { searchEntities, matchScore, norm } from '@/utils/adminSearch'
 import { useTheme } from '@/composables/useTheme'
 import { menuAPI } from '@/api/menu'
-import { orderAPI, pointRewardAPI } from '@/api/order'
+import { orderAPI, pointRewardAPI, adminSearchAPI } from '@/api/order'
 import { statsAPI } from '@/api/stats'
 import apiClient from '@/api/client'
 
@@ -141,6 +160,66 @@ const loadData = async () => {
   loadingData.value = false
 }
 
+// ── Pencarian lengkap di server (pesanan + IP/lokasi, pelanggan, blokir, percobaan, staf, pengeluaran) ──
+// Dipanggil setelah jeda ketik; hasil yang sudah usang (query berubah) dibuang. Data yang sudah dimuat di
+// browser tetap tampil seketika, hasil server digabung di atasnya tanpa duplikat.
+const serverSections = ref([])
+const serverQuery = ref('')
+const searching = ref(false)
+const searchFailed = ref(false)
+let searchTimer = null
+let searchSeq = 0
+let searchAbort = null
+
+const runServerSearch = async (q) => {
+  const mine = ++searchSeq
+  searchAbort?.abort()
+  searchAbort = typeof AbortController !== 'undefined' ? new AbortController() : null
+  searching.value = true
+  searchFailed.value = false
+  try {
+    const { data } = await adminSearchAPI.search(q, searchAbort ? { signal: searchAbort.signal } : {})
+    if (mine !== searchSeq) return
+    serverSections.value = data?.sections || []
+    serverQuery.value = q
+  } catch (e) {
+    if (mine !== searchSeq || e?.code === 'ERR_CANCELED' || e?.name === 'CanceledError') return
+    serverSections.value = []
+    serverQuery.value = ''
+    searchFailed.value = true
+  } finally {
+    if (mine === searchSeq) searching.value = false
+  }
+}
+
+watch(query, (v) => {
+  clearTimeout(searchTimer)
+  const q = v.trim()
+  if (q.length < 2) {
+    searchSeq++
+    searchAbort?.abort()
+    serverSections.value = []
+    serverQuery.value = ''
+    searching.value = false
+    searchFailed.value = false
+    return
+  }
+  searching.value = true
+  searchTimer = setTimeout(() => runServerSearch(q), 250)
+})
+
+// Gabungkan: item server di depan, item browser yang belum ada di server menyusul; bagian khusus server menyusul.
+const mergeSections = (local, remote) => {
+  const out = local.map((s) => ({ ...s, items: [...s.items] }))
+  for (const rs of remote) {
+    const mine = out.find((s) => s.title === rs.title)
+    if (!mine) { out.push({ title: rs.title, items: [...rs.items] }); continue }
+    const seen = new Set(rs.items.map((i) => i.key))
+    mine.items = [...rs.items, ...mine.items.filter((i) => !seen.has(i.key))]
+  }
+  return out
+}
+
 // Aksi cepat (bukan halaman): dijalankan langsung.
 const ACTIONS = [
   { key: 'act-theme', label: 'Ganti tema gelap / terang', hint: 'Tampilan', keywords: 'tema mode gelap terang dark light tampilan', run: () => toggleTheme() },
@@ -154,7 +233,8 @@ const sections = computed(() => {
   if (pages.length) secs.push({ title: 'Halaman', items: pages })
   const acts = ACTIONS.filter((a) => !words.length || matchScore(words, [a.label, a.keywords]) > 0)
   if (acts.length && words.length) secs.push({ title: 'Aksi', items: acts })
-  secs.push(...searchEntities(query.value, data))
+  const remote = serverQuery.value && serverQuery.value === query.value.trim() ? serverSections.value : []
+  secs.push(...mergeSections(searchEntities(query.value, data), remote))
   let n = 0
   return secs.map((sec) => ({ ...sec, items: sec.items.map((it) => ({ ...it, idx: n++ })) }))
 })
@@ -202,7 +282,7 @@ const onDialogKeydown = (e) => {
     e.preventDefault()
     closePalette()
   } else if (e.key === 'Tab') {
-    const focusables = e.currentTarget.querySelectorAll('input, button')
+    const focusables = e.currentTarget.querySelectorAll('input, button, a[href]')
     if (!focusables.length) return
     const first = focusables[0]
     const last = focusables[focusables.length - 1]
@@ -221,7 +301,11 @@ const onGlobalKeydown = (e) => {
 }
 
 onMounted(() => window.addEventListener('keydown', onGlobalKeydown))
-onUnmounted(() => window.removeEventListener('keydown', onGlobalKeydown))
+onUnmounted(() => {
+  window.removeEventListener('keydown', onGlobalKeydown)
+  clearTimeout(searchTimer)
+  searchAbort?.abort()
+})
 </script>
 
 <style scoped>
@@ -271,9 +355,19 @@ onUnmounted(() => window.removeEventListener('keydown', onGlobalKeydown))
 
 .qs-list { list-style: none; margin: 0; padding: 0.4rem; overflow-y: auto; }
 .qs-item {
-  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
-  min-height: 44px; padding: 0 0.85rem; border-radius: var(--r-md); cursor: pointer;
+  display: flex; flex-direction: column; justify-content: center; gap: 0.1rem;
+  min-height: 44px; padding: 0.3rem 0.85rem; border-radius: var(--r-md); cursor: pointer;
 }
+.qs-item-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-width: 0; }
+.qs-item-details { display: flex; align-items: center; gap: 0.6rem; min-width: 0; font-size: 0.75rem; color: var(--text-dim); }
+.qs-detail-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qs-maps {
+  flex-shrink: 0; padding: 0.15rem 0.5rem; border-radius: var(--r-xs); font-size: 0.6875rem; font-weight: 700;
+  border: 1px solid var(--border-strong); color: inherit; text-decoration: none;
+}
+.qs-maps:hover { text-decoration: underline; }
+.qs-maps:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.qs-item.is-active .qs-item-details { color: color-mix(in srgb, var(--on-accent) 85%, transparent); }
 .qs-item.is-active { background: var(--accent); color: var(--on-accent); }
 .qs-sec { padding: 0.55rem 0.85rem 0.25rem; font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-faint); }
 .qs-item-label { font-weight: 600; font-size: 0.9375rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -19,6 +19,7 @@ export const ADMIN_DESTINATIONS = [
   { to: '/admin/staff', label: 'Kelola PIN Staf', group: 'Internal', roles: ['owner'], keywords: 'staf staff pin' },
   { to: '/admin/settings', label: 'Pengaturan Sistem', group: 'Internal', roles: ['owner'], keywords: 'settings pengaturan sistem toko jam buka' },
   { to: '/admin/settings#blokir', label: 'Daftar Blokir Anti-Scam', group: 'Internal', roles: ['owner'], keywords: 'blokir blacklist scam penipu nomor ip buka blokir telegram' },
+  { to: '/admin/settings#blokir', label: 'Percobaan Order Terblokir', group: 'Internal', roles: ['owner'], keywords: 'percobaan scam penipu ditolak blokir ip nomor lokasi' },
   { to: '/admin/profile', label: 'Profil Saya', group: 'Akun', roles: ['owner', 'admin', 'kasir'], keywords: 'profil akun password' },
 ]
 

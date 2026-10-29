@@ -343,3 +343,43 @@ def order_auto_cancelled(order_pk):
 def send_report(text):
     """Laporan teks (ringkasan harian) ke semua chat terdaftar."""
     return send(text)
+
+
+def blocked_attempt(attempt_pk):
+    """
+    Kabari Telegram: ada yang mencoba memesan dari nomor/IP yang sedang diblokir.
+    Memuat semua petunjuk (nama, nomor, IP, lokasi perkiraan, tautan Maps, perangkat) + tindak lanjut:
+    kalau IP-nya BARU (belum diblokir), tampilkan perintah siap-salin untuk memblokirnya juga.
+    """
+    from . import blocklist
+    from .models import BlockedAttempt
+
+    a = BlockedAttempt.objects.filter(pk=attempt_pk).first()
+    if not a:
+        return False
+    info = dict(a.client_info or {})
+    place = ", ".join(p for p in (info.get("city"), info.get("region")) if p)
+    where = " ".join(p for p in (place, ci.country_label(info.get("country"))) if p)
+    maps = ci.maps_url(info.get("lat"), info.get("lng"))
+    total = BlockedAttempt.objects.filter(kind=a.kind, value=a.value).count()
+    what = "NOMOR WA diblokir (pesanan ditolak)" if a.kind == blocklist.KIND_PHONE else "IP diblokir (dipaksa QRIS)"
+    lines = [
+        "🛑 Percobaan order dari kontak TERBLOKIR",
+        f"Jenis: {what}",
+        f"Nama: {a.name or '-'}",
+        f"WA: {a.phone or '-'}",
+        f"IP: {a.client_ip or 'tidak terbaca'}",
+    ]
+    if where:
+        lines.append(f"📍 {where} (perkiraan)")
+    if info.get("device"):
+        lines.append(f"📱 {info['device']}")
+    if info.get("bot"):
+        lines.append("🤖 Perangkat mirip skrip/bot")
+    if maps:
+        lines.append(f"🗺 {maps}")
+    lines.append(f"Percobaan ke-{total} dari {a.value}")
+    if a.client_ip and not blocklist.is_ip_blocked(a.client_ip):
+        lines += ["", "IP ini belum diblokir. Untuk memaksa QRIS dari IP ini:", f"/blokir {a.client_ip}"]
+    lines += ["", "Riwayat lengkap: /lacak " + (a.phone or a.client_ip or a.value)]
+    return send("\n".join(lines))

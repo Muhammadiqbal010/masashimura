@@ -520,6 +520,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, nextTick } from "vue";
+import { useRoute } from "vue-router";
 import apiClient from "@/api/client";
 import { toast } from "vue-sonner";
 import { focusOnDesktop } from "@/utils/touch";
@@ -805,8 +806,16 @@ const exportDocument = async (type) => {
   finally { setTimeout(() => { isExporting.value = false; }, 1500); }
 };
 
+const route = useRoute();
+
 onMounted(async () => {
   window.addEventListener("keydown", onKeydown);
+  // Pencarian global membuka pengeluaran lewat ?date=YYYY-MM-DD supaya langsung ke hari yang dicari.
+  const qDate = route.query.date;
+  if (typeof qDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(qDate)) {
+    const [y, m, d] = qDate.split("-").map(Number);
+    currentDate.value = new Date(y, m - 1, d);
+  }
   await fetchDailyData();
   try {
     const { data } = await apiClient.get("/orders/finance/monthly/", { params: { year: selectedYear.value } });

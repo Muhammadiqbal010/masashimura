@@ -160,8 +160,30 @@ class ListTests(TestCase):
     def test_list_runs_constant_queries(self):
         for i in range(30):
             blocklist.block("phone", f"0822000000{i:02d}")
-        with self.assertNumQueries(11):   # tetap 11 berapa pun jumlah barisnya (tidak N+1)
+        with self.assertNumQueries(15):   # tetap 15 berapa pun jumlah barisnya (tidak N+1)
             self.c.get(URL)
+
+    def test_query_count_does_not_grow_with_rows_orders_and_attempts(self):
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+
+        def count():
+            with CaptureQueriesContext(connection) as ctx:
+                self.assertEqual(self.c.get(URL).status_code, 200)
+            return len(ctx)
+
+        def add(i):
+            phone, ip = f"0822000000{i:02d}", f"10.0.0.{i + 1}"
+            blocklist.block("phone", phone)
+            blocklist.block("ip", ip)
+            blocklist.record_attempt("phone", phone, phone=phone, name="x", ip=ip)
+            Order.objects.create(source="web", customer_phone=phone, client_ip=ip)
+
+        add(0)
+        few = count()
+        for i in range(1, 25):
+            add(i)
+        self.assertEqual(count(), few)
 
 
 class AddTests(TestCase):

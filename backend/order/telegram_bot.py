@@ -1,6 +1,6 @@
 """
 Webhook bot Telegram: menangani tombol (Terima / Tolak / Siap / Blokir) dan perintah
-(/antrean, /ringkasan, /lacak, /blokir, /bukablokir, /daftarblokir).
+(/antrean, /ringkasan, /lacak, /percobaan, /blokir, /bukablokir, /daftarblokir).
 
 Keamanan:
   - Telegram mengirim header X-Telegram-Bot-Api-Secret-Token yang kita set saat setWebhook
@@ -151,6 +151,9 @@ def handle_command(message):
         notify.send(trace.lookup(arg), chat_ids=[str(chat_id)])
     elif cmd in ("/blokir", "/bukablokir"):
         notify.send(_block_command(cmd, arg, actor=_actor_name(user)), chat_ids=[str(chat_id)])
+    elif cmd == "/percobaan":
+        from . import trace
+        notify.send(trace.attempts_text(), chat_ids=[str(chat_id)])
     elif cmd == "/daftarblokir":
         notify.send(_block_list_text(), chat_ids=[str(chat_id)])
     elif cmd == "/ringkasan":

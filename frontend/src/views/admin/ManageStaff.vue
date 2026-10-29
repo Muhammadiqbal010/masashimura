@@ -114,12 +114,14 @@ import { ref, computed, onMounted } from 'vue'
 import { toast } from 'vue-sonner'
 import { RefreshCw, Search, Users, KeyRound, AlertTriangle } from 'lucide-vue-next'
 import apiClient from '@/api/client'
+import { useRouteSearch } from '@/composables/useRouteSearch'
 import AdminModal from '@/components/ui/admin/Adminmodal.vue'
 
 const staffList = ref([])
 const loading = ref(true)
 const loadError = ref(false)
 const query = ref('')
+useRouteSearch(query) // ?q= dari pencarian global
 
 const pinOpen = ref(false)
 const pinTarget = ref(null)

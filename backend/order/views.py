@@ -253,18 +253,24 @@ def create_order(request):
     # order POS dibuat staff yang login, IP-nya tidak relevan.
     client_data, client_ip = {}, None
     if source == 'web':
-        # Nomor yang diblokir lewat Telegram ditolak total (kasir yang memutuskan; bisa dibuka lagi dari sana).
-        blocked_error = guards.web_blocked_error(phone)
-        if blocked_error:
-            return Response({"error": blocked_error, "blocked": True}, status=403)
-
         client_data = client_info.collect(request.META)
         client_ip = client_data.pop('ip', '') or None
+
+        # Nomor yang diblokir lewat Telegram ditolak total (kasir yang memutuskan; bisa dibuka lagi dari sana).
+        # Percobaannya dicatat (BlockedAttempt) dan dikabari ke Telegram supaya kelihatan blokirnya bekerja
+        # dan IP/nomor baru yang dipakai orang yang sama bisa dilacak.
+        blocked_error = guards.web_blocked_error(phone)
+        if blocked_error:
+            guards.note_blocked_attempt('phone', phone, phone, name, client_ip, client_data)
+            return Response({"error": blocked_error, "blocked": True}, status=403)
+
         if payment_method == 'cash':
             # Terlalu banyak order cash menunggu dari nomor/IP ini, atau IP diblokir:
             # bukan ditolak, tapi dialihkan ke QRIS (frontend otomatis memindahkan pilihan bayarnya).
             qris_reason = guards.web_pending_qris_reason(phone, client_ip)
             if qris_reason:
+                if qris_reason == guards.QRIS_IP_BLOCKED:
+                    guards.note_blocked_attempt('ip', client_ip, phone, name, client_ip, client_data)
                 return Response(guards.qris_required_payload(qris_reason), status=409)
 
     # Waktu order manual — HANYA berlaku untuk source='pos' (di titik ini sudah

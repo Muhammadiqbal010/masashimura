@@ -22,13 +22,16 @@ from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from . import blocklist, client_info as ci, events
-from .models import BlockedContact, Order
+from . import blocklist, dossier, events
+from .models import BlockedAttempt, BlockedContact, Order
 
 LIST_LIMIT = 500          # daftar aktif tidak dipotong sampai sejauh ini
 HISTORY_LIMIT = 100       # riwayat (sudah dibuka / kedaluwarsa) hanya yang terbaru
 EXPIRING_SOON_DAYS = 14   # IP yang masa blokirnya tinggal segini ditandai "segera berakhir"
 MAX_NAMES = 3             # nama pemesan yang ditampilkan per nomor/IP
+RECENT_ORDERS = 5         # pesanan terakhir yang ditampilkan per nomor/IP
+ATTEMPTS_SHOWN = 5        # percobaan terbaru yang ditampilkan per nomor/IP
+ATTEMPT_LIST_LIMIT = 200  # daftar percobaan terbaru (halaman Percobaan)
 MAX_REASON = 255
 
 EFFECTS = {
@@ -111,25 +114,7 @@ def _activity(rows):
     return counts, names
 
 
-def _location(info):
-    """Perkiraan lokasi dari client_info satu order (header Vercel). Hanya petunjuk level kota."""
-    info = info or {}
-    city, region = info.get("city") or "", info.get("region") or ""
-    country = info.get("country") or ""
-    parts = [p for p in (city, region) if p]
-    if country:
-        parts.append("Indonesia" if country == "ID" else country)
-    lat, lng = info.get("lat"), info.get("lng")
-    return {
-        "city": city,
-        "region": region,
-        "country": country,
-        "text": ", ".join(parts),
-        "device": info.get("device") or "",
-        "timezone": info.get("tz") or "",
-        "bot": bool(info.get("bot")),
-        "maps_url": ci.maps_url(lat, lng) if isinstance(lat, (int, float)) and isinstance(lng, (int, float)) else "",
-    }
+_location = dossier.location   # satu sumber dengan pencarian admin & bot Telegram
 
 
 def _footprint(rows):
@@ -138,17 +123,20 @@ def _footprint(rows):
       latest[key]  = (order_number, created_at, client_info, ip_atau_nomor_lawan)
       places[key]  = daftar lokasi berbeda (maks 5), terbaru dulu
       related[key] = IP yang pernah dipakai nomor itu / nomor yang pernah muncul dari IP itu (maks 5)
+      recent[key]  = pesanan terakhir (maks RECENT_ORDERS) lengkap: nama, nomor, IP, lokasi, tautan Maps
     """
     phones = {r.value for r in rows if r.kind == blocklist.KIND_PHONE}
     ips = {r.value for r in rows if r.kind == blocklist.KIND_IP}
-    latest, places, related = {}, defaultdict(list), defaultdict(list)
+    latest, places, related, recent_orders = {}, defaultdict(list), defaultdict(list), defaultdict(list)
     if not (phones or ips):
-        return latest, places, related
+        return latest, places, related, recent_orders
 
     recent = (Order.objects.filter(Q(customer_phone__in=phones) | Q(client_ip__in=ips))
-              .order_by("-created_at")
-              .values_list("order_number", "created_at", "customer_phone", "client_ip", "client_info")[:3000])
-    for number, created, phone, ip, info in recent:
+              .order_by("-created_at", "-id").values(*dossier.ORDER_FIELDS)[:3000])
+    for row in recent:
+        number, created, phone, ip, info = (row["order_number"], row["created_at"], row["customer_phone"],
+                                            row["client_ip"], row["client_info"])
+        built = None
         pairs = ((blocklist.KIND_PHONE, phone, ip), (blocklist.KIND_IP, ip, phone))
         for kind, mine, other in pairs:
             if not mine or (kind == blocklist.KIND_PHONE and mine not in phones) or (kind == blocklist.KIND_IP and mine not in ips):
@@ -161,14 +149,64 @@ def _footprint(rows):
                 places[key].append(text)
             if other and other not in related[key] and len(related[key]) < 5:
                 related[key].append(other)
-    return latest, places, related
+            if len(recent_orders[key]) < RECENT_ORDERS:
+                built = built or dossier.order_row(row)
+                recent_orders[key].append(built)
+    return latest, places, related, recent_orders
+
+
+def _ips_blocked(attempts):
+    """Himpunan IP (dari daftar percobaan) yang sedang diblokir efektif — 1 query untuk seluruh daftar."""
+    ips = {a.client_ip for a in attempts if a.client_ip}
+    if not ips:
+        return set()
+    cutoff = timezone.now() - timedelta(days=blocklist.IP_BLOCK_DAYS)
+    return set(BlockedContact.objects.filter(kind=blocklist.KIND_IP, is_active=True, blocked_at__gte=cutoff,
+                                             value__in=ips).values_list("value", flat=True))
+
+
+def _attempt_row(a, blocked_ips=None):
+    loc = _location(a.client_info)
+    return {
+        "id": a.pk,
+        "kind": a.kind,
+        "kind_label": KIND_LABELS.get(a.kind, a.kind),
+        "value": a.value,
+        "phone": a.phone,
+        "name": a.name,
+        "ip": a.client_ip or "",
+        # None = tidak dihitung (tampilan ringkas di dalam daftar blokir); True/False = status blokir IP saat ini
+        "ip_blocked": None if blocked_ips is None else (a.client_ip in blocked_ips),
+        "created_at": a.created_at,
+        "location": loc,
+        "location_text": loc["text"],
+        "maps_url": loc["maps_url"],
+        "device": loc["device"],
+        "bot": loc["bot"],
+    }
+
+
+def _attempts(rows):
+    """{key: [percobaan terbaru…]} untuk semua baris sekaligus (1 query, maks ATTEMPTS_SHOWN per kunci)."""
+    keys = {(r.kind, r.value) for r in rows}
+    out = defaultdict(list)
+    if not keys:
+        return out
+    values = {v for _, v in keys}
+    for a in BlockedAttempt.objects.filter(value__in=values).order_by("-created_at")[:3000]:
+        key = (a.kind, a.value)
+        if key in keys and len(out[key]) < ATTEMPTS_SHOWN:
+            out[key].append(_attempt_row(a))
+    return out
 
 
 def _serialize(rows, now=None):
     now = now or timezone.now()
     rows = list(rows)
     counts, names = _activity(rows)
-    latest, places, related = _footprint(rows)
+    latest, places, related, recent_orders = _footprint(rows)
+    attempt_totals = blocklist.attempt_counts({(r.kind, r.value) for r in rows})
+    attempts = _attempts(rows)
     order_numbers = {r.order_number for r in rows if r.order_number}
     order_ids = dict(Order.objects.filter(order_number__in=order_numbers).values_list("order_number", "id")) if order_numbers else {}
 
@@ -206,6 +244,12 @@ def _serialize(rows, now=None):
             "other_locations": [p for p in places.get(key, []) if not loc or p != loc["text"]],
             "related_label": "IP yang pernah dipakai" if r.kind == blocklist.KIND_PHONE else "Nomor WA yang pernah muncul",
             "related": related.get(key, []),
+            # Pesanan terakhir dari nomor/IP ini (nama, nomor WA, IP, lokasi perkiraan, tautan Google Maps)
+            "recent_orders": recent_orders.get(key, []),
+            # Percobaan order SETELAH diblokir (ditolak/dipaksa QRIS)
+            "attempt_count": attempt_totals.get(key, (0, None))[0],
+            "last_attempt_at": attempt_totals.get(key, (0, None))[1],
+            "attempts": attempts.get(key, []),
         })
     return out
 
@@ -224,6 +268,7 @@ def _summary(now=None):
         "ip": effective.filter(kind=blocklist.KIND_IP).count(),
         "ip_expiring_soon": effective.filter(kind=blocklist.KIND_IP, blocked_at__lt=soon_cutoff).count(),
         "history": BlockedContact.objects.exclude(pk__in=effective.values("pk")).count(),
+        "attempts_7d": BlockedAttempt.objects.filter(created_at__gte=now - timedelta(days=7)).count(),
         "ip_block_days": blocklist.IP_BLOCK_DAYS,
         "expiring_soon_days": EXPIRING_SOON_DAYS,
     }
@@ -298,6 +343,37 @@ class BlocklistView(APIView):
             },
             status=status.HTTP_201_CREATED if fresh else status.HTTP_200_OK,
         )
+
+
+class BlocklistAttemptsView(APIView):
+    """
+    GET /orders/blocklist/attempts/  — percobaan order dari nomor/IP yang sudah diblokir, terbaru dulu.
+    Parameter: ?days=7 (1–180), ?q=<nomor|IP|nama>. Berguna untuk melihat blokir benar-benar bekerja dan
+    menemukan nomor/IP baru yang dipakai orang yang sama.
+    """
+    permission_classes = [IsAuthenticated, IsOwnerRole]
+
+    def get(self, request):
+        try:
+            days = max(1, min(int(request.query_params.get("days", 7)), blocklist.ATTEMPT_KEEP_DAYS))
+        except (TypeError, ValueError):
+            days = 7
+        qs = BlockedAttempt.objects.filter(created_at__gte=timezone.now() - timedelta(days=days))
+        text = (request.query_params.get("q") or "").strip()
+        if text:
+            cond = Q(value__icontains=text) | Q(phone__icontains=text) | Q(name__icontains=text) | Q(client_ip__icontains=text)
+            target = blocklist.parse_target(text)
+            if target:
+                cond |= Q(kind=target[0], value=target[1]) | Q(phone=target[1])
+            qs = qs.filter(cond)
+        total = qs.count()
+        rows = list(qs.order_by("-created_at")[:ATTEMPT_LIST_LIMIT])
+        blocked_ips = _ips_blocked(rows)
+        return Response({
+            "days": days,
+            "total": total,
+            "results": [_attempt_row(a, blocked_ips) for a in rows],
+        })
 
 
 class BlocklistUnblockView(APIView):

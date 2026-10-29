@@ -675,6 +675,29 @@ class BlockedContact(models.Model):
         return f"{self.kind}:{self.value} ({'aktif' if self.is_active else 'dibuka'})"
 
 
+class BlockedAttempt(models.Model):
+    """
+    Satu percobaan order web dari nomor/IP yang sedang diblokir (lihat blocklist.record_attempt).
+    Berguna untuk tahu apakah blokir benar-benar bekerja, dan untuk melacak IP/nomor baru yang dipakai
+    orang yang sama setelah diblokir. Tidak pernah dibuat untuk order POS.
+    """
+    KIND_CHOICES = (('phone', 'Nomor WA diblokir'), ('ip', 'IP diblokir'))
+
+    kind        = models.CharField(max_length=5, choices=KIND_CHOICES)
+    value       = models.CharField(max_length=64, db_index=True)   # nomor / IP yang kena blokir
+    phone       = models.CharField(max_length=20, blank=True, default='')
+    name        = models.CharField(max_length=100, blank=True, default='')
+    client_ip   = models.GenericIPAddressField(null=True, blank=True)
+    client_info = models.JSONField(default=dict, blank=True)
+    created_at  = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.kind}:{self.value} @ {self.created_at:%Y-%m-%d %H:%M}"
+
+
 # ─────────────────────────────────────────────
 # SIGNALS
 # ─────────────────────────────────────────────

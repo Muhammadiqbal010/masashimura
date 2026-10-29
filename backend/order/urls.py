@@ -1,7 +1,8 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from .blocklist_views import BlocklistUnblockView, BlocklistView
+from .search_views import AdminSearchView
+from .blocklist_views import BlocklistAttemptsView, BlocklistUnblockView, BlocklistView
 from .staff_views import cron_run, staff_summary_view
 from .telegram_bot import telegram_webhook
 from .views import (
@@ -129,7 +130,11 @@ urlpatterns = [
 
     # ── Daftar blokir anti-scam (khusus owner; kelola juga lewat Telegram) ────
     path("orders/blocklist/",                    BlocklistView.as_view(),        name="blocklist"),
+    path("orders/blocklist/attempts/",           BlocklistAttemptsView.as_view(), name="blocklist-attempts"),
     path("orders/blocklist/<int:pk>/unblock/",   BlocklistUnblockView.as_view(), name="blocklist-unblock"),
+
+    # ── Pencarian admin lengkap (Ctrl/Cmd+K) ──────────────────────────────────
+    path("orders/admin-search/",                 AdminSearchView.as_view(),      name="admin-search"),
 
     # ── Store settings ───────────────────────────────────────────────────────
     path("orders/settings/", StoreSettingsView.as_view(), name="store-settings"),

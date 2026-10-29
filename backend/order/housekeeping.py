@@ -4,6 +4,7 @@ Bersih-bersih berkala data anti-scam (dipanggil cron harian dan perintah purge_c
 - Jejak IP/lokasi di order lama dihapus: IP termasuk data pribadi, simpan seperlunya saja.
   Order, total, dan laporan tidak tersentuh.
 - Blokir IP yang sudah lewat masa berlakunya dinonaktifkan (lihat blocklist.IP_BLOCK_DAYS).
+- Catatan percobaan order dari nomor/IP terblokir yang sangat lama dihapus (blocklist.ATTEMPT_KEEP_DAYS).
 """
 from datetime import timedelta
 
@@ -32,4 +33,5 @@ def run_daily(days=TRACE_KEEP_DAYS):
     return {
         "purged_orders": purge_client_traces(days=days),
         "expired_ip_blocks": blocklist.expire_old_ip_blocks(),
+        "purged_attempts": blocklist.purge_old_attempts(),
     }

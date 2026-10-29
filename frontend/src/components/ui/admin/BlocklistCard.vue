@@ -12,7 +12,7 @@
         </p>
       </div>
       <div class="adm-card-head-actions">
-        <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" :disabled="loading || forbidden" @click="fetchList()">
+        <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" :disabled="loading || forbidden" @click="fetchList(); showAttempts && fetchAttempts()">
           <RefreshCw :size="13" :class="{ 'bl-spin': loading }" /> Muat ulang
         </button>
       </div>
@@ -44,7 +44,56 @@
           <p class="bl-stat-value">{{ summary ? summary.ip_expiring_soon : '–' }}</p>
           <p class="bl-stat-label">IP segera berakhir <span class="bl-faint">· ≤ {{ expiringDays }} hari</span></p>
         </div>
+        <div class="bl-stat" :class="{ 'is-danger': summary && summary.attempts_7d > 0 }">
+          <p class="bl-stat-value">{{ summary ? summary.attempts_7d : '–' }}</p>
+          <p class="bl-stat-label">Percobaan terblokir <span class="bl-faint">· 7 hari</span></p>
+        </div>
       </div>
+
+      <!-- ── Percobaan order dari kontak terblokir ─────────────────────────── -->
+      <section class="bl-attempts" aria-labelledby="bl-att-title">
+        <button type="button" class="bl-att-head" :aria-expanded="showAttempts" aria-controls="bl-att-body" @click="toggleAttempts">
+          <span class="bl-att-title" id="bl-att-title"><ShieldAlert :size="15" /> Percobaan order setelah diblokir</span>
+          <span class="bl-faint bl-att-sub">Siapa yang masih mencoba, dari mana, dan IP barunya</span>
+          <ChevronDown :size="16" class="bl-chev" :class="{ 'is-open': showAttempts }" aria-hidden="true" />
+        </button>
+        <div v-if="showAttempts" id="bl-att-body" class="bl-att-body">
+          <div class="adm-seg" role="group" aria-label="Rentang waktu percobaan">
+            <button v-for="d in ATTEMPT_DAYS" :key="d" type="button" class="adm-seg-btn" :aria-pressed="attemptDays === d" @click="setAttemptDays(d)">{{ d }} hari</button>
+          </div>
+          <p v-if="attemptsLoading && !attempts.length" class="adm-hint">Memuat…</p>
+          <p v-else-if="attemptsError" class="adm-hint bl-err">{{ attemptsError }}</p>
+          <p v-else-if="!attempts.length" class="adm-hint">Tidak ada percobaan dalam {{ attemptDays }} hari terakhir. Blokir bekerja dan belum ada yang mencoba lagi.</p>
+          <ul v-else class="bl-att-list">
+            <li v-for="a in attempts" :key="a.id" class="bl-att">
+              <div class="bl-att-top">
+                <span class="adm-badge" :class="a.kind === 'ip' ? 'adm-badge--amber' : 'adm-badge--red'">{{ a.kind === 'ip' ? 'IP → dipaksa QRIS' : 'Nomor → ditolak' }}</span>
+                <span class="bl-faint">{{ fmt(a.created_at) }} · {{ ago(a.created_at) }}</span>
+              </div>
+              <dl class="bl-order-meta">
+                <div><dt>Nama</dt><dd>{{ a.name || '–' }}</dd></div>
+                <div><dt>Nomor WA</dt><dd class="adm-mono">{{ a.phone || '–' }}</dd></div>
+                <div><dt>IP</dt><dd class="adm-mono">{{ a.ip || '–' }}
+                  <span v-if="a.ip && a.ip_blocked" class="adm-badge adm-badge--red">sudah diblokir</span>
+                  <span v-else-if="a.ip" class="adm-badge adm-badge--amber">IP baru</span>
+                </dd></div>
+                <div><dt>Lokasi (perkiraan)</dt><dd>{{ a.location_text || '–' }}
+                  <a v-if="a.maps_url" :href="a.maps_url" target="_blank" rel="noopener noreferrer" class="bl-link">Google Maps <ExternalLink :size="11" /></a>
+                </dd></div>
+                <div class="bl-meta-wide"><dt>Perangkat</dt><dd>{{ a.device || '–' }} <span v-if="a.bot" class="adm-badge adm-badge--amber">Mirip bot</span></dd></div>
+              </dl>
+              <div class="bl-att-actions">
+                <button v-if="a.ip && !a.ip_blocked" type="button" class="adm-btn adm-btn--soft adm-btn--sm" :disabled="blockingIp.has(a.ip)" @click="blockAttemptIp(a)">
+                  <span v-if="blockingIp.has(a.ip)" class="adm-spinner"></span><Ban v-else :size="13" /> Blokir IP ini
+                </button>
+                <button v-if="a.phone" type="button" class="adm-btn adm-btn--ghost adm-btn--sm" @click="query = a.phone">
+                  <Search :size="13" /> Lihat nomor ini
+                </button>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </section>
 
       <!-- ── Cara kerja ───────────────────────────────────────────────────── -->
       <div class="bl-note">
@@ -247,6 +296,55 @@
               </dl>
             </div>
 
+            <details v-if="it.recent_orders && it.recent_orders.length" class="bl-orders" :open="it.recent_orders.length <= 2">
+              <summary class="bl-orders-sum">
+                <ListOrdered :size="13" /> Pesanan terakhir
+                <span class="bl-faint">· {{ it.recent_orders.length }} dari {{ it.order_count }}</span>
+              </summary>
+              <ul class="bl-order-list">
+                <li v-for="o in it.recent_orders" :key="o.id" class="bl-order">
+                  <div class="bl-order-top">
+                    <router-link :to="orderLink(o)" class="bl-order-no adm-mono">{{ o.order_number }}</router-link>
+                    <span class="adm-badge" :class="statusTone(o)">{{ o.status_label }}</span>
+                    <span class="bl-faint">{{ fmt(o.created_at) }}</span>
+                  </div>
+                  <dl class="bl-order-meta">
+                    <div><dt>Nama</dt><dd>{{ o.name || '–' }}</dd></div>
+                    <div><dt>Nomor WA</dt><dd class="adm-mono">{{ o.phone || '–' }}</dd></div>
+                    <div><dt>IP</dt><dd class="adm-mono">{{ o.ip || '–' }}</dd></div>
+                    <div><dt>Total</dt><dd>{{ rupiah(o.total) }}</dd></div>
+                    <div class="bl-meta-wide"><dt>Lokasi (perkiraan dari IP)</dt>
+                      <dd>{{ o.location_text || '–' }}
+                        <a v-if="o.maps_url" :href="o.maps_url" target="_blank" rel="noopener noreferrer" class="bl-link">Google Maps <ExternalLink :size="11" /></a>
+                      </dd>
+                    </div>
+                    <div v-if="o.device" class="bl-meta-wide"><dt>Perangkat</dt><dd>{{ o.device }}</dd></div>
+                  </dl>
+                </li>
+              </ul>
+            </details>
+
+            <details v-if="it.attempts && it.attempts.length" class="bl-orders bl-orders--warn">
+              <summary class="bl-orders-sum">
+                <ShieldAlert :size="13" /> Percobaan setelah diblokir
+                <span class="bl-faint">· {{ it.attempt_count }} kali, terakhir {{ ago(it.last_attempt_at) }}</span>
+              </summary>
+              <ul class="bl-order-list">
+                <li v-for="a in it.attempts" :key="a.id" class="bl-order">
+                  <div class="bl-order-top"><span>{{ fmt(a.created_at) }}</span><span class="bl-faint">{{ a.name || 'tanpa nama' }}</span></div>
+                  <dl class="bl-order-meta">
+                    <div><dt>Nomor WA</dt><dd class="adm-mono">{{ a.phone || '–' }}</dd></div>
+                    <div><dt>IP</dt><dd class="adm-mono">{{ a.ip || '–' }}</dd></div>
+                    <div class="bl-meta-wide"><dt>Lokasi (perkiraan)</dt>
+                      <dd>{{ a.location_text || '–' }}
+                        <a v-if="a.maps_url" :href="a.maps_url" target="_blank" rel="noopener noreferrer" class="bl-link">Google Maps <ExternalLink :size="11" /></a>
+                      </dd>
+                    </div>
+                  </dl>
+                </li>
+              </ul>
+            </details>
+
             <div class="bl-actions">
               <button type="button" class="adm-btn adm-btn--ghost adm-btn--sm" @click="copy(it.value)">
                 <Copy :size="13" /> Salin
@@ -288,10 +386,11 @@ import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { toast } from 'vue-sonner'
 import {
   ShieldAlert, ShieldCheck, Info, Plus, Ban, Search, X, Phone, Globe, Clock,
-  Copy, RotateCcw, RefreshCw, AlertTriangle, Lock, MapPin, ExternalLink,
+  Copy, RotateCcw, RefreshCw, AlertTriangle, Lock, MapPin, ExternalLink, ChevronDown, ListOrdered,
 } from 'lucide-vue-next'
 import { blocklistAPI } from '@/api/order'
 import { useAdminConfirm } from '@/composables/useAdminConfirm'
+import { useRouteSearch } from '@/composables/useRouteSearch'
 import AdminConfirm from '@/components/ui/admin/Adminconfirm.vue'
 
 const { state: confirmState, ask, accept: acceptConfirm, cancel: cancelConfirm } = useAdminConfirm()
@@ -312,6 +411,7 @@ const LIST_LIMIT = 500      // sama dengan LIST_LIMIT di backend
 const view = ref('active')
 const kind = ref('')
 const query = ref('')
+useRouteSearch(query) // ?q=<nomor|IP> dari pencarian global Ctrl+K supaya langsung tersaring
 const items = ref([])
 const summary = ref(null)
 const loading = ref(false)
@@ -355,6 +455,15 @@ const dtf = new Intl.DateTimeFormat('id-ID', {
   hour: '2-digit', minute: '2-digit', hour12: false,
 })
 const fmt = (iso) => (iso ? `${dtf.format(new Date(iso))} WIB` : '–')
+const rupiah = (v) => 'Rp ' + Math.round(Number(v) || 0).toLocaleString('id-ID')
+const wibDay = (iso) => new Date(iso).toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' })   // YYYY-MM-DD
+// Tautan ke pesanan di halaman Pesanan (tanggal + nomor order, sama dengan hasil pencarian global).
+const orderLink = (o) => `/admin/orders?date=${wibDay(o.created_at)}&q=${encodeURIComponent(o.order_number)}`
+const statusTone = (o) => {
+  if (o.status_label === 'Selesai') return 'adm-badge--green'
+  if (o.status_label === 'Dibatalkan' || o.status_label === 'Batal otomatis') return 'adm-badge--red'
+  return 'adm-badge--amber'
+}
 
 const ago = (iso) => {
   if (!iso) return ''
@@ -425,6 +534,57 @@ watch(query, () => {
 })
 onMounted(fetchList)
 onBeforeUnmount(() => clearTimeout(timer))
+
+// ── Percobaan order setelah diblokir ─────────────────────────────────────────────────────
+const ATTEMPT_DAYS = [7, 30, 90]
+const showAttempts = ref(false)
+const attemptDays = ref(7)
+const attempts = ref([])
+const attemptsLoading = ref(false)
+const attemptsError = ref('')
+const blockingIp = ref(new Set())
+let attemptSeq = 0
+
+async function fetchAttempts() {
+  const mine = ++attemptSeq
+  attemptsLoading.value = true
+  attemptsError.value = ''
+  try {
+    const { data } = await blocklistAPI.attempts({ days: attemptDays.value })
+    if (mine !== attemptSeq) return
+    attempts.value = data.results || []
+  } catch (e) {
+    if (mine !== attemptSeq) return
+    attemptsError.value = errText(e, 'Gagal memuat percobaan.')
+    attempts.value = []
+  } finally {
+    if (mine === attemptSeq) attemptsLoading.value = false
+  }
+}
+function toggleAttempts() {
+  showAttempts.value = !showAttempts.value
+  if (showAttempts.value) fetchAttempts()
+}
+function setAttemptDays(d) {
+  attemptDays.value = d
+  fetchAttempts()
+}
+async function blockAttemptIp(a) {
+  const next = new Set(blockingIp.value)
+  next.add(a.ip)
+  blockingIp.value = next
+  try {
+    const { data } = await blocklistAPI.add(a.ip, `Percobaan dari nomor terblokir ${a.phone || ''}`.trim())
+    data.created ? toast.success(data.message) : toast.info(data.message)
+    await Promise.all([fetchAttempts(), fetchList()])
+  } catch (e) {
+    toast.error(errText(e, 'Gagal memblokir IP.'))
+  } finally {
+    const done = new Set(blockingIp.value)
+    done.delete(a.ip)
+    blockingIp.value = done
+  }
+}
 
 // ── Aksi ─────────────────────────────────────────────────────────────────────────────────
 const setBusy = (id, on) => {
@@ -507,13 +667,14 @@ async function copy(value) {
 @keyframes bl-spin { to { transform: rotate(360deg); } }
 
 /* ── Ringkasan ─────────────────────────────────────────────────── */
-.bl-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.65rem; }
+.bl-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.65rem; }
 .bl-stat {
   padding: 0.8rem 0.95rem; min-width: 0;
   border: 1px solid var(--border); border-radius: var(--r-md);
   background: rgb(var(--ink) / 0.03);
 }
 .bl-stat.is-warn { background: var(--tint-amber); border-color: var(--line-amber); }
+.bl-stat.is-danger { background: var(--tint-red, rgb(220 38 38 / 0.1)); border-color: var(--line-red, rgb(220 38 38 / 0.4)); }
 .bl-stat-value {
   margin: 0; font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; line-height: 1;
   color: var(--text); font-variant-numeric: tabular-nums;
@@ -612,5 +773,52 @@ async function copy(value) {
   .bl-actions .adm-btn { flex: 1 1 auto; justify-content: center; }
   .bl-toolbar .adm-seg { width: 100%; }
   .bl-toolbar .adm-seg .adm-seg-btn { flex: 1; }
+}
+
+/* ── Percobaan terblokir ── */
+.bl-err { color: var(--red-soft, #f87171); }
+.bl-attempts { border: 1px solid var(--border, rgb(var(--ink) / 0.1)); border-radius: var(--r-md, 12px); overflow: hidden; }
+.bl-att-head {
+  width: 100%; display: flex; align-items: center; gap: 0.6rem; padding: 0.75rem 0.9rem; min-height: 48px;
+  background: transparent; border: 0; color: var(--text); text-align: left; cursor: pointer; font: inherit;
+}
+.bl-att-head:hover { background: rgb(var(--ink) / 0.04); }
+.bl-att-head:focus-visible { outline: 2px solid var(--blue-soft, #60a5fa); outline-offset: -2px; }
+.bl-att-title { display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 700; font-size: 0.875rem; }
+.bl-att-sub { flex: 1; min-width: 0; font-size: 0.75rem; }
+.bl-chev { flex-shrink: 0; transition: transform 0.2s; }
+.bl-chev.is-open { transform: rotate(180deg); }
+.bl-att-body { display: flex; flex-direction: column; gap: 0.7rem; padding: 0 0.9rem 0.9rem; }
+.bl-att-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0.6rem; }
+.bl-att { padding: 0.7rem 0.8rem; border-radius: var(--r-sm, 8px); background: rgb(var(--ink) / 0.03); border-left: 3px solid var(--red-soft, #f87171); }
+.bl-att-top { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; font-size: 0.75rem; }
+.bl-att-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.6rem; }
+
+/* ── Pesanan terakhir per blokir ── */
+.bl-orders { margin-top: 0.75rem; border: 1px solid var(--border, rgb(var(--ink) / 0.1)); border-radius: var(--r-sm, 8px); }
+.bl-orders--warn { border-color: var(--line-red, rgb(220 38 38 / 0.35)); }
+.bl-orders-sum {
+  display: flex; align-items: center; gap: 0.4rem; padding: 0.55rem 0.8rem; min-height: 44px; cursor: pointer;
+  font-size: 0.8125rem; font-weight: 600; color: var(--text); list-style: none;
+}
+.bl-orders-sum::-webkit-details-marker { display: none; }
+.bl-orders-sum:focus-visible { outline: 2px solid var(--blue-soft, #60a5fa); outline-offset: -2px; }
+.bl-order-list { margin: 0; padding: 0 0.8rem 0.8rem; list-style: none; display: flex; flex-direction: column; gap: 0.55rem; }
+.bl-order { padding: 0.6rem 0.7rem; border-radius: var(--r-sm, 8px); background: rgb(var(--ink) / 0.03); min-width: 0; }
+.bl-order-top { display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem; font-size: 0.75rem; }
+.bl-order-no { font-weight: 700; color: var(--blue-soft, #60a5fa); text-decoration: none; padding: 0.15rem 0; }
+.bl-order-no:hover { text-decoration: underline; }
+.bl-order-meta { margin: 0.45rem 0 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.4rem 0.8rem; }
+.bl-order-meta > div { min-width: 0; }
+.bl-order-meta dt { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-faint); }
+.bl-order-meta dd { margin: 0; font-size: 0.8125rem; line-height: 1.5; color: var(--text-2); overflow-wrap: anywhere; }
+
+@media (max-width: 900px) {
+  .bl-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .bl-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bl-att-sub { display: none; }
+  .bl-order-meta { grid-template-columns: minmax(0, 1fr); }
 }
 </style>

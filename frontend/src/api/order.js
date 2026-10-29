@@ -64,4 +64,11 @@ export const blocklistAPI = {
   list: (params = {}) => apiClient.get("/orders/blocklist/", { params }),
   add: (target, reason = "") => apiClient.post("/orders/blocklist/", { target, reason }),
   unblock: (id) => apiClient.post(`/orders/blocklist/${id}/unblock/`),
+  attempts: (params = {}) => apiClient.get("/orders/blocklist/attempts/", { params }),
+};
+
+// Pencarian admin lengkap (Ctrl/Cmd+K): pesanan, pelanggan, blokir, percobaan, staf, pengeluaran.
+// Isinya mengikuti peran: IP, lokasi, blokir, staf, dan pengeluaran hanya untuk owner.
+export const adminSearchAPI = {
+  search: (q, config = {}) => apiClient.get("/orders/admin-search/", { params: { q }, ...config }),
 };
