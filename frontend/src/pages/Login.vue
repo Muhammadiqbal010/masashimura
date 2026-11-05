@@ -27,29 +27,29 @@
             class="hero-logo"
             onerror="this.style.display='none'"
           />
-          <h2 class="hero-tagline">Admin ERP System</h2>
+          <h2 class="hero-tagline">Ruang Staf Masashimura</h2>
           <p class="hero-desc">
-            Infrastruktur manajemen internal, rekap finansial, kontrol stok, dan kasir POS terintegrasi Masashimura Bekasi.
+            Kasir, stok, laporan, dan pelanggan Masashimura Bekasi, semua dikelola dari sini.
           </p>
           <div class="hero-stats">
             <div class="hero-stat">
-              <span class="stat-num">POS</span>
-              <span class="stat-lbl">Kasir</span>
+              <span class="stat-num">Kasir</span>
+              <span class="stat-lbl">Pesanan</span>
             </div>
             <div class="hero-stat-div"></div>
             <div class="hero-stat">
-              <span class="stat-num">ERP</span>
-              <span class="stat-lbl">Finansial</span>
+              <span class="stat-num">Laporan</span>
+              <span class="stat-lbl">Omzet</span>
             </div>
             <div class="hero-stat-div"></div>
             <div class="hero-stat">
-              <span class="stat-num">CRM</span>
-              <span class="stat-lbl">Loyalitas</span>
+              <span class="stat-num">Pelanggan</span>
+              <span class="stat-lbl">Poin</span>
             </div>
           </div>
         </div>
 
-        <p class="hero-copy">© 2026 Masashimura Corporation. All Rights Reserved.</p>
+        <p class="hero-copy">© 2026 Masashimura Bekasi</p>
       </div>
     </div>
 
@@ -59,16 +59,16 @@
 
         <!-- Header -->
         <div class="form-header">
-          <p class="form-eyebrow"><span class="hanko hanko--sm" aria-hidden="true">管</span>Masashimura · Admin ERP</p>
-          <h1 class="form-title">Masuk ke Sistem</h1>
-          <p class="form-subtitle">Masukkan kredensial otorisasi untuk mengakses ruang kendali.</p>
+          <p class="form-eyebrow"><span class="hanko hanko--sm" aria-hidden="true">管</span>Masashimura · Ruang Staf</p>
+          <h1 class="form-title">Masuk</h1>
+          <p class="form-subtitle">Masuk pakai akun staf kamu.</p>
         </div>
 
         <!-- Form -->
         <form @submit.prevent="handleSubmit" class="login-form">
 
           <div class="field">
-            <label class="field-label">Username / Email Karyawan</label>
+            <label class="field-label">Username atau email staf</label>
             <div class="input-wrap">
               <svg class="input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               <input
@@ -77,7 +77,7 @@
                 required
                 autocomplete="username"
                 :disabled="loading"
-                placeholder="username anda..."
+                placeholder="username atau email"
                 class="text-input"
               />
             </div>
@@ -105,7 +105,7 @@
           <button type="submit" :disabled="loading" class="submit-btn">
             <span v-if="loading" class="btn-spinner"></span>
             <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
-            {{ loading ? 'Memverifikasi...' : 'Masuk ke Sistem' }}
+            {{ loading ? 'Memeriksa akun...' : 'Masuk' }}
           </button>
 
         </form>
@@ -113,12 +113,12 @@
         <!-- Forgot password -->
         <div class="forgot-wrap">
           <button @click="openForgotModal" class="forgot-btn">
-            Lupa password akun?
+            Lupa password?
           </button>
         </div>
 
         <!-- Footer -->
-        <p class="form-footer">Akses terbatas untuk staff & operator Masashimura</p>
+        <p class="form-footer">Khusus tim Masashimura</p>
 
       </div>
     </div>
@@ -342,7 +342,7 @@ const handleSelfResetPassword = async () => {
   color: rgba(255,255,255,0.7); margin: 0;
 }
 .hero-desc {
-  font-size: 0.78rem; color: rgba(255,255,255,0.6);
+  font-size: 0.9rem; color: rgba(255,255,255,0.78);
   line-height: 1.7; margin: 0; max-width: 340px;
 }
 .hero-stats {
@@ -357,7 +357,7 @@ const handleSelfResetPassword = async () => {
 .stat-lbl { font-size: 0.75rem; color: rgba(255,255,255,0.6); letter-spacing: 0.1em; text-transform: uppercase; }
 .hero-stat-div { width: 1px; height: 28px; background: rgba(255,255,255,0.1); }
 
-.hero-copy { font-size: 0.75rem; color: rgba(255,255,255,0.5); font-family: monospace; }
+.hero-copy { font-size: 0.8rem; color: rgba(255,255,255,0.6); }
 
 /* ── Form Panel ────────────────────────────────────────────────────── */
 .form-panel {
