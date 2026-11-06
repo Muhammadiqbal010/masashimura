@@ -1,26 +1,23 @@
 <template>
-  <div class="page dot-grid relative min-h-screen pb-24 pt-5 font-inter text-[#111113] sm:pt-6">
+  <div class="page dot-grid relative min-h-screen pb-28 pt-4 lg:pb-16 font-inter text-[#111113] sm:pt-6">
 
     <div class="relative mx-auto max-w-6xl px-5 sm:px-8 lg:px-10">
 
       <!-- Bar atas mini: halaman checkout sengaja tanpa navbar & footer -->
-      <div class="mb-8 flex items-center justify-between gap-3 sm:mb-10">
+      <div class="mb-4 flex items-center justify-between gap-3 sm:mb-6">
         <button type="button" class="co-back" @click="goBack">
           <ArrowLeft :size="16" aria-hidden="true" />
           <span>{{ payment || cashDone ? "Beranda" : "Kembali ke menu" }}</span>
         </button>
         <router-link to="/" class="co-logo" aria-label="Masashimura – Beranda">
-          <img src="@/assets/masashimura-logo.png" alt="Masashimura" class="h-8 w-auto object-contain sm:h-10" />
+          <img src="@/assets/masashimura-logo.png" alt="Masashimura" class="h-7 w-auto object-contain sm:h-9" />
         </router-link>
       </div>
 
       <!-- Header -->
-      <header class="mb-8 sm:mb-10">
-        <p class="eyebrow-jp mb-4"><span class="hanko" aria-hidden="true">会計</span>Checkout</p>
-        <h1 class="font-sora text-4xl leading-[1.1] sm:text-5xl">
-          Pesanan Kamu
-        </h1>
-        <p class="mt-3 text-base text-[#55555D]">Cek item, isi data, lalu pilih cara bayar.</p>
+      <header class="mb-5 sm:mb-6">
+        <h1 class="font-sora text-3xl leading-tight sm:text-4xl">Pesanan Kamu</h1>
+        <p class="mt-1 text-sm text-[#55555D]">Cek item, isi data, lalu pilih cara bayar.</p>
       </header>
 
       <!-- ══ PANEL STATUS PEMBAYARAN ONLINE (muncul setelah order gateway dibuat) ══ -->
@@ -177,7 +174,7 @@
         <!-- Toko tutup: jelaskan kenapa tombol pesan tidak bisa dipakai -->
         <StoreBanner />
 
-        <div class="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1fr_400px] lg:gap-8">
+        <div class="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1fr_380px] lg:gap-6">
 
           <!-- ── KIRI: List Item ──────────────────────────────────── -->
           <section class="space-y-3" aria-label="Item pesanan">
@@ -229,10 +226,10 @@
             <div
               v-for="item in Object.values(cartStore.cart)"
               :key="item.cartKey"
-              class="card-item flex gap-4"
+              class="card-item flex gap-3"
             >
               <!-- Thumbnail -->
-              <div class="h-[72px] w-[72px] flex-shrink-0 overflow-hidden rounded-2xl border border-[#111113]/10 bg-[#EFEBE2] sm:h-20 sm:w-20">
+              <div class="h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl border border-[#111113]/10 bg-[#EFEBE2] sm:h-16 sm:w-16">
                 <img
                   v-if="item.image_url"
                   :src="getMediaUrl(item.image_url, 160)"
@@ -245,7 +242,7 @@
               <!-- Detail -->
               <div class="min-w-0 flex-1">
                 <div class="flex items-start justify-between gap-3">
-                  <h4 class="font-sora text-base font-semibold leading-snug text-[#111113]">
+                  <h4 class="font-sora text-sm font-semibold leading-snug text-[#111113] sm:text-base">
                     {{ item.name }}
                   </h4>
                   <button
@@ -258,11 +255,12 @@
                   </button>
                 </div>
 
-                <p class="mt-1 text-sm text-[#55555D]">
-                  {{ item.quantity }} × {{ formatPrice(item.price) }}
-                </p>
+                <div class="mt-0.5 flex items-baseline justify-between gap-3">
+                  <p class="text-sm text-[#55555D]">{{ item.quantity }} × {{ formatPrice(item.price) }}</p>
+                  <p class="font-sora text-sm font-semibold tabular-nums text-[#111113] sm:text-base">{{ formatPrice(item.price * item.quantity) }}</p>
+                </div>
 
-                <div v-if="item.optionDetails?.length" class="mt-2 flex flex-wrap gap-1.5">
+                <div v-if="item.optionDetails?.length" class="mt-1.5 flex flex-wrap gap-1.5">
                   <span
                     v-for="opt in item.optionDetails"
                     :key="opt.group + opt.label"
@@ -276,9 +274,6 @@
                   "{{ item.notes }}"
                 </p>
 
-                <p class="mt-3 font-sora text-base font-semibold tracking-tight text-[#111113]">
-                  {{ formatPrice(item.price * item.quantity) }}
-                </p>
               </div>
             </div>
 
@@ -298,12 +293,13 @@
           </section>
 
           <!-- ── KANAN: Form & Payment ────────────────────────────── -->
-          <aside class="card space-y-6 lg:sticky lg:top-6">
+          <aside class="card space-y-4 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
 
-            <h2 class="font-sora text-xl font-semibold tracking-tight text-[#111113]">Data pemesan</h2>
+            <h2 class="font-sora text-lg font-semibold tracking-tight text-[#111113]">Data pemesan</h2>
 
+            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
             <!-- Nama -->
-            <div class="space-y-2">
+            <div class="space-y-1.5">
               <label for="co-name" class="block text-sm font-medium text-[#3F3F46]">Nama</label>
               <input
                 id="co-name"
@@ -331,7 +327,7 @@
             </div>
 
             <!-- Nomor WA -->
-            <div class="space-y-2">
+            <div class="space-y-1.5">
               <label for="co-phone" class="block text-sm font-medium text-[#3F3F46]">Nomor WhatsApp</label>
               <!-- type="tel" + inputmode="numeric": keypad angka di HP, tapi nilainya tetap string.
                    type="number" sengaja tidak dipakai: Vue mengubahnya jadi Number sehingga angka 0 di depan
@@ -362,8 +358,16 @@
                 {{ phoneErrorText || `Diawali 08, ${PHONE_MIN}-${PHONE_MAX} digit angka.` }}
               </p>
 
-              <!-- PIN member: terlihat oleh semua pelanggan supaya status member nomor lain tidak bocor -->
-              <div class="mt-3 rounded-2xl border border-[#111113]/10 bg-[#F7F5F0] p-3.5">
+              </div>
+            </div>
+
+            <!-- PIN member: tetap terlihat oleh semua pelanggan (supaya status member nomor lain tidak bocor), tapi dilipat -->
+            <div>
+              <button type="button" class="pin-toggle" :aria-expanded="pinOpen" aria-controls="co-pin" @click="pinOpen = !pinOpen">
+                <span>{{ memberInfo ? `Poin kamu: ${(memberInfo.points ?? 0).toLocaleString("id-ID")}` : "Punya PIN member?" }}</span>
+                <ChevronDown :size="16" class="pin-chev" :class="{ 'is-open': pinOpen }" aria-hidden="true" />
+              </button>
+              <div v-show="pinOpen" id="co-pin" class="mt-2 rounded-2xl border border-[#111113]/10 bg-[#F7F5F0] p-3">
                 <MemberPinBox
                   :phone="phone"
                   :info="memberInfo"
@@ -384,12 +388,7 @@
                   type="button"
                   @click="serviceType = opt.value"
                   :aria-pressed="serviceType === opt.value"
-                  :class="[
-                    'rounded-2xl border-2 px-4 py-3 text-left transition-all duration-150',
-                    serviceType === opt.value
-                      ? 'border-[#D92B22] bg-[#D92B22]/10'
-                      : 'border-[#111113]/15 bg-[#111113]/[0.03] hover:border-[#111113]/40'
-                  ]"
+                  :class="['opt', { 'is-on': serviceType === opt.value }]"
                 >
                   <span class="block font-sora text-sm font-semibold text-[#111113]">{{ opt.icon }} {{ opt.label }}</span>
                   <span class="block text-xs text-[#55555D]">{{ opt.hint }}</span>
@@ -406,12 +405,7 @@
                   :disabled="cashTooBig || !!qrisForced"
                   @click="selectPayment('cash')"
                   :aria-pressed="paymentMethod === 'cash'"
-                  :class="[
-                    'rounded-2xl border-2 px-4 py-3 text-left transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-35',
-                    paymentMethod === 'cash'
-                      ? 'border-[#D92B22] bg-[#D92B22]/10'
-                      : 'border-[#111113]/15 bg-[#111113]/[0.03] hover:border-[#111113]/40'
-                  ]"
+                  :class="['opt', { 'is-on': paymentMethod === 'cash' }]"
                 >
                   <span class="block font-sora text-sm font-semibold text-[#111113]">Cash</span>
                   <span class="block text-xs text-[#55555D]">{{ cashTooBig ? "Maks. Rp150.000" : qrisForced ? "Tidak tersedia" : "Bayar di toko" }}</span>
@@ -421,12 +415,7 @@
                   :disabled="gatewayUnavailable"
                   @click="selectPayment('gateway')"
                   :aria-pressed="paymentMethod === 'gateway'"
-                  :class="[
-                    'rounded-2xl border-2 px-4 py-3 text-left transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-35',
-                    paymentMethod === 'gateway'
-                      ? 'border-[#D92B22] bg-[#D92B22]/10'
-                      : 'border-[#111113]/15 bg-[#111113]/[0.03] hover:border-[#111113]/40'
-                  ]"
+                  :class="['opt', { 'is-on': paymentMethod === 'gateway' }]"
                 >
                   <span class="block font-sora text-sm font-semibold text-[#111113]">QRIS</span>
                   <span class="block text-xs text-[#55555D]">Bayar online</span>
@@ -491,25 +480,34 @@
                 <span class="flex-shrink-0 tabular-nums text-[#6B6B73]">−{{ reward.point_cost.toLocaleString("id-ID") }} poin</span>
               </div>
 
-              <div class="flex items-end justify-between border-t border-[#111113]/10 pt-4">
+              <div class="flex items-end justify-between border-t border-[#111113]/10 pt-3">
                 <span class="text-sm font-medium text-[#55555D]">Total bayar</span>
-                <span class="font-sora text-3xl font-semibold leading-none tracking-tight text-[#111113]">
+                <span class="font-sora text-2xl font-semibold leading-none tracking-tight text-[#111113]">
                   {{ formatPrice(finalTotal) }}
                 </span>
               </div>
             </div>
 
-            <!-- CTA -->
-            <button
-              type="button"
-              class="btn-primary !min-h-[56px] !text-base"
-              @click="checkout"
-              :disabled="isCheckoutDisabled"
-            >
-              <span>{{ ctaLabel }}</span>
-              <ArrowRight v-if="!isProcessing" :size="18" />
-            </button>
+            <!-- CTA (desktop). Di HP tombol pindah ke bar bawah -->
+            <div class="hidden lg:block">
+              <button type="button" class="btn-primary !min-h-[52px] !text-base" @click="checkout" :disabled="isCheckoutDisabled">
+                <span>{{ ctaLabel }}</span>
+                <ArrowRight v-if="!isProcessing" :size="18" />
+              </button>
+            </div>
           </aside>
+        </div>
+
+        <!-- Bar bawah (HP/tablet): total dan tombol pesan selalu terjangkau -->
+        <div v-if="!cartStore.isEmpty" class="co-bar">
+          <div class="co-bar-total">
+            <span>Total bayar</span>
+            <strong>{{ formatPrice(finalTotal) }}</strong>
+          </div>
+          <button type="button" class="btn-primary co-bar-btn" @click="checkout" :disabled="isCheckoutDisabled">
+            <span>{{ ctaLabel }}</span>
+            <ArrowRight v-if="!isProcessing" :size="18" />
+          </button>
         </div>
       </div>
     </div>
@@ -532,7 +530,7 @@ import { useCartStore } from "@/stores/cart"
 import { orderAPI, paymentAPI, menuAPI, getMediaUrl } from "@/api"
 import { getCustomerLocation } from "@/composables/useGeolocation"
 import { toast } from "vue-sonner"
-import { X, Check, Clock, ShoppingCart, ArrowRight, ArrowLeft } from "lucide-vue-next"
+import { X, Check, Clock, ShoppingCart, ArrowRight, ArrowLeft, ChevronDown } from "lucide-vue-next"
 import { useStoreSettings } from "@/composables/useStoreSettings"
 import PromoCodeBox from "@/components/ui/PromoCodeBox.vue"
 import PointRedeemBox from "@/components/ui/PointRedeemBox.vue"
@@ -670,6 +668,8 @@ const selectedRewards = computed(() =>
 // tidak pernah ke localStorage, dan dikirim ulang ke server saat membuat order yang menukar poin.
 const memberInfo = ref(null)
 const memberPin  = ref("")
+const pinOpen    = ref(false)
+watch(memberInfo, (v) => { if (v) pinOpen.value = true })
 
 const onMemberVerified = ({ info, pin }) => {
   memberInfo.value        = info
@@ -1334,25 +1334,25 @@ onBeforeUnmount(() => {
 }
 
 .card {
-  border-radius: 1.5rem;
+  border-radius: 1.25rem;
   border: 2px solid #111113;
-  box-shadow: 6px 6px 0 #111113;
+  box-shadow: 5px 5px 0 #111113;
   background: #FFFFFF;
-  padding: 1.5rem;
+  padding: 1.25rem;
 }
 @media (min-width: 640px) {
-  .card { padding: 1.75rem; }
+  .card { padding: 1.5rem; }
 }
 
 .card-item {
   border-radius: 1.25rem;
   border: 2px solid #111113;
-  box-shadow: 4px 4px 0 #111113;
+  box-shadow: 3px 3px 0 #111113;
   background: #FFFFFF;
-  padding: 1rem;
+  padding: 0.75rem;
 }
 @media (min-width: 640px) {
-  .card-item { padding: 1.25rem; }
+  .card-item { padding: 0.875rem 1rem; }
 }
 
 /* Ornamen panel pembayaran: pita merah bergaris + watermark kanji */
@@ -1377,7 +1377,7 @@ onBeforeUnmount(() => {
 /* Input: 16px di HP supaya iOS tidak zoom otomatis */
 .field {
   width: 100%;
-  height: 3rem;
+  height: 2.75rem;
   border-radius: 0.875rem;
   border: 2px solid rgba(17, 17, 19, 0.25);
   background: #F7F5F0;
@@ -1470,4 +1470,41 @@ input:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .animate-spin { animation-duration: 2s; }
 }
+
+/* Pilihan tipe pesanan dan metode bayar */
+.opt {
+  border: 2px solid rgba(17, 17, 19, 0.15);
+  border-radius: 0.875rem;
+  background: rgba(17, 17, 19, 0.03);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  min-height: 3rem;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.opt:hover:not(:disabled) { border-color: rgba(17, 17, 19, 0.4); }
+.opt.is-on { border-color: #D92B22; background: rgba(217, 43, 34, 0.1); }
+.opt:disabled { cursor: not-allowed; opacity: 0.35; }
+
+/* Lipatan PIN member */
+.pin-toggle {
+  display: flex; width: 100%; min-height: 2.75rem; align-items: center; justify-content: space-between; gap: 0.5rem;
+  padding: 0 0.875rem; border: 2px dashed rgba(17, 17, 19, 0.3); border-radius: 0.875rem;
+  background: #F7F5F0; font-size: 0.875rem; font-weight: 600; color: #3F3F46;
+}
+.pin-toggle:hover { border-color: rgba(17, 17, 19, 0.6); }
+.pin-chev { transition: transform 0.15s ease; }
+.pin-chev.is-open { transform: rotate(180deg); }
+
+/* Bar bawah checkout (HP dan tablet) */
+.co-bar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.625rem 1rem calc(0.625rem + env(safe-area-inset-bottom, 0px));
+  background: #FFFFFF; border-top: 2px solid #111113;
+}
+.co-bar-total { display: flex; flex-direction: column; min-width: 0; line-height: 1.15; }
+.co-bar-total span { font-size: 0.75rem; color: #55555D; }
+.co-bar-total strong { font-family: "Sora", sans-serif; font-size: 1.125rem; font-weight: 700; white-space: nowrap; }
+.co-bar-btn { flex: 1; width: auto; min-height: 3rem; padding: 0.5rem 1rem; }
+@media (min-width: 1024px) { .co-bar { display: none; } }
 </style>
