@@ -174,10 +174,10 @@
         <!-- Toko tutup: jelaskan kenapa tombol pesan tidak bisa dipakai -->
         <StoreBanner />
 
-        <div class="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1fr_380px] lg:gap-6">
+        <div class="grid grid-cols-1 items-start gap-5 lg:grid-cols-[1fr_400px] lg:gap-6">
 
-          <!-- ── KIRI: List Item ──────────────────────────────────── -->
-          <section class="space-y-3" aria-label="Item pesanan">
+          <!-- ── KIRI: 1 Item, 2 Data pemesan ─────────────────────── -->
+          <section class="space-y-4" aria-label="Item dan data pemesan">
 
             <!-- Empty -->
             <div
@@ -194,7 +194,9 @@
               </router-link>
             </div>
 
-            <!-- Paket -->
+            <div v-if="!cartStore.isEmpty" class="card">
+              <h2 class="step-h font-sora"><span class="step-n" aria-hidden="true">1</span>Item pesanan</h2>
+              <!-- Paket -->
             <div
               v-for="line in cartStore.bundleLines"
               :key="line.cartKey"
@@ -276,6 +278,7 @@
 
               </div>
             </div>
+            </div>
 
             <!-- Rekomendasi dari isi keranjang -->
             <MenuRecommendations
@@ -286,18 +289,13 @@
               variant="list"
               :format-price="formatPrice"
               :can-add="isStoreOpen"
-              class="pt-3"
               @select="addRecommended"
               @add="addRecommended"
             />
-          </section>
 
-          <!-- ── KANAN: Form & Payment ────────────────────────────── -->
-          <aside class="card space-y-4 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
-
-            <h2 class="font-sora text-lg font-semibold tracking-tight text-[#111113]">Data pemesan</h2>
-
-            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            <div class="card space-y-4">
+              <h2 class="step-h font-sora !mb-0"><span class="step-n" aria-hidden="true">2</span>Data pemesan</h2>
+              <div class="grid gap-3 sm:grid-cols-2">
             <!-- Nama -->
             <div class="space-y-1.5">
               <label for="co-name" class="block text-sm font-medium text-[#3F3F46]">Nama</label>
@@ -361,24 +359,7 @@
               </div>
             </div>
 
-            <!-- PIN member: tetap terlihat oleh semua pelanggan (supaya status member nomor lain tidak bocor), tapi dilipat -->
-            <div>
-              <button type="button" class="pin-toggle" :aria-expanded="pinOpen" aria-controls="co-pin" @click="pinOpen = !pinOpen">
-                <span>{{ memberInfo ? `Poin kamu: ${(memberInfo.points ?? 0).toLocaleString("id-ID")}` : "Punya PIN member?" }}</span>
-                <ChevronDown :size="16" class="pin-chev" :class="{ 'is-open': pinOpen }" aria-hidden="true" />
-              </button>
-              <div v-show="pinOpen" id="co-pin" class="mt-2 rounded-2xl border border-[#111113]/10 bg-[#F7F5F0] p-3">
-                <MemberPinBox
-                  :phone="phone"
-                  :info="memberInfo"
-                  :admin-whatsapp="adminWhatsapp"
-                  @verified="onMemberVerified"
-                  @reset="resetMember"
-                />
-              </div>
-            </div>
-
-            <!-- Tipe pesanan -->
+              <!-- Tipe pesanan -->
             <div class="space-y-2">
               <span class="block text-sm font-medium text-[#3F3F46]">Makan di sini atau dibungkus?</span>
               <div class="grid grid-cols-2 gap-2.5">
@@ -395,6 +376,29 @@
                 </button>
               </div>
             </div>
+
+              <!-- PIN member: tetap terlihat oleh semua pelanggan (supaya status member nomor lain tidak bocor), tapi dilipat -->
+            <div>
+              <button type="button" class="pin-toggle" :aria-expanded="pinOpen" aria-controls="co-pin" @click="pinOpen = !pinOpen">
+                <span>{{ memberInfo ? `Poin kamu: ${(memberInfo.points ?? 0).toLocaleString("id-ID")}` : "Punya PIN member?" }}</span>
+                <ChevronDown :size="16" class="pin-chev" :class="{ 'is-open': pinOpen }" aria-hidden="true" />
+              </button>
+              <div v-show="pinOpen" id="co-pin" class="mt-2 rounded-2xl border border-[#111113]/10 bg-[#F7F5F0] p-3">
+                <MemberPinBox
+                  :phone="phone"
+                  :info="memberInfo"
+                  :admin-whatsapp="adminWhatsapp"
+                  @verified="onMemberVerified"
+                  @reset="resetMember"
+                />
+              </div>
+            </div>
+            </div>
+          </section>
+
+          <!-- ── KANAN: 3 Pembayaran (menempel saat scroll di desktop) ── -->
+          <aside class="card space-y-4 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto" aria-label="Pembayaran">
+            <h2 class="step-h font-sora !mb-0"><span class="step-n" aria-hidden="true">3</span>Pembayaran</h2>
 
             <!-- Metode Pembayaran -->
             <div class="space-y-2">
@@ -1345,15 +1349,10 @@ onBeforeUnmount(() => {
 }
 
 .card-item {
-  border-radius: 1.25rem;
-  border: 2px solid #111113;
-  box-shadow: 3px 3px 0 #111113;
-  background: #FFFFFF;
-  padding: 0.75rem;
+  padding: 0.75rem 0;
 }
-@media (min-width: 640px) {
-  .card-item { padding: 0.875rem 1rem; }
-}
+.card-item + .card-item { border-top: 2px dashed rgba(17, 17, 19, 0.18); }
+.card-item:last-child { padding-bottom: 0; }
 
 /* Ornamen panel pembayaran: pita merah bergaris + watermark kanji */
 .pay-card { position: relative; overflow: hidden; padding-top: 2rem; }
@@ -1507,4 +1506,15 @@ input:focus-visible {
 .co-bar-total strong { font-family: "Sora", sans-serif; font-size: 1.125rem; font-weight: 700; white-space: nowrap; }
 .co-bar-btn { flex: 1; width: auto; min-height: 3rem; padding: 0.5rem 1rem; }
 @media (min-width: 1024px) { .co-bar { display: none; } }
+
+/* Penanda langkah 1-3: urutan nyata (cek item, isi data, bayar) */
+.step-h {
+  display: flex; align-items: center; gap: 0.6rem;
+  margin-bottom: 0.25rem; font-size: 1.0625rem; font-weight: 700; color: #111113;
+}
+.step-n {
+  display: inline-flex; width: 1.75rem; height: 1.75rem; flex-shrink: 0; align-items: center; justify-content: center;
+  border: 2px solid #111113; border-radius: 9999px; background: #F4C542; font-size: 0.8125rem; font-weight: 800;
+}
+.opt .font-sora { font-size: 0.8125rem; }
 </style>
