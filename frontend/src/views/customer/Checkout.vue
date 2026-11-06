@@ -194,7 +194,8 @@
               </router-link>
             </div>
 
-            <div v-if="!cartStore.isEmpty" class="card">
+            <div class="card space-y-5">
+            <div v-if="!cartStore.isEmpty" class="space-y-3">
               <h2 class="step-h font-sora"><span class="step-n" aria-hidden="true">1</span>Item pesanan</h2>
               <!-- Paket -->
             <div
@@ -278,8 +279,6 @@
 
               </div>
             </div>
-            </div>
-
             <!-- Rekomendasi dari isi keranjang -->
             <MenuRecommendations
               v-if="!cartStore.isEmpty"
@@ -292,9 +291,10 @@
               @select="addRecommended"
               @add="addRecommended"
             />
+            </div>
 
-            <div class="card space-y-4">
-              <h2 class="step-h font-sora !mb-0"><span class="step-n" aria-hidden="true">2</span>Data pemesan</h2>
+            <div class="space-y-4" :class="{ 'sect-rule': !cartStore.isEmpty }">
+              <h2 class="step-h font-sora"><span class="step-n" aria-hidden="true">2</span>Data pemesan</h2>
               <div class="grid gap-3 sm:grid-cols-2">
             <!-- Nama -->
             <div class="space-y-1.5">
@@ -378,12 +378,13 @@
             </div>
 
               <!-- PIN member: tetap terlihat oleh semua pelanggan (supaya status member nomor lain tidak bocor), tapi dilipat -->
-            <div>
-              <button type="button" class="pin-toggle" :aria-expanded="pinOpen" aria-controls="co-pin" @click="pinOpen = !pinOpen">
-                <span>{{ memberInfo ? `Poin kamu: ${(memberInfo.points ?? 0).toLocaleString("id-ID")}` : "Punya PIN member?" }}</span>
+            <div class="pin-sec">
+              <button type="button" class="pin-toggle" :aria-expanded="pinOpen" aria-controls="co-pin-panel" @click="pinOpen = !pinOpen">
+                <span v-if="memberInfo">Poin kamu: {{ (memberInfo.points ?? 0).toLocaleString("id-ID") }}</span>
+                <span v-else>PIN member <span class="pin-note">(opsional, untuk lihat dan tukar poin)</span></span>
                 <ChevronDown :size="16" class="pin-chev" :class="{ 'is-open': pinOpen }" aria-hidden="true" />
               </button>
-              <div v-show="pinOpen" id="co-pin" class="mt-2 rounded-2xl border border-[#111113]/10 bg-[#F7F5F0] p-3">
+              <div v-show="pinOpen" id="co-pin-panel" class="pin-slot mt-1">
                 <MemberPinBox
                   :phone="phone"
                   :info="memberInfo"
@@ -394,15 +395,15 @@
               </div>
             </div>
             </div>
+            </div>
           </section>
 
           <!-- ── KANAN: 3 Pembayaran (menempel saat scroll di desktop) ── -->
           <aside class="card space-y-4 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto" aria-label="Pembayaran">
-            <h2 class="step-h font-sora !mb-0"><span class="step-n" aria-hidden="true">3</span>Pembayaran</h2>
+            <h2 class="step-h font-sora"><span class="step-n" aria-hidden="true">3</span>Pembayaran</h2>
 
             <!-- Metode Pembayaran -->
-            <div class="space-y-2">
-              <span class="block text-sm font-medium text-[#3F3F46]">Pembayaran</span>
+            <div class="space-y-2" role="group" aria-label="Metode pembayaran">
               <div class="grid grid-cols-2 gap-2.5">
                 <button
                   type="button"
@@ -1348,11 +1349,9 @@ onBeforeUnmount(() => {
   .card { padding: 1.5rem; }
 }
 
-.card-item {
-  padding: 0.75rem 0;
-}
+.card-item { padding: 0.625rem 0; }
+.step-h + .card-item { padding-top: 0.125rem; }
 .card-item + .card-item { border-top: 2px dashed rgba(17, 17, 19, 0.18); }
-.card-item:last-child { padding-bottom: 0; }
 
 /* Ornamen panel pembayaran: pita merah bergaris + watermark kanji */
 .pay-card { position: relative; overflow: hidden; padding-top: 2rem; }
@@ -1484,13 +1483,17 @@ input:focus-visible {
 .opt.is-on { border-color: #D92B22; background: rgba(217, 43, 34, 0.1); }
 .opt:disabled { cursor: not-allowed; opacity: 0.35; }
 
-/* Lipatan PIN member */
+/* Lipatan PIN member: baris biasa, judul aslinya pindah ke tombol */
+.sect-rule { border-top: 2px dashed rgba(17, 17, 19, 0.18); padding-top: 1.25rem; }
+.pin-sec { border-top: 2px dashed rgba(17, 17, 19, 0.18); padding-top: 0.25rem; }
 .pin-toggle {
   display: flex; width: 100%; min-height: 2.75rem; align-items: center; justify-content: space-between; gap: 0.5rem;
-  padding: 0 0.875rem; border: 2px dashed rgba(17, 17, 19, 0.3); border-radius: 0.875rem;
-  background: #F7F5F0; font-size: 0.875rem; font-weight: 600; color: #3F3F46;
+  padding: 0; background: none; border: 0; text-align: left; font-size: 0.875rem; font-weight: 600; color: #111113;
 }
-.pin-toggle:hover { border-color: rgba(17, 17, 19, 0.6); }
+.pin-note { font-weight: 400; font-size: 0.8125rem; color: #6B6B73; }
+.pin-slot :deep(.pin-label) {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
 .pin-chev { transition: transform 0.15s ease; }
 .pin-chev.is-open { transform: rotate(180deg); }
 
@@ -1510,7 +1513,7 @@ input:focus-visible {
 /* Penanda langkah 1-3: urutan nyata (cek item, isi data, bayar) */
 .step-h {
   display: flex; align-items: center; gap: 0.6rem;
-  margin-bottom: 0.25rem; font-size: 1.0625rem; font-weight: 700; color: #111113;
+  font-size: 1.0625rem; font-weight: 700; color: #111113;
 }
 .step-n {
   display: inline-flex; width: 1.75rem; height: 1.75rem; flex-shrink: 0; align-items: center; justify-content: center;
