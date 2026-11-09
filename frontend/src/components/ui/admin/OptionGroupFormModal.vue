@@ -214,7 +214,8 @@ const close = () => { if (!saving.value) emit('update:modelValue', false) }
 .og-add { align-self: flex-start; }
 .og-menus-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.5rem; }
 .og-menus-tools { display: flex; gap: 0.4rem; flex-wrap: wrap; }
-.og-search { margin-bottom: 0.5rem; }
+/* .adm-search aslinya untuk toolbar berbaris (flex: 1 1 14rem); di kolom vertikal itu jadi TINGGI 14rem */
+.og-search { flex: none; width: 100%; max-width: none; margin-bottom: 0.5rem; }
 .og-menus {
   max-height: 14rem; overflow-y: auto; padding: 0.25rem 0.75rem;
   border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-2);
