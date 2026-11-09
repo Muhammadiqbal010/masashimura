@@ -26,6 +26,35 @@ class Category(models.Model):
         return self.name
 
 
+class OptionGroup(models.Model):
+    """
+    Grup opsi yang dibuat sekali lalu dipasang ke banyak menu (Level Pedas, Suhu, Topping...).
+    Ini SUMBER KEBENARAN opsi. Menu.options hanya salinan hasil rakitan dari grup yang dipasang
+    (lihat sync_menu_options), jadi semua kode lama (order, paket, API publik) tetap membaca
+    Menu.options tanpa perubahan.
+    """
+    name     = models.CharField(max_length=50, unique=True)
+    required = models.BooleanField(default=False)
+    multiple = models.BooleanField(default=False)
+    # [{"label": "Sedeng", "price": 0}, ...]  (validasi: menu/options.py -> clean_choices)
+    choices  = models.JSONField(default=list)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["id"]
+
+    def as_option(self):
+        return {
+            "name": self.name,
+            "required": bool(self.required),
+            "multiple": bool(self.multiple),
+            "choices": self.choices,
+        }
+
+    def __str__(self):
+        return self.name
+
+
 class Menu(models.Model):
     name        = models.CharField(max_length=100)
     category    = models.ForeignKey(
@@ -58,7 +87,11 @@ class Menu(models.Model):
     # Opsi pilihan per menu (pedas, suhu, add-on, dll). Struktur & validasi: menu/options.py
     # [{"name": "Level Pedas", "required": true, "multiple": false,
     #   "choices": [{"label": "Sedeng", "price": 0}, ...]}]
+    # DITURUNKAN dari option_groups (jangan diisi manual): diperbarui lewat sync_menu_options.
     options = models.JSONField(default=list, blank=True)
+
+    # Grup opsi dari library yang dipasang ke menu ini.
+    option_groups = models.ManyToManyField(OptionGroup, related_name="menus", blank=True)
 
     def save(self, *args, **kwargs):
         if self._state.adding and not self.created_at:
@@ -68,6 +101,15 @@ class Menu(models.Model):
 
     def __str__(self):
         return self.name
+
+
+def sync_menu_options(menu_ids):
+    """Rakit ulang Menu.options dari grup yang dipasang, untuk menu-menu yang terdampak.
+    Pakai update() supaya Menu.save() (hitung price_web, dll) tidak ikut jalan."""
+    for menu in Menu.objects.filter(pk__in=list(menu_ids)).prefetch_related("option_groups"):
+        rebuilt = [g.as_option() for g in menu.option_groups.all()]
+        if rebuilt != menu.options:
+            Menu.objects.filter(pk=menu.pk).update(options=rebuilt)
 
 
 @receiver(post_delete, sender=Menu)

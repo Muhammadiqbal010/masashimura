@@ -35,6 +35,27 @@ def _to_price(value, where):
     return int(d)
 
 
+def clean_choices(name, raw_choices):
+    """Validasi + normalisasi daftar pilihan satu grup. Return [{"label", "price"}]."""
+    if not isinstance(raw_choices, list) or not raw_choices:
+        raise OptionError(f'Grup "{name}" minimal punya 1 pilihan.')
+    if len(raw_choices) > MAX_CHOICES:
+        raise OptionError(f'Grup "{name}" maksimal {MAX_CHOICES} pilihan.')
+
+    choices, seen_labels = [], set()
+    for choice in raw_choices:
+        if not isinstance(choice, dict):
+            raise OptionError(f'Format pilihan di grup "{name}" tidak valid.')
+        label = str(choice.get("label") or "").strip()
+        if not label:
+            raise OptionError(f'Ada pilihan kosong di grup "{name}".')
+        if label.lower() in seen_labels:
+            raise OptionError(f'Pilihan "{label}" dobel di grup "{name}".')
+        seen_labels.add(label.lower())
+        choices.append({"label": label, "price": _to_price(choice.get("price"), f"{name} / {label}")})
+    return choices
+
+
 def clean_options(raw):
     """Validasi + normalisasi struktur opsi yang diisi admin. Return list bersih."""
     if raw in (None, ""):
@@ -55,23 +76,7 @@ def clean_options(raw):
             raise OptionError(f'Grup opsi "{name}" dobel.')
         seen_groups.add(name.lower())
 
-        raw_choices = group.get("choices")
-        if not isinstance(raw_choices, list) or not raw_choices:
-            raise OptionError(f'Grup "{name}" minimal punya 1 pilihan.')
-        if len(raw_choices) > MAX_CHOICES:
-            raise OptionError(f'Grup "{name}" maksimal {MAX_CHOICES} pilihan.')
-
-        choices, seen_labels = [], set()
-        for choice in raw_choices:
-            if not isinstance(choice, dict):
-                raise OptionError(f'Format pilihan di grup "{name}" tidak valid.')
-            label = str(choice.get("label") or "").strip()
-            if not label:
-                raise OptionError(f'Ada pilihan kosong di grup "{name}".')
-            if label.lower() in seen_labels:
-                raise OptionError(f'Pilihan "{label}" dobel di grup "{name}".')
-            seen_labels.add(label.lower())
-            choices.append({"label": label, "price": _to_price(choice.get("price"), f"{name} / {label}")})
+        choices = clean_choices(name, group.get("choices"))
 
         cleaned.append({
             "name": name,

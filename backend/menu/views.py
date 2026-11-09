@@ -10,10 +10,12 @@ from django.db.models.deletion import ProtectedError
 from django.db.models.functions import Coalesce
 
 from accounts.permissions import IsAdminLevel, IsStaffLevel
-from .models import Menu, Category, MenuBundle
+from django.db import transaction
+
+from .models import Menu, Category, MenuBundle, OptionGroup, sync_menu_options
 from .serializers import (
     MenuSerializer, PublicMenuSerializer, CategorySerializer,
-    BundleSerializer, PublicBundleSerializer,
+    BundleSerializer, PublicBundleSerializer, OptionGroupSerializer,
 )
 from order.permissions import PublicReadStaffWrite
 
@@ -30,8 +32,22 @@ class CategoryViewSet(viewsets.ModelViewSet):
     permission_classes = [PublicReadStaffWrite]
 
 
+class OptionGroupViewSet(viewsets.ModelViewSet):
+    """Library grup opsi (Level Pedas, Suhu, Topping...). Hanya staf; publik cukup membaca menu.options."""
+    queryset = OptionGroup.objects.prefetch_related("menus").all()
+    serializer_class = OptionGroupSerializer
+    permission_classes = [IsStaffLevel]
+    pagination_class = None  # frontend mengharapkan array biasa
+
+    def perform_destroy(self, instance):
+        affected = list(instance.menus.values_list("pk", flat=True))
+        with transaction.atomic():
+            instance.delete()
+            sync_menu_options(affected)
+
+
 class MenuViewSet(viewsets.ModelViewSet):
-    queryset = Menu.objects.select_related("category").all()
+    queryset = Menu.objects.select_related("category").prefetch_related("option_groups").all()
     serializer_class = MenuSerializer
     permission_classes = [PublicReadStaffWrite]
 

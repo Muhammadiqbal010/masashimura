@@ -1,11 +1,12 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import MenuViewSet, CategoryViewSet, TopBestSellersMenuView, BundleViewSet
+from .views import MenuViewSet, CategoryViewSet, TopBestSellersMenuView, BundleViewSet, OptionGroupViewSet
 
 router = DefaultRouter()
 router.register(r'menus', MenuViewSet, basename='menu')
 router.register(r'categories', CategoryViewSet, basename='category')
 router.register(r'bundles', BundleViewSet, basename='bundle')
+router.register(r'option-groups', OptionGroupViewSet, basename='option-group')
 
 urlpatterns = [
     # Path manual untuk bestsellers HARUS di atas agar tidak "dimakan" router

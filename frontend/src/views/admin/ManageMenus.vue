@@ -19,10 +19,17 @@
     <div class="adm-seg mm-tabs" role="tablist" aria-label="Bagian kelola menu">
       <button type="button" role="tab" class="adm-seg-btn" :aria-selected="pageTab === 'menu'" :aria-pressed="pageTab === 'menu'" @click="pageTab = 'menu'">Menu</button>
       <button type="button" role="tab" class="adm-seg-btn" :aria-selected="pageTab === 'paket'" :aria-pressed="pageTab === 'paket'" @click="pageTab = 'paket'">Paket</button>
+      <button type="button" role="tab" class="adm-seg-btn" :aria-selected="pageTab === 'opsi'" :aria-pressed="pageTab === 'opsi'" @click="pageTab = 'opsi'">Opsi</button>
       <button type="button" role="tab" class="adm-seg-btn" :aria-selected="pageTab === 'kemiripan'" :aria-pressed="pageTab === 'kemiripan'" @click="pageTab = 'kemiripan'">Kemiripan</button>
     </div>
 
-    <BundleManager v-if="pageTab === 'paket'" :menus="menus" />
+    <OptionGroupManager
+      v-if="pageTab === 'opsi'"
+      :groups="optionGroups" :menus="menus" :loading="optionsLoading"
+      @changed="refreshOptionData"
+    />
+
+    <BundleManager v-else-if="pageTab === 'paket'" :menus="menus" />
 
     <MenuSimilarityTab v-else-if="pageTab === 'kemiripan'" :menus="menus" @go-paket="pageTab = 'paket'" />
 
@@ -279,63 +286,38 @@
           </div>
         </div>
 
-        <!-- Opsi pilihan (pedas, suhu, ukuran, add-on) -->
+        <!-- Opsi pilihan: dipilih dari library (tab "Opsi"), bukan diketik satu-satu -->
         <div class="adm-field">
           <span class="adm-label">Opsi pilihan <span class="adm-opt">(opsional)</span></span>
           <p class="mm-opt-hint">
-            Contoh: Level Pedas (pilih satu) atau Tambahan (boleh banyak, berbayar). Kosongkan harga kalau gratis.
+            Centang opsi yang berlaku untuk menu ini. Opsinya dibuat sekali di tab Opsi, jadi tidak perlu diketik ulang di tiap menu.
           </p>
 
-          <div v-for="(group, gi) in form.options" :key="gi" class="mm-opt-group">
-            <div class="mm-opt-head">
-              <input
-                v-model="group.name" type="text" class="adm-input" maxlength="50"
-                placeholder="Nama grup, mis. Level Pedas" :aria-label="`Nama grup opsi ${gi + 1}`"
-              />
-              <button type="button" class="adm-icon-btn adm-icon-btn--danger" :aria-label="`Hapus grup ${group.name || gi + 1}`" @click="removeGroup(gi)">
-                <Trash2 :size="15" />
-              </button>
-            </div>
+          <div v-if="optionsLoading" class="adm-skel" style="height:56px"></div>
 
-            <div class="mm-opt-flags">
-              <label class="mm-opt-check"><input v-model="group.required" type="checkbox" /> Wajib dipilih</label>
-              <label class="mm-opt-check"><input v-model="group.multiple" type="checkbox" /> Boleh pilih banyak</label>
-            </div>
+          <div v-else-if="!optionGroups.length" class="mm-opt-empty">
+            Belum ada grup opsi. Buat dulu lewat tombol di bawah.
+          </div>
 
-            <div v-for="(choice, ci) in group.choices" :key="ci" class="mm-opt-choice">
-              <input
-                v-model="choice.label" type="text" class="adm-input" maxlength="50"
-                placeholder="Nama pilihan" :aria-label="`Pilihan ${ci + 1} di ${group.name || 'grup'}`"
-              />
-              <div class="adm-affix mm-opt-price">
-                <span class="adm-affix-pre" aria-hidden="true">+Rp</span>
-                <input
-                  v-model="choice.price" type="number" inputmode="numeric" min="0" step="500"
-                  class="adm-input adm-input--mono has-pre" placeholder="0" aria-label="Harga tambahan"
-                />
-              </div>
-              <button
-                type="button" class="adm-icon-btn" :disabled="group.choices.length <= 1"
-                :aria-label="`Hapus pilihan ${choice.label || ci + 1}`" @click="removeChoice(group, ci)"
-              >
-                <X :size="14" />
-              </button>
-            </div>
-
-            <button
-              type="button" class="adm-btn adm-btn--ghost mm-opt-add"
-              :disabled="group.choices.length >= MAX_CHOICES" @click="addChoice(group)"
+          <div v-else class="mm-opt-pick">
+            <label
+              v-for="g in optionGroups" :key="g.id" class="mm-opt-item"
+              :class="{ 'is-on': form.option_group_ids.includes(g.id) }"
             >
-              <Plus :size="14" /> Tambah pilihan
-            </button>
+              <input v-model="form.option_group_ids" type="checkbox" :value="g.id" />
+              <span class="mm-opt-item-body">
+                <span class="mm-opt-item-name">
+                  {{ g.name }}
+                  <small>{{ g.required ? 'Wajib' : 'Opsional' }} · {{ g.multiple ? 'pilih banyak' : 'pilih satu' }}</small>
+                </span>
+                <span class="mm-opt-item-choices">{{ g.choices.map((c) => c.label).join(' · ') }}</span>
+              </span>
+            </label>
           </div>
 
           <div class="mm-opt-actions">
-            <button type="button" class="adm-btn adm-btn--soft" :disabled="form.options.length >= MAX_GROUPS" @click="addGroup()">
-              <Plus :size="14" /> Grup opsi
-            </button>
-            <button type="button" class="adm-btn adm-btn--ghost" :disabled="form.options.length >= MAX_GROUPS" @click="addSpicyPreset">
-              Preset Level Pedas
+            <button type="button" class="adm-btn adm-btn--soft" @click="openGroupModal">
+              <Plus :size="14" /> Buat grup opsi baru
             </button>
           </div>
           <p v-if="errors.options" class="adm-error">{{ errors.options }}</p>
@@ -350,6 +332,13 @@
         </button>
       </template>
     </AdminModal>
+
+    <!-- ══ Modal: buat grup opsi cepat (sejajar, dipakai dari form menu) ══ -->
+    <OptionGroupFormModal
+      v-model="showGroupModal" :group="null" :menus="menus"
+      :preselect-menu-id="editingMenu?.id ?? null"
+      @saved="onGroupQuickSaved"
+    />
 
     <!-- ══ Modal: tambah kategori (sejajar, bukan di dalam modal menu) ══ -->
     <AdminModal v-model="showCategoryModal" title="Tambah Kategori" size="sm" :persistent="savingCategory">
@@ -416,13 +405,16 @@ import { getMediaUrl } from '@/api'
 import ImageCropper from '@/components/ui/ImageCropper.vue'
 import AdminModal from '@/components/ui/admin/Adminmodal.vue'
 import BundleManager from '@/components/ui/admin/BundleManager.vue'
+import OptionGroupManager from '@/components/ui/admin/OptionGroupManager.vue'
+import OptionGroupFormModal from '@/components/ui/admin/OptionGroupFormModal.vue'
+import { optionGroupAPI } from '@/api/optionGroups'
 import MenuSimilarityTab from '@/components/ui/admin/MenuSimilarityTab.vue'
 
 const router = useRouter()
 
 // ── State ───────────────────────────────────────────────────────────
 const menus          = ref([])
-const pageTab        = ref('menu')   // 'menu' | 'paket' | 'kemiripan'
+const pageTab        = ref('menu')   // 'menu' | 'paket' | 'opsi' | 'kemiripan'
 const loading        = ref(true)
 const isDialogOpen   = ref(false)
 const editingMenu    = ref(null)
@@ -444,17 +436,21 @@ const categoryError     = ref('')
 const newCategory       = reactive({ name: '', group: 'makanan' })
 const categoryList      = ref([]) // [{id, name, group}]
 
+// Library grup opsi (dibuat di tab "Opsi", dipasang ke menu lewat form menu)
+const optionGroups    = ref([])  // [{id, name, required, multiple, choices, menu_ids, menu_count}]
+const optionsLoading  = ref(true)
+const showGroupModal  = ref(false)
+
 const blankForm = () => ({
   name: '', category: '', price: '', description: '',
   is_available: true, is_recommended: false, is_secret: false,
-  options: [],
+  option_group_ids: [],
 })
 const form   = reactive(blankForm())
 const errors = reactive({ name: '', category: '', price: '', options: '' })
 
 // Batas ini sama dengan menu/options.py (server tetap validasi ulang)
 const MAX_GROUPS  = 6
-const MAX_CHOICES = 15
 
 const showCropper = ref(false)
 const rawImageForCropper = ref(null)
@@ -520,53 +516,45 @@ const displayGroupName = (catName) => (isOrphan(catName) ? NO_CATEGORY_LABEL : c
 
 const clearErrors = () => { errors.name = errors.category = errors.price = errors.options = '' }
 
-// ── Editor opsi ─────────────────────────────────────────────────────
-const addGroup = (name = '', required = false, labels = ['']) => {
-  if (form.options.length >= MAX_GROUPS) return
-  form.options.push({
-    name, required, multiple: false,
-    choices: labels.map((label) => ({ label, price: '' })),
-  })
-}
-const addSpicyPreset = () => addGroup('Level Pedas', true, ['Nggak pedas', 'Sedeng', 'Pedas'])
-const removeGroup = (gi) => { form.options.splice(gi, 1) }
-const addChoice = (group) => { if (group.choices.length < MAX_CHOICES) group.choices.push({ label: '', price: '' }) }
-const removeChoice = (group, ci) => { if (group.choices.length > 1) group.choices.splice(ci, 1) }
-
-// Bersihkan + cek opsi sebelum dikirim. Return { list } atau { error }.
-const buildOptions = () => {
-  const list = []
-  const seenGroups = new Set()
-  for (const g of form.options) {
-    const name = (g.name || '').trim()
-    if (!name) return { error: 'Nama grup opsi wajib diisi (atau hapus grupnya).' }
-    if (seenGroups.has(name.toLowerCase())) return { error: `Grup "${name}" dobel.` }
-    seenGroups.add(name.toLowerCase())
-
-    const seenLabels = new Set()
-    const choices = []
-    for (const c of g.choices) {
-      const label = (c.label || '').trim()
-      if (!label) return { error: `Ada pilihan kosong di grup "${name}".` }
-      if (seenLabels.has(label.toLowerCase())) return { error: `Pilihan "${label}" dobel di grup "${name}".` }
-      seenLabels.add(label.toLowerCase())
-      const price = c.price === '' || c.price == null ? 0 : Number(c.price)
-      if (!Number.isInteger(price) || price < 0) return { error: `Harga "${label}" harus bilangan bulat, tidak negatif.` }
-      choices.push({ label, price })
-    }
-    if (!choices.length) return { error: `Grup "${name}" minimal punya 1 pilihan.` }
-    list.push({ name, required: !!g.required, multiple: !!g.multiple, choices })
+// ── Opsi (library) ──────────────────────────────────────────────────
+const fetchOptionGroups = async () => {
+  try {
+    const res = await optionGroupAPI.getAll()
+    optionGroups.value = res.data
+  } catch {
+    toast.error('Gagal memuat grup opsi')
+  } finally {
+    optionsLoading.value = false
   }
-  return { list }
 }
+
+// Dipanggil saat grup opsi dibuat / diubah / dihapus / dipasang ke menu.
+// Menu ikut di-refresh karena menu.options (yang dibaca customer & POS) berubah.
+const refreshOptionData = async () => {
+  await Promise.all([fetchOptionGroups(), fetchMenus({ silent: true })])
+  // Buang id grup yang sudah dihapus dari form yang sedang terbuka
+  const alive = new Set(optionGroups.value.map((g) => g.id))
+  form.option_group_ids = form.option_group_ids.filter((id) => alive.has(id))
+}
+
+const openGroupModal = () => { showGroupModal.value = true }
+
+// Grup baru dari tombol di form menu → langsung tercentang untuk menu ini
+const onGroupQuickSaved = async (g) => {
+  await fetchOptionGroups()
+  if (g?.id && !form.option_group_ids.includes(g.id)) form.option_group_ids.push(g.id)
+  fetchMenus({ silent: true })
+}
+
 const validate = () => {
   clearErrors()
   let ok = true
   if (!form.name.trim())               { errors.name = 'Nama menu wajib diisi.'; ok = false }
   if (!form.category)                  { errors.category = 'Kategori wajib diisi.'; ok = false }
   if (!form.price || +form.price <= 0) { errors.price = 'Harga harus lebih dari 0.'; ok = false }
-  const opt = buildOptions()
-  if (opt.error) { errors.options = opt.error; ok = false }
+  if (form.option_group_ids.length > MAX_GROUPS) {
+    errors.options = `Maksimal ${MAX_GROUPS} grup opsi per menu.`; ok = false
+  }
   return ok
 }
 
@@ -678,13 +666,7 @@ const editMenu = (menu) => {
     is_available: menu.is_available,
     is_recommended: !!menu.is_recommended,
     is_secret: !!menu.is_secret,
-    // Salin dalam supaya mengetik di editor tidak mengubah daftar menu sebelum disimpan
-    options: (menu.options || []).map((g) => ({
-      name: g.name,
-      required: !!g.required,
-      multiple: !!g.multiple,
-      choices: (g.choices || []).map((c) => ({ label: c.label, price: c.price || '' })),
-    })),
+    option_group_ids: [...(menu.option_group_ids || [])],
   })
   clearErrors()
   resetPhoto()
@@ -709,7 +691,7 @@ const saveMenu = async () => {
     payload.append('is_available', form.is_available)
     payload.append('is_recommended', form.is_recommended)
     payload.append('is_secret', form.is_secret)
-    payload.append('options', JSON.stringify(buildOptions().list))
+    payload.append('option_group_ids', JSON.stringify(form.option_group_ids))
     if (photoFile.value) payload.append('image', photoFile.value)
 
     if (editingMenu.value) {
@@ -724,7 +706,8 @@ const saveMenu = async () => {
   } catch (err) {
     // Pesan validasi dari server (opsi tidak valid, harga ≤ 0, dll) ditampilkan di tempatnya
     const data = err.response?.data
-    const optMsg = Array.isArray(data?.options) ? data.options[0] : data?.options
+    const rawOpt = data?.option_group_ids ?? data?.options
+    const optMsg = Array.isArray(rawOpt) ? rawOpt[0] : rawOpt
     const priceMsg = Array.isArray(data?.price) ? data.price[0] : data?.price
     if (optMsg) errors.options = String(optMsg)
     if (priceMsg) errors.price = String(priceMsg)
@@ -810,7 +793,7 @@ const toggleStock = async (menu) => {
 onMounted(async () => {
   const token = localStorage.getItem('token')
   if (!token) { router.push('/login'); return }
-  await Promise.all([fetchMenus(), fetchCategories()])
+  await Promise.all([fetchMenus(), fetchCategories(), fetchOptionGroups()])
 })
 </script>
 
@@ -914,23 +897,23 @@ onMounted(async () => {
 .mm-flag--secret { color: var(--red-soft); }
 .mm-flag--opt { color: var(--text-faint); }
 
-/* Editor opsi */
+/* Pemilih opsi (dari library) */
 .mm-opt-hint { margin: 0 0 0.6rem; font-size: 0.75rem; color: var(--text-faint); }
-.mm-opt-group {
-  display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 0.75rem; padding: 0.8rem;
+.mm-opt-empty { padding: 0.9rem; margin-bottom: 0.6rem; font-size: 0.8125rem; color: var(--text-dim); border: 1px dashed var(--border-strong); border-radius: var(--r-md); }
+.mm-opt-pick { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.75rem; }
+.mm-opt-item {
+  display: flex; align-items: flex-start; gap: 0.7rem; padding: 0.7rem 0.8rem; cursor: pointer;
   border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-2);
+  transition: border-color 0.15s, background 0.15s;
 }
-.mm-opt-head { display: flex; gap: 0.5rem; align-items: center; }
-.mm-opt-head .adm-input { flex: 1; min-width: 0; }
-.mm-opt-flags { display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; }
-.mm-opt-check { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; color: var(--text-2); cursor: pointer; }
-.mm-opt-choice { display: grid; grid-template-columns: minmax(0, 1fr) 8.5rem auto; gap: 0.5rem; align-items: center; }
-.mm-opt-price { min-width: 0; }
-.mm-opt-add { align-self: flex-start; }
+.mm-opt-item:hover { border-color: var(--border-strong); }
+.mm-opt-item.is-on { border-color: var(--accent); background: var(--tint-accent); }
+.mm-opt-item input { width: 18px; height: 18px; margin-top: 0.1rem; flex-shrink: 0; accent-color: var(--accent); cursor: pointer; }
+.mm-opt-item-body { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+.mm-opt-item-name { font-size: 0.875rem; font-weight: 600; color: var(--text); }
+.mm-opt-item-name small { margin-left: 0.4rem; font-size: 0.7rem; font-weight: 500; color: var(--text-faint); }
+.mm-opt-item-choices { font-size: 0.75rem; color: var(--text-dim); }
 .mm-opt-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-@media (max-width: 640px) {
-  .mm-opt-choice { grid-template-columns: minmax(0, 1fr) 7rem auto; }
-}
 
 /* Dropzone foto */
 .mm-drop {

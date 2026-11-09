@@ -1,9 +1,11 @@
 from rest_framework import serializers
 from django.db import transaction
 
+import json
+
 from . import bundles as bundle_logic
-from .models import Menu, Category, MenuBundle, MenuBundleItem
-from .options import clean_options, OptionError
+from .models import Menu, Category, MenuBundle, MenuBundleItem, OptionGroup, sync_menu_options
+from .options import clean_choices, OptionError, MAX_GROUPS
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -31,8 +33,12 @@ class MenuSerializer(serializers.ModelSerializer):
     image_url      = serializers.SerializerMethodField(read_only=True)
     price_web      = serializers.DecimalField(max_digits=10, decimal_places=0, read_only=True)
 
-    # Dari FormData, options datang sebagai string JSON; JSONField DRF otomatis mem-parse-nya.
-    options        = serializers.JSONField(required=False)
+    # options = hasil rakitan dari grup yang dipasang (baca saja; dibaca customer/POS seperti biasa).
+    options        = serializers.JSONField(read_only=True)
+    # Grup opsi yang dipasang ke menu ini. Dari FormData datang sebagai string JSON, mis. "[1,3]".
+    option_group_ids = serializers.PrimaryKeyRelatedField(
+        source="option_groups", many=True, queryset=OptionGroup.objects.all(), required=False
+    )
 
     class Meta:
         model  = Menu
@@ -41,7 +47,7 @@ class MenuSerializer(serializers.ModelSerializer):
             "category", "category_name", "category_group",
             "description", "image", "image_url",
             "is_available", "is_active",
-            "is_recommended", "is_secret", "options",
+            "is_recommended", "is_secret", "options", "option_group_ids",
         ]
 
     def validate_price(self, value):
@@ -49,11 +55,40 @@ class MenuSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Harga harus lebih dari 0.")
         return value
 
-    def validate_options(self, value):
-        try:
-            return clean_options(value)
-        except OptionError as e:
-            raise serializers.ValidationError(str(e))
+    def to_internal_value(self, data):
+        # "[]" berarti "cabut semua opsi dari menu ini" (tetap terbaca di PATCH multipart).
+        if hasattr(data, "dict"):  # QueryDict dari multipart; file image ikut terbawa
+            data = data.dict()
+        raw = data.get("option_group_ids")
+        if isinstance(raw, str):
+            try:
+                data["option_group_ids"] = json.loads(raw or "[]")
+            except ValueError:
+                raise serializers.ValidationError({"option_group_ids": "Format opsi tidak valid."})
+        return super().to_internal_value(data)
+
+    def validate_option_group_ids(self, groups):
+        if len(groups) > MAX_GROUPS:
+            raise serializers.ValidationError(f"Maksimal {MAX_GROUPS} grup opsi per menu.")
+        return groups
+
+    @transaction.atomic
+    def create(self, validated):
+        touched = "option_groups" in validated
+        menu = super().create(validated)
+        if touched:
+            sync_menu_options([menu.pk])
+            menu.refresh_from_db(fields=["options"])
+        return menu
+
+    @transaction.atomic
+    def update(self, instance, validated):
+        touched = "option_groups" in validated
+        menu = super().update(instance, validated)
+        if touched:
+            sync_menu_options([menu.pk])
+            menu.refresh_from_db(fields=["options"])
+        return menu
 
     def get_category_name(self, obj):
         return obj.category.name if obj.category else None
@@ -63,6 +98,73 @@ class MenuSerializer(serializers.ModelSerializer):
 
     def get_image_url(self, obj):
         return obj.image.url if obj.image else None
+
+
+class OptionGroupSerializer(serializers.ModelSerializer):
+    """Library grup opsi (staff). menu_ids = menu yang memakai grup ini; bisa ditulis dari sini."""
+    menu_ids = serializers.PrimaryKeyRelatedField(
+        source="menus", many=True, queryset=Menu.objects.all(), required=False
+    )
+    menu_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = OptionGroup
+        fields = ["id", "name", "required", "multiple", "choices", "menu_ids", "menu_count"]
+
+    def get_menu_count(self, obj):
+        return len(obj.menus.all())  # menus sudah di-prefetch di viewset
+
+    def validate_name(self, value):
+        value = (value or "").strip()
+        if not value:
+            raise serializers.ValidationError("Nama grup wajib diisi.")
+        clash = OptionGroup.objects.filter(name__iexact=value)
+        if self.instance:
+            clash = clash.exclude(pk=self.instance.pk)
+        if clash.exists():
+            raise serializers.ValidationError(f'Grup "{value}" sudah ada.')
+        return value
+
+    def validate_choices(self, value):
+        name = (self.initial_data.get("name") or "grup ini") if hasattr(self, "initial_data") else "grup ini"
+        try:
+            return clean_choices(name, value)
+        except OptionError as e:
+            raise serializers.ValidationError(str(e))
+
+    def _check_limit(self, menus, instance=None):
+        """Satu menu maksimal MAX_GROUPS grup (aturan yang sama dengan sebelumnya)."""
+        already = set(instance.menus.values_list("pk", flat=True)) if instance else set()
+        for m in menus:
+            if m.pk not in already and m.option_groups.count() >= MAX_GROUPS:
+                raise serializers.ValidationError(
+                    {"menu_ids": f"{m.name} sudah punya {MAX_GROUPS} grup opsi (batas maksimal)."}
+                )
+
+    @transaction.atomic
+    def create(self, validated):
+        menus = validated.pop("menus", [])
+        self._check_limit(menus)
+        group = OptionGroup.objects.create(**validated)
+        group.menus.set(menus)
+        sync_menu_options([m.pk for m in menus])
+        return group
+
+    @transaction.atomic
+    def update(self, instance, validated):
+        menus = validated.pop("menus", None)
+        if menus is not None:
+            self._check_limit(menus, instance)
+        before = set(instance.menus.values_list("pk", flat=True))
+        for k, v in validated.items():
+            setattr(instance, k, v)
+        instance.save()
+        if menus is not None:
+            instance.menus.set(menus)
+        after = set(instance.menus.values_list("pk", flat=True))
+        # Nama/pilihan grup berubah -> semua menu yang memakainya ikut dirakit ulang
+        sync_menu_options(before | after)
+        return instance
 
 
 class PublicMenuSerializer(serializers.ModelSerializer):
